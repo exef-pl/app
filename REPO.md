@@ -1,0 +1,12 @@
+https://github.com/poulCuzz/ksef-import
+https://github.com/Crusty-IT/KSeF-Master
+https://github.com/herbat73/KsefMinimal
+https://github.com/m32/ksef
+https://github.com/jakubmatias/ksef-client-js
+https://github.com/smekcio/ksef-client-python
+https://github.com/sosekivalda/ksef-integration
+https://github.com/alexandear81/polishInvoicingback
+https://github.com/Kamil-Dab/ksef-py
+https://github.com/stanislawbartkowski/ksef_cli
+https://github.com/stanislawbartkowski/ksef_pyth
+https://github.com/dawid-pakosz/KSeF-Python-Client-Updated
