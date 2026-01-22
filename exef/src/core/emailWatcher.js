@@ -158,6 +158,10 @@ class EmailWatcher extends EventEmitter {
   }
 
   setImapConfig(config) {
+    if (!config) {
+      this.imapConfig = null
+      return
+    }
     this.imapConfig = {
       host: config.host,
       port: config.port || 993,
@@ -169,12 +173,24 @@ class EmailWatcher extends EventEmitter {
   }
 
   setOauthConfig(config) {
+    if (!config) {
+      this.oauthConfig = null
+      return
+    }
     this.oauthConfig = {
       clientId: config.clientId,
       clientSecret: config.clientSecret,
       refreshToken: config.refreshToken,
       accessToken: config.accessToken,
     }
+  }
+
+  setProvider(provider) {
+    const next = String(provider || '').trim().toLowerCase()
+    if (!next) {
+      return
+    }
+    this.provider = next
   }
 }
 

@@ -56,6 +56,26 @@ function parseJsonOutput(stdout) {
   } catch (_e) {
   }
 
+  const firstObj = trimmed.indexOf('{')
+  const lastObj = trimmed.lastIndexOf('}')
+  if (firstObj >= 0 && lastObj > firstObj) {
+    const candidate = trimmed.slice(firstObj, lastObj + 1)
+    try {
+      return JSON.parse(candidate)
+    } catch (_e) {
+    }
+  }
+
+  const firstArr = trimmed.indexOf('[')
+  const lastArr = trimmed.lastIndexOf(']')
+  if (firstArr >= 0 && lastArr > firstArr) {
+    const candidate = trimmed.slice(firstArr, lastArr + 1)
+    try {
+      return JSON.parse(candidate)
+    } catch (_e) {
+    }
+  }
+
   const lines = trimmed.split('\n').map((l) => l.trim()).filter(Boolean)
   for (let i = lines.length - 1; i >= 0; i--) {
     try {
@@ -99,6 +119,13 @@ async function run() {
   const settingsGet = runCli(['settings', 'get', '--json'])
   const settingsJson = parseJsonOutput(settingsGet.stdout)
   tests.push({ name: 'exef settings get --json', ok: settingsGet.code === 0 && !!settingsJson })
+
+  const ksefAuth = runCli(['ksef', 'auth', '--token', 'test-token-123', '--nip', '1234567890', '--json'])
+  const ksefAuthJson = parseJsonOutput(ksefAuth.stdout)
+  tests.push({
+    name: 'exef ksef auth --json (and persisted)',
+    ok: ksefAuth.code === 0 && !!ksefAuthJson?.accessToken && ksefAuthJson?.saved === true && !!ksefAuthJson?.accountId,
+  })
 
   console.log('\n' + '='.repeat(60))
   console.log('Test Results:')

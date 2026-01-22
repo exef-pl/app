@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --production
+
+COPY dropbox-mock-server.js ./
+
+EXPOSE 8091
+
+CMD ["node", "dropbox-mock-server.js"]

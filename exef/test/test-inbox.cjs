@@ -70,6 +70,79 @@ async function testDebugStorageSync() {
   return res.ok
 }
 
+async function testSettingsEmailRoundTrip() {
+  console.log('\n[TEST] PUT /settings (email round-trip)')
+
+  const settingsRes = await fetch(`${BASE_URL}/settings`)
+  const originalSettings = await settingsRes.json().catch(() => null)
+  if (!settingsRes.ok || !originalSettings) {
+    console.log('  Cannot read settings, skip')
+    return false
+  }
+
+  const originalEmail = originalSettings?.channels?.email || null
+
+  try {
+    const body = {
+      channels: {
+        email: {
+          activeAccountId: 'acc-1',
+          accounts: [
+            {
+              id: 'acc-1',
+              provider: 'imap',
+              enabled: true,
+              imap: {
+                host: 'imap.example.com',
+                port: 993,
+                tls: true,
+                user: 'test@example.com',
+                password: 'secret',
+                mailbox: 'INBOX',
+              },
+            },
+          ],
+        },
+      },
+    }
+
+    const putRes = await fetch(`${BASE_URL}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+    const putJson = await putRes.json().catch(() => ({}))
+    console.log('  Status:', putRes.status)
+    if (!putRes.ok) {
+      console.log('  Response:', JSON.stringify(putJson))
+      return false
+    }
+
+    const next = putJson?.channels?.email
+    const ok =
+      next &&
+      next.activeAccountId === 'acc-1' &&
+      Array.isArray(next.accounts) &&
+      next.accounts.length === 1 &&
+      next.accounts[0].id === 'acc-1'
+
+    return !!ok
+  } finally {
+    try {
+      await fetch(`${BASE_URL}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channels: {
+            email: originalEmail,
+          },
+        }),
+      })
+    } catch (_e) {
+    }
+  }
+}
+
 async function testLocalFolderStorageSyncImportAndProcess() {
   console.log('\n[TEST] Local folder sync -> invoice -> process (XML fixture)')
 
@@ -320,6 +393,7 @@ async function runAllTests() {
     results.push({ name: 'debug/workflow/events', ok: await testDebugWorkflowEvents() })
     results.push({ name: 'debug/storage/state', ok: await testDebugStorageState() })
     results.push({ name: 'debug/storage/sync', ok: await testDebugStorageSync() })
+    results.push({ name: 'settings email round-trip', ok: await testSettingsEmailRoundTrip() })
     results.push({ name: 'storage local folder -> process (xml)', ok: await testLocalFolderStorageSyncImportAndProcess() })
 
     const jsonInvoiceId = await testAddInvoiceFromJson()

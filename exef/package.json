@@ -27,7 +27,11 @@
     "test:email": "node --test docker/email-tests/tests/email-sync.test.js",
     "test:email:docker": "cd docker/email-tests && ./tests/run-tests.sh",
     "docker:email:up": "cd docker/email-tests && docker-compose up -d",
-    "docker:email:down": "cd docker/email-tests && docker-compose down"
+    "docker:email:down": "cd docker/email-tests && docker-compose down",
+    "test:storage": "node --test docker/storage-tests/tests/storage-sync.test.js",
+    "test:storage:docker": "cd docker/storage-tests && ./tests/run-tests.sh",
+    "docker:storage:up": "cd docker/storage-tests && docker-compose up -d",
+    "docker:storage:down": "cd docker/storage-tests && docker-compose down"
   },
   "dependencies": {
     "cors": "^2.8.5",

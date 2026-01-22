@@ -1005,22 +1005,21 @@ function renderInvoices() {
 
     const sourceLabel = inv.source === 'ksef' ? 'z KSeF' : inv.source === 'email' ? 'z email' : inv.source === 'scanner' ? 'ze skanera' : 'z pliku';
 
-    let actions = '';
+    let actionButtons = '';
     if (inv.status === 'pending' || inv.status === 'ocr') {
-      actions = `
+      actionButtons = `
         <button onclick="processInvoice('${inv.id}')">Przetwórz</button>
         <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
       `;
     } else if (inv.status === 'described') {
-      actions = `
+      actionButtons = `
         <button class="success" onclick="approveInvoice('${inv.id}')">Zatwierdź</button>
         <button onclick="editInvoice('${inv.id}')">Edytuj</button>
         <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
         <button class="danger" onclick="rejectInvoice('${inv.id}')">Odrzuć</button>
       `;
-    } else if (inv.status === 'approved') {
-      actions = `
-        <span style="color: #16a34a;">✓ Zatwierdzona</span>
+    } else {
+      actionButtons = `
         <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
       `;
     }
@@ -1035,7 +1034,7 @@ function renderInvoices() {
       ).join('');
 
       projectControl = `
-        <div style="flex:1; min-width: 240px;">
+        <div style="min-width: 200px;">
           <div class="subtle" style="margin-bottom: 6px;">📁 Projekt</div>
           <select onchange="assignInvoiceToProjectFromTable('${inv.id}', this.value)">${projectOptions}</select>
         </div>
@@ -1055,7 +1054,7 @@ function renderInvoices() {
       }).join('');
 
       projectControl = `
-        <div style="flex:1; min-width: 240px;">
+        <div style="min-width: 200px;">
           <div class="subtle" style="margin-bottom: 6px;">📁 Projekt</div>
           <div style="max-height: 120px; overflow:auto; padding-right: 6px;">
             ${list}
@@ -1074,7 +1073,7 @@ function renderInvoices() {
       ).join('');
 
       expenseTypeControl = `
-        <div style="flex:1; min-width: 240px;">
+        <div style="min-width: 200px;">
           <div class="subtle" style="margin-bottom: 6px;">🏷️ Typ wydatku</div>
           <select onchange="assignInvoiceToExpenseTypeFromTable('${inv.id}', this.value)">${expenseTypeOptions}</select>
         </div>
@@ -1092,7 +1091,7 @@ function renderInvoices() {
       }).join('');
 
       expenseTypeControl = `
-        <div style="flex:1; min-width: 240px;">
+        <div style="min-width: 200px;">
           <div class="subtle" style="margin-bottom: 6px;">🏷️ Typ wydatku</div>
           <div style="max-height: 120px; overflow:auto; padding-right: 6px;">
             ${list}
@@ -1111,30 +1110,46 @@ function renderInvoices() {
       return `<div style="margin-top: 6px;">${chips}</div>`;
     })() : '';
 
+    const statusText = inv.status === 'approved' || inv.status === 'booked'
+      ? `✓ ${statusLabel}`
+      : statusLabel;
+
+    const statusCell = `
+      <div style="min-width: 160px;">
+        <div class="subtle" style="margin-bottom: 6px;">Status</div>
+        <div class="${statusClass}" style="font-weight: 600;">${statusText}</div>
+      </div>
+    `;
+
     return `
       <div class="card">
-        <div class="card-header">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px 12px; align-items:start;">
           <div>
             <div class="card-title">
               <span class="source-icon">${icon}</span>
               ${inv.invoiceNumber || inv.fileName || 'Faktura'}
-              <span class="${statusClass}">[${statusLabel}]</span>
             </div>
+          </div>
+
+          <div>
             <div class="card-meta">
               ${inv.contractorName || inv.sellerName || '???'} • ${sourceLabel}
               ${inv.issueDate ? ` • ${inv.issueDate}` : ''}
             </div>
+            ${suggestion ? `<div style="margin-top: 6px;">${suggestion}</div>` : ''}
+            ${labelsInfo}
           </div>
-          <div class="card-amount">${amount}</div>
+
+          <div class="card-amount" style="text-align:right; justify-self:end;">${amount}</div>
         </div>
-        ${suggestion ? `<div style="margin: 8px 0;">${suggestion}</div>` : ''}
-        ${labelsInfo}
-        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display:flex; flex-direction:column; gap:10px;">
-          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
-            ${expenseTypeControl}
-            ${projectControl}
+
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items:end;">
+          ${expenseTypeControl}
+          ${projectControl}
+          ${statusCell}
+          <div class="card-actions" style="margin-top: 0; justify-content: flex-end; flex-wrap: wrap; align-items: center; justify-self: end;">
+            ${actionButtons}
           </div>
-          <div class="card-actions">${actions}</div>
         </div>
       </div>
     `;

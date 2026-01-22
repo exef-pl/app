@@ -84,13 +84,225 @@ function getDefaultSettings() {
     },
     channels: {
       localFolders: { paths: [] },
-      email: { accounts: [] },
+      email: { accounts: [], activeAccountId: null },
       ksef: { accounts: [], activeAccountId: null },
       remoteStorage: { connections: [], state: {} },
       devices: { printers: [], scanners: [] },
       other: { sources: [] },
     },
   }
+}
+
+function buildSettingsFromEnv() {
+  const settings = getDefaultSettings()
+  const connections = []
+  const emailAccounts = []
+  const ksefAccounts = []
+
+  // Dropbox from .env
+  if (process.env.EXEF_DROPBOX_ENABLED === 'true' || process.env.EXEF_DROPBOX_ACCESS_TOKEN || process.env.EXEF_DROPBOX_REFRESH_TOKEN) {
+    connections.push({
+      id: 'dropbox-env',
+      type: 'dropbox',
+      name: 'Dropbox (env)',
+      enabled: process.env.EXEF_DROPBOX_ENABLED !== 'false',
+      apiUrl: process.env.EXEF_DROPBOX_API_URL || null,
+      accessToken: process.env.EXEF_DROPBOX_ACCESS_TOKEN || null,
+      refreshToken: process.env.EXEF_DROPBOX_REFRESH_TOKEN || null,
+      clientId: process.env.EXEF_DROPBOX_CLIENT_ID || null,
+      clientSecret: process.env.EXEF_DROPBOX_CLIENT_SECRET || null,
+      folderPath: process.env.EXEF_DROPBOX_FOLDER_PATH || '/',
+    })
+  }
+
+  // Google Drive from .env
+  if (process.env.EXEF_GDRIVE_ENABLED === 'true' || process.env.EXEF_GDRIVE_ACCESS_TOKEN || process.env.EXEF_GDRIVE_REFRESH_TOKEN) {
+    connections.push({
+      id: 'gdrive-env',
+      type: 'gdrive',
+      name: 'Google Drive (env)',
+      enabled: process.env.EXEF_GDRIVE_ENABLED !== 'false',
+      apiUrl: process.env.EXEF_GDRIVE_API_URL || null,
+      accessToken: process.env.EXEF_GDRIVE_ACCESS_TOKEN || null,
+      refreshToken: process.env.EXEF_GDRIVE_REFRESH_TOKEN || null,
+      clientId: process.env.EXEF_GDRIVE_CLIENT_ID || null,
+      clientSecret: process.env.EXEF_GDRIVE_CLIENT_SECRET || null,
+      folderId: process.env.EXEF_GDRIVE_FOLDER_ID || 'root',
+    })
+  }
+
+  // OneDrive from .env
+  if (process.env.EXEF_ONEDRIVE_ENABLED === 'true' || process.env.EXEF_ONEDRIVE_ACCESS_TOKEN || process.env.EXEF_ONEDRIVE_REFRESH_TOKEN) {
+    connections.push({
+      id: 'onedrive-env',
+      type: 'onedrive',
+      name: 'OneDrive (env)',
+      enabled: process.env.EXEF_ONEDRIVE_ENABLED !== 'false',
+      apiUrl: process.env.EXEF_ONEDRIVE_API_URL || null,
+      accessToken: process.env.EXEF_ONEDRIVE_ACCESS_TOKEN || null,
+      refreshToken: process.env.EXEF_ONEDRIVE_REFRESH_TOKEN || null,
+      clientId: process.env.EXEF_ONEDRIVE_CLIENT_ID || null,
+      clientSecret: process.env.EXEF_ONEDRIVE_CLIENT_SECRET || null,
+      folderId: process.env.EXEF_ONEDRIVE_FOLDER_ID || 'root',
+    })
+  }
+
+  // Nextcloud from .env
+  if (process.env.EXEF_NEXTCLOUD_ENABLED === 'true' || process.env.EXEF_NEXTCLOUD_WEBDAV_URL) {
+    connections.push({
+      id: 'nextcloud-env',
+      type: 'nextcloud',
+      name: 'Nextcloud (env)',
+      enabled: process.env.EXEF_NEXTCLOUD_ENABLED !== 'false',
+      webdavUrl: process.env.EXEF_NEXTCLOUD_WEBDAV_URL || null,
+      username: process.env.EXEF_NEXTCLOUD_USERNAME || null,
+      password: process.env.EXEF_NEXTCLOUD_PASSWORD || null,
+      folderPath: process.env.EXEF_NEXTCLOUD_FOLDER_PATH || '/',
+    })
+  }
+
+  // IMAP email from .env
+  if (process.env.EXEF_IMAP_ENABLED === 'true' || process.env.EXEF_IMAP_HOST) {
+    emailAccounts.push({
+      id: 'imap-env',
+      type: 'imap',
+      name: 'IMAP (env)',
+      enabled: process.env.EXEF_IMAP_ENABLED !== 'false',
+      imap: {
+        host: process.env.EXEF_IMAP_HOST || null,
+        port: process.env.EXEF_IMAP_PORT ? parseInt(process.env.EXEF_IMAP_PORT, 10) : 993,
+        user: process.env.EXEF_IMAP_USER || null,
+        password: process.env.EXEF_IMAP_PASSWORD || null,
+        tls: process.env.EXEF_IMAP_TLS !== 'false',
+      },
+    })
+  }
+
+  // Gmail OAuth from .env
+  if (process.env.EXEF_GMAIL_ENABLED === 'true' || process.env.EXEF_GMAIL_ACCESS_TOKEN || process.env.EXEF_GMAIL_REFRESH_TOKEN) {
+    emailAccounts.push({
+      id: 'gmail-env',
+      type: 'gmail-oauth',
+      name: 'Gmail (env)',
+      enabled: process.env.EXEF_GMAIL_ENABLED !== 'false',
+      oauth: {
+        apiUrl: process.env.EXEF_GMAIL_API_URL || null,
+        accessToken: process.env.EXEF_GMAIL_ACCESS_TOKEN || null,
+        refreshToken: process.env.EXEF_GMAIL_REFRESH_TOKEN || null,
+        clientId: process.env.EXEF_GMAIL_CLIENT_ID || null,
+        clientSecret: process.env.EXEF_GMAIL_CLIENT_SECRET || null,
+      },
+    })
+  }
+
+  // Outlook OAuth from .env
+  if (process.env.EXEF_OUTLOOK_ENABLED === 'true' || process.env.EXEF_OUTLOOK_ACCESS_TOKEN || process.env.EXEF_OUTLOOK_REFRESH_TOKEN) {
+    emailAccounts.push({
+      id: 'outlook-env',
+      type: 'outlook-oauth',
+      name: 'Outlook (env)',
+      enabled: process.env.EXEF_OUTLOOK_ENABLED !== 'false',
+      oauth: {
+        apiUrl: process.env.EXEF_OUTLOOK_API_URL || null,
+        accessToken: process.env.EXEF_OUTLOOK_ACCESS_TOKEN || null,
+        refreshToken: process.env.EXEF_OUTLOOK_REFRESH_TOKEN || null,
+        clientId: process.env.EXEF_OUTLOOK_CLIENT_ID || null,
+        clientSecret: process.env.EXEF_OUTLOOK_CLIENT_SECRET || null,
+      },
+    })
+  }
+
+  // KSeF from .env
+  if (process.env.EXEF_KSEF_ENABLED === 'true' || process.env.EXEF_KSEF_TOKEN) {
+    ksefAccounts.push({
+      id: 'ksef-env',
+      name: 'KSeF (env)',
+      enabled: process.env.EXEF_KSEF_ENABLED !== 'false',
+      nip: process.env.EXEF_KSEF_NIP || null,
+      accessToken: process.env.EXEF_KSEF_TOKEN || null,
+      tokenType: process.env.EXEF_KSEF_TOKEN_TYPE || 'authorisation',
+    })
+  }
+
+  // Local folders from .env
+  const envWatchPaths = process.env.EXEF_WATCH_PATHS 
+    ? process.env.EXEF_WATCH_PATHS.split(',').map((p) => p.trim()).filter(Boolean) 
+    : []
+
+  if (connections.length > 0) {
+    settings.channels.remoteStorage.connections = connections
+  }
+  if (emailAccounts.length > 0) {
+    settings.channels.email.accounts = emailAccounts
+    settings.channels.email.activeAccountId = emailAccounts[0]?.id || null
+  }
+  if (ksefAccounts.length > 0) {
+    settings.channels.ksef.accounts = ksefAccounts
+    settings.channels.ksef.activeAccountId = ksefAccounts[0]?.id || null
+  }
+  if (envWatchPaths.length > 0) {
+    settings.channels.localFolders.paths = envWatchPaths
+  }
+
+  return settings
+}
+
+function isSettingsEmpty(settings) {
+  if (!settings) return true
+  const channels = settings.channels || {}
+  const hasConnections = Array.isArray(channels.remoteStorage?.connections) && channels.remoteStorage.connections.length > 0
+  const hasEmails = Array.isArray(channels.email?.accounts) && channels.email.accounts.length > 0
+  const hasKsef = Array.isArray(channels.ksef?.accounts) && channels.ksef.accounts.length > 0
+  const hasLocalFolders = Array.isArray(channels.localFolders?.paths) && channels.localFolders.paths.length > 0
+  return !hasConnections && !hasEmails && !hasKsef && !hasLocalFolders
+}
+
+function mergeEnvSettings(existingSettings, envSettings) {
+  const result = { ...existingSettings }
+  
+  // Merge remoteStorage connections - add env connections if not already present
+  const existingConnIds = new Set((result.channels?.remoteStorage?.connections || []).map((c) => c.id))
+  const envConnections = (envSettings.channels?.remoteStorage?.connections || []).filter((c) => !existingConnIds.has(c.id))
+  if (envConnections.length > 0) {
+    result.channels = result.channels || {}
+    result.channels.remoteStorage = result.channels.remoteStorage || {}
+    result.channels.remoteStorage.connections = [...(result.channels.remoteStorage.connections || []), ...envConnections]
+  }
+
+  // Merge email accounts
+  const existingEmailIds = new Set((result.channels?.email?.accounts || []).map((a) => a.id))
+  const envEmails = (envSettings.channels?.email?.accounts || []).filter((a) => !existingEmailIds.has(a.id))
+  if (envEmails.length > 0) {
+    result.channels = result.channels || {}
+    result.channels.email = result.channels.email || {}
+    result.channels.email.accounts = [...(result.channels.email.accounts || []), ...envEmails]
+    if (!result.channels.email.activeAccountId && envEmails[0]?.id) {
+      result.channels.email.activeAccountId = envEmails[0].id
+    }
+  }
+
+  // Merge ksef accounts
+  const existingKsefIds = new Set((result.channels?.ksef?.accounts || []).map((a) => a.id))
+  const envKsef = (envSettings.channels?.ksef?.accounts || []).filter((a) => !existingKsefIds.has(a.id))
+  if (envKsef.length > 0) {
+    result.channels = result.channels || {}
+    result.channels.ksef = result.channels.ksef || {}
+    result.channels.ksef.accounts = [...(result.channels.ksef.accounts || []), ...envKsef]
+    if (!result.channels.ksef.activeAccountId && envKsef[0]?.id) {
+      result.channels.ksef.activeAccountId = envKsef[0].id
+    }
+  }
+
+  // Merge local folders
+  const existingPaths = new Set(result.channels?.localFolders?.paths || [])
+  const envPaths = (envSettings.channels?.localFolders?.paths || []).filter((p) => !existingPaths.has(p))
+  if (envPaths.length > 0) {
+    result.channels = result.channels || {}
+    result.channels.localFolders = result.channels.localFolders || {}
+    result.channels.localFolders.paths = [...(result.channels.localFolders.paths || []), ...envPaths]
+  }
+
+  return result
 }
 
 function readJsonFile(filePath, fallbackValue) {
@@ -118,6 +330,58 @@ function normalizeStringArray(value) {
   return Array.from(new Set(value.map((v) => String(v)).map((v) => v.trim()).filter(Boolean)))
 }
 
+function getActiveKsefAccount(currentSettings) {
+  const accounts = Array.isArray(currentSettings?.channels?.ksef?.accounts)
+    ? currentSettings.channels.ksef.accounts
+    : []
+  const activeId = currentSettings?.channels?.ksef?.activeAccountId || null
+  if (!activeId) {
+    return null
+  }
+  return accounts.find((a) => a && a.id === activeId) || null
+}
+
+function applyKsefFromSettings(currentSettings) {
+  const active = getActiveKsefAccount(currentSettings)
+  const token = active?.accessToken || null
+  workflow.setKsefAccessToken(token)
+}
+
+function getActiveEmailAccount(currentSettings) {
+  const accounts = Array.isArray(currentSettings?.channels?.email?.accounts)
+    ? currentSettings.channels.email.accounts
+    : []
+  const activeId = currentSettings?.channels?.email?.activeAccountId || null
+  if (activeId) {
+    return accounts.find((a) => a && a.id === activeId) || null
+  }
+  return accounts.find((a) => a && a.enabled !== false) || null
+}
+
+function applyEmailFromSettings(currentSettings) {
+  const account = getActiveEmailAccount(currentSettings)
+  if (!account) {
+    workflow.configureEmail({ provider: 'imap', imap: null, oauth: null })
+    return
+  }
+
+  const provider = String(account.provider || account.type || '').trim().toLowerCase()
+  if (provider.includes('gmail') || provider.includes('outlook') || provider.includes('oauth')) {
+    workflow.configureEmail({
+      provider: provider || 'gmail-oauth',
+      imap: null,
+      oauth: account.oauth || account.oauthConfig || account.config || account,
+    })
+    return
+  }
+
+  workflow.configureEmail({
+    provider: provider || 'imap',
+    imap: account.imap || account.imapConfig || account.config || account,
+    oauth: null,
+  })
+}
+
 function loadSettings() {
   const defaults = getDefaultSettings()
   const fromFile = readJsonFile(settingsFilePath, defaults)
@@ -138,6 +402,14 @@ function loadSettings() {
       localFolders: {
         ...defaults.channels.localFolders,
         ...((fromFile.channels || {}).localFolders || {}),
+      },
+      email: {
+        ...defaults.channels.email,
+        ...((fromFile.channels || {}).email || {}),
+      },
+      ksef: {
+        ...defaults.channels.ksef,
+        ...((fromFile.channels || {}).ksef || {}),
       },
       remoteStorage: {
         ...defaults.channels.remoteStorage,
@@ -274,6 +546,14 @@ async function getSettingsFromBackend() {
       loaded.channels.localFolders.paths = normalizeStringArray(loaded.channels.localFolders.paths)
     }
     if (loaded?.channels) {
+      loaded.channels.email = {
+        ...defaults.channels.email,
+        ...((loaded.channels || {}).email || {}),
+      }
+      loaded.channels.ksef = {
+        ...defaults.channels.ksef,
+        ...((loaded.channels || {}).ksef || {}),
+      }
       loaded.channels.remoteStorage = {
         ...defaults.channels.remoteStorage,
         ...((loaded.channels || {}).remoteStorage || {}),
@@ -282,6 +562,48 @@ async function getSettingsFromBackend() {
     return loaded
   }
   return loadSettings()
+}
+
+async function initSettingsFromEnv() {
+  const envSettings = buildSettingsFromEnv()
+  const hasEnvConfig = !isSettingsEmpty(envSettings)
+  
+  if (!hasEnvConfig) {
+    return null
+  }
+
+  if (dataLayer) {
+    const defaults = getDefaultSettings()
+    const currentSettings = await dataLayer.getSettings(defaults)
+    
+    if (isSettingsEmpty(currentSettings)) {
+      console.log('[env] SQLite settings empty, populating from .env...')
+      const merged = mergeEnvSettings(currentSettings, envSettings)
+      await dataLayer.setSettings(merged)
+      console.log('[env] Settings populated from .env:', {
+        connections: merged.channels?.remoteStorage?.connections?.length || 0,
+        emailAccounts: merged.channels?.email?.accounts?.length || 0,
+        ksefAccounts: merged.channels?.ksef?.accounts?.length || 0,
+        localFolders: merged.channels?.localFolders?.paths?.length || 0,
+      })
+      return merged
+    } else {
+      console.log('[env] SQLite settings already configured, merging new .env entries...')
+      const merged = mergeEnvSettings(currentSettings, envSettings)
+      await dataLayer.setSettings(merged)
+      return merged
+    }
+  } else {
+    const currentSettings = loadSettings()
+    if (isSettingsEmpty(currentSettings)) {
+      console.log('[env] File settings empty, populating from .env...')
+      const merged = mergeEnvSettings(currentSettings, envSettings)
+      writeJsonFile(settingsFilePath, merged)
+      return merged
+    }
+  }
+  
+  return null
 }
 
 async function setSettingsToBackend(nextSettings) {
@@ -347,6 +669,9 @@ const workflow = createInvoiceWorkflow({
 if (workflow?.storageSync && typeof workflow.storageSync.setState === 'function') {
   workflow.storageSync.setState(settings?.channels?.remoteStorage?.state || {})
 }
+
+applyKsefFromSettings(settings)
+applyEmailFromSettings(settings)
 
 let pendingRemoteStorageState = null
 let remoteStorageStateSaveTimer = null
@@ -443,18 +768,30 @@ if (workflow?.storageSync) {
 }
 
 if (dataLayer) {
-  getSettingsFromBackend().then((loaded) => {
-    settings = loaded
-    workflow.configureStorage({
-      watchPaths: settings.channels.localFolders.paths,
-      connections: settings?.channels?.remoteStorage?.connections || [],
-    })
+  (async () => {
+    try {
+      // First, try to populate settings from .env if SQLite is empty
+      const envPopulated = await initSettingsFromEnv()
+      
+      // Then load the final settings (which may include .env values)
+      const loaded = envPopulated || await getSettingsFromBackend()
+      settings = loaded
+      
+      workflow.configureStorage({
+        watchPaths: settings.channels.localFolders.paths,
+        connections: settings?.channels?.remoteStorage?.connections || [],
+      })
 
-    if (workflow?.storageSync && typeof workflow.storageSync.setState === 'function') {
-      workflow.storageSync.setState(settings?.channels?.remoteStorage?.state || {})
+      if (workflow?.storageSync && typeof workflow.storageSync.setState === 'function') {
+        workflow.storageSync.setState(settings?.channels?.remoteStorage?.state || {})
+      }
+
+      applyKsefFromSettings(settings)
+      applyEmailFromSettings(settings)
+    } catch (_e) {
+      console.error('[env] Failed to initialize settings:', _e.message)
     }
-  }).catch((_e) => {
-  })
+  })()
 }
 
 const expenseTypesFilePath = process.env.EXEF_EXPENSE_TYPES_FILE_PATH || path.join(__dirname, '../../data/expense_types.csv')
@@ -586,6 +923,16 @@ app.put('/settings', async (req, res) => {
           ...((current.channels || {}).localFolders || {}),
           ...((body.channels || {}).localFolders || {}),
         },
+        email: {
+          ...defaults.channels.email,
+          ...((current.channels || {}).email || {}),
+          ...((body.channels || {}).email || {}),
+        },
+        ksef: {
+          ...defaults.channels.ksef,
+          ...((current.channels || {}).ksef || {}),
+          ...((body.channels || {}).ksef || {}),
+        },
         remoteStorage: {
           ...defaults.channels.remoteStorage,
           ...((current.channels || {}).remoteStorage || {}),
@@ -606,6 +953,9 @@ app.put('/settings', async (req, res) => {
     if (workflow?.storageSync && typeof workflow.storageSync.setState === 'function') {
       workflow.storageSync.setState(settings?.channels?.remoteStorage?.state || {})
     }
+
+    applyKsefFromSettings(settings)
+    applyEmailFromSettings(settings)
 
     res.json(settings)
   } catch (err) {
@@ -640,6 +990,9 @@ app.post('/data/import', async (req, res) => {
     if (workflow?.storageSync && typeof workflow.storageSync.setState === 'function') {
       workflow.storageSync.setState(settings?.channels?.remoteStorage?.state || {})
     }
+
+    applyKsefFromSettings(settings)
+    applyEmailFromSettings(settings)
     res.json({ ok: true })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
@@ -720,6 +1073,9 @@ app.post('/data/import/:entity', async (req, res) => {
       if (workflow?.storageSync && typeof workflow.storageSync.setState === 'function') {
         workflow.storageSync.setState(settings?.channels?.remoteStorage?.state || {})
       }
+
+      applyKsefFromSettings(settings)
+      applyEmailFromSettings(settings)
       return res.json({ ok: true })
     }
     return res.status(404).json({ error: 'unknown_entity' })
@@ -762,6 +1118,9 @@ app.post('/db/import.sqlite', async (req, res) => {
     if (workflow?.storageSync && typeof workflow.storageSync.setState === 'function') {
       workflow.storageSync.setState(settings?.channels?.remoteStorage?.state || {})
     }
+
+    applyKsefFromSettings(settings)
+    applyEmailFromSettings(settings)
     res.json({ ok: true })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
@@ -783,7 +1142,62 @@ app.get('/contractors', async (_req, res) => {
 app.post('/ksef/auth/token', async (req, res) => {
   try {
     const result = await ksef.authenticateWithKsefToken(req.body)
-    res.json(result)
+
+    const current = await getSettingsFromBackend()
+    const accounts = Array.isArray(current?.channels?.ksef?.accounts) ? current.channels.ksef.accounts : []
+    const nip = req.body?.nip ? String(req.body.nip) : null
+    const requestedAccountId = req.body?.accountId ? String(req.body.accountId) : null
+
+    let account = null
+    if (requestedAccountId) {
+      account = accounts.find((a) => a && a.id === requestedAccountId) || null
+    }
+    if (!account && nip) {
+      account = accounts.find((a) => a && String(a.nip || '') === nip) || null
+    }
+
+    const accountId = account?.id || requestedAccountId || (nip ? `ksef:${nip}` : `ksef:${Date.now()}`)
+    const nextAccount = {
+      ...(account || {}),
+      id: accountId,
+      ...(nip ? { nip } : {}),
+      accessToken: result?.accessToken || null,
+      expiresAt: result?.expiresAt || null,
+      environment: result?.environment || null,
+      updatedAt: new Date().toISOString(),
+    }
+
+    const nextAccounts = (() => {
+      const idx = accounts.findIndex((a) => a && a.id === accountId)
+      if (idx >= 0) {
+        const copy = accounts.slice()
+        copy[idx] = { ...copy[idx], ...nextAccount }
+        return copy
+      }
+      return [...accounts, nextAccount]
+    })()
+
+    const nextSettings = {
+      ...current,
+      channels: {
+        ...(current.channels || {}),
+        ksef: {
+          ...((current.channels || {}).ksef || {}),
+          accounts: nextAccounts,
+          activeAccountId: accountId,
+        },
+      },
+    }
+    await setSettingsToBackend(nextSettings)
+    settings = nextSettings
+
+    workflow.setKsefAccessToken(result?.accessToken || null)
+
+    res.json({
+      ...result,
+      accountId,
+      saved: true,
+    })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }

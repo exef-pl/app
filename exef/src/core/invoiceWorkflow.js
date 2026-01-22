@@ -115,8 +115,13 @@ class InvoiceWorkflow extends EventEmitter {
   }
 
   setKsefAccessToken(token) {
-    this.ksefAccessToken = token
-    if (token && !this.ksefPollTimer) {
+    const next = token ? String(token) : null
+    this.ksefAccessToken = next
+    if (!next) {
+      this._stopKsefPolling()
+      return
+    }
+    if (!this.ksefPollTimer) {
       this._startKsefPolling()
     }
   }
@@ -198,10 +203,15 @@ class InvoiceWorkflow extends EventEmitter {
   }
 
   configureEmail(config) {
-    if (config.imap) {
+    if (config.provider && typeof this.emailWatcher.setProvider === 'function') {
+      this.emailWatcher.setProvider(config.provider)
+    }
+
+    if (Object.prototype.hasOwnProperty.call(config, 'imap') && typeof this.emailWatcher.setImapConfig === 'function') {
       this.emailWatcher.setImapConfig(config.imap)
     }
-    if (config.oauth) {
+
+    if (Object.prototype.hasOwnProperty.call(config, 'oauth') && typeof this.emailWatcher.setOauthConfig === 'function') {
       this.emailWatcher.setOauthConfig(config.oauth)
     }
   }
