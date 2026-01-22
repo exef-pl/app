@@ -15,6 +15,9 @@
       .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
       .tab { padding: 8px 16px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; font-size: 14px; }
       .tab.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+      .nav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+      .nav-btn { padding: 8px 16px; border-radius: 8px; border: 1px solid #e5e7eb; background: #fff; cursor: pointer; font-size: 14px; }
+      .nav-btn.active { background: #111827; color: #fff; border-color: #111827; }
       .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; background: #fff; margin-bottom: 12px; }
       .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
       .card-title { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; }
@@ -82,9 +85,13 @@
       .invoices-table th { background: #f9fafb; font-weight: 600; position: sticky; top: 0; z-index: 1; }
       .invoices-table td.muted { color: #6b7280; }
       .invoices-table td.center { text-align: center; }
-      .project-col { max-width: 90px; }
+      .project-col { min-width: 160px; }
       .project-radio { display: flex; align-items: center; justify-content: center; gap: 6px; }
       .project-radio input { cursor: pointer; }
+      .label-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 12px; border: 1px solid #e5e7eb; background: #fff; margin-right: 6px; margin-top: 6px; }
+      .label-dot { width: 10px; height: 10px; border-radius: 999px; border: 1px solid rgba(0,0,0,0.1); }
+      .page-title { font-size: 18px; font-weight: 700; margin: 0 0 12px 0; }
+      .subtle { color: #6b7280; font-size: 13px; }
     </style>
   </head>
   <body>
@@ -98,26 +105,98 @@
     </div>
 
     <div class="container">
-      
-      <div class="tabs">
-        <button class="tab active" data-filter="">Wszystkie</button>
-        <button class="tab" data-filter="pending">Oczekujące</button>
-        <button class="tab" data-filter="described">Opisane</button>
-        <button class="tab" data-filter="approved">Zatwierdzone</button>
+      <div class="nav">
+        <button id="navInbox" class="nav-btn active" data-page="inbox">📥 Inbox</button>
+        <button id="navProjects" class="nav-btn" data-page="projects">📁 Projekty</button>
+        <button id="navLabels" class="nav-btn" data-page="labels">🏷️ Etykiety</button>
+        <button id="navSettings" class="nav-btn" data-page="settings">⚙️ Konfiguracja</button>
       </div>
 
-      <div id="invoiceList"></div>
-
-      <div class="card" style="margin-top: 24px;">
-        <div class="card-header">
-          <div class="card-title">Akcje</div>
+      <div id="pageInbox">
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">Wszystkie</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="statPending">0</div>
+            <div class="stat-label">Oczekujące</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="statDescribed">0</div>
+            <div class="stat-label">Opisane</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="statApproved">0</div>
+            <div class="stat-label">Zatwierdzone</div>
+          </div>
         </div>
-        <div class="card-actions">
-          <button id="refreshBtn" class="primary">Odśwież</button>
-          <button id="toggleViewBtn">Widok: karty</button>
-          <button id="exportBtn">Eksportuj zatwierdzone (CSV)</button>
-          <button id="projectsBtn">📁 Zarządzaj projektami</button>
-          <button id="expenseTypesBtn">🏷️ Typy wydatków</button>
+
+        <div class="tabs">
+          <button class="tab active" data-filter="">Wszystkie</button>
+          <button class="tab" data-filter="pending">Oczekujące</button>
+          <button class="tab" data-filter="described">Opisane</button>
+          <button class="tab" data-filter="approved">Zatwierdzone</button>
+        </div>
+
+        <div id="invoiceList"></div>
+
+        <div class="card" style="margin-top: 24px;">
+          <div class="card-header">
+            <div class="card-title">Akcje</div>
+          </div>
+          <div class="card-actions">
+            <button id="refreshBtn" class="primary">Odśwież</button>
+            <button id="toggleViewBtn">Widok: karty</button>
+            <button id="exportBtn">Eksportuj zatwierdzone (CSV)</button>
+            <button id="projectsBtn">📁 Projekty</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="pageProjects" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="page-title">Projekty</div>
+              <div class="subtle">Lista projektów używanych do przypisywania dokumentów.</div>
+            </div>
+            <div>
+              <button id="projectsAddBtn" class="primary">+ Dodaj projekt</button>
+            </div>
+          </div>
+          <div id="projectsPageList"></div>
+        </div>
+      </div>
+
+      <div id="pageLabels" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="page-title">Etykiety</div>
+              <div class="subtle">Etykiety (tagi) możesz przypisywać do dokumentów niezależnie od projektu.</div>
+            </div>
+            <div>
+              <button id="labelsAddBtn" class="primary">+ Dodaj etykietę</button>
+            </div>
+          </div>
+          <div id="labelsPageList"></div>
+        </div>
+      </div>
+
+      <div id="pageSettings" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="page-title">Konfiguracja</div>
+              <div class="subtle">Konfiguracja list (projekty/etykiety) oraz kanałów dostępu do dokumentów.</div>
+            </div>
+            <div>
+              <button id="settingsReloadBtn">Odśwież</button>
+              <button id="settingsSaveBtn" class="primary">Zapisz</button>
+            </div>
+          </div>
+          <div id="settingsPageContent"></div>
         </div>
       </div>
     </div>
