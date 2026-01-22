@@ -95,35 +95,43 @@ class InvoiceWorkflow extends EventEmitter {
       return null
     }
 
+    const inv = (!invoice.originalFile && invoice.id)
+      ? await this.inbox.getInvoice(invoice.id)
+      : invoice
+
+    if (!inv) {
+      return null
+    }
+
     const needsAny = !(
-      invoice.contractorName &&
-      invoice.grossAmount &&
-      invoice.invoiceNumber &&
-      invoice.issueDate
+      inv.contractorName &&
+      inv.grossAmount &&
+      inv.invoiceNumber &&
+      inv.issueDate
     )
 
     if (!needsAny) {
       return null
     }
 
-    if (!invoice.originalFile) {
+    if (!inv.originalFile) {
       return null
     }
 
     const ocrLike = await this.ocrPipeline.runOcr({
-      id: invoice.id,
-      source: invoice.source,
-      originalFile: invoice.originalFile,
-      fileName: invoice.fileName,
-      fileType: invoice.fileType,
-      currency: invoice.currency,
-      contractorName: invoice.contractorName,
-      contractorNip: invoice.contractorNip,
-      invoiceNumber: invoice.invoiceNumber,
-      issueDate: invoice.issueDate,
-      grossAmount: invoice.grossAmount,
-      netAmount: invoice.netAmount,
-      vatAmount: invoice.vatAmount,
+      id: inv.id,
+      source: inv.source,
+      originalFile: inv.originalFile,
+      fileName: inv.fileName,
+      fileType: inv.fileType,
+      currency: inv.currency,
+      contractorName: inv.contractorName,
+      contractorNip: inv.contractorNip,
+      invoiceNumber: inv.invoiceNumber,
+      issueDate: inv.issueDate,
+      grossAmount: inv.grossAmount,
+      netAmount: inv.netAmount,
+      vatAmount: inv.vatAmount,
     })
 
     const hasAnything = !!(
@@ -140,17 +148,16 @@ class InvoiceWorkflow extends EventEmitter {
       return null
     }
 
-    return this.inbox.updateInvoice(invoice.id, {
-      // keep status unchanged (still pending)
+    return this.inbox.updateInvoice(inv.id, {
       parsedData: ocrLike,
-      invoiceNumber: ocrLike.invoiceNumber || invoice.invoiceNumber,
-      issueDate: ocrLike.issueDate || invoice.issueDate,
-      contractorNip: ocrLike.sellerNip || invoice.contractorNip,
-      contractorName: ocrLike.sellerName || invoice.contractorName,
-      grossAmount: ocrLike.grossAmount || invoice.grossAmount,
-      netAmount: ocrLike.netAmount || invoice.netAmount,
-      vatAmount: ocrLike.vatAmount || invoice.vatAmount,
-      currency: ocrLike.currency || invoice.currency,
+      invoiceNumber: ocrLike.invoiceNumber || inv.invoiceNumber,
+      issueDate: ocrLike.issueDate || inv.issueDate,
+      contractorNip: ocrLike.sellerNip || inv.contractorNip,
+      contractorName: ocrLike.sellerName || inv.contractorName,
+      grossAmount: ocrLike.grossAmount || inv.grossAmount,
+      netAmount: ocrLike.netAmount || inv.netAmount,
+      vatAmount: ocrLike.vatAmount || inv.vatAmount,
+      currency: ocrLike.currency || inv.currency,
     })
   }
 
@@ -291,13 +298,21 @@ class InvoiceWorkflow extends EventEmitter {
 
   async listInvoices(filter = {}) {
     const invoices = await this.inbox.listInvoices(filter)
+    const stripFile = (inv) => {
+      if (!inv || typeof inv !== 'object') {
+        return inv
+      }
+      const copy = { ...inv }
+      delete copy.originalFile
+      return copy
+    }
     const out = []
     for (const inv of invoices) {
       try {
         const updated = await this._autoExtractXmlMetadata(inv)
-        out.push(updated || inv)
+        out.push(stripFile(updated || inv))
       } catch (_e) {
-        out.push(inv)
+        out.push(stripFile(inv))
       }
     }
     return out

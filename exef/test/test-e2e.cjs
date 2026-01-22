@@ -72,7 +72,7 @@ async function main() {
     EXEF_PROJECTS_FILE_PATH: projectsPath,
     EXEF_LABELS_FILE_PATH: labelsPath,
     EXEF_EXPENSE_TYPES_FILE_PATH: expenseTypesPath,
-    EXEF_STORAGE_BACKEND: 'files',
+    EXEF_STORAGE_BACKEND: 'sqlite',
     EXEF_DB_PATH: sqliteDbPath,
   }
 

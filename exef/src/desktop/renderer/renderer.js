@@ -739,8 +739,9 @@ async function renderAccountsPage() {
       const idx = raw === '' ? null : Number(raw);
       const acc = idx != null && ksefAccounts[idx] ? ksefAccounts[idx] : null;
       if (acc && ksefTokenInput && !ksefTokenInput.value) {
-        if (acc.token) {
-          ksefTokenInput.value = String(acc.token);
+        const token = acc.accessToken || acc.token;
+        if (token) {
+          ksefTokenInput.value = String(token);
         }
       }
       if (acc && ksefNipInput && !ksefNipInput.value) {
@@ -754,6 +755,14 @@ async function renderAccountsPage() {
         }
       }
     });
+
+    const activeAccountId = settings?.channels?.ksef?.activeAccountId || null;
+    const activeIdx = activeAccountId ? ksefAccounts.findIndex((a) => a && a.id === activeAccountId) : -1;
+    const autoSelectIdx = activeIdx >= 0 ? activeIdx : (ksefAccounts.length === 1 ? 0 : -1);
+    if (autoSelectIdx >= 0 && ksefAccountSelect.value === '') {
+      ksefAccountSelect.value = String(autoSelectIdx);
+      ksefAccountSelect.dispatchEvent(new Event('change'));
+    }
   }
 
   const ksefAuthBtn = document.getElementById('accountsKsefAuthBtn');
@@ -1628,6 +1637,73 @@ function isXmlLike({ fileType, fileName, content } = {}) {
   return false;
 }
 
+function escapeHtml(text) {
+  return String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function detectKsefXslNameFromXml(xmlDoc) {
+  const root = xmlDoc?.documentElement;
+  const ns = String(root?.namespaceURI || '');
+  const rootName = String(root?.localName || root?.nodeName || '').toLowerCase();
+
+  if (ns.includes('upo.schematy.mf.gov.pl') || rootName.includes('upo')) {
+    return 'upo.xsl';
+  }
+
+  if (ns.includes('/12648/')) {
+    return 'styl-fa2.xsl';
+  }
+  if (ns.includes('/13775/')) {
+    return 'styl-fa3.xsl';
+  }
+
+  const wariantNodes = xmlDoc.getElementsByTagNameNS('*', 'WariantFormularza');
+  const wariant = wariantNodes && wariantNodes[0] ? String(wariantNodes[0].textContent || '').trim() : '';
+  if (wariant === '2') return 'styl-fa2.xsl';
+  if (wariant === '3') return 'styl-fa3.xsl';
+
+  return 'styl-fa3.xsl';
+}
+
+async function renderXmlInvoiceToHtml(xmlText) {
+  const xmlDoc = new DOMParser().parseFromString(xmlText, 'application/xml');
+  const parseError = xmlDoc.getElementsByTagName('parsererror');
+  if (parseError && parseError.length) {
+    return `<!doctype html><html><head><meta charset="utf-8"></head><body><pre>${escapeHtml(xmlText)}</pre></body></html>`;
+  }
+
+  const xslName = detectKsefXslNameFromXml(xmlDoc);
+  const xslRes = await fetch(`${url}/ksef/xsl/${xslName}`);
+  if (!xslRes.ok) {
+    return `<!doctype html><html><head><meta charset="utf-8"></head><body><pre>${escapeHtml(xmlText)}</pre></body></html>`;
+  }
+  const xslText = await xslRes.text();
+  const xslDoc = new DOMParser().parseFromString(xslText, 'application/xml');
+  const xslParseError = xslDoc.getElementsByTagName('parsererror');
+  if (xslParseError && xslParseError.length) {
+    return `<!doctype html><html><head><meta charset="utf-8"></head><body><pre>${escapeHtml(xmlText)}</pre></body></html>`;
+  }
+
+  const processor = new XSLTProcessor();
+  processor.importStylesheet(xslDoc);
+
+  const outDoc = processor.transformToDocument(xmlDoc);
+  const serialized = new XMLSerializer().serializeToString(outDoc);
+  if (serialized && /<html[\s>]/i.test(serialized)) {
+    return serialized;
+  }
+
+  const fragment = processor.transformToFragment(xmlDoc, document);
+  const wrapper = document.createElement('div');
+  wrapper.appendChild(fragment);
+  return `<!doctype html><html><head><meta charset="utf-8"></head><body>${wrapper.innerHTML}</body></html>`;
+}
+
 function normalizeInvoiceFileContent(invoice) {
   const fileName = invoice?.fileName || 'invoice';
   const fileType = invoice?.fileType || guessMimeTypeFromFileName(fileName);
@@ -1701,6 +1777,9 @@ async function openInvoicePreview(invoiceId) {
         <div id="invoicePreviewContainer" style="border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); overflow: hidden;"></div>
         <div class="form-actions" style="margin-top: 12px; flex-wrap: wrap;">
           <button id="openInvoiceDetailsBtn">Szczegóły</button>
+          <button id="printInvoiceBtn" style="display:none;">Drukuj / PDF</button>
+          <button id="downloadInvoiceHtmlBtn" style="display:none;">Pobierz HTML</button>
+          <button id="downloadInvoiceXmlBtn" style="display:none;">Pobierz XML</button>
           <button id="downloadInvoiceFileBtn" class="primary">Pobierz</button>
           <button class="cancel-btn">Zamknij</button>
         </div>
@@ -1710,7 +1789,17 @@ async function openInvoicePreview(invoiceId) {
 
   document.body.appendChild(modal);
 
-  const close = () => modal.remove();
+  let blobUrl = null;
+  const close = () => {
+    if (blobUrl) {
+      try {
+        URL.revokeObjectURL(blobUrl);
+      } catch (_e) {
+      }
+      blobUrl = null;
+    }
+    modal.remove();
+  };
   modal.querySelector('.close-btn').addEventListener('click', close);
   modal.querySelector('.cancel-btn').addEventListener('click', close);
   modal.addEventListener('click', (e) => {
@@ -1723,47 +1812,82 @@ async function openInvoicePreview(invoiceId) {
   });
 
   const previewEl = modal.querySelector('#invoicePreviewContainer');
-  let blobUrl = null;
-  try {
-    if (normalized.kind === 'blob' && normalized.blob) {
-      blobUrl = URL.createObjectURL(normalized.blob);
+  const printBtn = modal.querySelector('#printInvoiceBtn');
+  const downloadHtmlBtn = modal.querySelector('#downloadInvoiceHtmlBtn');
+  const downloadXmlBtn = modal.querySelector('#downloadInvoiceXmlBtn');
 
-      const ft = String(normalized.fileType || '').toLowerCase();
-      const fn = String(normalized.fileName || '').toLowerCase();
+  const ftLower = String(normalized.fileType || '').toLowerCase();
+  const fnLower = String(normalized.fileName || '').toLowerCase();
+  const isXml = isXmlLike({ fileType: normalized.fileType, fileName: normalized.fileName, content: normalized.kind === 'text' ? normalized.text : null });
 
-      if (ft.includes('pdf') || fn.endsWith('.pdf')) {
-        previewEl.innerHTML = `<iframe src="${blobUrl}" style="width:100%; height: 72vh; border:0;"></iframe>`;
-      } else if (ft.startsWith('image/') || fn.endsWith('.png') || fn.endsWith('.jpg') || fn.endsWith('.jpeg') || fn.endsWith('.gif') || fn.endsWith('.webp')) {
-        previewEl.innerHTML = `<div style="padding: 10px; display:flex; justify-content:center;"><img src="${blobUrl}" style="max-width:100%; height:auto; border-radius: 8px; border:1px solid var(--border); background: var(--surface);"></div>`;
-      } else {
-        previewEl.innerHTML = `<iframe src="${blobUrl}" style="width:100%; height: 72vh; border:0;"></iframe>`;
-      }
+  if (isXml) {
+    const xmlText = normalized.kind === 'text'
+      ? String(normalized.text || '')
+      : (normalized.kind === 'blob' && normalized.blob ? await normalized.blob.text() : '');
 
-      modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
-        downloadBlob(normalized.fileName || 'invoice', normalized.blob);
-      });
-    } else if (normalized.kind === 'text') {
-      previewEl.innerHTML = `<pre style="white-space: pre-wrap; margin:0; padding: 12px; max-height: 72vh; overflow:auto;">${(normalized.text || '').replace(/</g, '&lt;')}</pre>`;
-      modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
-        const blob = new Blob([normalized.text || ''], { type: normalized.fileType || 'text/plain;charset=utf-8' });
-        downloadBlob(normalized.fileName || 'invoice.txt', blob);
-      });
-    } else {
-      previewEl.innerHTML = `<div class="empty" style="padding: 20px;">Nieobsługiwany format pliku</div>`;
-      modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
-        showNotification('Nie można pobrać: nieznany format', 'error');
-      });
-    }
-  } finally {
-    modal.addEventListener('remove', () => {
-      if (blobUrl) {
-        try {
-          URL.revokeObjectURL(blobUrl);
-        } catch (_e) {
-        }
+    const html = await renderXmlInvoiceToHtml(xmlText);
+    previewEl.innerHTML = `<iframe id="xmlPreviewFrame" style="width:100%; height: 72vh; border:0; background:#fff;" srcdoc="${escapeHtml(html)}"></iframe>`;
+
+    printBtn.style.display = 'inline';
+    downloadHtmlBtn.style.display = 'inline';
+    downloadXmlBtn.style.display = 'inline';
+    modal.querySelector('#downloadInvoiceFileBtn').style.display = 'none';
+
+    printBtn.addEventListener('click', () => {
+      const frame = modal.querySelector('#xmlPreviewFrame');
+      try {
+        frame?.contentWindow?.focus();
+        frame?.contentWindow?.print();
+      } catch (_e) {
+        showNotification('Nie udało się otworzyć wydruku', 'error');
       }
     });
+
+    downloadHtmlBtn.addEventListener('click', () => {
+      const name = (normalized.fileName || 'invoice.xml').replace(/\.xml$/i, '.html');
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      downloadBlob(name, blob);
+    });
+
+    downloadXmlBtn.addEventListener('click', () => {
+      const name = normalized.fileName || 'invoice.xml';
+      const blob = new Blob([xmlText], { type: 'application/xml;charset=utf-8' });
+      downloadBlob(name, blob);
+    });
+
+    return;
   }
+
+  if (normalized.kind === 'blob' && normalized.blob) {
+    blobUrl = URL.createObjectURL(normalized.blob);
+
+    if (ftLower.includes('pdf') || fnLower.endsWith('.pdf')) {
+      previewEl.innerHTML = `<iframe src="${blobUrl}" style="width:100%; height: 72vh; border:0;"></iframe>`;
+    } else if (ftLower.startsWith('image/') || fnLower.endsWith('.png') || fnLower.endsWith('.jpg') || fnLower.endsWith('.jpeg') || fnLower.endsWith('.gif') || fnLower.endsWith('.webp')) {
+      previewEl.innerHTML = `<div style="padding: 10px; display:flex; justify-content:center;"><img src="${blobUrl}" style="max-width:100%; height:auto; border-radius: 8px; border:1px solid var(--border); background: var(--surface);"></div>`;
+    } else {
+      previewEl.innerHTML = `<iframe src="${blobUrl}" style="width:100%; height: 72vh; border:0;"></iframe>`;
+    }
+
+    modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
+      downloadBlob(normalized.fileName || 'invoice', normalized.blob);
+    });
+    return;
+  }
+
+  if (normalized.kind === 'text') {
+    previewEl.innerHTML = `<pre style="white-space: pre-wrap; margin:0; padding: 12px; max-height: 72vh; overflow:auto;">${escapeHtml(normalized.text || '')}</pre>`;
+    modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
+      const blob = new Blob([normalized.text || ''], { type: normalized.fileType || 'text/plain;charset=utf-8' });
+      downloadBlob(normalized.fileName || 'invoice.txt', blob);
+    });
+    return;
+  }
+
+  previewEl.innerHTML = `<div class="empty" style="padding: 20px;">Nieobsługiwany format pliku</div>`;
+  modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
+    showNotification('Nie można pobrać: nieznany format', 'error');
+  });
 }
 
 async function exportDataBundle() {

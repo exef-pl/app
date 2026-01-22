@@ -38,3 +38,9 @@ make exef-web-up
 # Zobacz wszystkie dostępne komendy
 make help
 ```
+
+## Testowanie UI / pliki przykładowe
+
+Instrukcja testów manualnych (UI + linki do plików CSV/XML) jest w głównym README:
+
+- [`README.md` → "Testowanie UI (local-service)"](../README.md#testowanie-ui-local-service)

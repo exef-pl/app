@@ -67,7 +67,7 @@ npm run build:cli
 | `exef inbox approve <id>` | Zatwierdź |
 | `exef inbox reject <id>` | Odrzuć |
 | `exef inbox export` | Eksportuj |
-| `exef inbox export-files --output-dir <dir> [--status approved|all]` | Eksportuj pliki faktur do folderów: `[typ wydatku]/[projekt]/[dokument]` |
+| `exef inbox export-files --output-dir DIR [--status approved/all]` | Eksportuj pliki faktur do folderów: `[typ wydatku]/[projekt]/[dokument]` |
 
 ### KSeF
 
@@ -98,6 +98,9 @@ npm run build:cli
 | `EXEF_OUTPUT_FORMAT` | Format wyjścia: `json` lub `text` |
 | `EXEF_STORAGE_BACKEND` | Backend storage: `files` lub `sqlite` |
 | `EXEF_DB_PATH` | Ścieżka do pliku SQLite (gdy `EXEF_STORAGE_BACKEND=sqlite`) |
+
+Uwaga: przy `EXEF_STORAGE_BACKEND=sqlite` pliki faktur (PDF/JPG/PNG/XML) są zapisywane w bazie jako BLOB.
+Eksport `exef db export` zawiera te pliki, natomiast `exef data export` (bundle JSON) może nie zawierać treści plików.
 
 ## Przykłady użycia
 

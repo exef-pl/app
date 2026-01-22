@@ -25,7 +25,7 @@ app.use(helmet({
       fontSrc: ["'self'", "data:", "http:", "https:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"],
+      frameSrc: ["'self'", "blob:", "data:"],
     },
   },
   crossOriginEmbedderPolicy: false
@@ -43,7 +43,7 @@ app.use((req, res, next) => {
       "font-src 'self' data: http: https:; " +
       "object-src 'none'; " +
       "media-src 'self'; " +
-      "frame-src 'none'"
+      "frame-src 'self' blob: data:"
     );
   }
   next();
@@ -867,7 +867,7 @@ app.use('/', (req, res, next) => {
         "font-src 'self' data: http: https:; " +
         "object-src 'none'; " +
         "media-src 'self'; " +
-        "frame-src 'none'"
+        "frame-src 'self' blob: data:"
       );
       res.send(content);
       return;
@@ -875,6 +875,69 @@ app.use('/', (req, res, next) => {
   }
   next();
 }, express.static(path.join(__dirname, '../desktop/renderer')))
+
+function rewriteXslImportsToProxy(xslText) {
+  if (!xslText) return xslText
+  return String(xslText).replace(
+    /href=(['"])(https?:\/\/[^'\"]+?\.xsl)\1/gi,
+    (_m, quote, href) => `href=${quote}/ksef/xsl/proxy?url=${encodeURIComponent(href)}${quote}`
+  )
+}
+
+function isAllowedRemoteXslUrl(rawUrl) {
+  try {
+    const u = new URL(rawUrl)
+    const allowedHosts = new Set([
+      'crd.gov.pl',
+      'jpk.mf.gov.pl',
+      'ksef.mf.gov.pl',
+      'ksef-test.mf.gov.pl',
+      'ksef-demo.mf.gov.pl',
+    ])
+    return (u.protocol === 'http:' || u.protocol === 'https:') && allowedHosts.has(u.hostname)
+  } catch (_e) {
+    return false
+  }
+}
+
+app.get('/ksef/xsl/:name', (req, res) => {
+  const name = String(req.params.name || '')
+  const allowed = new Set(['styl-fa2.xsl', 'styl-fa3.xsl', 'upo.xsl'])
+  if (!allowed.has(name)) {
+    return res.status(404).json({ error: 'xsl_not_found' })
+  }
+
+  const filePath = path.join(__dirname, '../../../ksef', name)
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'xsl_not_found' })
+  }
+
+  const raw = fs.readFileSync(filePath, 'utf8')
+  const rewritten = rewriteXslImportsToProxy(raw)
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8')
+  res.send(rewritten)
+})
+
+app.get('/ksef/xsl/proxy', async (req, res) => {
+  const target = req.query.url
+  if (!target || typeof target !== 'string' || !isAllowedRemoteXslUrl(target)) {
+    return res.status(400).json({ error: 'invalid_xsl_url' })
+  }
+
+  try {
+    const response = await fetch(target)
+    if (!response.ok) {
+      return res.status(502).json({ error: `xsl_fetch_failed_${response.status}` })
+    }
+
+    const text = await response.text()
+    const rewritten = rewriteXslImportsToProxy(text)
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8')
+    res.send(rewritten)
+  } catch (err) {
+    res.status(502).json({ error: err?.message ?? 'xsl_fetch_failed' })
+  }
+})
 
 const ksef = createKsefFacade({})
 

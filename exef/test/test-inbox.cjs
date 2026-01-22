@@ -455,6 +455,117 @@ async function testKsefEndpoints() {
   return res.ok
 }
 
+async function testExportFilesHierarchy() {
+  console.log('\n[TEST] POST /inbox/export/files (hierarchy)')
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exef-export-'))
+  const projectId = `PRJ-${Date.now()}`
+  const expenseTypeId = `ET-${Date.now()}`
+
+  try {
+    const pRes = await fetch(`${BASE_URL}/projects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: projectId, nazwa: 'Projekt Test', status: 'aktywny' }),
+    })
+    await pRes.json().catch(() => ({}))
+
+    const etRes = await fetch(`${BASE_URL}/expense-types`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: expenseTypeId, nazwa: 'Koszt Test', opis: '' }),
+    })
+    await etRes.json().catch(() => ({}))
+
+    const addRes = await fetch(`${BASE_URL}/inbox/invoices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source: 'scanner',
+        file: 'data:image/png;base64,AA==',
+        metadata: {
+          fileName: 'doc.png',
+          fileType: 'image/png',
+        },
+      }),
+    })
+    const addJson = await addRes.json().catch(() => ({}))
+    if (!addRes.ok || !addJson?.id) {
+      return false
+    }
+    const invoiceId = addJson.id
+
+    const assignProjRes = await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(invoiceId)}/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId }),
+    })
+    if (!assignProjRes.ok) {
+      return false
+    }
+
+    const assignEtRes = await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(invoiceId)}/assign-expense-type`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expenseTypeId }),
+    })
+    if (!assignEtRes.ok) {
+      return false
+    }
+
+    const approveRes = await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(invoiceId)}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    if (!approveRes.ok) {
+      return false
+    }
+
+    const exportRes = await fetch(`${BASE_URL}/inbox/export/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ outputDir: tmpDir, status: 'approved' }),
+    })
+    const exportJson = await exportRes.json().catch(() => ({}))
+    console.log('  Export status:', exportRes.status)
+    if (!exportRes.ok) {
+      console.log('  Export response:', JSON.stringify(exportJson))
+      return false
+    }
+
+    const rootEntries = fs.readdirSync(tmpDir, { withFileTypes: true })
+    const expenseDir = rootEntries.find((e) => e.isDirectory())
+    if (!expenseDir) {
+      console.log('  No expense-type folder created')
+      return false
+    }
+
+    const expensePath = path.join(tmpDir, expenseDir.name)
+    const projectEntries = fs.readdirSync(expensePath, { withFileTypes: true })
+    const projectDir = projectEntries.find((e) => e.isDirectory())
+    if (!projectDir) {
+      console.log('  No project folder created')
+      return false
+    }
+
+    const projectPath = path.join(expensePath, projectDir.name)
+    const docs = fs.readdirSync(projectPath)
+    const hasDoc = docs.some((n) => n.includes('doc.png') || n.endsWith('.png'))
+    if (!hasDoc) {
+      console.log('  No document exported into hierarchy folder')
+      return false
+    }
+
+    return true
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    } catch (_e) {
+    }
+  }
+}
+
 async function runAllTests() {
   console.log('='.repeat(60))
   console.log('EXEF Inbox API Tests')
@@ -486,6 +597,7 @@ async function runAllTests() {
     results.push({ name: 'approve invoice', ok: await testApproveInvoice(jsonInvoiceId) })
     results.push({ name: 'export CSV', ok: await testExportCsv() })
     results.push({ name: 'ksef auth', ok: await testKsefEndpoints() })
+    results.push({ name: 'export files hierarchy', ok: await testExportFilesHierarchy() })
   } catch (e) {
     console.error('\n[ERROR]', e.message)
   }

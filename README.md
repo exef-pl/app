@@ -259,6 +259,62 @@ const invoice = InvoiceBuilder.vatInvoice('FV/2026/01/001', '2026-01-22', seller
 
 ## Testowanie
 
+### Testowanie UI (local-service)
+
+UI jest serwowane przez local-service (renderer w `exef/src/desktop/renderer/`).
+
+Uruchomienie:
+
+```bash
+cd exef
+npm install
+npm run local
+```
+
+Otwórz UI:
+
+- `http://localhost:<PORT>/` (PORT jest dobierany automatycznie; zapisywany w `exef/.exef-local-service.port`)
+- Inbox: `http://localhost:<PORT>/?page=inbox&view=cards`
+- Konta / Sync: `http://localhost:<PORT>/?page=accounts`
+- Projekty: `http://localhost:<PORT>/?page=projects`
+- Etykiety: `http://localhost:<PORT>/?page=labels`
+- Konfiguracja: `http://localhost:<PORT>/?page=settings`
+
+Pliki testowe:
+
+- Projekty (CSV): [`exef/test/fixtures/sample-projects.csv`](exef/test/fixtures/sample-projects.csv)
+- Etykiety (CSV): [`exef/test/fixtures/sample-labels.csv`](exef/test/fixtures/sample-labels.csv)
+- Faktura XML (FA3/KSeF-like): [`exef/test/fixtures/sample-invoice.xml`](exef/test/fixtures/sample-invoice.xml)
+- Faktura JSON: [`exef/test/fixtures/sample-invoice.json`](exef/test/fixtures/sample-invoice.json)
+
+Checklist (manual):
+
+- **Import/Export projektów**
+  - Wejdź w `Projekty`.
+  - Kliknij `Import` i wskaż `sample-projects.csv`.
+  - Kliknij `Export` i sprawdź pobrany `projects.csv`.
+
+- **Import/Export etykiet**
+  - Wejdź w `Etykiety`.
+  - Kliknij `Import` i wskaż `sample-labels.csv`.
+  - Kliknij `Export` i sprawdź pobrany `labels.csv`.
+
+- **Dodanie faktury z pliku (Inbox)**
+  - Wejdź w `Konta` → sekcja `Dodaj fakturę z pliku`.
+  - Wybierz np. `sample-invoice.xml`.
+  - Przejdź do `Inbox` i sprawdź, czy karta pokazuje numer faktury, kontrahenta i kwotę.
+
+- **Podgląd faktury (preview)**
+  - W `Inbox` kliknij `Otwórz`.
+  - Sprawdź podgląd oraz przycisk `Pobierz`.
+
+- **KSeF (ręcznie)**
+  - `Konta` → sekcja `KSeF`: `Autoryzuj` (token + NIP) → `Pobierz faktury`.
+
+- **Synchronizacja storage**
+  - `Konta` → `Synchronizacja teraz`.
+  - `Pokaż ostatnie zdarzenia` oraz `Pokaż stan storage`.
+
 ### Testy API (make exef-test-api)
 
 ```bash
