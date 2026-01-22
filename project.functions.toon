@@ -1,0 +1,48 @@
+project: exef
+generated: "2026-01-22T08:32:02.424453"
+modules[7]{path,lang,items}:
+  src/core/listen.js,javascript,4
+  src/core/ksefFacade.js,javascript,15
+  src/web/server.js,javascript,0
+  src/desktop/preload.js,javascript,2
+  src/desktop/main.js,javascript,1
+  src/local-service/server.js,javascript,1
+  src/desktop/renderer/renderer.js,javascript,1
+
+function_details:
+  src/core/listen.js:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      isPortNumber,function,(value) -> None,3-5,false,3,1,is port number
+      canBind,function,"(host, port) -> None",7-22,false,16,1,checks bind
+      findAvailablePort,function,() -> None,24-47,true,24,1,retrieves available port
+      listenWithFallback,function,(app) -> None,49-73,true,25,1,handles with fallback
+  src/core/ksefFacade.js:
+    functions[15]{name,kind,sig,loc,async,lines,cc,does}:
+      createKsefFacade,function,(options) -> None,294-296,false,3,1,creates ksef facade
+      KsefFacade.constructor,method,() -> None,16-23,false,8,1,constructor
+      KsefFacade.authenticateWithKsefToken,method,() -> None,25-38,true,14,1,validates with ksef token
+      KsefFacade.openOnlineSession,method,() -> None,40-60,true,21,1,starts online session
+      KsefFacade.closeOnlineSession,method,() -> None,62-103,true,42,1,stops online session
+      KsefFacade.sendOnlineInvoice,method,() -> None,105-128,true,24,1,sends online invoice
+      KsefFacade.queryInvoiceMetadata,method,() -> None,130-141,true,12,1,retrieves invoice metadata
+      KsefFacade.getInvoiceStatus,method,() -> None,143-156,true,14,1,retrieves invoice status
+      KsefFacade.downloadInvoice,method,() -> None,158-193,true,36,1,download invoice
+      KsefFacade.resolveEncryptionInfo,method,(accessToken) -> None,195-212,true,18,1,resolve encryption info
+      KsefFacade.createEncryptionInfoFromCertificate,method,(certificateBase64) -> None,214-233,false,20,1,creates encryption info from certificate
+      KsefFacade.createFallbackEncryptionInfo,method,() -> None,235-240,false,6,1,creates fallback encryption info
+      KsefFacade.wrapPem,method,(certificateBase64) -> None,242-245,false,4,1,wrap pem
+      KsefFacade.requestJson,method,() -> None,247-261,true,15,1,request json
+      KsefFacade.requestRaw,method,() -> None,263-291,true,29,1,request raw
+  src/desktop/preload.js:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      readPortFile,function,(filePath) -> None,7-21,false,15,1,retrieves port file
+      resolveLocalServiceBaseUrl,function,() -> None,23-35,false,13,1,resolve local service base url
+  src/desktop/main.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      createWindow,function,() -> None,7-17,false,11,1,creates window
+  src/local-service/server.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      writePortFile,function,"(filePath, portNumber) -> None",84-93,false,10,1,logs port file
+  src/desktop/renderer/renderer.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      check,function,() -> None,5-16,true,12,1,checks

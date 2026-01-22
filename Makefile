@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-all push
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push
 
 # Default target
 help:
@@ -17,6 +17,7 @@ help:
 	@echo "  exef-local-bin      - Build only local service binaries (fast, no npm install)"
 	@echo "  exef-local-packages - Build linux deb+rpm packages for local service (via nfpm docker)"
 	@echo "  exef-desktop-build  - Build desktop app installers (AppImage/deb/rpm + Windows NSIS)"
+	@echo "  exef-desktop-test   - Smoke-test desktop app on Linux (start local-service, verify health, launch AppImage)"
 	@echo "  exef-all            - Build all 3 exef artifacts"
 	@echo "  push               - Bump version + generate docs/v/<tag>/ + tag + push"
 	@echo "  clean              - Remove all generated index files"
@@ -126,6 +127,10 @@ exef-desktop-build:
 	@echo "Building exef desktop app installers (electron-builder)..."
 	@cd exef && /usr/share/nodejs/corepack/shims/npm install
 	@cd exef && /usr/share/nodejs/corepack/shims/npm run build:desktop
+
+exef-desktop-test:
+	@echo "Running exef desktop smoke-test on Linux..."
+	@cd exef && ./scripts/desktop-test.cjs
 
 exef-all: exef-web-docker exef-local-packages exef-desktop-build
 	@echo "All exef artifacts built."
