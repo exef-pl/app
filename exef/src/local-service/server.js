@@ -344,6 +344,7 @@ function isSettingsEmpty(settings) {
 
 function mergeEnvSettings(existingSettings, envSettings) {
   const result = { ...existingSettings }
+  const shouldPreferEnv = isSettingsEmpty(existingSettings)
   
   // Merge remoteStorage connections - add env connections if not already present
   const existingConnIds = new Set((result.channels?.remoteStorage?.connections || []).map((c) => c.id))
@@ -406,15 +407,18 @@ function mergeEnvSettings(existingSettings, envSettings) {
 
   if (envSettings?.ocr && typeof envSettings.ocr === 'object') {
     result.ocr = result.ocr && typeof result.ocr === 'object' ? { ...result.ocr } : {}
-    if (!result.ocr.provider && envSettings.ocr.provider) {
-      result.ocr.provider = envSettings.ocr.provider
+    if (envSettings.ocr.provider) {
+      const currentProvider = String(result.ocr.provider || '').trim().toLowerCase()
+      const nextProvider = String(envSettings.ocr.provider || '').trim().toLowerCase()
+      if (shouldPreferEnv || !currentProvider || currentProvider === 'tesseract') {
+        result.ocr.provider = nextProvider
+      }
     }
     const existingApi = result.ocr.api && typeof result.ocr.api === 'object' ? result.ocr.api : {}
     const envApi = envSettings.ocr.api && typeof envSettings.ocr.api === 'object' ? envSettings.ocr.api : {}
-    result.ocr.api = {
-      ...envApi,
-      ...existingApi,
-    }
+    result.ocr.api = shouldPreferEnv
+      ? { ...existingApi, ...envApi }
+      : { ...envApi, ...existingApi }
   }
 
   return result

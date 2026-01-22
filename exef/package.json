@@ -31,7 +31,11 @@
     "test:storage": "node --test docker/storage-tests/tests/storage-sync.test.js",
     "test:storage:docker": "cd docker/storage-tests && ./tests/run-tests.sh",
     "docker:storage:up": "cd docker/storage-tests && docker-compose up -d",
-    "docker:storage:down": "cd docker/storage-tests && docker-compose down"
+    "docker:storage:down": "cd docker/storage-tests && docker-compose down",
+    "test:ocr": "node --test docker/ocr-tests/tests/ocr-rest.test.js",
+    "test:ocr:docker": "cd docker/ocr-tests && ./tests/run-tests.sh",
+    "docker:ocr:up": "cd docker/ocr-tests && docker-compose up -d",
+    "docker:ocr:down": "cd docker/ocr-tests && docker-compose down"
   },
   "dependencies": {
     "cors": "^2.8.5",
