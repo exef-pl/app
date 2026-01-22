@@ -222,20 +222,20 @@ exef-test:
 
 exef-test-api:
 	@echo "Running exef API integration tests..."
-	@cd exef && node test/test-inbox.cjs
+	@cd exef && NODE_ENV=test EXEF_ENV_FILE=.env.test node test/test-inbox.cjs
 
 exef-test-cli:
 	@echo "Running exef CLI integration tests..."
-	@cd exef && node test/test-cli.cjs
+	@cd exef && NODE_ENV=test EXEF_ENV_FILE=.env.test node test/test-cli.cjs
 
 exef-test-e2e:
 	@echo "Running exef E2E (local-service + API + CLI)..."
-	@cd exef && node test/test-e2e.cjs
+	@cd exef && NODE_ENV=test EXEF_ENV_FILE=.env.test node test/test-e2e.cjs
 
 exef-test-gui:
 	@echo "Opening GUI test interface..."
 	@echo "Starting local service and opening browser..."
-	@cd exef && (/usr/share/nodejs/corepack/shims/npm run local &) && \
+	@cd exef && (NODE_ENV=test EXEF_ENV_FILE=.env.test /usr/share/nodejs/corepack/shims/npm run local &) && \
 	for i in 1 2 3 4 5 6 7 8 9 10; do \
 		[ -f .exef-local-service.port ] && break; \
 		sleep 1; \

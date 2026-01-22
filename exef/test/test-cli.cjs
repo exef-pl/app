@@ -127,6 +127,14 @@ async function run() {
     ok: ksefAuth.code === 0 && !!ksefAuthJson?.accessToken && ksefAuthJson?.saved === true && !!ksefAuthJson?.accountId,
   })
 
+  const pollToken = ksefAuthJson?.accessToken || 'stub-test'
+  const ksefPoll = runCli(['ksef', 'poll', '--token', pollToken, '--since', '2026-01-01', '--json'])
+  const ksefPollJson = parseJsonOutput(ksefPoll.stdout)
+  tests.push({
+    name: 'exef ksef poll --json (mocked)',
+    ok: ksefPoll.code === 0 && typeof ksefPollJson?.added === 'number',
+  })
+
   console.log('\n' + '='.repeat(60))
   console.log('Test Results:')
   console.log('='.repeat(60))

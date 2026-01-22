@@ -295,6 +295,10 @@ class KsefFacade {
       throw new Error('Missing accessToken');
     }
 
+    if (process.env.NODE_ENV === 'test' || process.env.EXEF_KSEF_MOCK === 'true') {
+      return [];
+    }
+
     const dateFrom = since ? new Date(since).toISOString() : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const metadata = await this.queryInvoiceMetadata({

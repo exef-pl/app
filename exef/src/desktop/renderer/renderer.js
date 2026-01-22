@@ -1266,16 +1266,27 @@ function renderInvoicesTable(container) {
     }
 
     let actions = '';
+    const previewBtn = `<button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>`;
+    const detailsBtn = `<button onclick="window.openInvoicePage('${inv.id}')">Szczegóły</button>`;
+    let workflowActions = '';
     if (inv.status === 'pending' || inv.status === 'ocr') {
-      actions = `<button onclick="processInvoice('${inv.id}')">Przetwórz</button>`;
+      workflowActions = `<button onclick="processInvoice('${inv.id}')">Przetwórz</button>`;
     } else if (inv.status === 'described') {
-      actions = `
+      workflowActions = `
         <button class="success" onclick="approveInvoice('${inv.id}')">Zatwierdź</button>
         <button class="danger" onclick="rejectInvoice('${inv.id}')">Odrzuć</button>
       `;
     } else if (inv.status === 'approved') {
-      actions = `<span style="color: #16a34a;">✓ Zatwierdzona</span>`;
+      workflowActions = `<span style="color: #16a34a;">✓ Zatwierdzona</span>`;
     }
+
+    actions = `
+      <div style="display:flex; gap:6px; flex-wrap: wrap; align-items: center;">
+        ${previewBtn}
+        ${detailsBtn}
+        ${workflowActions}
+      </div>
+    `;
 
     return `
       <tr>

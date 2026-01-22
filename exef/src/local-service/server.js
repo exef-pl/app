@@ -5,6 +5,15 @@ const fs = require('node:fs')
 const path = require('node:path')
 const dotenv = require('dotenv')
 
+if (!process.env.EXEF_ENV_FILE && process.env.NODE_ENV === 'test') {
+  try {
+    if (!fs.existsSync('.env') && fs.existsSync('.env.test')) {
+      fs.copyFileSync('.env.test', '.env')
+    }
+  } catch (_e) {
+  }
+}
+
 const envFile = process.env.EXEF_ENV_FILE || (
   process.env.NODE_ENV === 'test' && fs.existsSync('.env.test') ? '.env.test' : null
 )

@@ -74,6 +74,37 @@ async function main() {
     EXEF_EXPENSE_TYPES_FILE_PATH: expenseTypesPath,
     EXEF_STORAGE_BACKEND: 'sqlite',
     EXEF_DB_PATH: sqliteDbPath,
+
+    // Disable remote storage bootstrap in E2E to avoid depending on mock services
+    EXEF_DROPBOX_ENABLED: 'false',
+    EXEF_DROPBOX_API_URL: '',
+    EXEF_DROPBOX_ACCESS_TOKEN: '',
+    EXEF_DROPBOX_REFRESH_TOKEN: '',
+    EXEF_DROPBOX_CLIENT_ID: '',
+    EXEF_DROPBOX_CLIENT_SECRET: '',
+    EXEF_DROPBOX_FOLDER_PATH: '',
+
+    EXEF_GDRIVE_ENABLED: 'false',
+    EXEF_GDRIVE_API_URL: '',
+    EXEF_GDRIVE_ACCESS_TOKEN: '',
+    EXEF_GDRIVE_REFRESH_TOKEN: '',
+    EXEF_GDRIVE_CLIENT_ID: '',
+    EXEF_GDRIVE_CLIENT_SECRET: '',
+    EXEF_GDRIVE_FOLDER_ID: '',
+
+    EXEF_ONEDRIVE_ENABLED: 'false',
+    EXEF_ONEDRIVE_API_URL: '',
+    EXEF_ONEDRIVE_ACCESS_TOKEN: '',
+    EXEF_ONEDRIVE_REFRESH_TOKEN: '',
+    EXEF_ONEDRIVE_CLIENT_ID: '',
+    EXEF_ONEDRIVE_CLIENT_SECRET: '',
+    EXEF_ONEDRIVE_FOLDER_ID: '',
+
+    EXEF_NEXTCLOUD_ENABLED: 'false',
+    EXEF_NEXTCLOUD_WEBDAV_URL: '',
+    EXEF_NEXTCLOUD_USERNAME: '',
+    EXEF_NEXTCLOUD_PASSWORD: '',
+    EXEF_NEXTCLOUD_FOLDER_PATH: '',
   }
 
   console.log('='.repeat(60))
