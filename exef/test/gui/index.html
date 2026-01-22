@@ -47,6 +47,11 @@
       gap: 10px;
     }
 
+    #apiUrl {
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
     .status-dot {
       width: 12px;
       height: 12px;
@@ -265,7 +270,7 @@
     <header>
       <h1>ExEF - Testy GUI</h1>
       <div class="status-bar">
-        <span id="apiUrl">http://127.0.0.1:3030</span>
+        <span id="apiUrl" onclick="changeApiUrl()" title="Kliknij aby zmienić URL API">http://127.0.0.1:3030</span>
         <div class="status-dot" id="statusDot"></div>
         <span id="statusText">sprawdzanie...</span>
       </div>
@@ -319,8 +324,31 @@
   </div>
 
   <script>
-    const API_URL = localStorage.getItem('exef_api_url') || 'http://127.0.0.1:3030';
-    document.getElementById('apiUrl').textContent = API_URL;
+    let API_URL = '';
+
+    function resolveDefaultApiUrl() {
+      const qs = new URLSearchParams(window.location.search);
+      return qs.get('api') || localStorage.getItem('exef_api_url') || window.location.origin;
+    }
+
+    function setApiUrl(nextUrl) {
+      API_URL = String(nextUrl || '').trim();
+      if (!API_URL) {
+        API_URL = window.location.origin;
+      }
+      localStorage.setItem('exef_api_url', API_URL);
+      document.getElementById('apiUrl').textContent = API_URL;
+    }
+
+    setApiUrl(resolveDefaultApiUrl());
+
+    window.changeApiUrl = function changeApiUrl() {
+      const next = prompt('Podaj URL API (np. http://127.0.0.1:3032):', API_URL);
+      if (!next) return;
+      setApiUrl(next);
+      checkHealth();
+      log(`Ustawiono API_URL: ${API_URL}`, 'info');
+    }
 
     const TESTS = [
       { id: 'health', name: 'Health Check', method: 'GET', endpoint: '/health', params: [] },
