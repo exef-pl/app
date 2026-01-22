@@ -160,7 +160,14 @@ install:
 	@echo "Installing exef dependencies..."
 	@cd exef && /usr/share/nodejs/corepack/shims/npm install
 	@echo "Installing Python dependencies..."
-	@if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+	@if [ -f requirements-dev.txt ]; then \
+		if pip install -r requirements-dev.txt 2>/dev/null; then \
+			echo "Python dependencies installed successfully"; \
+		else \
+			echo "Python installation failed - using virtual environment recommended"; \
+			echo "Run: python3 -m venv venv && source venv/bin/activate && pip install -r requirements-dev.txt"; \
+		fi; \
+	fi
 	@echo "Initializing submodules..."
 	@git submodule update --init --recursive || echo "No submodules found"
 	@echo "Installation complete!"
