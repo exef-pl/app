@@ -1,0 +1,36 @@
+[submodule "ksef-import"]
+	path = ksef-import
+	url = https://github.com/poulCuzz/ksef-import
+[submodule "KSeF-Master"]
+	path = KSeF-Master
+	url = https://github.com/Crusty-IT/KSeF-Master
+[submodule "KsefMinimal"]
+	path = KsefMinimal
+	url = https://github.com/herbat73/KsefMinimal
+[submodule "ksef"]
+	path = ksef
+	url = https://github.com/m32/ksef
+[submodule "ksef-client-js"]
+	path = ksef-client-js
+	url = https://github.com/jakubmatias/ksef-client-js
+[submodule "ksef-client-python"]
+	path = ksef-client-python
+	url = https://github.com/smekcio/ksef-client-python
+[submodule "ksef-integration"]
+	path = ksef-integration
+	url = https://github.com/sosekivalda/ksef-integration
+[submodule "polishInvoicingback"]
+	path = polishInvoicingback
+	url = https://github.com/alexandear81/polishInvoicingback
+[submodule "ksef-py"]
+	path = ksef-py
+	url = https://github.com/Kamil-Dab/ksef-py
+[submodule "ksef_cli"]
+	path = ksef_cli
+	url = https://github.com/stanislawbartkowski/ksef_cli
+[submodule "ksef_pyth"]
+	path = ksef_pyth
+	url = https://github.com/stanislawbartkowski/ksef_pyth
+[submodule "KSeF-Python-Client-Updated"]
+	path = KSeF-Python-Client-Updated
+	url = https://github.com/dawid-pakosz/KSeF-Python-Client-Updated
