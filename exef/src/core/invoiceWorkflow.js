@@ -200,8 +200,12 @@ class InvoiceWorkflow extends EventEmitter {
 
   configureStorage(config) {
     if (config.watchPaths) {
-      for (const p of config.watchPaths) {
-        this.storageSync.addWatchPath(p)
+      if (typeof this.storageSync.setWatchPaths === 'function') {
+        this.storageSync.setWatchPaths(config.watchPaths)
+      } else {
+        for (const p of config.watchPaths) {
+          this.storageSync.addWatchPath(p)
+        }
       }
     }
     if (config.oauth) {
@@ -277,6 +281,32 @@ class InvoiceWorkflow extends EventEmitter {
       return updatedInvoice
     } catch (error) {
       throw new Error(`Failed to assign invoice to expense type: ${error.message}`)
+    }
+  }
+
+  async assignInvoiceToLabels(invoiceId, labelIds) {
+    try {
+      const invoice = await this.inbox.getInvoice(invoiceId)
+      if (!invoice) {
+        throw new Error('Invoice not found')
+      }
+
+      const normalized = Array.isArray(labelIds)
+        ? Array.from(new Set(labelIds.map((v) => String(v)).map((v) => v.trim()).filter(Boolean)))
+        : []
+
+      const updatedInvoice = {
+        ...invoice,
+        labelIds: normalized,
+        labelsAssignedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }
+
+      await this.inbox.updateInvoice(invoiceId, updatedInvoice)
+      this.emit('invoice:labels_assigned', { invoice: updatedInvoice, labelIds: normalized })
+      return updatedInvoice
+    } catch (error) {
+      throw new Error(`Failed to assign invoice to labels: ${error.message}`)
     }
   }
 }
