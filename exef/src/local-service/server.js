@@ -18,6 +18,7 @@ app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
 app.use('/test', express.static(path.join(__dirname, '../../test/gui')))
+app.use('/', express.static(path.join(__dirname, '../desktop/renderer')))
 
 const ksef = createKsefFacade({})
 
@@ -32,83 +33,6 @@ const workflow = createInvoiceWorkflow({
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'exef-local-service' })
-})
-
-app.get('/', (_req, res) => {
-  res.send(`<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>ExEF Local Service</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .endpoint { background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 5px; }
-        .method { font-weight: bold; color: #007bff; }
-        .path { font-family: monospace; background: #e9ecef; padding: 2px 4px; border-radius: 3px; }
-        a { color: #007bff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-    </style>
-</head>
-<body>
-    <h1>🚀 ExEF Local Service</h1>
-    <p>Service is running! Available endpoints:</p>
-    
-    <div class="endpoint">
-        <span class="method">GET</span> <span class="path">/health</span> - Health check
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">GET</span> <span class="path">/inbox/stats</span> - Invoice statistics
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">GET</span> <span class="path">/inbox/invoices</span> - List invoices
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/inbox/invoices</span> - Add invoice
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/inbox/export</span> - Export invoices
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">GET</span> <span class="path">/test/</span> - <a href="/test/">GUI Test Interface</a>
-    </div>
-    
-    <h3>KSeF Endpoints</h3>
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/ksef/auth/token</span> - Authenticate with token
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/ksef/sessions/online/open</span> - Open online session
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/ksef/sessions/online/close</span> - Close online session
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/ksef/sessions/online/send</span> - Send invoice
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/ksef/invoices/query</span> - Query invoice metadata
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/ksef/invoices/status</span> - Get invoice status
-    </div>
-    
-    <div class="endpoint">
-        <span class="method">POST</span> <span class="path">/ksef/invoices/download</span> - Download invoice
-    </div>
-    
-    <p><small>ExEF Local Service - API for invoice management and KSeF integration</small></p>
-</body>
-</html>`)
 })
 
 app.post('/ksef/auth/token', async (req, res) => {
