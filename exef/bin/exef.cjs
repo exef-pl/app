@@ -605,12 +605,22 @@ async function cmdInboxExportFiles(args, options) {
   }
 
   const status = options.status || 'approved'
+  const source = options.source || null
+  const since = options.since || null
+  const ids = parseCsv(options.ids)
+  const projectIds = parseCsv(options.project)
+  const expenseTypeIds = parseCsv(options['expense-type'] ?? options.expenseType)
 
   const res = await request('POST', '/inbox/export/files', {
     baseUrl: options.url,
     body: {
       outputDir: path.resolve(String(outputDir)),
       status,
+      ...(source ? { source } : {}),
+      ...(since ? { since } : {}),
+      ...(ids.length ? { ids } : {}),
+      ...(projectIds.length ? { projectIds } : {}),
+      ...(expenseTypeIds.length ? { expenseTypeIds } : {}),
     },
   })
 

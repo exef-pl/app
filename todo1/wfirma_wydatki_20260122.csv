@@ -1,0 +1,8 @@
+Data;Numer dokumentu;Nr KSeF;NIP;Kontrahent;Opis;Netto;VAT;Brutto;Schemat księgowy;Uwagi
+2026-01-15;FV/2026/01/001;1-1-1-2026-9876543210-20260115-HOSTING1;9876543210;OVH Hosting Sp. z o.o.;Hosting i domeny - Serwer VPS produkcyjny - [Projekt: EXEF];200,00;46,00;246,00;KOSZTY_IT;"Projekt: EXEF; Tagi: it, infrastruktura"
+2026-01-18;FV/123/01/2026;1-1-1-2026-5261040828-20260118-ORLEN123;5261040828;PKN Orlen S.A.;Paliwo - Tankowanie służbowe - WE12345 - [SAMOCHÓD];162,60;37,40;200,00;KOSZTY_AUTA;Tagi: auto, pojazd_firmowy
+2026-01-20;FV/2026/01/015;1-1-1-2026-1234567890-20260120-DEVTEAM1;1234567890;DevTeam Sp. z o.o.;B+R: Usługi - Prace rozwojowe - moduł KSeF parser - [Projekt: EXEF] - [B+R];5000,00;1150,00;6150,00;POZOSTALE_KOSZTY;"Projekt: EXEF; Tagi: br, development, ksef"
+2026-01-21;INV-2026-0042-PL;1-1-1-2026-IE6388047V-20260121-GOOGLE01;IE6388047V;Google Ireland Limited;Marketing i reklama - Google Ads - kampania styczniowa - [Projekt: EXEF];500,00;115,00;615,00;MARKETING;"Projekt: EXEF; Tagi: marketing, ads, digital"
+2026-01-22;FV/2026/0199;1-1-1-2026-7791011327-20260122-BIURO001;7791011327;IKEA Retail Sp. z o.o.;Materiały biurowe - Materiały biurowe - krzesło, lampka;81,30;18,70;100,00;KOSZTY_BIURA;Tagi: biuro, wyposazenie
+2026-01-10;FZ/2026/00123;1-1-1-2026-5213609321-20260110-HURTOW01;5213609321;AB S.A.;Zakup towarów handlowych - Zakup towarów do odsprzedaży - sprzęt IT;8500,00;1955,00;10455,00;POZOSTALE_KOSZTY;Tagi: towary, magazyn
+2026-01-12;DHL/2026/PL/0004521;1-1-1-2026-9510004937-20260112-DHL00001;9510004937;DHL Express (Poland) Sp. z o.o.;Koszty transportu - Dostawa towarów z hurtowni;150,00;34,50;184,50;POZOSTALE_KOSZTY;Tagi: transport, logistyka

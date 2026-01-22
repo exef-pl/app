@@ -24,6 +24,119 @@ function resolveBaseUrl() {
 
 const BASE_URL = resolveBaseUrl()
 
+async function testExportFilesFiltering() {
+  console.log('\n[TEST] POST /inbox/export/files (filtering)')
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exef-export-filter-'))
+  const projectId1 = `PRJ-A-${Date.now()}`
+  const projectId2 = `PRJ-B-${Date.now()}`
+  const expenseTypeId = `ET-${Date.now()}`
+
+  try {
+    await fetch(`${BASE_URL}/projects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: projectId1, nazwa: 'Projekt A', status: 'aktywny' }),
+    }).then((r) => r.json().catch(() => ({})))
+
+    await fetch(`${BASE_URL}/projects`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: projectId2, nazwa: 'Projekt B', status: 'aktywny' }),
+    }).then((r) => r.json().catch(() => ({})))
+
+    await fetch(`${BASE_URL}/expense-types`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: expenseTypeId, nazwa: 'Koszt', opis: '' }),
+    }).then((r) => r.json().catch(() => ({})))
+
+    async function createApproved(projectId, fileName) {
+      const addRes = await fetch(`${BASE_URL}/inbox/invoices`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'scanner',
+          file: 'data:image/png;base64,AA==',
+          metadata: { fileName, fileType: 'image/png' },
+        }),
+      })
+      const addJson = await addRes.json().catch(() => ({}))
+      if (!addRes.ok || !addJson?.id) {
+        throw new Error('failed_to_add_invoice')
+      }
+      const id = addJson.id
+
+      await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(id)}/assign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      })
+
+      await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(id)}/assign-expense-type`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expenseTypeId }),
+      })
+
+      await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(id)}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      return id
+    }
+
+    await createApproved(projectId1, 'a.png')
+    await createApproved(projectId2, 'b.png')
+
+    const exportRes = await fetch(`${BASE_URL}/inbox/export/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ outputDir: tmpDir, status: 'approved', projectId: [projectId1] }),
+    })
+    const exportJson = await exportRes.json().catch(() => ({}))
+    console.log('  Export status:', exportRes.status)
+    if (!exportRes.ok) {
+      console.log('  Export response:', JSON.stringify(exportJson))
+      return false
+    }
+
+    if (exportJson.matched !== 1 || exportJson.exported !== 1) {
+      console.log('  Unexpected counts:', JSON.stringify(exportJson))
+      return false
+    }
+
+    const expenseDirs = fs.readdirSync(tmpDir, { withFileTypes: true }).filter((d) => d.isDirectory())
+    if (expenseDirs.length !== 1) {
+      console.log('  Expected 1 expense dir, got', expenseDirs.length)
+      return false
+    }
+    const projectDirs = fs.readdirSync(path.join(tmpDir, expenseDirs[0].name), { withFileTypes: true }).filter((d) => d.isDirectory())
+    if (projectDirs.length !== 1) {
+      console.log('  Expected 1 project dir, got', projectDirs.length)
+      return false
+    }
+    const files = fs.readdirSync(path.join(tmpDir, expenseDirs[0].name, projectDirs[0].name))
+    if (files.length !== 1) {
+      console.log('  Expected 1 exported file, got', files.length)
+      return false
+    }
+    if (!files[0].includes('a.png') && !files[0].endsWith('.png')) {
+      console.log('  Unexpected exported file name:', files[0])
+      return false
+    }
+
+    return true
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    } catch (_e) {
+    }
+  }
+}
+
 async function testSettingsOcrExternalApiMock() {
   console.log('\n[TEST] PUT /settings (ocr external-api mock)')
 
@@ -598,6 +711,7 @@ async function runAllTests() {
     results.push({ name: 'export CSV', ok: await testExportCsv() })
     results.push({ name: 'ksef auth', ok: await testKsefEndpoints() })
     results.push({ name: 'export files hierarchy', ok: await testExportFilesHierarchy() })
+    results.push({ name: 'export files filtering', ok: await testExportFilesFiltering() })
   } catch (e) {
     console.error('\n[ERROR]', e.message)
   }

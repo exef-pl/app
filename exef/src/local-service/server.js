@@ -1,10 +1,14 @@
 const express = require('express')
 const helmet = require('helmet')
 const cors = require('cors')
-const dotenv = require('dotenv')
-dotenv.config(process.env.EXEF_ENV_FILE ? { path: process.env.EXEF_ENV_FILE } : {})
 const fs = require('node:fs')
 const path = require('node:path')
+const dotenv = require('dotenv')
+
+const envFile = process.env.EXEF_ENV_FILE || (
+  process.env.NODE_ENV === 'test' && fs.existsSync('.env.test') ? '.env.test' : null
+)
+dotenv.config(envFile ? { path: envFile } : {})
 
 const { createKsefFacade } = require('../core/ksefFacade')
 const { listenWithFallback } = require('../core/listen')
@@ -1515,9 +1519,40 @@ app.post('/inbox/export/files', async (req, res) => {
     }
     const outputDir = path.resolve(String(outputDirRaw))
     const status = req.body?.status ? String(req.body.status) : INVOICE_STATUS.APPROVED
+    const source = req.body?.source ? String(req.body.source) : null
+    const since = req.body?.since ? String(req.body.since) : null
 
-    const filter = status === 'all' ? {} : { status }
+    const ids = normalizeStringArray(req.body?.ids)
+    const projectIds = normalizeStringArray(req.body?.projectId ?? req.body?.projectIds)
+    const expenseTypeIds = normalizeStringArray(req.body?.expenseTypeId ?? req.body?.expenseTypeIds)
+
+    const filter = {
+      ...(status === 'all' ? {} : { status }),
+      ...(source ? { source } : {}),
+      ...(since ? { since } : {}),
+    }
+
     const invoices = await workflow.listInvoices(filter)
+
+    const idSet = ids.length ? new Set(ids) : null
+    const projectSet = projectIds.length ? new Set(projectIds) : null
+    const expenseTypeSet = expenseTypeIds.length ? new Set(expenseTypeIds) : null
+
+    const filteredInvoices = invoices.filter((inv) => {
+      if (!inv || !inv.id) {
+        return false
+      }
+      if (idSet && !idSet.has(String(inv.id))) {
+        return false
+      }
+      if (projectSet && !projectSet.has(String(inv.projectId || ''))) {
+        return false
+      }
+      if (expenseTypeSet && !expenseTypeSet.has(String(inv.expenseTypeId || ''))) {
+        return false
+      }
+      return true
+    })
 
     const expenseTypeMap = new Map()
     const projectMap = new Map()
@@ -1542,7 +1577,7 @@ app.post('/inbox/export/files', async (req, res) => {
     let exported = 0
     let skippedNoFile = 0
 
-    for (const inv of invoices) {
+    for (const inv of filteredInvoices) {
       if (!inv || !inv.id) {
         continue
       }
@@ -1600,7 +1635,7 @@ app.post('/inbox/export/files', async (req, res) => {
       exported++
     }
 
-    res.json({ ok: true, outputDir, status, exported, skippedNoFile, total: invoices.length })
+    res.json({ ok: true, outputDir, status, source, since, exported, skippedNoFile, total: invoices.length, matched: filteredInvoices.length })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }

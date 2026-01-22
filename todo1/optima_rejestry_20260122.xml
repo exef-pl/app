@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<REJESTRY_VAT xmlns="http://www.comarch.pl/optima/rejestr">
+  <REJESTR>
+    <TYP>ZAKUP</TYP>
+    <DOKUMENT>
+      <DATA_WYSTAWIENIA>2026-01-15</DATA_WYSTAWIENIA>
+      <DATA_WPLYWU>2026-01-15</DATA_WPLYWU>
+      <NUMER>FV/2026/01/001</NUMER>
+      <NR_KSEF>1-1-1-2026-9876543210-20260115-HOSTING1</NR_KSEF>
+      <KONTRAHENT>
+        <NIP>9876543210</NIP>
+        <NAZWA>OVH Hosting Sp. z o.o.</NAZWA>
+        <ADRES>ul. Serwerowa 1, Warszawa, 00-001</ADRES>
+      </KONTRAHENT>
+      <OPIS>Hosting i domeny - Serwer VPS produkcyjny - [Projekt: EXEF]</OPIS>
+      <NETTO>200</NETTO>
+      <VAT>46</VAT>
+      <BRUTTO>246</BRUTTO>
+      <KATEGORIA>USLUGI_INFORMATYCZNE</KATEGORIA>
+      <UWAGI>Projekt: EXEF; Tagi: it, infrastruktura</UWAGI>
+    </DOKUMENT>
+  </REJESTR>
+  <REJESTR>
+    <TYP>ZAKUP</TYP>
+    <DOKUMENT>
+      <DATA_WYSTAWIENIA>2026-01-18</DATA_WYSTAWIENIA>
+      <DATA_WPLYWU>2026-01-18</DATA_WPLYWU>
+      <NUMER>FV/123/01/2026</NUMER>
+      <NR_KSEF>1-1-1-2026-5261040828-20260118-ORLEN123</NR_KSEF>
+      <KONTRAHENT>
+        <NIP>5261040828</NIP>
+        <NAZWA>PKN Orlen S.A.</NAZWA>
+        <ADRES>ul. Chemików 7, Płock, 09-411</ADRES>
+      </KONTRAHENT>
+      <OPIS>Paliwo - Tankowanie służbowe - WE12345 - [SAMOCHÓD]</OPIS>
+      <NETTO>162.6</NETTO>
+      <VAT>37.4</VAT>
+      <BRUTTO>200</BRUTTO>
+      <KATEGORIA>PALIWO</KATEGORIA>
+      <UWAGI>Tagi: auto, pojazd_firmowy</UWAGI>
+    </DOKUMENT>
+  </REJESTR>
+  <REJESTR>
+    <TYP>ZAKUP</TYP>
+    <DOKUMENT>
+      <DATA_WYSTAWIENIA>2026-01-20</DATA_WYSTAWIENIA>
+      <DATA_WPLYWU>2026-01-20</DATA_WPLYWU>
+      <NUMER>FV/2026/01/015</NUMER>
+      <NR_KSEF>1-1-1-2026-1234567890-20260120-DEVTEAM1</NR_KSEF>
+      <KONTRAHENT>
+        <NIP>1234567890</NIP>
+        <NAZWA>DevTeam Sp. z o.o.</NAZWA>
+        <ADRES>ul. Programistów 10, Kraków, 30-001</ADRES>
+      </KONTRAHENT>
+      <OPIS>B+R: Usługi - Prace rozwojowe - moduł KSeF parser - [Projekt: EXEF] - [B+R]</OPIS>
+      <NETTO>5000</NETTO>
+      <VAT>1150</VAT>
+      <BRUTTO>6150</BRUTTO>
+      <KATEGORIA>POZOSTALE</KATEGORIA>
+      <UWAGI>Projekt: EXEF; Tagi: br, development, ksef</UWAGI>
+    </DOKUMENT>
+  </REJESTR>
+  <REJESTR>
+    <TYP>ZAKUP</TYP>
+    <DOKUMENT>
+      <DATA_WYSTAWIENIA>2026-01-21</DATA_WYSTAWIENIA>
+      <DATA_WPLYWU>2026-01-21</DATA_WPLYWU>
+      <NUMER>INV-2026-0042-PL</NUMER>
+      <NR_KSEF>1-1-1-2026-IE6388047V-20260121-GOOGLE01</NR_KSEF>
+      <KONTRAHENT>
+        <NIP>IE6388047V</NIP>
+        <NAZWA>Google Ireland Limited</NAZWA>
+        <ADRES>Gordon House, Barrow Street, Dublin 4, D04 E5W5</ADRES>
+      </KONTRAHENT>
+      <OPIS>Marketing i reklama - Google Ads - kampania styczniowa - [Projekt: EXEF]</OPIS>
+      <NETTO>500</NETTO>
+      <VAT>115</VAT>
+      <BRUTTO>615</BRUTTO>
+      <KATEGORIA>REKLAMA</KATEGORIA>
+      <UWAGI>Projekt: EXEF; Tagi: marketing, ads, digital</UWAGI>
+    </DOKUMENT>
+  </REJESTR>
+  <REJESTR>
+    <TYP>ZAKUP</TYP>
+    <DOKUMENT>
+      <DATA_WYSTAWIENIA>2026-01-22</DATA_WYSTAWIENIA>
+      <DATA_WPLYWU>2026-01-22</DATA_WPLYWU>
+      <NUMER>FV/2026/0199</NUMER>
+      <NR_KSEF>1-1-1-2026-7791011327-20260122-BIURO001</NR_KSEF>
+      <KONTRAHENT>
+        <NIP>7791011327</NIP>
+        <NAZWA>IKEA Retail Sp. z o.o.</NAZWA>
+        <ADRES>ul. Malborska 47, Janki, 05-090</ADRES>
+      </KONTRAHENT>
+      <OPIS>Materiały biurowe - Materiały biurowe - krzesło, lampka</OPIS>
+      <NETTO>81.3</NETTO>
+      <VAT>18.7</VAT>
+      <BRUTTO>100</BRUTTO>
+      <KATEGORIA>MAT_BIUROWE</KATEGORIA>
+      <UWAGI>Tagi: biuro, wyposazenie</UWAGI>
+    </DOKUMENT>
+  </REJESTR>
+  <REJESTR>
+    <TYP>ZAKUP</TYP>
+    <DOKUMENT>
+      <DATA_WYSTAWIENIA>2026-01-10</DATA_WYSTAWIENIA>
+      <DATA_WPLYWU>2026-01-10</DATA_WPLYWU>
+      <NUMER>FZ/2026/00123</NUMER>
+      <NR_KSEF>1-1-1-2026-5213609321-20260110-HURTOW01</NR_KSEF>
+      <KONTRAHENT>
+        <NIP>5213609321</NIP>
+        <NAZWA>AB S.A.</NAZWA>
+        <ADRES>Magnice, ul. Europejska 4, Kobierzyce, 55-040</ADRES>
+      </KONTRAHENT>
+      <OPIS>Zakup towarów handlowych - Zakup towarów do odsprzedaży - sprzęt IT</OPIS>
+      <NETTO>8500</NETTO>
+      <VAT>1955</VAT>
+      <BRUTTO>10455</BRUTTO>
+      <KATEGORIA>POZOSTALE</KATEGORIA>
+      <UWAGI>Tagi: towary, magazyn</UWAGI>
+    </DOKUMENT>
+  </REJESTR>
+  <REJESTR>
+    <TYP>ZAKUP</TYP>
+    <DOKUMENT>
+      <DATA_WYSTAWIENIA>2026-01-12</DATA_WYSTAWIENIA>
+      <DATA_WPLYWU>2026-01-12</DATA_WPLYWU>
+      <NUMER>DHL/2026/PL/0004521</NUMER>
+      <NR_KSEF>1-1-1-2026-9510004937-20260112-DHL00001</NR_KSEF>
+      <KONTRAHENT>
+        <NIP>9510004937</NIP>
+        <NAZWA>DHL Express (Poland) Sp. z o.o.</NAZWA>
+        <ADRES>ul. Osmańska 2, Warszawa, 02-823</ADRES>
+      </KONTRAHENT>
+      <OPIS>Koszty transportu - Dostawa towarów z hurtowni</OPIS>
+      <NETTO>150</NETTO>
+      <VAT>34.5</VAT>
+      <BRUTTO>184.5</BRUTTO>
+      <KATEGORIA>POZOSTALE</KATEGORIA>
+      <UWAGI>Tagi: transport, logistyka</UWAGI>
+    </DOKUMENT>
+  </REJESTR>
+</REJESTRY_VAT>

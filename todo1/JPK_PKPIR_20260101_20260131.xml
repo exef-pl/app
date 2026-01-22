@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<JPK xmlns="http://jpk.mf.gov.pl/wzor/2025/12/01/12011/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/">
+  <Naglowek>
+    <KodFormularza kodSystemowy="JPK_PKPIR (3)" wersjaSchemy="3-0">JPK_PKPIR</KodFormularza>
+    <WariantFormularza>3</WariantFormularza>
+    <CelZlozenia>1</CelZlozenia>
+    <DataWytworzeniaJPK>2026-01-22T14:18:56.125Z</DataWytworzeniaJPK>
+    <DataOd>2026-01-01</DataOd>
+    <DataDo>2026-01-31</DataDo>
+    <NazwaSystemu>EXEF/opisz.pl</NazwaSystemu>
+  </Naglowek>
+  <Podmiot1>
+    <etd:NIP>1234567890</etd:NIP>
+    <etd:PelnaNazwa>Softreck Sp. z o.o.</etd:PelnaNazwa>
+  </Podmiot1>
+  <PKPiR>
+    <K_1>1</K_1>
+    <K_2>2026-01-15</K_2>
+    <K_3>1-1-1-2026-9876543210-20260115-HOSTING1</K_3>
+    <K_4>FV/2026/01/001</K_4>
+    <K_5>9876543210</K_5>
+    <K_6>OVH Hosting Sp. z o.o.</K_6>
+    <K_7>ul. Serwerowa 1, Warszawa, 00-001</K_7>
+    <K_8>Hosting i domeny - Serwer VPS produkcyjny - [Projekt: EXEF]</K_8>
+    <K_9>0.00</K_9>
+    <K_10>0.00</K_10>
+    <K_11>0.00</K_11>
+    <K_12>0.00</K_12>
+    <K_13>0.00</K_13>
+    <K_14>0.00</K_14>
+    <K_15>200.00</K_15>
+    <K_16>200.00</K_16>
+    <K_17>0.00</K_17>
+    <K_18>0.00</K_18>
+    <K_19>Projekt: EXEF; Tagi: it, infrastruktura</K_19>
+  </PKPiR>
+  <PKPiR>
+    <K_1>2</K_1>
+    <K_2>2026-01-18</K_2>
+    <K_3>1-1-1-2026-5261040828-20260118-ORLEN123</K_3>
+    <K_4>FV/123/01/2026</K_4>
+    <K_5>5261040828</K_5>
+    <K_6>PKN Orlen S.A.</K_6>
+    <K_7>ul. Chemików 7, Płock, 09-411</K_7>
+    <K_8>Paliwo - Tankowanie służbowe - WE12345 - [SAMOCHÓD]</K_8>
+    <K_9>0.00</K_9>
+    <K_10>0.00</K_10>
+    <K_11>0.00</K_11>
+    <K_12>0.00</K_12>
+    <K_13>0.00</K_13>
+    <K_14>0.00</K_14>
+    <K_15>162.60</K_15>
+    <K_16>162.60</K_16>
+    <K_17>0.00</K_17>
+    <K_18>0.00</K_18>
+    <K_19>Tagi: auto, pojazd_firmowy</K_19>
+  </PKPiR>
+  <PKPiR>
+    <K_1>3</K_1>
+    <K_2>2026-01-20</K_2>
+    <K_3>1-1-1-2026-1234567890-20260120-DEVTEAM1</K_3>
+    <K_4>FV/2026/01/015</K_4>
+    <K_5>1234567890</K_5>
+    <K_6>DevTeam Sp. z o.o.</K_6>
+    <K_7>ul. Programistów 10, Kraków, 30-001</K_7>
+    <K_8>B+R: Usługi - Prace rozwojowe - moduł KSeF parser - [Projekt: EXEF] - [B+R]</K_8>
+    <K_9>0.00</K_9>
+    <K_10>0.00</K_10>
+    <K_11>0.00</K_11>
+    <K_12>0.00</K_12>
+    <K_13>0.00</K_13>
+    <K_14>0.00</K_14>
+    <K_15>0.00</K_15>
+    <K_16>5000.00</K_16>
+    <K_17>0.00</K_17>
+    <K_18>5000.00</K_18>
+    <K_19>Projekt: EXEF; Tagi: br, development, ksef</K_19>
+  </PKPiR>
+  <PKPiR>
+    <K_1>4</K_1>
+    <K_2>2026-01-21</K_2>
+    <K_3>1-1-1-2026-IE6388047V-20260121-GOOGLE01</K_3>
+    <K_4>INV-2026-0042-PL</K_4>
+    <K_5>IE6388047V</K_5>
+    <K_6>Google Ireland Limited</K_6>
+    <K_7>Gordon House, Barrow Street, Dublin 4, D04 E5W5</K_7>
+    <K_8>Marketing i reklama - Google Ads - kampania styczniowa - [Projekt: EXEF]</K_8>
+    <K_9>0.00</K_9>
+    <K_10>0.00</K_10>
+    <K_11>0.00</K_11>
+    <K_12>0.00</K_12>
+    <K_13>0.00</K_13>
+    <K_14>0.00</K_14>
+    <K_15>500.00</K_15>
+    <K_16>500.00</K_16>
+    <K_17>0.00</K_17>
+    <K_18>0.00</K_18>
+    <K_19>Projekt: EXEF; Tagi: marketing, ads, digital</K_19>
+  </PKPiR>
+  <PKPiR>
+    <K_1>5</K_1>
+    <K_2>2026-01-22</K_2>
+    <K_3>1-1-1-2026-7791011327-20260122-BIURO001</K_3>
+    <K_4>FV/2026/0199</K_4>
+    <K_5>7791011327</K_5>
+    <K_6>IKEA Retail Sp. z o.o.</K_6>
+    <K_7>ul. Malborska 47, Janki, 05-090</K_7>
+    <K_8>Materiały biurowe - Materiały biurowe - krzesło, lampka</K_8>
+    <K_9>0.00</K_9>
+    <K_10>0.00</K_10>
+    <K_11>0.00</K_11>
+    <K_12>0.00</K_12>
+    <K_13>0.00</K_13>
+    <K_14>0.00</K_14>
+    <K_15>81.30</K_15>
+    <K_16>81.30</K_16>
+    <K_17>0.00</K_17>
+    <K_18>0.00</K_18>
+    <K_19>Tagi: biuro, wyposazenie</K_19>
+  </PKPiR>
+  <PKPiR>
+    <K_1>6</K_1>
+    <K_2>2026-01-10</K_2>
+    <K_3>1-1-1-2026-5213609321-20260110-HURTOW01</K_3>
+    <K_4>FZ/2026/00123</K_4>
+    <K_5>5213609321</K_5>
+    <K_6>AB S.A.</K_6>
+    <K_7>Magnice, ul. Europejska 4, Kobierzyce, 55-040</K_7>
+    <K_8>Zakup towarów handlowych - Zakup towarów do odsprzedaży - sprzęt IT</K_8>
+    <K_9>0.00</K_9>
+    <K_10>0.00</K_10>
+    <K_11>0.00</K_11>
+    <K_12>8500.00</K_12>
+    <K_13>0.00</K_13>
+    <K_14>0.00</K_14>
+    <K_15>0.00</K_15>
+    <K_16>8500.00</K_16>
+    <K_17>0.00</K_17>
+    <K_18>0.00</K_18>
+    <K_19>Tagi: towary, magazyn</K_19>
+  </PKPiR>
+  <PKPiR>
+    <K_1>7</K_1>
+    <K_2>2026-01-12</K_2>
+    <K_3>1-1-1-2026-9510004937-20260112-DHL00001</K_3>
+    <K_4>DHL/2026/PL/0004521</K_4>
+    <K_5>9510004937</K_5>
+    <K_6>DHL Express (Poland) Sp. z o.o.</K_6>
+    <K_7>ul. Osmańska 2, Warszawa, 02-823</K_7>
+    <K_8>Koszty transportu - Dostawa towarów z hurtowni</K_8>
+    <K_9>0.00</K_9>
+    <K_10>0.00</K_10>
+    <K_11>0.00</K_11>
+    <K_12>0.00</K_12>
+    <K_13>150.00</K_13>
+    <K_14>0.00</K_14>
+    <K_15>0.00</K_15>
+    <K_16>150.00</K_16>
+    <K_17>0.00</K_17>
+    <K_18>0.00</K_18>
+    <K_19>Tagi: transport, logistyka</K_19>
+  </PKPiR>
+  <PKPiRCtrl>
+    <LiczbaWierszy>7</LiczbaWierszy>
+    <SumaPrzychodow>0.00</SumaPrzychodow>
+    <SumaKosztow>14593.90</SumaKosztow>
+  </PKPiRCtrl>
+</JPK>

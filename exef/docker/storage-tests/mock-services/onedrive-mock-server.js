@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 app.use(cors());
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 const PORT = process.env.PORT || 8093;

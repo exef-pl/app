@@ -1,12 +1,14 @@
 import pytest
 import requests
+import uuid
 
 
 @pytest.mark.e2e
 def test_invoice_can_be_assigned_to_project(exef_local_process):
     base_url = getattr(exef_local_process, 'base_url', 'http://127.0.0.1:3030')
 
-    project_id = 'PRJ-E2E-001'
+    # Use a unique project ID to avoid conflicts
+    project_id = f'PRJ-E2E-{uuid.uuid4().hex[:8]}'
 
     r_proj = requests.post(
         f'{base_url}/projects',

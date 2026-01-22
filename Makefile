@@ -283,7 +283,7 @@ test-all: python-test test-e2e exef-test-e2e $(SUBMODULE_TEST_TARGETS)
 
 test-e2e:
 	@echo "Running E2E tests..."
-	@python3 -m pytest -o addopts= -m e2e
+	@python3 -m pytest -o addopts= -m e2e -p no:aiohttp
 
 python-test:
 	@echo "Running Python tests (non-e2e)..."

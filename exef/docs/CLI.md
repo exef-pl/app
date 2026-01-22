@@ -67,7 +67,7 @@ npm run build:cli
 | `exef inbox approve <id>` | Zatwierdź |
 | `exef inbox reject <id>` | Odrzuć |
 | `exef inbox export` | Eksportuj |
-| `exef inbox export-files --output-dir DIR [--status approved/all]` | Eksportuj pliki faktur do folderów: `[typ wydatku]/[projekt]/[dokument]` |
+| `exef inbox export-files --output-dir DIR [--status approved/all] [--project P1,P2] [--expense-type T1,T2] [--ids ID1,ID2] [--source scanner/email/storage/ksef] [--since YYYY-MM-DD]` | Eksportuj pliki faktur do folderów: `[typ wydatku]/[projekt]/[dokument]` |
 
 ### KSeF
 
@@ -168,6 +168,18 @@ exef inbox export --format json --output faktury.json
 
 # Eksport plików faktur (PDF/JPG/PNG/XML) do folderów wg typu wydatku i projektu
 exef inbox export-files --output-dir ./exported --status approved
+
+# Eksport tylko dla wybranych projektów
+exef inbox export-files --output-dir ./exported --project PRJ-001,PRJ-002
+
+# Eksport tylko dla wybranych typów wydatków
+exef inbox export-files --output-dir ./exported --expense-type ET-01,ET-02
+
+# Eksport tylko wskazanych faktur
+exef inbox export-files --output-dir ./exported --ids abc123,def456
+
+# Eksport po źródle i od daty
+exef inbox export-files --output-dir ./exported --source storage --since 2026-01-01
 ```
 
 ### Integracja z KSeF

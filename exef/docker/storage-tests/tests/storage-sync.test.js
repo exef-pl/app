@@ -433,19 +433,19 @@ describe('Storage Sync Tests', () => {
     });
 
     it('should list files via PROPFIND', async () => {
-      const files = await sync.listFiles('/');
+      const files = await sync.listFiles('/Faktury');
       assert.ok(Array.isArray(files));
       assert.ok(files.length > 0, 'Should have at least one file');
     });
 
     it('should filter invoice files from listing', async () => {
-      const files = await sync.listFiles('/');
+      const files = await sync.listFiles('/Faktury');
       const invoiceFiles = files.filter((f) => sync.isInvoiceFile(f.name));
       assert.ok(invoiceFiles.length > 0, 'Should have invoice files');
     });
 
     it('should download file content', async () => {
-      const files = await sync.listFiles('/');
+      const files = await sync.listFiles('/Faktury');
       const pdfFile = files.find((f) => f.name && f.name.endsWith('.pdf'));
       if (pdfFile) {
         const content = await sync.downloadFile(null, pdfFile.href);
