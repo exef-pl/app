@@ -34,6 +34,15 @@ async function fetchJsonWithTimeout(fullUrl, timeoutMs) {
   }
 }
 
+async function probeLocalService(baseUrl, timeoutMs) {
+  const health = await fetchJsonWithTimeout(`${baseUrl}/health`, timeoutMs);
+  if (health?.service !== 'exef-local-service') {
+    return { isLocalService: false, hasSettings: false };
+  }
+  const settingsProbe = await fetchJsonWithTimeout(`${baseUrl}/settings`, timeoutMs);
+  return { isLocalService: true, hasSettings: Boolean(settingsProbe && typeof settingsProbe === 'object') };
+}
+
 async function resolveApiBaseUrl() {
   if (window.exef?.localServiceBaseUrl) {
     setApiUrl(window.exef.localServiceBaseUrl);
@@ -50,16 +59,17 @@ async function resolveApiBaseUrl() {
   if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
     const origin = window.location.origin;
     if (origin && origin !== 'null') {
-      const originHealth = await fetchJsonWithTimeout(`${origin}/health`, 600);
-      if (originHealth?.service === 'exef-local-service') {
+      const originProbe = await probeLocalService(origin, 600);
+      if (originProbe.isLocalService && originProbe.hasSettings) {
         setApiUrl(origin);
         return;
       }
     }
   }
 
-  const currentHealth = await fetchJsonWithTimeout(`${url}/health`, 600);
-  if (currentHealth?.service === 'exef-local-service') {
+  const currentProbe = await probeLocalService(url, 600);
+  const currentIsLocalService = currentProbe.isLocalService;
+  if (currentIsLocalService && currentProbe.hasSettings) {
     return;
   }
 
@@ -93,8 +103,8 @@ async function resolveApiBaseUrl() {
     const batch = candidates.slice(i, i + batchSize);
     const results = await Promise.all(
       batch.map(async (candidate) => {
-        const health = await fetchJsonWithTimeout(`${candidate}/health`, 450);
-        return health?.service === 'exef-local-service' ? candidate : null;
+        const probe = await probeLocalService(candidate, 450);
+        return probe.isLocalService && probe.hasSettings ? candidate : null;
       })
     );
     const found = results.find(Boolean);
@@ -102,6 +112,10 @@ async function resolveApiBaseUrl() {
       setApiUrl(found);
       return;
     }
+  }
+
+  if (currentIsLocalService) {
+    return;
   }
 }
 
@@ -127,6 +141,8 @@ let projects = [];
 let expenseTypes = [];
 let labels = [];
 let settings = null;
+let ksefAccessTokenCache = null;
+let ksefAccessTokenExpiresAt = null;
 let currentInvoice = null;
 
 let viewMode = localStorage.getItem('exef_invoice_view') || 'cards';
@@ -388,10 +404,11 @@ async function syncUiFromUrl() {
 
 function setActivePage(nextPage, options = {}) {
   const syncUrl = options.syncUrl !== false;
-  const normalized = nextPage === 'projects' || nextPage === 'labels' || nextPage === 'settings' ? nextPage : 'inbox';
+  const normalized = nextPage === 'accounts' || nextPage === 'projects' || nextPage === 'labels' || nextPage === 'settings' ? nextPage : 'inbox';
   activePage = normalized;
 
   const pages = {
+    accounts: document.getElementById('pageAccounts'),
     inbox: document.getElementById('pageInbox'),
     projects: document.getElementById('pageProjects'),
     labels: document.getElementById('pageLabels'),
@@ -422,10 +439,415 @@ function setActivePage(nextPage, options = {}) {
 
   if (normalized === 'projects') {
     renderProjectsPage();
+  } else if (normalized === 'accounts') {
+    renderAccountsPage();
   } else if (normalized === 'labels') {
     renderLabelsPage();
   } else if (normalized === 'settings') {
     renderSettingsPage();
+  }
+}
+
+function isoDateDaysAgo(days) {
+  const d = new Date(Date.now() - Number(days || 0) * 24 * 60 * 60 * 1000);
+  return d.toISOString().slice(0, 10);
+}
+
+async function runAccountsStorageSync() {
+  const res = await fetch(`${url}/debug/storage/sync`, { method: 'POST' });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `sync_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function runAccountsFetchWorkflowEvents() {
+  const res = await fetch(`${url}/debug/workflow/events`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `events_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function runAccountsFetchStorageState() {
+  const res = await fetch(`${url}/debug/storage/state`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `state_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function authenticateKsefWithToken(token, nip) {
+  const res = await fetch(`${url}/ksef/auth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, nip }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `ksef_auth_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function pollKsefInvoices(accessToken, since) {
+  const body = { accessToken };
+  if (since) {
+    body.since = since;
+  }
+  const res = await fetch(`${url}/inbox/ksef/poll`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `ksef_poll_failed_${res.status}`);
+  }
+  return data;
+}
+
+function guessMimeTypeFromFileName(fileName) {
+  const name = String(fileName || '').toLowerCase();
+  if (name.endsWith('.pdf')) return 'application/pdf';
+  if (name.endsWith('.xml')) return 'application/xml';
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  return 'application/octet-stream';
+}
+
+async function addInvoiceFromLocalFile(file, source) {
+  const fileName = file?.name || 'invoice';
+  const mime = file?.type || guessMimeTypeFromFileName(fileName);
+  const ext = String(fileName).toLowerCase().split('.').pop();
+  const isXml = ext === 'xml' || mime.includes('xml');
+
+  const body = {
+    source: source || 'scanner',
+    metadata: {
+      fileName,
+      fileType: mime,
+      fileSize: file?.size || null,
+    },
+  };
+
+  if (isXml) {
+    body.file = await readFileAsText(file);
+  } else {
+    const buf = await readFileAsArrayBuffer(file);
+    body.file = arrayBufferToBase64(buf);
+  }
+
+  const res = await fetch(`${url}/inbox/invoices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `add_invoice_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function renderAccountsPage() {
+  const container = document.getElementById('accountsPageContent');
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = '<div class="subtle">Wczytuję…</div>';
+
+  try {
+    await loadSettings();
+  } catch (e) {
+    container.innerHTML = `<div class="empty">Błąd wczytania konfiguracji: ${e.message}</div>`;
+    return;
+  }
+
+  const localPaths = settings?.channels?.localFolders?.paths || [];
+  const remoteConnections = settings?.channels?.remoteStorage?.connections || [];
+  const ksefAccounts = settings?.channels?.ksef?.accounts || [];
+
+  const defaultSince = isoDateDaysAgo(7);
+
+  container.innerHTML = `
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <div>
+          <div class="page-title" style="margin-bottom:0;">Synchronizacja</div>
+          <div class="subtle">Lokalne foldery + zdalne połączenia (Dropbox/GDrive/Nextcloud) skonfigurowane w Konfiguracji.</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div style="flex:1; min-width: 280px;">
+          <div style="font-weight:600; margin-bottom:8px;">Lokalne foldery</div>
+          ${localPaths.length ? `<div class="subtle">${localPaths.map((p) => `<div><code>${p}</code></div>`).join('')}</div>` : '<div class="empty" style="padding: 12px;">Brak ścieżek</div>'}
+        </div>
+        <div style="flex:1; min-width: 280px;">
+          <div style="font-weight:600; margin-bottom:8px;">Zdalne połączenia</div>
+          ${remoteConnections.length ? `<div class="subtle">Połączeń: ${remoteConnections.length}</div>` : '<div class="empty" style="padding: 12px;">Brak połączeń</div>'}
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top: 12px; flex-wrap: wrap;">
+        <button id="accountsSyncNowBtn" class="primary" type="button">Synchronizuj teraz</button>
+        <button id="accountsShowEventsBtn" type="button">Pokaż ostatnie zdarzenia</button>
+        <button id="accountsShowStorageStateBtn" type="button">Pokaż stan storage</button>
+      </div>
+
+      <div id="accountsSyncResult" class="subtle" style="margin-top: 10px;"></div>
+      <div id="accountsDebugOut" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <div>
+          <div class="page-title" style="margin-bottom:0;">KSeF</div>
+          <div class="subtle">Pobieranie faktur z KSeF (endpoint: <code>POST /inbox/ksef/poll</code>).</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Konto (opcjonalnie):</label>
+        <select id="accountsKsefAccountSelect">
+          <option value="">— ręcznie —</option>
+          ${ksefAccounts.map((a, idx) => {
+            const name = a?.name || a?.nip || `konto_${idx + 1}`;
+            return `<option value="${idx}">${String(name)}</option>`;
+          }).join('')}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Token KSeF:</label>
+        <input id="accountsKsefToken" type="password" placeholder="wklej token" />
+        <div class="subtle" style="margin-top:6px;">Jeśli wybierzesz konto z listy i ma <code>token</code>/<code>nip</code>, pola mogą się uzupełnić automatycznie.</div>
+      </div>
+
+      <div class="form-group">
+        <label>NIP:</label>
+        <input id="accountsKsefNip" type="text" placeholder="1234567890" />
+      </div>
+
+      <div class="form-group">
+        <label>Od (YYYY-MM-DD / ISO):</label>
+        <input id="accountsKsefSince" type="text" value="${defaultSince}" />
+      </div>
+
+      <div class="form-actions" style="flex-wrap: wrap;">
+        <button id="accountsKsefAuthBtn" type="button">Autoryzuj</button>
+        <button id="accountsKsefPollBtn" class="primary" type="button">Pobierz faktury</button>
+      </div>
+
+      <div id="accountsKsefResult" class="subtle" style="margin-top: 10px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="page-title" style="margin-bottom:0;">Dodaj fakturę z pliku</div>
+          <div class="subtle">Wysyła plik do inbox (endpoint: <code>POST /inbox/invoices</code>).</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Źródło:</label>
+        <select id="accountsAddInvoiceSource">
+          <option value="scanner">scanner</option>
+          <option value="storage">storage</option>
+          <option value="email">email</option>
+          <option value="ksef">ksef</option>
+        </select>
+      </div>
+
+      <div class="form-actions" style="flex-wrap: wrap;">
+        <button id="accountsAddInvoiceBtn" class="primary" type="button">Wybierz plik i dodaj</button>
+      </div>
+
+      <div id="accountsAddInvoiceResult" class="subtle" style="margin-top: 10px;"></div>
+    </div>
+  `;
+
+  const debugOut = document.getElementById('accountsDebugOut');
+  const syncResult = document.getElementById('accountsSyncResult');
+
+  const syncNowBtn = document.getElementById('accountsSyncNowBtn');
+  if (syncNowBtn) {
+    syncNowBtn.addEventListener('click', async () => {
+      try {
+        if (syncResult) {
+          syncResult.textContent = 'Synchronizuję…';
+        }
+        const result = await runAccountsStorageSync();
+        await refresh();
+        if (syncResult) {
+          syncResult.textContent = `Znaleziono: ${result?.count || 0}, czas: ${result?.ms || 0} ms`;
+        }
+        showNotification('Synchronizacja zakończona', 'success');
+      } catch (e) {
+        if (syncResult) {
+          syncResult.textContent = `Błąd: ${e.message}`;
+        }
+        showNotification('Błąd synchronizacji: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const showEventsBtn = document.getElementById('accountsShowEventsBtn');
+  if (showEventsBtn) {
+    showEventsBtn.addEventListener('click', async () => {
+      try {
+        const data = await runAccountsFetchWorkflowEvents();
+        const events = Array.isArray(data?.events) ? data.events : [];
+        if (debugOut) {
+          debugOut.innerHTML = `<pre style="white-space: pre-wrap; margin:0;">${JSON.stringify(events.slice(-50), null, 2)}</pre>`;
+        }
+      } catch (e) {
+        showNotification('Błąd: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const showStorageStateBtn = document.getElementById('accountsShowStorageStateBtn');
+  if (showStorageStateBtn) {
+    showStorageStateBtn.addEventListener('click', async () => {
+      try {
+        const data = await runAccountsFetchStorageState();
+        if (debugOut) {
+          debugOut.innerHTML = `<pre style="white-space: pre-wrap; margin:0;">${JSON.stringify(data?.state || null, null, 2)}</pre>`;
+        }
+      } catch (e) {
+        showNotification('Błąd: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const ksefResult = document.getElementById('accountsKsefResult');
+  const ksefAccountSelect = document.getElementById('accountsKsefAccountSelect');
+  const ksefTokenInput = document.getElementById('accountsKsefToken');
+  const ksefNipInput = document.getElementById('accountsKsefNip');
+  const ksefSinceInput = document.getElementById('accountsKsefSince');
+
+  if (ksefAccountSelect) {
+    ksefAccountSelect.addEventListener('change', () => {
+      const raw = ksefAccountSelect.value;
+      const idx = raw === '' ? null : Number(raw);
+      const acc = idx != null && ksefAccounts[idx] ? ksefAccounts[idx] : null;
+      if (acc && ksefTokenInput && !ksefTokenInput.value) {
+        if (acc.token) {
+          ksefTokenInput.value = String(acc.token);
+        }
+      }
+      if (acc && ksefNipInput && !ksefNipInput.value) {
+        if (acc.nip) {
+          ksefNipInput.value = String(acc.nip);
+        }
+      }
+      if (acc && ksefSinceInput && !ksefSinceInput.value) {
+        if (acc.since) {
+          ksefSinceInput.value = String(acc.since);
+        }
+      }
+    });
+  }
+
+  const ksefAuthBtn = document.getElementById('accountsKsefAuthBtn');
+  if (ksefAuthBtn) {
+    ksefAuthBtn.addEventListener('click', async () => {
+      try {
+        const token = String(ksefTokenInput?.value || '').trim();
+        const nip = String(ksefNipInput?.value || '').trim();
+        if (!token || !nip) {
+          throw new Error('Wymagane: token i NIP');
+        }
+        if (ksefResult) {
+          ksefResult.textContent = 'Autoryzuję…';
+        }
+        const auth = await authenticateKsefWithToken(token, nip);
+        ksefAccessTokenCache = auth?.accessToken || null;
+        ksefAccessTokenExpiresAt = auth?.expiresAt || null;
+        if (ksefResult) {
+          ksefResult.textContent = `OK (expires: ${ksefAccessTokenExpiresAt || '-'})`;
+        }
+        showNotification('KSeF: autoryzacja OK', 'success');
+      } catch (e) {
+        if (ksefResult) {
+          ksefResult.textContent = `Błąd: ${e.message}`;
+        }
+        showNotification('KSeF: błąd autoryzacji: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const ksefPollBtn = document.getElementById('accountsKsefPollBtn');
+  if (ksefPollBtn) {
+    ksefPollBtn.addEventListener('click', async () => {
+      try {
+        const since = String(ksefSinceInput?.value || '').trim();
+        let accessToken = ksefAccessTokenCache;
+        if (!accessToken) {
+          const token = String(ksefTokenInput?.value || '').trim();
+          const nip = String(ksefNipInput?.value || '').trim();
+          if (!token || !nip) {
+            throw new Error('Brak accessToken: wklej token i NIP albo najpierw autoryzuj');
+          }
+          const auth = await authenticateKsefWithToken(token, nip);
+          accessToken = auth?.accessToken || null;
+          ksefAccessTokenCache = accessToken;
+          ksefAccessTokenExpiresAt = auth?.expiresAt || null;
+        }
+        if (!accessToken) {
+          throw new Error('Brak accessToken');
+        }
+        if (ksefResult) {
+          ksefResult.textContent = 'Pobieram…';
+        }
+        const out = await pollKsefInvoices(accessToken, since || null);
+        await refresh();
+        if (ksefResult) {
+          ksefResult.textContent = `Dodano: ${out?.added || 0}`;
+        }
+        showNotification('KSeF: pobrano faktury', 'success');
+      } catch (e) {
+        if (ksefResult) {
+          ksefResult.textContent = `Błąd: ${e.message}`;
+        }
+        showNotification('KSeF: błąd pobierania: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const addInvoiceResult = document.getElementById('accountsAddInvoiceResult');
+  const addInvoiceBtn = document.getElementById('accountsAddInvoiceBtn');
+  if (addInvoiceBtn) {
+    addInvoiceBtn.addEventListener('click', async () => {
+      try {
+        const source = document.getElementById('accountsAddInvoiceSource')?.value || 'scanner';
+        const file = await selectFile('.pdf,.png,.jpg,.jpeg,.xml,application/pdf,image/*,application/xml');
+        if (!file) {
+          return;
+        }
+        if (addInvoiceResult) {
+          addInvoiceResult.textContent = 'Dodaję…';
+        }
+        const inv = await addInvoiceFromLocalFile(file, source);
+        await refresh();
+        if (addInvoiceResult) {
+          addInvoiceResult.textContent = `Dodano: ${inv?.id || '-'}`;
+        }
+        showNotification('Faktura dodana', 'success');
+      } catch (e) {
+        if (addInvoiceResult) {
+          addInvoiceResult.textContent = `Błąd: ${e.message}`;
+        }
+        showNotification('Błąd dodawania faktury: ' + e.message, 'error');
+      }
+    });
   }
 }
 
@@ -705,13 +1127,15 @@ function renderInvoices() {
           </div>
           <div class="card-amount">${amount}</div>
         </div>
-        ${suggestion ? `<div style="margin-bottom: 8px;">${suggestion}</div>` : ''}
-        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start; margin-top: 10px;">
-          ${expenseTypeControl}
-          ${projectControl}
-        </div>
+        ${suggestion ? `<div style="margin: 8px 0;">${suggestion}</div>` : ''}
         ${labelsInfo}
-        <div class="card-actions">${actions}</div>
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;">
+            ${expenseTypeControl}
+            ${projectControl}
+          </div>
+          <div class="card-actions">${actions}</div>
+        </div>
       </div>
     `;
   }).join('');
@@ -1361,8 +1785,11 @@ async function renderSettingsPage() {
     </div>
 
     <div class="form-group">
-      <label>Email accounts (JSON):</label>
-      <textarea id="settingsEmailAccounts" rows="5">${JSON.stringify(emailAccounts, null, 2)}</textarea>
+      <label>Konta email:</label>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button id="settingsEmailAccountsBtn" type="button">Zarządzaj kontami (${emailAccounts.length})</button>
+        <span class="subtle">${emailAccounts.length ? emailAccounts.map(a => a.name || a.provider).join(', ') : 'Brak skonfigurowanych kont'}</span>
+      </div>
     </div>
 
     <div class="form-group">
@@ -1411,6 +1838,13 @@ async function renderSettingsPage() {
   const contrastBtn = document.getElementById('contrastRunBtn');
   if (contrastBtn) {
     contrastBtn.addEventListener('click', runContrastReport);
+  }
+
+  const emailAccountsBtn = document.getElementById('settingsEmailAccountsBtn');
+  if (emailAccountsBtn) {
+    emailAccountsBtn.addEventListener('click', () => {
+      showEmailAccountsManager();
+    });
   }
 
   const exportBundleBtn = document.getElementById('settingsExportBundleBtn');
@@ -1660,6 +2094,296 @@ async function renderLabelsPage() {
       }
     });
   });
+}
+
+// Email Account Editor
+const EMAIL_PROVIDERS = {
+  IMAP: 'imap',
+  GMAIL_OAUTH: 'gmail-oauth',
+  OUTLOOK_OAUTH: 'outlook-oauth',
+};
+
+const EMAIL_PROVIDER_LABELS = {
+  'imap': 'IMAP (uniwersalny)',
+  'gmail-oauth': 'Gmail (OAuth)',
+  'outlook-oauth': 'Outlook/Microsoft 365 (OAuth)',
+};
+
+let emailAccountsCache = [];
+
+function showEmailAccountsManager() {
+  emailAccountsCache = settings?.channels?.email?.accounts || [];
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 800px;">
+      <div class="modal-header">
+        <h2>Konta email</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="subtle" style="margin-bottom:16px;">Skonfiguruj konta email do automatycznego pobierania faktur z załączników.</div>
+        <div class="projects-toolbar">
+          <button class="add-email-account-btn primary">+ Dodaj konto</button>
+        </div>
+        <div class="email-accounts-list"></div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const close = () => modal.remove();
+  modal.querySelector('.close-btn').addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+
+  renderEmailAccountsList(modal.querySelector('.email-accounts-list'));
+
+  modal.querySelector('.add-email-account-btn').addEventListener('click', () => {
+    showEmailAccountForm(null, () => renderEmailAccountsList(modal.querySelector('.email-accounts-list')));
+  });
+}
+
+function renderEmailAccountsList(container) {
+  if (!emailAccountsCache.length) {
+    container.innerHTML = '<p class="empty">Brak skonfigurowanych kont email</p>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'projects-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Nazwa</th>
+        <th>Typ</th>
+        <th>Host/Email</th>
+        <th>Status</th>
+        <th>Akcje</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector('tbody');
+  emailAccountsCache.forEach((account, index) => {
+    const row = document.createElement('tr');
+    const providerLabel = EMAIL_PROVIDER_LABELS[account.provider] || account.provider;
+    const hostOrEmail = account.provider === 'imap'
+      ? (account.host || '—')
+      : (account.email || '—');
+    row.innerHTML = `
+      <td>${account.name || 'Konto ' + (index + 1)}</td>
+      <td>${providerLabel}</td>
+      <td>${hostOrEmail}</td>
+      <td><span class="status-badge status-${account.enabled !== false ? 'aktywny' : 'zakończony'}">${account.enabled !== false ? 'Aktywne' : 'Nieaktywne'}</span></td>
+      <td>
+        <button class="edit-email-account-btn" data-index="${index}">Edytuj</button>
+        <button class="delete-email-account-btn danger" data-index="${index}">Usuń</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  container.innerHTML = '';
+  container.appendChild(table);
+
+  container.querySelectorAll('.edit-email-account-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      showEmailAccountForm(emailAccountsCache[idx], () => renderEmailAccountsList(container), idx);
+    });
+  });
+
+  container.querySelectorAll('.delete-email-account-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const idx = parseInt(e.target.dataset.index, 10);
+      if (confirm('Czy na pewno usunąć to konto?')) {
+        emailAccountsCache.splice(idx, 1);
+        await saveEmailAccountsToSettings();
+        renderEmailAccountsList(container);
+        showNotification('Konto usunięte', 'success');
+      }
+    });
+  });
+}
+
+function showEmailAccountForm(account = null, onSave = null, editIndex = -1) {
+  const isEdit = account !== null;
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+
+  const providerOptions = Object.entries(EMAIL_PROVIDER_LABELS).map(([value, label]) =>
+    `<option value="${value}" ${account?.provider === value ? 'selected' : ''}>${label}</option>`
+  ).join('');
+
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2>${isEdit ? 'Edytuj konto email' : 'Dodaj konto email'}</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="email-account-form">
+          <div class="form-group">
+            <label>Nazwa konta:</label>
+            <input type="text" name="name" value="${account?.name || ''}" placeholder="np. Firmowy Gmail" required>
+          </div>
+          <div class="form-group">
+            <label>Typ połączenia:</label>
+            <select name="provider" id="emailProviderSelect">
+              ${providerOptions}
+            </select>
+          </div>
+          <div class="form-group">
+            <label><input type="checkbox" name="enabled" ${account?.enabled !== false ? 'checked' : ''}> Aktywne</label>
+          </div>
+
+          <div id="imapFields" class="provider-fields">
+            <hr style="margin: 16px 0; border: none; border-top: 1px solid var(--border);">
+            <h4 style="margin-bottom: 12px;">Ustawienia IMAP</h4>
+            <div class="form-group">
+              <label>Host IMAP:</label>
+              <input type="text" name="host" value="${account?.host || ''}" placeholder="imap.gmail.com">
+            </div>
+            <div class="form-group">
+              <label>Port:</label>
+              <input type="number" name="port" value="${account?.port || 993}" placeholder="993">
+            </div>
+            <div class="form-group">
+              <label><input type="checkbox" name="tls" ${account?.tls !== false ? 'checked' : ''}> TLS/SSL</label>
+            </div>
+            <div class="form-group">
+              <label>Użytkownik (email):</label>
+              <input type="text" name="user" value="${account?.user || ''}" placeholder="user@example.com">
+            </div>
+            <div class="form-group">
+              <label>Hasło:</label>
+              <input type="password" name="password" value="${account?.password || ''}" placeholder="hasło lub hasło aplikacji">
+            </div>
+            <div class="form-group">
+              <label>Folder:</label>
+              <input type="text" name="mailbox" value="${account?.mailbox || 'INBOX'}" placeholder="INBOX">
+            </div>
+          </div>
+
+          <div id="oauthFields" class="provider-fields" style="display: none;">
+            <hr style="margin: 16px 0; border: none; border-top: 1px solid var(--border);">
+            <h4 style="margin-bottom: 12px;">Ustawienia OAuth</h4>
+            <div class="form-group">
+              <label>Email:</label>
+              <input type="email" name="email" value="${account?.email || ''}" placeholder="user@gmail.com">
+            </div>
+            <div class="form-group">
+              <label>Client ID:</label>
+              <input type="text" name="clientId" value="${account?.clientId || ''}" placeholder="OAuth Client ID">
+            </div>
+            <div class="form-group">
+              <label>Client Secret:</label>
+              <input type="password" name="clientSecret" value="${account?.clientSecret || ''}" placeholder="OAuth Client Secret">
+            </div>
+            <div class="form-group">
+              <label>Refresh Token:</label>
+              <input type="text" name="refreshToken" value="${account?.refreshToken || ''}" placeholder="Refresh Token">
+            </div>
+            <div class="form-group">
+              <label>Access Token (opcjonalnie):</label>
+              <input type="text" name="accessToken" value="${account?.accessToken || ''}" placeholder="Access Token">
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary">${isEdit ? 'Zapisz zmiany' : 'Dodaj konto'}</button>
+            <button type="button" class="cancel-btn">Anuluj</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const providerSelect = modal.querySelector('#emailProviderSelect');
+  const imapFields = modal.querySelector('#imapFields');
+  const oauthFields = modal.querySelector('#oauthFields');
+
+  function updateProviderFields() {
+    const provider = providerSelect.value;
+    if (provider === 'imap') {
+      imapFields.style.display = 'block';
+      oauthFields.style.display = 'none';
+    } else {
+      imapFields.style.display = 'none';
+      oauthFields.style.display = 'block';
+    }
+  }
+
+  updateProviderFields();
+  providerSelect.addEventListener('change', updateProviderFields);
+
+  const close = () => modal.remove();
+  modal.querySelector('.close-btn').addEventListener('click', close);
+  modal.querySelector('.cancel-btn').addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+
+  modal.querySelector('.email-account-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const provider = form.provider.value;
+
+    const accountData = {
+      id: account?.id || 'email-' + Date.now(),
+      name: form.name.value.trim(),
+      provider: provider,
+      enabled: form.enabled.checked,
+    };
+
+    if (provider === 'imap') {
+      accountData.host = form.host.value.trim();
+      accountData.port = parseInt(form.port.value, 10) || 993;
+      accountData.tls = form.tls.checked;
+      accountData.user = form.user.value.trim();
+      accountData.password = form.password.value;
+      accountData.mailbox = form.mailbox.value.trim() || 'INBOX';
+    } else {
+      accountData.email = form.email.value.trim();
+      accountData.clientId = form.clientId.value.trim();
+      accountData.clientSecret = form.clientSecret.value.trim();
+      accountData.refreshToken = form.refreshToken.value.trim();
+      accountData.accessToken = form.accessToken.value.trim();
+    }
+
+    if (isEdit && editIndex >= 0) {
+      emailAccountsCache[editIndex] = accountData;
+    } else {
+      emailAccountsCache.push(accountData);
+    }
+
+    await saveEmailAccountsToSettings();
+    showNotification(isEdit ? 'Konto zaktualizowane' : 'Konto dodane', 'success');
+    close();
+    if (onSave) onSave();
+  });
+}
+
+async function saveEmailAccountsToSettings() {
+  const nextSettings = {
+    ...settings,
+    channels: {
+      ...(settings?.channels || {}),
+      email: {
+        ...(settings?.channels?.email || {}),
+        accounts: emailAccountsCache,
+      },
+    },
+  };
+  await saveSettings(nextSettings);
+  settings = nextSettings;
 }
 
 function showLabelForm(label = null) {
@@ -2075,6 +2799,27 @@ if (settingsReloadBtn) {
   settingsReloadBtn.addEventListener('click', () => renderSettingsPage());
 }
 
+const accountsReloadBtn = document.getElementById('accountsReloadBtn');
+if (accountsReloadBtn) {
+  accountsReloadBtn.addEventListener('click', () => renderAccountsPage());
+}
+
+const accountsSyncBtn = document.getElementById('accountsSyncBtn');
+if (accountsSyncBtn) {
+  accountsSyncBtn.addEventListener('click', async () => {
+    try {
+      await runAccountsStorageSync();
+      await refresh();
+      showNotification('Synchronizacja zakończona', 'success');
+      if (activePage === 'accounts') {
+        await renderAccountsPage();
+      }
+    } catch (e) {
+      showNotification('Błąd synchronizacji: ' + e.message, 'error');
+    }
+  });
+}
+
 const settingsSaveBtn = document.getElementById('settingsSaveBtn');
 if (settingsSaveBtn) {
   settingsSaveBtn.addEventListener('click', async () => {
@@ -2092,7 +2837,8 @@ if (settingsSaveBtn) {
         return Array.isArray(parsed) ? parsed : parsed;
       };
 
-      const emailAccounts = parseJson('settingsEmailAccounts');
+      // Email accounts are managed via popup form, use current settings
+      const emailAccounts = settings?.channels?.email?.accounts || [];
       const ksefAccounts = parseJson('settingsKsefAccounts');
       const remoteConnections = parseJson('settingsRemoteStorage');
       const printers = parseJson('settingsPrinters');

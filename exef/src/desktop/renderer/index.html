@@ -224,6 +224,7 @@
     <header>
       <h1>ExEF <span id="newBadge" class="badge" style="display:none">0</span></h1>
       <div class="nav">
+        <button id="navAccounts" class="nav-btn" data-page="accounts">🔌 Konta</button>
         <button id="navInbox" class="nav-btn active" data-page="inbox">📥 Inbox</button>
         <button id="navProjects" class="nav-btn" data-page="projects">📁 Projekty</button>
         <button id="navLabels" class="nav-btn" data-page="labels">🏷️ Etykiety</button>
@@ -261,6 +262,22 @@
             <button id="exportBtn">Eksportuj zatwierdzone (CSV)</button>
             <button id="projectsBtn">📁 Projekty</button>
           </div>
+        </div>
+      </div>
+
+      <div id="pageAccounts" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="page-title">Konta i synchronizacja</div>
+              <div class="subtle">Synchronizacja i pobieranie faktur z usług zewnętrznych oraz lokalnych źródeł.</div>
+            </div>
+            <div>
+              <button id="accountsReloadBtn">Odśwież</button>
+              <button id="accountsSyncBtn" class="primary">Synchronizuj</button>
+            </div>
+          </div>
+          <div id="accountsPageContent"></div>
         </div>
       </div>
 

@@ -6,6 +6,7 @@ const STORAGE_PROVIDERS = {
   LOCAL: 'local-folder',
   DROPBOX: 'dropbox',
   GDRIVE: 'gdrive',
+  ONEDRIVE: 'onedrive',
   NEXTCLOUD: 'nextcloud',
 }
 
@@ -25,6 +26,7 @@ class StorageSync extends EventEmitter {
     this.oauthConfig = options.oauthConfig || null
     this._dropboxCursors = new Map()
     this._gdriveSince = new Map()
+    this._onedriveDeltaLinks = new Map()
 
     if (options.state) {
       this.setState(options.state)
@@ -35,6 +37,7 @@ class StorageSync extends EventEmitter {
     return {
       dropboxCursors: Object.fromEntries(this._dropboxCursors.entries()),
       gdriveSince: Object.fromEntries(this._gdriveSince.entries()),
+      onedriveDeltaLinks: Object.fromEntries(this._onedriveDeltaLinks.entries()),
     }
   }
 
@@ -45,9 +48,13 @@ class StorageSync extends EventEmitter {
     const gdriveSince = state?.gdriveSince && typeof state.gdriveSince === 'object'
       ? state.gdriveSince
       : {}
+    const onedriveDeltaLinks = state?.onedriveDeltaLinks && typeof state.onedriveDeltaLinks === 'object'
+      ? state.onedriveDeltaLinks
+      : {}
 
     this._dropboxCursors = new Map(Object.entries(dropboxCursors).map(([k, v]) => [String(k), v]))
     this._gdriveSince = new Map(Object.entries(gdriveSince).map(([k, v]) => [String(k), v]))
+    this._onedriveDeltaLinks = new Map(Object.entries(onedriveDeltaLinks).map(([k, v]) => [String(k), v]))
   }
 
   async start() {
@@ -115,6 +122,7 @@ class StorageSync extends EventEmitter {
     const defaultPriority = (type) => {
       if (type === STORAGE_PROVIDERS.DROPBOX) return 10
       if (type === STORAGE_PROVIDERS.GDRIVE) return 20
+      if (type === STORAGE_PROVIDERS.ONEDRIVE) return 25
       if (type === STORAGE_PROVIDERS.NEXTCLOUD) return 30
       if (type === STORAGE_PROVIDERS.LOCAL) return 40
       return 100
@@ -140,6 +148,9 @@ class StorageSync extends EventEmitter {
     }
     if (type === STORAGE_PROVIDERS.GDRIVE) {
       return this._syncGdriveConnection(conn)
+    }
+    if (type === STORAGE_PROVIDERS.ONEDRIVE) {
+      return this._syncOnedriveConnection(conn)
     }
     if (type === STORAGE_PROVIDERS.NEXTCLOUD) {
       return this._syncNextcloudConnection(conn)
@@ -610,6 +621,246 @@ class StorageSync extends EventEmitter {
     if (!res.ok) {
       const errText = await res.text().catch(() => '')
       throw new Error(`Google Drive download failed: ${res.status}${errText ? ` ${errText}` : ''}`)
+    }
+
+    const arr = await res.arrayBuffer()
+    return Buffer.from(arr)
+  }
+
+  async _syncOnedriveConnection(conn) {
+    let accessToken = conn?.accessToken || conn?.oauth?.accessToken || conn?.oauthConfig?.accessToken
+    if (!accessToken) {
+      accessToken = await this._refreshOnedriveAccessToken(conn)
+      if (!accessToken) {
+        return []
+      }
+    }
+
+    const driveId = conn?.driveId || null
+    const folderIdsRaw = Array.isArray(conn?.folderIds)
+      ? conn.folderIds
+      : conn?.folderId
+        ? [conn.folderId]
+        : ['root']
+
+    const folderIds = Array.from(new Set(folderIdsRaw.map((v) => String(v)).map((v) => v.trim()).filter(Boolean)))
+    const invoices = []
+
+    for (const folderId of folderIds) {
+      const deltaKey = `onedrive:${conn?.id || 'onedrive'}:${driveId || 'me'}:${folderId}`
+      let deltaLink = this._onedriveDeltaLinks.get(deltaKey) || null
+
+      const baseUrl = driveId
+        ? `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}`
+        : 'https://graph.microsoft.com/v1.0/me/drive'
+
+      let url = deltaLink
+        ? deltaLink
+        : folderId === 'root'
+          ? `${baseUrl}/root/delta`
+          : `${baseUrl}/items/${encodeURIComponent(folderId)}/delta`
+
+      let hasMore = true
+
+      while (hasMore) {
+        let listRes = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+
+        if (listRes.status === 401) {
+          const refreshed = await this._refreshOnedriveAccessToken(conn)
+          if (refreshed) {
+            accessToken = refreshed
+            listRes = await fetch(url, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            })
+          }
+        }
+
+        if (!listRes.ok) {
+          const errText = await listRes.text().catch(() => '')
+          this.emit('error', new Error(`OneDrive delta failed: ${listRes.status}${errText ? ` ${errText}` : ''}`))
+          break
+        }
+
+        const data = await listRes.json().catch(() => ({}))
+        const items = Array.isArray(data.value) ? data.value : []
+
+        for (const item of items) {
+          if (item.deleted || item.folder) continue
+
+          const name = String(item.name || '')
+          if (!this._isInvoiceFileName(name)) continue
+
+          const key = `onedrive:${conn?.id || 'onedrive'}:${item.id || name}:${item.eTag || item.lastModifiedDateTime || ''}`
+          if (this.processedFiles.has(key)) continue
+
+          if (this.inbox && typeof this.inbox.getInvoiceBySourceKey === 'function') {
+            const existing = await this.inbox.getInvoiceBySourceKey(key)
+            if (existing) {
+              this.processedFiles.add(key)
+              continue
+            }
+          }
+
+          const content = await this._downloadOnedriveFile({ accessToken, conn, itemId: item.id })
+          const ext = path.extname(name).toLowerCase()
+
+          if (this.inbox) {
+            const invoice = await this.inbox.addInvoice('storage', content, {
+              fileName: name,
+              fileType: item.file?.mimeType || this._getMimeType(ext),
+              fileSize: item.size != null ? Number(item.size) : null,
+              sourceKey: key,
+              storageType: STORAGE_PROVIDERS.ONEDRIVE,
+              storageProviderId: conn?.id || null,
+              storageId: item.id || null,
+              sourcePath: item.parentReference?.path ? `${item.parentReference.path}/${name}` : null,
+              remoteUrl: item.webUrl || null,
+            })
+            invoices.push(invoice)
+            this.emit('invoice:found', invoice)
+          }
+
+          this.processedFiles.add(key)
+        }
+
+        if (data['@odata.nextLink']) {
+          url = data['@odata.nextLink']
+        } else {
+          hasMore = false
+          if (data['@odata.deltaLink']) {
+            this._onedriveDeltaLinks.set(deltaKey, data['@odata.deltaLink'])
+            this.emit('state:changed', this.getState())
+          }
+        }
+      }
+    }
+
+    this.emit('onedrive:sync', { connectionId: conn?.id || null, folderIds })
+    return invoices
+  }
+
+  async _refreshOnedriveAccessToken(conn) {
+    const refreshToken = conn?.refreshToken || conn?.oauth?.refreshToken || conn?.oauthConfig?.refreshToken
+    const clientId = conn?.clientId || conn?.oauth?.clientId || conn?.oauthConfig?.clientId || this.oauthConfig?.clientId
+    const clientSecret = conn?.clientSecret || conn?.oauth?.clientSecret || conn?.oauthConfig?.clientSecret || this.oauthConfig?.clientSecret
+
+    if (!refreshToken || !clientId) {
+      return null
+    }
+
+    const tokenUrl = String(conn?.tokenUrl || conn?.oauth?.tokenUrl || 'https://login.microsoftonline.com/common/oauth2/v2.0/token')
+    const params = new URLSearchParams({
+      client_id: clientId,
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+      scope: 'Files.Read Files.Read.All offline_access',
+    })
+
+    if (clientSecret) {
+      params.append('client_secret', clientSecret)
+    }
+
+    const res = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    })
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '')
+      this.emit('error', new Error(`OneDrive token refresh failed: ${res.status}${errText ? ` ${errText}` : ''}`))
+      return null
+    }
+
+    const data = await res.json().catch(() => ({}))
+    const accessToken = data.access_token ? String(data.access_token) : null
+    if (!accessToken) {
+      return null
+    }
+
+    this._applyOnedriveAccessToken(conn, accessToken, data.expires_in)
+    return accessToken
+  }
+
+  _applyOnedriveAccessToken(conn, accessToken, expiresInSeconds) {
+    const token = accessToken ? String(accessToken) : null
+    if (!token) {
+      return
+    }
+
+    const expiresAt =
+      expiresInSeconds != null && !Number.isNaN(Number(expiresInSeconds))
+        ? new Date(Date.now() + Number(expiresInSeconds) * 1000 - 10000).toISOString()
+        : null
+
+    conn.accessToken = token
+    conn.oauth = {
+      ...(conn.oauth || {}),
+      accessToken: token,
+      ...(expiresAt ? { expiresAt } : {}),
+    }
+    conn.oauthConfig = {
+      ...(conn.oauthConfig || {}),
+      accessToken: token,
+      ...(expiresAt ? { expiresAt } : {}),
+    }
+
+    if (conn?.id) {
+      const idx = this.connections.findIndex((c) => c && c.id === conn.id)
+      if (idx >= 0) {
+        this.connections[idx] = { ...this.connections[idx], ...conn }
+      }
+      this.emit('connection:updated', { connection: { ...conn } })
+    }
+  }
+
+  async _downloadOnedriveFile({ accessToken, conn, itemId }) {
+    const id = String(itemId)
+    const driveId = conn?.driveId || null
+    const baseUrl = driveId
+      ? `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}`
+      : 'https://graph.microsoft.com/v1.0/me/drive'
+    const url = `${baseUrl}/items/${encodeURIComponent(id)}/content`
+
+    let token = accessToken ? String(accessToken) : conn?.accessToken || conn?.oauth?.accessToken
+    if (!token) {
+      token = await this._refreshOnedriveAccessToken(conn)
+    }
+    if (!token) {
+      throw new Error('OneDrive access token missing')
+    }
+
+    let res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      redirect: 'follow',
+    })
+
+    if (res.status === 401) {
+      const refreshed = await this._refreshOnedriveAccessToken(conn)
+      if (refreshed) {
+        token = refreshed
+        res = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          redirect: 'follow',
+        })
+      }
+    }
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '')
+      throw new Error(`OneDrive download failed: ${res.status}${errText ? ` ${errText}` : ''}`)
     }
 
     const arr = await res.arrayBuffer()

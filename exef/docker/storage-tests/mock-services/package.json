@@ -1,0 +1,16 @@
+{
+  "name": "exef-storage-mock-services",
+  "version": "1.0.0",
+  "description": "Mock storage API services for testing",
+  "scripts": {
+    "start:dropbox": "node dropbox-mock-server.js",
+    "start:gdrive": "node gdrive-mock-server.js",
+    "start:onedrive": "node onedrive-mock-server.js",
+    "start:nextcloud": "node nextcloud-mock-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.0"
+  }
+}

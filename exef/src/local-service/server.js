@@ -52,6 +52,10 @@ app.use((req, res, next) => {
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
+app.get('/favicon.ico', (_req, res) => {
+  res.status(204).end()
+})
+
 const projectsFilePath = process.env.EXEF_PROJECTS_FILE_PATH || path.join(__dirname, '../../data/projects.csv')
 const labelsFilePath = process.env.EXEF_LABELS_FILE_PATH || path.join(__dirname, '../../data/labels.csv')
 const settingsFilePath = process.env.EXEF_SETTINGS_FILE_PATH || path.join(__dirname, '../../data/settings.json')

@@ -1,7 +1,10 @@
 project: exef
-generated: "2026-01-22T12:52:13.655134"
-modules[19]{path,lang,items}:
-  src/core/storageSync.js,javascript,32
+generated: "2026-01-22T13:29:31.419566"
+modules[22]{path,lang,items}:
+  docker/email-tests/tests/email-sync.test.js,javascript,8
+  docker/email-tests/mock-services/outlook-mock-server.js,javascript,1
+  docker/email-tests/mock-services/gmail-mock-server.js,javascript,1
+  src/core/storageSync.js,javascript,36
   src/core/emailWatcher.js,javascript,13
   src/core/sqliteDb.js,javascript,12
   src/core/invoiceWorkflow.js,javascript,25
@@ -19,43 +22,63 @@ modules[19]{path,lang,items}:
   src/desktop/preload.js,javascript,2
   src/desktop/main.js,javascript,1
   src/local-service/server.js,javascript,16
-  src/desktop/renderer/renderer.js,javascript,65
+  src/desktop/renderer/renderer.js,javascript,79
 
 function_details:
+  docker/email-tests/tests/email-sync.test.js:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      MockEmailWatcher.constructor,method,() -> None,14-21,false,8,1,constructor
+      MockEmailWatcher.fetchEmails,method,() -> None,23-32,true,10,1,retrieves emails
+      MockEmailWatcher._fetchImap,method,() -> None,34-49,true,16,1,retrieves imap
+      MockEmailWatcher._fetchGmailOauth,method,() -> None,51-124,true,74,1,retrieves gmail oauth
+      MockEmailWatcher._fetchOutlookOauth,method,() -> None,126-173,true,48,1,retrieves outlook oauth
+      MockEmailWatcher.downloadAttachment,method,"(messageId, attachmentId) -> None",175-182,true,8,1,download attachment
+      MockEmailWatcher._downloadGmailAttachment,method,"(messageId, attachmentId) -> None",184-198,true,15,1,download gmail attachment
+      MockEmailWatcher._downloadOutlookAttachment,method,"(messageId, attachmentId) -> None",200-214,true,15,1,download outlook attachment
+  docker/email-tests/mock-services/outlook-mock-server.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      initializeMockData,function,() -> None,20-106,false,87,1,initializes mock data
+  docker/email-tests/mock-services/gmail-mock-server.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      initializeMockData,function,() -> None,20-115,false,96,1,initializes mock data
   src/core/storageSync.js:
-    functions[32]{name,kind,sig,loc,async,lines,cc,does}:
-      createStorageSync,function,() -> None,796-798,false,3,1,creates storage sync
-      StorageSync.constructor,method,() -> None,15-32,false,18,1,constructor
-      StorageSync.getState,method,() -> None,34-39,false,6,1,retrieves state
-      StorageSync.setState,method,(state) -> None,41-51,false,11,1,updates state
-      StorageSync.start,method,() -> None,53-61,true,9,1,starts
-      StorageSync.stop,method,() -> None,63-70,false,8,1,stops
-      StorageSync._poll,method,() -> None,72-80,true,9,1,poll
-      StorageSync.syncNewFiles,method,() -> None,82-110,true,29,1,sync new files
-      StorageSync._getSortedConnections,method,(connections) -> None,112-134,false,23,1,retrieves sorted connections
-      StorageSync._syncConnection,method,(conn) -> None,136-148,true,13,1,sync connection
-      StorageSync._syncLocalFolder,method,() -> None,150-206,true,57,1,sync local folder
-      StorageSync._syncDropbox,method,() -> None,208-223,true,16,1,sync dropbox
-      StorageSync._syncDropboxConnection,method,(conn) -> None,225-325,true,101,1,sync dropbox connection
-      StorageSync._downloadDropboxFile,method,"(accessToken, dropboxPath) -> None",327-341,true,15,1,download dropbox file
-      StorageSync._syncGdrive,method,() -> None,343-358,true,16,1,sync gdrive
-      StorageSync._syncGdriveConnection,method,(conn) -> None,360-485,true,126,1,sync gdrive connection
-      StorageSync._getGdriveAccessToken,method,(conn) -> None,487-490,false,4,1,retrieves gdrive access token
-      StorageSync._getGdriveRefreshToken,method,(conn) -> None,492-495,false,4,1,retrieves gdrive refresh token
-      StorageSync._getGdriveClientId,method,(conn) -> None,497-500,false,4,1,retrieves gdrive client id
-      StorageSync._getGdriveClientSecret,method,(conn) -> None,502-505,false,4,1,retrieves gdrive client secret
-      StorageSync._applyGdriveAccessToken,method,"(conn, accessToken, expiresInSeconds) -> None",507-537,false,31,1,apply gdrive access token
-      StorageSync._refreshGdriveAccessToken,method,(conn) -> None,539-578,true,40,1,refresh gdrive access token
-      StorageSync._downloadGdriveFile,method,() -> None,580-617,true,38,1,download gdrive file
-      StorageSync._syncNextcloudConnection,method,(conn) -> None,619-734,true,116,1,sync nextcloud connection
-      StorageSync._getMimeType,method,(ext) -> None,736-745,false,10,1,retrieves mime type
-      StorageSync._isInvoiceFileName,method,(fileNameOrPath) -> None,747-750,false,4,1,is invoice file name
-      StorageSync.addWatchPath,method,(pathToWatch) -> None,752-756,false,5,1,creates watch path
-      StorageSync.setWatchPaths,method,(paths) -> None,758-772,false,15,1,updates watch paths
-      StorageSync.removeWatchPath,method,(pathToRemove) -> None,774-776,false,3,1,deletes watch path
-      StorageSync.setOauthConfig,method,(config) -> None,778-785,false,8,1,updates oauth config
-      StorageSync.setConnections,method,(connections) -> None,787-789,false,3,1,updates connections
-      StorageSync.clearProcessedCache,method,() -> None,791-793,false,3,1,deletes processed cache
+    functions[36]{name,kind,sig,loc,async,lines,cc,does}:
+      createStorageSync,function,() -> None,1047-1049,false,3,1,creates storage sync
+      StorageSync.constructor,method,() -> None,16-34,false,19,1,constructor
+      StorageSync.getState,method,() -> None,36-42,false,7,1,retrieves state
+      StorageSync.setState,method,(state) -> None,44-58,false,15,1,updates state
+      StorageSync.start,method,() -> None,60-68,true,9,1,starts
+      StorageSync.stop,method,() -> None,70-77,false,8,1,stops
+      StorageSync._poll,method,() -> None,79-87,true,9,1,poll
+      StorageSync.syncNewFiles,method,() -> None,89-117,true,29,1,sync new files
+      StorageSync._getSortedConnections,method,(connections) -> None,119-142,false,24,1,retrieves sorted connections
+      StorageSync._syncConnection,method,(conn) -> None,144-159,true,16,1,sync connection
+      StorageSync._syncLocalFolder,method,() -> None,161-217,true,57,1,sync local folder
+      StorageSync._syncDropbox,method,() -> None,219-234,true,16,1,sync dropbox
+      StorageSync._syncDropboxConnection,method,(conn) -> None,236-336,true,101,1,sync dropbox connection
+      StorageSync._downloadDropboxFile,method,"(accessToken, dropboxPath) -> None",338-352,true,15,1,download dropbox file
+      StorageSync._syncGdrive,method,() -> None,354-369,true,16,1,sync gdrive
+      StorageSync._syncGdriveConnection,method,(conn) -> None,371-496,true,126,1,sync gdrive connection
+      StorageSync._getGdriveAccessToken,method,(conn) -> None,498-501,false,4,1,retrieves gdrive access token
+      StorageSync._getGdriveRefreshToken,method,(conn) -> None,503-506,false,4,1,retrieves gdrive refresh token
+      StorageSync._getGdriveClientId,method,(conn) -> None,508-511,false,4,1,retrieves gdrive client id
+      StorageSync._getGdriveClientSecret,method,(conn) -> None,513-516,false,4,1,retrieves gdrive client secret
+      StorageSync._applyGdriveAccessToken,method,"(conn, accessToken, expiresInSeconds) -> None",518-548,false,31,1,apply gdrive access token
+      StorageSync._refreshGdriveAccessToken,method,(conn) -> None,550-589,true,40,1,refresh gdrive access token
+      StorageSync._downloadGdriveFile,method,() -> None,591-628,true,38,1,download gdrive file
+      StorageSync._syncOnedriveConnection,method,(conn) -> None,630-746,true,117,1,sync onedrive connection
+      StorageSync._refreshOnedriveAccessToken,method,(conn) -> None,748-791,true,44,1,refresh onedrive access token
+      StorageSync._applyOnedriveAccessToken,method,"(conn, accessToken, expiresInSeconds) -> None",793-823,false,31,1,apply onedrive access token
+      StorageSync._downloadOnedriveFile,method,() -> None,825-868,true,44,1,download onedrive file
+      StorageSync._syncNextcloudConnection,method,(conn) -> None,870-985,true,116,1,sync nextcloud connection
+      StorageSync._getMimeType,method,(ext) -> None,987-996,false,10,1,retrieves mime type
+      StorageSync._isInvoiceFileName,method,(fileNameOrPath) -> None,998-1001,false,4,1,is invoice file name
+      StorageSync.addWatchPath,method,(pathToWatch) -> None,1003-1007,false,5,1,creates watch path
+      StorageSync.setWatchPaths,method,(paths) -> None,1009-1023,false,15,1,updates watch paths
+      StorageSync.removeWatchPath,method,(pathToRemove) -> None,1025-1027,false,3,1,deletes watch path
+      StorageSync.setOauthConfig,method,(config) -> None,1029-1036,false,8,1,updates oauth config
+      StorageSync.setConnections,method,(connections) -> None,1038-1040,false,3,1,updates connections
+      StorageSync.clearProcessedCache,method,() -> None,1042-1044,false,3,1,deletes processed cache
   src/core/emailWatcher.js:
     functions[13]{name,kind,sig,loc,async,lines,cc,does}:
       createEmailWatcher,function,() -> None,181-183,false,3,1,creates email watcher
@@ -325,86 +348,100 @@ function_details:
       createWindow,function,() -> None,7-17,false,11,1,creates window
   src/local-service/server.js:
     functions[16]{name,kind,sig,loc,async,lines,cc,does}:
-      canUseSqliteBackend,function,() -> None,61-68,false,8,1,checks use sqlite backend
-      getDefaultSettings,function,() -> None,72-90,false,19,1,retrieves default settings
-      readJsonFile,function,"(filePath, fallbackValue) -> None",92-103,false,12,1,retrieves json file
-      writeJsonFile,function,"(filePath, value) -> None",105-108,false,4,1,logs json file
-      normalizeStringArray,function,(value) -> None,110-115,false,6,1,normalize string array
-      loadSettings,function,() -> None,117-146,false,30,1,retrieves settings
-      parseCssColor,function,(input) -> None,152-183,false,32,1,parses css color
-      srgbToLinear,function,(channel) -> None,185-188,false,4,1,srgb to linear
-      relativeLuminance,function,(rgb) -> None,190-195,false,6,1,relative luminance
-      contrastRatio,function,"(fgRgb, bgRgb) -> None",197-203,false,7,1,contrast ratio
-      normalizePalette,function,(input) -> None,205-223,false,19,1,normalize palette
-      buildContrastChecks,function,(palette) -> None,225-263,false,39,1,creates contrast checks
-      getSettingsFromBackend,function,() -> None,265-281,true,17,1,retrieves settings from backend
-      setSettingsToBackend,function,(nextSettings) -> None,283-290,true,8,1,updates settings to backend
-      pushWorkflowEvent,function,"(type, payload) -> None",459-464,false,6,1,sends workflow event
-      writePortFile,function,"(filePath, portNumber) -> None",1608-1617,false,10,1,logs port file
+      canUseSqliteBackend,function,() -> None,65-72,false,8,1,checks use sqlite backend
+      getDefaultSettings,function,() -> None,76-94,false,19,1,retrieves default settings
+      readJsonFile,function,"(filePath, fallbackValue) -> None",96-107,false,12,1,retrieves json file
+      writeJsonFile,function,"(filePath, value) -> None",109-112,false,4,1,logs json file
+      normalizeStringArray,function,(value) -> None,114-119,false,6,1,normalize string array
+      loadSettings,function,() -> None,121-150,false,30,1,retrieves settings
+      parseCssColor,function,(input) -> None,156-187,false,32,1,parses css color
+      srgbToLinear,function,(channel) -> None,189-192,false,4,1,srgb to linear
+      relativeLuminance,function,(rgb) -> None,194-199,false,6,1,relative luminance
+      contrastRatio,function,"(fgRgb, bgRgb) -> None",201-207,false,7,1,contrast ratio
+      normalizePalette,function,(input) -> None,209-227,false,19,1,normalize palette
+      buildContrastChecks,function,(palette) -> None,229-267,false,39,1,creates contrast checks
+      getSettingsFromBackend,function,() -> None,269-285,true,17,1,retrieves settings from backend
+      setSettingsToBackend,function,(nextSettings) -> None,287-294,true,8,1,updates settings to backend
+      pushWorkflowEvent,function,"(type, payload) -> None",463-468,false,6,1,sends workflow event
+      writePortFile,function,"(filePath, portNumber) -> None",1612-1621,false,10,1,logs port file
   src/desktop/renderer/renderer.js:
-    functions[65]{name,kind,sig,loc,async,lines,cc,does}:
+    functions[79]{name,kind,sig,loc,async,lines,cc,does}:
       setApiUrl,function,(nextUrl) -> None,3-13,false,11,1,updates api url
       fetchJsonWithTimeout,function,"(fullUrl, timeoutMs) -> None",17-35,true,19,1,retrieves json with timeout
-      resolveApiBaseUrl,function,() -> None,37-106,true,70,1,resolve api base url
-      applyTheme,function,(nextTheme) -> None,138-153,false,16,1,apply theme
-      persistThemeToApi,function,(nextTheme) -> None,155-164,true,10,1,caches theme to api
-      cycleTheme,function,() -> None,166-171,false,6,1,cycle theme
-      readCssVar,function,(varName) -> None,175-177,false,3,1,retrieves css var
-      getComputedThemePalette,function,() -> None,179-196,false,18,1,retrieves computed theme palette
-      runContrastReport,function,() -> None,198-262,true,65,1,starts contrast report
-      getUrlState,function,() -> None,268-278,false,11,1,retrieves url state
-      setUrlState,function,(next) -> None,280-299,false,20,1,updates url state
-      updateToggleViewButton,function,() -> None,301-305,false,5,1,updates toggle view button
-      setViewMode,function,(nextMode) -> None,307-316,false,10,1,updates view mode
-      setActiveFilter,function,(nextFilter) -> None,318-334,false,17,1,updates active filter
-      closeActiveUrlModal,function,() -> None,336-341,false,6,1,stops active url modal
-      syncUiFromUrl,function,() -> None,343-387,true,45,1,sync ui from url
-      setActivePage,function,(nextPage) -> None,389-430,false,42,1,updates active page
-      runActionFromUrl,function,"(action, invoiceId) -> None",432-459,true,28,1,starts action from url
-      checkConnection,function,() -> None,461-477,true,17,1,checks connection
-      loadStats,function,() -> None,479-506,true,28,1,retrieves stats
-      getInvoiceById,function,(invoiceId) -> None,516-530,true,15,1,retrieves invoice by id
-      loadInvoices,function,() -> None,532-547,true,16,1,retrieves invoices
-      renderInvoices,function,() -> None,549-718,false,170,1,formats invoices
-      renderInvoicesTable,function,(container) -> None,720-872,false,153,1,formats invoices table
-      exportApproved,function,() -> None,912-920,false,9,1,export approved
-      refresh,function,() -> None,922-928,true,7,1,refresh
-      loadProjects,function,() -> None,931-944,true,14,1,retrieves projects
-      loadExpenseTypes,function,() -> None,946-959,true,14,1,retrieves expense types
-      updateProjectSelects,function,() -> None,961-978,false,18,1,updates project selects
-      loadLabels,function,() -> None,980-993,true,14,1,retrieves labels
-      createLabel,function,(data) -> None,995-1008,true,14,1,creates label
-      updateLabel,function,"(id, data) -> None",1010-1023,true,14,1,updates label
-      deleteLabel,function,(id) -> None,1025-1037,true,13,1,deletes label
-      assignInvoiceToLabels,function,"(invoiceId, labelIds) -> None",1039-1057,true,19,1,assign invoice to labels
-      loadSettings,function,() -> None,1059-1070,true,12,1,retrieves settings
-      downloadBlob,function,"(filename, blob) -> None",1072-1081,false,10,1,download blob
-      downloadJson,function,"(filename, data) -> None",1083-1086,false,4,1,download json
-      selectFile,function,(accept) -> None,1088-1099,true,12,1,retrieves file
-      readFileAsText,function,(file) -> None,1101-1103,true,3,1,retrieves file as text
-      readFileAsArrayBuffer,function,(file) -> None,1105-1107,true,3,1,retrieves file as array buffer
-      arrayBufferToBase64,function,(buffer) -> None,1109-1116,false,8,1,array buffer to base64
-      exportDataBundle,function,() -> None,1118-1125,true,8,1,export data bundle
-      importDataBundle,function,(bundle) -> None,1127-1138,true,12,1,import data bundle
-      exportEntity,function,(entity) -> None,1140-1147,true,8,1,export entity
-      importEntity,function,"(entity, payload) -> None",1149-1160,true,12,1,import entity
-      exportSqliteFile,function,() -> None,1162-1170,true,9,1,export sqlite file
-      importSqliteFile,function,(file) -> None,1172-1185,true,14,1,import sqlite file
-      saveSettings,function,(nextSettings) -> None,1187-1208,true,22,1,caches settings
-      renderSettingsPage,function,() -> None,1210-1518,true,309,1,formats settings page
-      assignInvoiceToExpenseType,function,"(invoiceId, expenseTypeId) -> None",1520-1538,true,19,1,assign invoice to expense type
-      showNotification,function,(message) -> None,1540-1568,false,29,1,show notification
-      assignInvoiceToProject,function,"(invoiceId, projectId) -> None",1570-1588,true,19,1,assign invoice to project
-      renderProjectsPage,function,() -> None,1590-1597,true,8,1,formats projects page
-      renderLabelsPage,function,() -> None,1599-1663,true,65,1,formats labels page
-      showLabelForm,function,() -> None,1665-1730,false,66,1,show label form
-      showProjectsManager,function,() -> None,1732-1800,true,69,1,show projects manager
-      renderProjectsList,function,(container) -> None,1802-1865,true,64,1,formats projects list
-      showProjectForm,function,() -> None,1867-1949,false,83,1,show project form
-      createProject,function,(data) -> None,1951-1964,true,14,1,creates project
-      updateProject,function,"(id, data) -> None",1966-1979,true,14,1,updates project
-      deleteProject,function,(id) -> None,1981-1993,true,13,1,deletes project
-      importProjectsFromCSV,function,(file) -> None,1995-2031,true,37,1,import projects from csv
-      showInvoiceListPage,function,() -> None,2261-2268,false,8,1,show invoice list page
-      showInvoiceDetailsPage,function,(invoiceId) -> None,2270-2378,true,109,1,show invoice details page
-      showInvoiceDetailsModal,function,(invoiceId) -> None,2380-2435,true,56,1,show invoice details modal
+      probeLocalService,function,"(baseUrl, timeoutMs) -> None",37-44,true,8,1,probe local service
+      resolveApiBaseUrl,function,() -> None,46-120,true,75,1,resolve api base url
+      applyTheme,function,(nextTheme) -> None,154-169,false,16,1,apply theme
+      persistThemeToApi,function,(nextTheme) -> None,171-180,true,10,1,caches theme to api
+      cycleTheme,function,() -> None,182-187,false,6,1,cycle theme
+      readCssVar,function,(varName) -> None,191-193,false,3,1,retrieves css var
+      getComputedThemePalette,function,() -> None,195-212,false,18,1,retrieves computed theme palette
+      runContrastReport,function,() -> None,214-278,true,65,1,starts contrast report
+      getUrlState,function,() -> None,284-294,false,11,1,retrieves url state
+      setUrlState,function,(next) -> None,296-315,false,20,1,updates url state
+      updateToggleViewButton,function,() -> None,317-321,false,5,1,updates toggle view button
+      setViewMode,function,(nextMode) -> None,323-332,false,10,1,updates view mode
+      setActiveFilter,function,(nextFilter) -> None,334-350,false,17,1,updates active filter
+      closeActiveUrlModal,function,() -> None,352-357,false,6,1,stops active url modal
+      syncUiFromUrl,function,() -> None,359-403,true,45,1,sync ui from url
+      setActivePage,function,(nextPage) -> None,405-449,false,45,1,updates active page
+      isoDateDaysAgo,function,(days) -> None,451-454,false,4,1,iso date days ago
+      runAccountsStorageSync,function,() -> None,456-463,true,8,1,starts accounts storage sync
+      runAccountsFetchWorkflowEvents,function,() -> None,465-472,true,8,1,starts accounts fetch workflow events
+      runAccountsFetchStorageState,function,() -> None,474-481,true,8,1,starts accounts fetch storage state
+      authenticateKsefWithToken,function,"(token, nip) -> None",483-494,true,12,1,validates ksef with token
+      pollKsefInvoices,function,"(accessToken, since) -> None",496-511,true,16,1,poll ksef invoices
+      guessMimeTypeFromFileName,function,(fileName) -> None,513-520,false,8,1,guess mime type from file name
+      addInvoiceFromLocalFile,function,"(file, source) -> None",522-554,true,33,1,creates invoice from local file
+      renderAccountsPage,function,() -> None,556-852,true,297,1,formats accounts page
+      runActionFromUrl,function,"(action, invoiceId) -> None",854-881,true,28,1,starts action from url
+      checkConnection,function,() -> None,883-899,true,17,1,checks connection
+      loadStats,function,() -> None,901-928,true,28,1,retrieves stats
+      getInvoiceById,function,(invoiceId) -> None,938-952,true,15,1,retrieves invoice by id
+      loadInvoices,function,() -> None,954-969,true,16,1,retrieves invoices
+      renderInvoices,function,() -> None,971-1142,false,172,1,formats invoices
+      renderInvoicesTable,function,(container) -> None,1144-1296,false,153,1,formats invoices table
+      exportApproved,function,() -> None,1336-1344,false,9,1,export approved
+      refresh,function,() -> None,1346-1352,true,7,1,refresh
+      loadProjects,function,() -> None,1355-1368,true,14,1,retrieves projects
+      loadExpenseTypes,function,() -> None,1370-1383,true,14,1,retrieves expense types
+      updateProjectSelects,function,() -> None,1385-1402,false,18,1,updates project selects
+      loadLabels,function,() -> None,1404-1417,true,14,1,retrieves labels
+      createLabel,function,(data) -> None,1419-1432,true,14,1,creates label
+      updateLabel,function,"(id, data) -> None",1434-1447,true,14,1,updates label
+      deleteLabel,function,(id) -> None,1449-1461,true,13,1,deletes label
+      assignInvoiceToLabels,function,"(invoiceId, labelIds) -> None",1463-1481,true,19,1,assign invoice to labels
+      loadSettings,function,() -> None,1483-1494,true,12,1,retrieves settings
+      downloadBlob,function,"(filename, blob) -> None",1496-1505,false,10,1,download blob
+      downloadJson,function,"(filename, data) -> None",1507-1510,false,4,1,download json
+      selectFile,function,(accept) -> None,1512-1523,true,12,1,retrieves file
+      readFileAsText,function,(file) -> None,1525-1527,true,3,1,retrieves file as text
+      readFileAsArrayBuffer,function,(file) -> None,1529-1531,true,3,1,retrieves file as array buffer
+      arrayBufferToBase64,function,(buffer) -> None,1533-1540,false,8,1,array buffer to base64
+      exportDataBundle,function,() -> None,1542-1549,true,8,1,export data bundle
+      importDataBundle,function,(bundle) -> None,1551-1562,true,12,1,import data bundle
+      exportEntity,function,(entity) -> None,1564-1571,true,8,1,export entity
+      importEntity,function,"(entity, payload) -> None",1573-1584,true,12,1,import entity
+      exportSqliteFile,function,() -> None,1586-1594,true,9,1,export sqlite file
+      importSqliteFile,function,(file) -> None,1596-1609,true,14,1,import sqlite file
+      saveSettings,function,(nextSettings) -> None,1611-1632,true,22,1,caches settings
+      renderSettingsPage,function,() -> None,1634-1952,true,319,1,formats settings page
+      assignInvoiceToExpenseType,function,"(invoiceId, expenseTypeId) -> None",1954-1972,true,19,1,assign invoice to expense type
+      showNotification,function,(message) -> None,1974-2002,false,29,1,show notification
+      assignInvoiceToProject,function,"(invoiceId, projectId) -> None",2004-2022,true,19,1,assign invoice to project
+      renderProjectsPage,function,() -> None,2024-2031,true,8,1,formats projects page
+      renderLabelsPage,function,() -> None,2033-2097,true,65,1,formats labels page
+      showEmailAccountsManager,function,() -> None,2114-2148,false,35,1,show email accounts manager
+      renderEmailAccountsList,function,(container) -> None,2150-2212,false,63,1,formats email accounts list
+      showEmailAccountForm,function,() -> None,2214-2372,false,159,1,show email account form
+      saveEmailAccountsToSettings,function,() -> None,2374-2387,true,14,1,caches email accounts to settings
+      showLabelForm,function,() -> None,2389-2454,false,66,1,show label form
+      showProjectsManager,function,() -> None,2456-2524,true,69,1,show projects manager
+      renderProjectsList,function,(container) -> None,2526-2589,true,64,1,formats projects list
+      showProjectForm,function,() -> None,2591-2673,false,83,1,show project form
+      createProject,function,(data) -> None,2675-2688,true,14,1,creates project
+      updateProject,function,"(id, data) -> None",2690-2703,true,14,1,updates project
+      deleteProject,function,(id) -> None,2705-2717,true,13,1,deletes project
+      importProjectsFromCSV,function,(file) -> None,2719-2755,true,37,1,import projects from csv
+      showInvoiceListPage,function,() -> None,3007-3014,false,8,1,show invoice list page
+      showInvoiceDetailsPage,function,(invoiceId) -> None,3016-3124,true,109,1,show invoice details page
+      showInvoiceDetailsModal,function,(invoiceId) -> None,3126-3181,true,56,1,show invoice details modal

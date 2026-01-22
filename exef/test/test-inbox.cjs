@@ -2,6 +2,7 @@
 
 const fs = require('node:fs')
 const path = require('node:path')
+const os = require('node:os')
 
 function resolveBaseUrl() {
   if (process.env.EXEF_TEST_URL) {
@@ -40,6 +41,138 @@ async function testInboxStats() {
   console.log('  Status:', res.status)
   console.log('  Response:', JSON.stringify(json, null, 2))
   return res.ok
+}
+
+async function testDebugWorkflowEvents() {
+  console.log('\n[TEST] GET /debug/workflow/events')
+  const res = await fetch(`${BASE_URL}/debug/workflow/events`)
+  const json = await res.json().catch(() => ({}))
+  console.log('  Status:', res.status)
+  console.log('  Events:', Array.isArray(json.events) ? json.events.length : 'n/a')
+  return res.ok
+}
+
+async function testDebugStorageState() {
+  console.log('\n[TEST] GET /debug/storage/state')
+  const res = await fetch(`${BASE_URL}/debug/storage/state`)
+  const json = await res.json().catch(() => ({}))
+  console.log('  Status:', res.status)
+  console.log('  State keys:', json?.state ? Object.keys(json.state) : 'n/a')
+  return res.ok
+}
+
+async function testDebugStorageSync() {
+  console.log('\n[TEST] POST /debug/storage/sync')
+  const res = await fetch(`${BASE_URL}/debug/storage/sync`, { method: 'POST' })
+  const json = await res.json().catch(() => ({}))
+  console.log('  Status:', res.status)
+  console.log('  Response:', JSON.stringify(json, null, 2))
+  return res.ok
+}
+
+async function testLocalFolderStorageSyncImportAndProcess() {
+  console.log('\n[TEST] Local folder sync -> invoice -> process (XML fixture)')
+
+  const settingsRes = await fetch(`${BASE_URL}/settings`)
+  const originalSettings = await settingsRes.json().catch(() => null)
+  if (!settingsRes.ok || !originalSettings) {
+    console.log('  Cannot read settings, skip')
+    return false
+  }
+
+  const originalPaths = Array.isArray(originalSettings?.channels?.localFolders?.paths)
+    ? originalSettings.channels.localFolders.paths
+    : []
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exef-watch-'))
+  const fixturePath = path.join(__dirname, 'fixtures', 'sample-invoice.xml')
+  const xmlContent = fs.readFileSync(fixturePath, 'utf8')
+  const watchedFileName = `watch-invoice-${Date.now()}.xml`
+  const watchedFilePath = path.join(tmpDir, watchedFileName)
+  fs.writeFileSync(watchedFilePath, xmlContent, 'utf8')
+
+  try {
+    const setRes = await fetch(`${BASE_URL}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        channels: {
+          localFolders: { paths: [tmpDir] },
+        },
+      }),
+    })
+    const setJson = await setRes.json().catch(() => ({}))
+    console.log('  Settings update status:', setRes.status)
+    if (!setRes.ok) {
+      console.log('  Settings update error:', JSON.stringify(setJson))
+      return false
+    }
+
+    const syncRes = await fetch(`${BASE_URL}/debug/storage/sync`, { method: 'POST' })
+    const syncJson = await syncRes.json().catch(() => ({}))
+    console.log('  Sync status:', syncRes.status)
+    console.log('  Sync response:', JSON.stringify(syncJson, null, 2))
+    if (!syncRes.ok) {
+      return false
+    }
+
+    const syncRes2 = await fetch(`${BASE_URL}/debug/storage/sync`, { method: 'POST' })
+    const syncJson2 = await syncRes2.json().catch(() => ({}))
+    console.log('  Sync#2 status:', syncRes2.status)
+    console.log('  Sync#2 response:', JSON.stringify(syncJson2, null, 2))
+    if (!syncRes2.ok) {
+      return false
+    }
+
+    const listRes = await fetch(`${BASE_URL}/inbox/invoices?source=storage`)
+    const listJson = await listRes.json().catch(() => ({}))
+    if (!listRes.ok) {
+      console.log('  List status:', listRes.status)
+      return false
+    }
+
+    const invoices = Array.isArray(listJson.invoices) ? listJson.invoices : []
+    const matches = invoices.filter((inv) => inv && inv.fileName === watchedFileName)
+    const found = matches[0] || null
+    if (!found) {
+      console.log('  Invoice not found in inbox after sync')
+      return false
+    }
+
+    if (matches.length !== 1) {
+      console.log(`  Expected 1 invoice for watched file, got ${matches.length}`)
+      return false
+    }
+
+    const procRes = await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(found.id)}/process`, { method: 'POST' })
+    const procJson = await procRes.json().catch(() => ({}))
+    console.log('  Process status:', procRes.status)
+    if (!procRes.ok) {
+      console.log('  Process error:', JSON.stringify(procJson))
+      return false
+    }
+    console.log('  Processed invoice status:', procJson.status)
+    console.log('  Extracted invoiceNumber:', procJson.invoiceNumber || procJson?.extracted?.invoiceNumber || '(none)')
+
+    return true
+  } finally {
+    try {
+      await fetch(`${BASE_URL}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          channels: {
+            localFolders: { paths: originalPaths },
+          },
+        }),
+      })
+    } catch (_e) {
+    }
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    } catch (_e) {
+    }
+  }
 }
 
 async function testAddInvoiceFromJson() {
@@ -183,6 +316,11 @@ async function runAllTests() {
   try {
     results.push({ name: 'health', ok: await testHealth() })
     results.push({ name: 'inbox/stats', ok: await testInboxStats() })
+
+    results.push({ name: 'debug/workflow/events', ok: await testDebugWorkflowEvents() })
+    results.push({ name: 'debug/storage/state', ok: await testDebugStorageState() })
+    results.push({ name: 'debug/storage/sync', ok: await testDebugStorageSync() })
+    results.push({ name: 'storage local folder -> process (xml)', ok: await testLocalFolderStorageSyncImportAndProcess() })
 
     const jsonInvoiceId = await testAddInvoiceFromJson()
     results.push({ name: 'add invoice (JSON)', ok: !!jsonInvoiceId })

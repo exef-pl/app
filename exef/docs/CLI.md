@@ -30,15 +30,35 @@ npm run build:cli
 ### Ogólne
 
 | Komenda | Opis |
-|---------|------|
+| -------- | ---- |
 | `exef help` | Wyświetl pomoc |
 | `exef version` | Wyświetl wersję |
 | `exef health` | Sprawdź status usługi |
 
+### Dane / baza (SQLite)
+
+| Komenda | Opis |
+| -------- | ---- |
+| `exef data export [--output plik.json]` | Eksport całej bazy do JSON (bundle) |
+| `exef data import --file plik.json` | Import całej bazy z JSON (bundle) |
+| `exef data export-entity <entity> [--output plik.json]` | Eksport encji: `projects`, `labels`, `expense-types`, `invoices`, `contractors`, `settings` |
+| `exef data import-entity <entity> --file plik.json` | Import encji (format jak w eksporcie) |
+| `exef db export [--output exef.sqlite]` | Eksport pliku SQLite |
+| `exef db import --file exef.sqlite` | Import pliku SQLite |
+| `exef contractors list` | Lista kontrahentów (wyciągana z faktur) |
+
+### UI (motyw / kontrast)
+
+| Komenda | Opis |
+| -------- | ---- |
+| `exef ui theme get` | Pobierz motyw UI (`white/dark/warm`) |
+| `exef ui theme set --theme white/dark/warm` | Ustaw motyw UI |
+| `exef ui contrast --palette plik.json` | Raport kontrastu (WCAG) dla palety |
+
 ### Skrzynka faktur (inbox)
 
 | Komenda | Opis |
-|---------|------|
+| -------- | ---- |
 | `exef inbox list` | Lista faktur |
 | `exef inbox stats` | Statystyki |
 | `exef inbox get <id>` | Szczegóły faktury |
@@ -51,7 +71,7 @@ npm run build:cli
 ### KSeF
 
 | Komenda | Opis |
-|---------|------|
+| -------- | ---- |
 | `exef ksef auth` | Autoryzacja tokenem |
 | `exef ksef session open` | Otwórz sesję |
 | `exef ksef session close` | Zamknij sesję |
@@ -63,8 +83,8 @@ npm run build:cli
 ## Opcje globalne
 
 | Opcja | Opis |
-|-------|------|
-| `--url <url>` | URL API (domyślnie: http://127.0.0.1:3030) |
+| ----- | ---- |
+| `--url <url>` | URL API (domyślnie: `http://127.0.0.1:3030`) |
 | `--json` | Wynik w formacie JSON |
 | `--quiet, -q` | Tryb cichy |
 | `--help, -h` | Pomoc |
@@ -72,9 +92,11 @@ npm run build:cli
 ## Zmienne środowiskowe
 
 | Zmienna | Opis |
-|---------|------|
+| ------- | ---- |
 | `EXEF_API_URL` | URL API |
 | `EXEF_OUTPUT_FORMAT` | Format wyjścia: `json` lub `text` |
+| `EXEF_STORAGE_BACKEND` | Backend storage: `files` lub `sqlite` |
+| `EXEF_DB_PATH` | Ścieżka do pliku SQLite (gdy `EXEF_STORAGE_BACKEND=sqlite`) |
 
 ## Przykłady użycia
 
@@ -163,7 +185,7 @@ exef ksef download 1234567890-20260122-ABCDEF123456-01 --output faktura.xml
 ## Mapowanie CLI ↔ REST API
 
 | CLI | REST API |
-|-----|----------|
+| --- | -------- |
 | `exef health` | `GET /health` |
 | `exef inbox list` | `GET /inbox/invoices` |
 | `exef inbox stats` | `GET /inbox/stats` |
@@ -180,6 +202,16 @@ exef ksef download 1234567890-20260122-ABCDEF123456-01 --output faktura.xml
 | `exef ksef send` | `POST /ksef/sessions/online/send` |
 | `exef ksef status` | `POST /ksef/invoices/status` |
 | `exef ksef download` | `POST /ksef/invoices/download` |
+| `exef data export` | `GET /data/export` |
+| `exef data import` | `POST /data/import` |
+| `exef data export-entity <entity>` | `GET /data/export/:entity` |
+| `exef data import-entity <entity>` | `POST /data/import/:entity` |
+| `exef db export` | `GET /db/export.sqlite` |
+| `exef db import` | `POST /db/import.sqlite` |
+| `exef contractors list` | `GET /contractors` |
+| `exef ui theme get` | `GET /ui/theme` |
+| `exef ui theme set` | `PUT /ui/theme` |
+| `exef ui contrast` | `POST /ui/contrast/report` |
 
 ## Integracja z shell
 
@@ -228,7 +260,7 @@ exef inbox export --format csv | mail -s "Faktury" ksiegowosc@firma.pl
 ## Kody wyjścia
 
 | Kod | Znaczenie |
-|-----|-----------|
+| --- | --------- |
 | 0 | Sukces |
 | 1 | Błąd (komunikat na stderr) |
 

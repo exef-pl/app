@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # Mock Dropbox API
+  mock-dropbox-api:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.dropbox
+    container_name: exef-mock-dropbox
+    ports:
+      - "8091:8091"
+    environment:
+      - PORT=8091
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Mock Google Drive API
+  mock-gdrive-api:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.gdrive
+    container_name: exef-mock-gdrive
+    ports:
+      - "8092:8092"
+    environment:
+      - PORT=8092
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8092/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Mock OneDrive/Microsoft Graph API
+  mock-onedrive-api:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.onedrive
+    container_name: exef-mock-onedrive
+    ports:
+      - "8093:8093"
+    environment:
+      - PORT=8093
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8093/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Mock Nextcloud WebDAV
+  mock-nextcloud-api:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.nextcloud
+    container_name: exef-mock-nextcloud
+    ports:
+      - "8094:8094"
+    environment:
+      - PORT=8094
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8094/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Test runner
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: docker/storage-tests/Dockerfile.test-runner
+    container_name: exef-storage-test-runner
+    depends_on:
+      mock-dropbox-api:
+        condition: service_healthy
+      mock-gdrive-api:
+        condition: service_healthy
+      mock-onedrive-api:
+        condition: service_healthy
+      mock-nextcloud-api:
+        condition: service_healthy
+    environment:
+      - DROPBOX_API_URL=http://mock-dropbox-api:8091
+      - GDRIVE_API_URL=http://mock-gdrive-api:8092
+      - ONEDRIVE_API_URL=http://mock-onedrive-api:8093
+      - NEXTCLOUD_API_URL=http://mock-nextcloud-api:8094
+      - NODE_ENV=test
+    volumes:
+      - ../../src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./results:/app/results
+    command: ["npm", "run", "test:storage"]
+
+networks:
+  default:
+    name: exef-storage-test-network

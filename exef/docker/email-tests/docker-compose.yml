@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # GreenMail - IMAP/SMTP test server
+  greenmail:
+    image: greenmail/standalone:2.0.0
+    container_name: exef-greenmail
+    ports:
+      - "3025:3025"   # SMTP
+      - "3110:3110"   # POP3
+      - "3143:3143"   # IMAP
+      - "3465:3465"   # SMTPS
+      - "3993:3993"   # IMAPS
+      - "3995:3995"   # POP3S
+      - "8080:8080"   # API
+    environment:
+      - GREENMAIL_OPTS=-Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.auth.disabled -Dgreenmail.verbose
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/user/list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Mock Gmail OAuth API
+  mock-gmail-api:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.gmail
+    container_name: exef-mock-gmail
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - MOCK_MODE=gmail
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Mock Outlook/Microsoft Graph API
+  mock-outlook-api:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.outlook
+    container_name: exef-mock-outlook
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      - MOCK_MODE=outlook
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Test runner
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: docker/email-tests/Dockerfile.test-runner
+    container_name: exef-email-test-runner
+    depends_on:
+      greenmail:
+        condition: service_healthy
+      mock-gmail-api:
+        condition: service_healthy
+      mock-outlook-api:
+        condition: service_healthy
+    environment:
+      - IMAP_HOST=greenmail
+      - IMAP_PORT=3143
+      - IMAPS_PORT=3993
+      - SMTP_HOST=greenmail
+      - SMTP_PORT=3025
+      - GMAIL_API_URL=http://mock-gmail-api:8081
+      - OUTLOOK_API_URL=http://mock-outlook-api:8082
+      - NODE_ENV=test
+    volumes:
+      - ../../src:/app/src:ro
+      - ./tests:/app/tests:ro
+      - ./results:/app/results
+    command: ["npm", "run", "test:email"]
+
+networks:
+  default:
+    name: exef-email-test-network

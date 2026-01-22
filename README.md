@@ -1,4 +1,10 @@
+1 szkic
 ![img.png](img.png)
+
+2 szkic
+![img_1.png](img_1.png)
+
+
 # exef-pl/app
 
 To repozytorium jest agregatorem projektów związanych z KSeF (Krajowy System e-Faktur):
@@ -71,6 +77,10 @@ Ważne zmienne:
 - `EXEF_WEB_HOST`, `EXEF_WEB_INTERNAL_PORT`, `EXEF_WEB_PORT_MAPPING` (docker)
 - `EXEF_LOCAL_SERVICE_HOST`, `EXEF_LOCAL_SERVICE_PORT`, `EXEF_LOCAL_SERVICE_PORT_FILE`
 - `EXEF_DESKTOP_LOCAL_SERVICE_BASE_URL` (opcjonalny override)
+
+Backend storage (pliki vs SQLite):
+- `EXEF_STORAGE_BACKEND` (`files` lub `sqlite`)
+- `EXEF_DB_PATH` (ścieżka do pliku SQLite; używane gdy `EXEF_STORAGE_BACKEND=sqlite`)
 
 Automatyczna zmiana portu przy konflikcie:
 - **local-service**: jeśli preferowany port zajęty, wybiera kolejny wolny (lub losowy) i zapisuje go do `EXEF_LOCAL_SERVICE_PORT_FILE`.
@@ -192,6 +202,28 @@ pending → ocr → described → approved → booked
 | `/inbox/export` | POST | Eksportuj zatwierdzone (CSV/JSON/wFirma) |
 | `/inbox/ksef/poll` | POST | Pobierz nowe faktury z KSeF |
 
+### API Endpoints (Dane / baza)
+
+Poniższe endpointy działają dla `EXEF_STORAGE_BACKEND=sqlite`:
+
+| Endpoint | Metoda | Opis |
+|----------|--------|------|
+| `/data/export` | GET | Eksport całej bazy jako JSON bundle |
+| `/data/import` | POST | Import całej bazy z JSON bundle |
+| `/data/export/:entity` | GET | Eksport encji: `projects`, `labels`, `expense-types`, `invoices`, `contractors`, `settings` |
+| `/data/import/:entity` | POST | Import encji (format jak w eksporcie) |
+| `/db/export.sqlite` | GET | Eksport pliku SQLite |
+| `/db/import.sqlite` | POST | Import pliku SQLite (payload `{ base64 }`) |
+| `/contractors` | GET | Lista kontrahentów (wyciąganych z faktur) |
+
+### API Endpoints (UI)
+
+| Endpoint | Metoda | Opis |
+|----------|--------|------|
+| `/ui/theme` | GET | Pobierz motyw UI |
+| `/ui/theme` | PUT | Ustaw motyw UI (`white`, `dark`, `warm`) |
+| `/ui/contrast/report` | POST | Raport kontrastu (WCAG) dla podanej palety |
+
 ### Konfiguracja (`.env`)
 
 ```bash
@@ -310,6 +342,16 @@ exef inbox export --format csv --output faktury.csv
 # KSeF
 exef ksef auth --token <token> --nip <nip>
 exef ksef poll --since 2026-01-01
+
+# Dane / baza (SQLite)
+exef data export --output exef-data.json
+exef data import --file exef-data.json
+exef data export-entity projects --output projects.json
+exef db export --output exef.sqlite
+
+# UI
+exef ui theme get
+exef ui theme set --theme dark
 ```
 
 ### Mapowanie CLI ↔ REST API

@@ -1,0 +1,15 @@
+{
+  "name": "exef-email-mock-services",
+  "version": "1.0.0",
+  "description": "Mock email API services for testing",
+  "main": "index.js",
+  "scripts": {
+    "start:gmail": "node gmail-mock-server.js",
+    "start:outlook": "node outlook-mock-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.0"
+  }
+}

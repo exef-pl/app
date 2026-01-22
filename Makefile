@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-cli exef-test-e2e exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test
 
 INCLUDE_SUBMODULES ?= 0
 
@@ -212,6 +212,14 @@ exef-test-api:
 	@echo "Running exef API integration tests..."
 	@cd exef && node test/test-inbox.cjs
 
+exef-test-cli:
+	@echo "Running exef CLI integration tests..."
+	@cd exef && node test/test-cli.cjs
+
+exef-test-e2e:
+	@echo "Running exef E2E (local-service + API + CLI)..."
+	@cd exef && node test/test-e2e.cjs
+
 exef-test-gui:
 	@echo "Opening GUI test interface..."
 	@echo "Starting local service and opening browser..."
@@ -255,7 +263,10 @@ all-with-submodules:
 build-all: exef-all $(SUBMODULE_BUILD_TARGETS)
 	@echo "All application builds completed."
 
-test-all: python-test test-e2e exef-test $(SUBMODULE_TEST_TARGETS)
+test: test-all
+	@echo "All tests (test-all) completed."
+
+test-all: python-test test-e2e exef-test-e2e $(SUBMODULE_TEST_TARGETS)
 	@echo "All tests completed."
 
 test-e2e:
