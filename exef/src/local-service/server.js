@@ -7,12 +7,24 @@ const path = require('node:path')
 
 const { createKsefFacade } = require('../core/ksefFacade')
 const { listenWithFallback } = require('../core/listen')
+const { createInvoiceWorkflow, INVOICE_STATUS } = require('../core/invoiceWorkflow')
+const { createStore } = require('../core/draftStore')
+const { EXPORT_FORMATS } = require('../core/exportService')
 
 const app = express()
 app.use(helmet())
 app.use(express.json({ limit: '10mb' }))
 
 const ksef = createKsefFacade({})
+
+const store = createStore({
+  filePath: process.env.EXEF_INVOICE_STORE_PATH || './data/invoices.json',
+})
+const workflow = createInvoiceWorkflow({
+  store,
+  ksefFacade: ksef,
+  watchPaths: process.env.EXEF_WATCH_PATHS ? process.env.EXEF_WATCH_PATHS.split(',') : [],
+})
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'exef-local-service' })
@@ -76,6 +88,101 @@ app.post('/ksef/invoices/download', async (req, res) => {
   try {
     const result = await ksef.downloadInvoice(req.body)
     res.json(result)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/inbox/stats', async (_req, res) => {
+  try {
+    const stats = await workflow.getStats()
+    res.json(stats)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/inbox/invoices', async (req, res) => {
+  try {
+    const filter = {
+      status: req.query.status,
+      source: req.query.source,
+      since: req.query.since,
+    }
+    const invoices = await workflow.listInvoices(filter)
+    res.json({ invoices, count: invoices.length })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/inbox/invoices/:id', async (req, res) => {
+  try {
+    const invoice = await workflow.getInvoice(req.params.id)
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' })
+    }
+    res.json(invoice)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/invoices', async (req, res) => {
+  try {
+    const { source, file, metadata } = req.body
+    const invoice = await workflow.addManualInvoice(source || 'scanner', file, metadata || {})
+    res.status(201).json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/invoices/:id/process', async (req, res) => {
+  try {
+    const invoice = await workflow.processInvoice(req.params.id)
+    res.json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/invoices/:id/approve', async (req, res) => {
+  try {
+    const invoice = await workflow.approveInvoice(req.params.id, req.body)
+    res.json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/invoices/:id/reject', async (req, res) => {
+  try {
+    const invoice = await workflow.rejectInvoice(req.params.id, req.body.reason)
+    res.json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/export', async (req, res) => {
+  try {
+    const format = req.body.format || EXPORT_FORMATS.CSV
+    const result = await workflow.exportApproved(format, req.body.options || {})
+    res.json(result)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/ksef/poll', async (req, res) => {
+  try {
+    const { accessToken, since } = req.body
+    const invoices = await ksef.pollNewInvoices({ accessToken, since })
+    for (const invData of invoices) {
+      await workflow.addManualInvoice('ksef', null, invData)
+    }
+    res.json({ added: invoices.length, invoices })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }

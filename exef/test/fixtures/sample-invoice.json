@@ -1,0 +1,57 @@
+{
+  "id": "test-invoice-001",
+  "invoiceNumber": "FV/2026/01/001",
+  "invoiceType": "VAT",
+  "issueDate": "2026-01-22",
+  "saleDate": "2026-01-22",
+  "dueDate": "2026-02-05",
+  "currency": "PLN",
+  "paymentMethod": "przelew",
+  "seller": {
+    "name": "Przykładowa Firma Sp. z o.o.",
+    "nip": "1234567890",
+    "address": {
+      "street": "ul. Testowa",
+      "houseNumber": "1",
+      "city": "Warszawa",
+      "postalCode": "00-001",
+      "country": "PL"
+    },
+    "email": "kontakt@przykladowa-firma.pl",
+    "phone": "+48 22 123 45 67"
+  },
+  "buyer": {
+    "name": "Klient Testowy S.A.",
+    "nip": "9876543210",
+    "address": {
+      "street": "ul. Kliencka",
+      "houseNumber": "99",
+      "city": "Kraków",
+      "postalCode": "00-999",
+      "country": "PL"
+    },
+    "email": "faktury@klient-testowy.pl"
+  },
+  "lines": [
+    {
+      "lineNumber": 1,
+      "productName": "Usługa hostingowa - plan roczny",
+      "productCode": "HOST-YEAR-01",
+      "quantity": 1,
+      "unit": "szt.",
+      "unitPrice": 1000.00,
+      "netAmount": 1000.00,
+      "vatRate": 23,
+      "vatAmount": 230.00,
+      "grossAmount": 1230.00,
+      "discount": 0
+    }
+  ],
+  "totals": {
+    "netAmount": 1000.00,
+    "vatAmount": 230.00,
+    "grossAmount": 1230.00
+  },
+  "bankAccount": "PL61109010140000071219812874",
+  "notes": "Termin płatności: 14 dni"
+}

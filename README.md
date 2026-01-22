@@ -146,6 +146,57 @@ make exef-desktop-test
 make exef-all
 ```
 
+## Architektura Obiegu Faktur
+
+EXEF obsługuje faktury z wielu źródeł jednocześnie:
+
+- **Email** - załączniki PDF/JPG (IMAP/OAuth)
+- **Skaner** - dokumenty papierowe
+- **Storage** - pliki z Dropbox/Google Drive/lokalnie
+- **KSeF** - e-faktury w formacie XML
+
+### Moduły
+
+| Moduł | Plik | Opis |
+|-------|------|------|
+| Unified Inbox | `src/core/unifiedInbox.js` | Centralna kolejka faktur |
+| Email Watcher | `src/core/emailWatcher.js` | Monitoring IMAP/OAuth |
+| Storage Sync | `src/core/storageSync.js` | Sync z chmurą/lokalnie |
+| OCR Pipeline | `src/core/ocrPipeline.js` | Przetwarzanie PDF/JPG |
+| Auto-Describe | `src/core/autoDescribe.js` | Automatyczne opisy |
+| Draft Store | `src/core/draftStore.js` | Przechowywanie faktur |
+| Export Service | `src/core/exportService.js` | Eksport CSV/wFirma |
+| Invoice Workflow | `src/core/invoiceWorkflow.js` | Orkiestrator całości |
+
+### Statusy faktury
+
+```
+pending → ocr → described → approved → booked
+                    ↓
+                rejected
+```
+
+### API Endpoints (Inbox)
+
+| Endpoint | Metoda | Opis |
+|----------|--------|------|
+| `/inbox/stats` | GET | Statystyki faktur |
+| `/inbox/invoices` | GET | Lista faktur (filtrowanie: `?status=`, `?source=`) |
+| `/inbox/invoices/:id` | GET | Szczegóły faktury |
+| `/inbox/invoices` | POST | Dodaj fakturę ręcznie |
+| `/inbox/invoices/:id/process` | POST | Przetwórz (OCR + auto-opis) |
+| `/inbox/invoices/:id/approve` | POST | Zatwierdź |
+| `/inbox/invoices/:id/reject` | POST | Odrzuć |
+| `/inbox/export` | POST | Eksportuj zatwierdzone (CSV/JSON/wFirma) |
+| `/inbox/ksef/poll` | POST | Pobierz nowe faktury z KSeF |
+
+### Konfiguracja (`.env`)
+
+```bash
+EXEF_INVOICE_STORE_PATH=./data/invoices.json
+EXEF_WATCH_PATHS=/home/user/Faktury,/home/user/Do-opisania
+```
+
 ## Release / tagowanie (make push)
 
 W tym repo tagowanie i wersjonowanie jest zautomatyzowane.

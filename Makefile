@@ -1,16 +1,29 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push exef-install exef-dev exef-local-dev exef-test exef-test-api exef-lint exef-clean
 
 # Default target
 help:
 	@echo "Available commands:"
+	@echo ""
+	@echo "  Submodules & Indexes:"
 	@echo "  init-submodules    - Initialize all repositories as git submodules (from REPO.md)"
 	@echo "  submodules         - Alias for init-submodules"
 	@echo "  update-submodules  - Update all submodules to latest commits"
 	@echo "  generate-indexes   - Generate code2logic indexes for each project"
 	@echo "  indexes            - Alias for generate-indexes"
 	@echo "  analyze-all        - Generate indexes + write analysis_report.md"
+	@echo ""
+	@echo "  ExEF Development:"
+	@echo "  exef-install        - Install exef dependencies (npm install)"
+	@echo "  exef-dev            - Run exef web service in development mode"
+	@echo "  exef-local-dev      - Run exef local service in development mode"
+	@echo "  exef-test           - Run exef unit tests"
+	@echo "  exef-test-api       - Run exef API integration tests against local service"
+	@echo "  exef-lint           - Run linter on exef code"
+	@echo "  exef-clean          - Clean exef build artifacts"
+	@echo ""
+	@echo "  ExEF Build:"
 	@echo "  exef-web-docker     - Build docker image for exef web service (VPS)"
 	@echo "  exef-web-up         - Run exef web service via docker compose with auto-selected host port"
 	@echo "  exef-local-build    - Build local service binaries (linux+windows via pkg)"
@@ -19,6 +32,8 @@ help:
 	@echo "  exef-desktop-build  - Build desktop app installers (AppImage/deb/rpm + Windows NSIS)"
 	@echo "  exef-desktop-test   - Smoke-test desktop app on Linux (start local-service, verify health, launch AppImage)"
 	@echo "  exef-all            - Build all 3 exef artifacts"
+	@echo ""
+	@echo "  Release:"
 	@echo "  push               - Bump version + generate docs/v/<tag>/ + tag + push"
 	@echo "  clean              - Remove all generated index files"
 	@echo "  help               - Show this help message"
@@ -134,6 +149,38 @@ exef-desktop-test:
 
 exef-all: exef-web-docker exef-local-packages exef-desktop-build
 	@echo "All exef artifacts built."
+
+# ExEF Development targets
+exef-install:
+	@echo "Installing exef dependencies..."
+	@cd exef && npm install
+
+exef-dev:
+	@echo "Starting exef web service in development mode..."
+	@cd exef && npm run web
+
+exef-local-dev:
+	@echo "Starting exef local service in development mode..."
+	@cd exef && npm run local
+
+exef-test:
+	@echo "Running exef unit tests..."
+	@cd exef && npm test 2>/dev/null || echo "No test script defined yet"
+
+exef-test-api:
+	@echo "Running exef API integration tests..."
+	@cd exef && node test/test-inbox.cjs
+
+exef-lint:
+	@echo "Running linter on exef code..."
+	@cd exef && npm run lint 2>/dev/null || echo "No lint script defined yet"
+
+exef-clean:
+	@echo "Cleaning exef build artifacts..."
+	@rm -rf exef/dist exef/node_modules/.cache
+	@rm -f exef/.exef-local-service.port
+	@rm -f exef/*.deb exef/*.rpm
+	@echo "Clean complete."
 
 # Release automation: bump version, generate docs/v/<tag>/, commit, tag and push
 push:

@@ -289,6 +289,37 @@ class KsefFacade {
 
     return res;
   }
+
+  async pollNewInvoices({ accessToken, since, subjectType } = {}) {
+    if (!accessToken) {
+      throw new Error('Missing accessToken');
+    }
+
+    const dateFrom = since ? new Date(since).toISOString() : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+    const metadata = await this.queryInvoiceMetadata({
+      accessToken,
+      dateFrom,
+      subjectType: subjectType ?? 'subject2',
+    });
+
+    if (!metadata || !metadata.invoices) {
+      return [];
+    }
+
+    return metadata.invoices.map((inv) => ({
+      source: 'ksef',
+      ksefId: inv.ksefReferenceNumber || inv.invoiceReferenceNumber,
+      ksefReferenceNumber: inv.ksefReferenceNumber,
+      invoiceNumber: inv.invoiceNumber,
+      issueDate: inv.invoicingDate,
+      contractorNip: inv.subjectTo?.issuedByIdentifier?.identifier,
+      contractorName: inv.subjectTo?.issuedByName,
+      grossAmount: inv.grossValue,
+      currency: inv.currency || 'PLN',
+      fetchedAt: new Date().toISOString(),
+    }));
+  }
 }
 
 function createKsefFacade(options) {
