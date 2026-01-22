@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push exef-install exef-dev exef-local-dev exef-test exef-test-api exef-lint exef-clean exef-cli exef-cli-build exef-cli-install
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-lint exef-clean exef-cli exef-cli-build exef-cli-install
 
 # Default target
 help:
@@ -16,6 +16,7 @@ help:
 	@echo ""
 	@echo "  ExEF Development:"
 	@echo "  exef-install        - Install exef dependencies (npm install)"
+	@echo "  install             - Install all project dependencies (npm + submodules)"
 	@echo "  exef-dev            - Run exef web service in development mode"
 	@echo "  exef-local-dev      - Run exef local service in development mode"
 	@echo "  exef-cli            - Run exef CLI (usage: make exef-cli ARGS='inbox list')"
@@ -154,6 +155,16 @@ exef-all: exef-web-docker exef-local-packages exef-desktop-build
 	@echo "All exef artifacts built."
 
 # ExEF Development targets
+install:
+	@echo "Installing all project dependencies..."
+	@echo "Installing exef dependencies..."
+	@cd exef && /usr/share/nodejs/corepack/shims/npm install
+	@echo "Installing Python dependencies..."
+	@if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+	@echo "Initializing submodules..."
+	@git submodule update --init --recursive || echo "No submodules found"
+	@echo "Installation complete!"
+
 exef-install:
 	@echo "Installing exef dependencies..."
 	@cd exef && npm install
