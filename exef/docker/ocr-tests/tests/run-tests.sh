@@ -14,14 +14,13 @@ if ! docker info > /dev/null 2>&1; then
 fi
 
 wait_for_service() {
-  local url=$1
   local name=$2
   local max_attempts=30
   local attempt=1
 
   echo "Waiting for $name to be ready..."
   while [ $attempt -le $max_attempts ]; do
-    if curl -sf "$url" > /dev/null 2>&1; then
+    if docker inspect -f '{{.State.Health.Status}}' "$name" 2>/dev/null | grep -q healthy; then
       echo "$name is ready!"
       return 0
     fi
@@ -43,8 +42,8 @@ echo "Starting mock OCR + local service..."
 docker-compose up -d mock-google-vision-api exef-local-service
 
 echo ""
-wait_for_service "http://localhost:8095/health" "Mock Google Vision API"
-wait_for_service "http://localhost:3035/health" "ExEF Local Service"
+wait_for_service "" "exef-mock-google-vision"
+wait_for_service "" "exef-ocr-local-service"
 
 echo ""
 echo "Running OCR tests in Docker..."

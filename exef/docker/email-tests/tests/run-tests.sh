@@ -19,14 +19,13 @@ fi
 
 # Function to wait for service health
 wait_for_service() {
-    local url=$1
     local name=$2
     local max_attempts=30
     local attempt=1
 
     echo "Waiting for $name to be ready..."
     while [ $attempt -le $max_attempts ]; do
-        if curl -sf "$url" > /dev/null 2>&1; then
+        if docker inspect -f '{{.State.Health.Status}}' "$name" 2>/dev/null | grep -q healthy; then
             echo "$name is ready!"
             return 0
         fi
@@ -48,26 +47,16 @@ docker-compose up -d greenmail mock-gmail-api mock-outlook-api
 
 # Wait for services to be healthy
 echo ""
-wait_for_service "http://localhost:8080/api/user/list" "GreenMail"
-wait_for_service "http://localhost:8081/health" "Gmail Mock API"
-wait_for_service "http://localhost:8082/health" "Outlook Mock API"
+wait_for_service "" "exef-greenmail"
+wait_for_service "" "exef-mock-gmail"
+wait_for_service "" "exef-mock-outlook"
 
 # Run tests
 echo ""
 echo "Running email sync tests..."
 echo ""
 
-export IMAP_HOST=localhost
-export IMAP_PORT=3143
-export IMAPS_PORT=3993
-export SMTP_HOST=localhost
-export SMTP_PORT=3025
-export GMAIL_API_URL=http://localhost:8081
-export OUTLOOK_API_URL=http://localhost:8082
-export NODE_ENV=test
-
-# Run tests using Node.js test runner
-node --test "$SCRIPT_DIR/email-sync.test.js" 2>&1 | tee "$PROJECT_DIR/results/test-output.log"
+docker-compose up --build --abort-on-container-exit --exit-code-from test-runner test-runner 2>&1 | tee "$PROJECT_DIR/results/test-output.log"
 
 TEST_EXIT_CODE=${PIPESTATUS[0]}
 

@@ -54,7 +54,11 @@ class InvoiceWorkflow extends EventEmitter {
   }
 
   _setupEventForwarding() {
-    this.inbox.on('invoice:added', (inv) => this.emit('invoice:added', inv))
+    this.inbox.on('invoice:added', (inv) => {
+      this.emit('invoice:added', inv)
+      this._autoExtractXmlMetadata(inv).catch((_e) => {
+      })
+    })
     this.inbox.on('invoice:updated', (inv) => this.emit('invoice:updated', inv))
     this.emailWatcher.on('invoice:found', (inv) => this.emit('email:invoice', inv))
     this.emailWatcher.on('error', (err) => this.emit('email:error', err))
@@ -67,6 +71,87 @@ class InvoiceWorkflow extends EventEmitter {
     this.deviceSync.on('scanner:documents', (data) => this.emit('scanner:documents', data))
     this.deviceSync.on('printer:printed', (data) => this.emit('printer:printed', data))
     this.deviceSync.on('error', (err) => this.emit('device:error', err))
+  }
+
+  _looksLikeXmlInvoice(invoice) {
+    const ft = String(invoice?.fileType || '').toLowerCase()
+    const fn = String(invoice?.fileName || '').toLowerCase()
+    if (ft.includes('xml') || fn.endsWith('.xml')) {
+      return true
+    }
+    const raw = invoice?.originalFile
+    if (typeof raw === 'string') {
+      const s = raw.trim()
+      return s.startsWith('<?xml') || (s.startsWith('<') && s.includes('</'))
+    }
+    return false
+  }
+
+  async _autoExtractXmlMetadata(invoice) {
+    if (!invoice) {
+      return null
+    }
+    if (!this._looksLikeXmlInvoice(invoice)) {
+      return null
+    }
+
+    const needsAny = !(
+      invoice.contractorName &&
+      invoice.grossAmount &&
+      invoice.invoiceNumber &&
+      invoice.issueDate
+    )
+
+    if (!needsAny) {
+      return null
+    }
+
+    if (!invoice.originalFile) {
+      return null
+    }
+
+    const ocrLike = await this.ocrPipeline.runOcr({
+      id: invoice.id,
+      source: invoice.source,
+      originalFile: invoice.originalFile,
+      fileName: invoice.fileName,
+      fileType: invoice.fileType,
+      currency: invoice.currency,
+      contractorName: invoice.contractorName,
+      contractorNip: invoice.contractorNip,
+      invoiceNumber: invoice.invoiceNumber,
+      issueDate: invoice.issueDate,
+      grossAmount: invoice.grossAmount,
+      netAmount: invoice.netAmount,
+      vatAmount: invoice.vatAmount,
+    })
+
+    const hasAnything = !!(
+      ocrLike?.sellerName ||
+      ocrLike?.sellerNip ||
+      ocrLike?.invoiceNumber ||
+      ocrLike?.issueDate ||
+      ocrLike?.grossAmount ||
+      ocrLike?.netAmount ||
+      ocrLike?.vatAmount
+    )
+
+    if (!hasAnything) {
+      return null
+    }
+
+    return this.inbox.updateInvoice(invoice.id, {
+      // keep status unchanged (still pending)
+      parsedData: ocrLike,
+      invoiceNumber: ocrLike.invoiceNumber || invoice.invoiceNumber,
+      issueDate: ocrLike.issueDate || invoice.issueDate,
+      contractorNip: ocrLike.sellerNip || invoice.contractorNip,
+      contractorName: ocrLike.sellerName || invoice.contractorName,
+      grossAmount: ocrLike.grossAmount || invoice.grossAmount,
+      netAmount: ocrLike.netAmount || invoice.netAmount,
+      vatAmount: ocrLike.vatAmount || invoice.vatAmount,
+      currency: ocrLike.currency || invoice.currency,
+    })
   }
 
   configureDevices({ scanners = [], printers = [] }) {
@@ -205,7 +290,17 @@ class InvoiceWorkflow extends EventEmitter {
   }
 
   async listInvoices(filter = {}) {
-    return this.inbox.listInvoices(filter)
+    const invoices = await this.inbox.listInvoices(filter)
+    const out = []
+    for (const inv of invoices) {
+      try {
+        const updated = await this._autoExtractXmlMetadata(inv)
+        out.push(updated || inv)
+      } catch (_e) {
+        out.push(inv)
+      }
+    }
+    return out
   }
 
   async getInvoice(id) {

@@ -129,28 +129,60 @@ class OcrPipeline extends EventEmitter {
   }
 
   _extractFromKsefXml(xml) {
-    const get = (tag) => {
-      const match = xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`, 'i'))
-      return match ? match[1].trim() : null
+    const safe = String(xml || '')
+
+    const extractSection = (tag) => {
+      const t = String(tag)
+      const re = new RegExp(
+        `<(?:[\\w-]+:)?${t}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w-]+:)?${t}>`,
+        'i'
+      )
+      const m = safe.match(re)
+      return m ? String(m[1] || '') : ''
     }
 
-    const getAmount = (tag) => {
-      const val = get(tag)
-      return val ? parseFloat(val) : null
+    const get = (tag, fromXml) => {
+      const t = String(tag)
+      const src = fromXml != null ? String(fromXml) : safe
+      const re = new RegExp(
+        `<(?:[\\w-]+:)?${t}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w-]+:)?${t}>`,
+        'i'
+      )
+      const m = src.match(re)
+      if (!m) {
+        return null
+      }
+      const raw = String(m[1] || '')
+      const text = raw.replace(/<[^>]+>/g, '').trim()
+      return text || null
     }
+
+    const getAmount = (tag, fromXml) => {
+      const val = get(tag, fromXml)
+      if (!val) {
+        return null
+      }
+      const normalized = String(val).replace(/\s/g, '').replace(',', '.')
+      const n = parseFloat(normalized)
+      return Number.isFinite(n) ? n : null
+    }
+
+    const fa = extractSection('Fa') || safe
+    const podmiot1 = extractSection('Podmiot1') || safe
+    const podmiot2 = extractSection('Podmiot2') || safe
 
     return {
-      invoiceNumber: get('P_2') || get('NrFaktury') || get('InvoiceNumber'),
-      issueDate: get('P_1') || get('DataWystawienia') || get('IssueDate'),
-      dueDate: get('TerminPlatnosci') || get('DueDate'),
-      sellerNip: get('NIP') || get('SellerNIP'),
-      sellerName: get('Nazwa') || get('SellerName'),
-      buyerNip: get('NIPNabywcy') || get('BuyerNIP'),
-      buyerName: get('NazwaNabywcy') || get('BuyerName'),
-      netAmount: getAmount('P_13_1') || getAmount('WartoscNetto'),
-      vatAmount: getAmount('P_14_1') || getAmount('KwotaVAT'),
-      grossAmount: getAmount('P_15') || getAmount('WartoscBrutto'),
-      currency: get('KodWaluty') || 'PLN',
+      invoiceNumber: get('P_2', fa) || get('NrFaktury', fa) || get('InvoiceNumber', fa) || get('P_2') || get('NrFaktury') || get('InvoiceNumber'),
+      issueDate: get('P_1', fa) || get('DataWystawienia', fa) || get('IssueDate', fa) || get('P_1') || get('DataWystawienia') || get('IssueDate'),
+      dueDate: get('TerminPlatnosci', fa) || get('DueDate', fa) || get('TerminPlatnosci') || get('DueDate'),
+      sellerNip: get('NIP', podmiot1) || get('SellerNIP') || get('NIP'),
+      sellerName: get('Nazwa', podmiot1) || get('SellerName') || get('Nazwa'),
+      buyerNip: get('NIP', podmiot2) || get('BuyerNIP') || get('NIPNabywcy'),
+      buyerName: get('Nazwa', podmiot2) || get('BuyerName') || get('NazwaNabywcy'),
+      netAmount: getAmount('P_13_1', fa) || getAmount('WartoscNetto', fa) || getAmount('P_13_1') || getAmount('WartoscNetto'),
+      vatAmount: getAmount('P_14_1', fa) || getAmount('KwotaVAT', fa) || getAmount('P_14_1') || getAmount('KwotaVAT'),
+      grossAmount: getAmount('P_15', fa) || getAmount('WartoscBrutto', fa) || getAmount('P_15') || getAmount('WartoscBrutto'),
+      currency: get('KodWaluty', fa) || get('KodWaluty') || 'PLN',
       items: [],
     }
   }

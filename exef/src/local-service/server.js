@@ -1380,7 +1380,164 @@ app.post('/db/import.sqlite', async (req, res) => {
 
     applyKsefFromSettings(settings)
     applyEmailFromSettings(settings)
+    applyOcrFromSettings(settings)
+    applyDevicesFromSettings(settings)
     res.json({ ok: true })
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+function sanitizePathSegment(value, fallback) {
+  const raw = value === null || value === undefined ? '' : String(value)
+  const trimmed = raw.trim() || String(fallback || '').trim()
+  if (!trimmed) {
+    return 'unassigned'
+  }
+  const cleaned = trimmed
+    .replace(/\.+/g, '.')
+    .replace(/[\\/]/g, '_')
+    .replace(/[<>:"|?*\x00-\x1F]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return cleaned || 'unassigned'
+}
+
+function inferFileExtension(fileType) {
+  const ft = String(fileType || '').toLowerCase()
+  if (ft.includes('pdf')) return '.pdf'
+  if (ft.includes('png')) return '.png'
+  if (ft.includes('jpeg') || ft.includes('jpg')) return '.jpg'
+  if (ft.includes('xml')) return '.xml'
+  return ''
+}
+
+function normalizeFileToBufferForExport(value) {
+  if (!value) {
+    return null
+  }
+  if (Buffer.isBuffer(value)) {
+    return value
+  }
+  if (value && typeof value === 'object' && value.type === 'Buffer' && Array.isArray(value.data)) {
+    return Buffer.from(value.data)
+  }
+  if (Array.isArray(value) && value.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
+    return Buffer.from(value)
+  }
+  const s = String(value).trim()
+  if (!s) {
+    return null
+  }
+  const dataUrlMatch = s.match(/^data:([^;]+);base64,(.*)$/i)
+  if (dataUrlMatch) {
+    return Buffer.from(dataUrlMatch[2], 'base64')
+  }
+  const base64Candidate = s.replace(/\s/g, '')
+  const looksBase64 = base64Candidate.length % 4 === 0 && /^[a-z0-9+/]+=*$/i.test(base64Candidate)
+  if (looksBase64) {
+    try {
+      return Buffer.from(base64Candidate, 'base64')
+    } catch (_e) {
+    }
+  }
+  return Buffer.from(s, 'utf8')
+}
+
+app.post('/inbox/export/files', async (req, res) => {
+  try {
+    const outputDirRaw = req.body?.outputDir || req.body?.baseDir || req.body?.dir
+    if (!outputDirRaw) {
+      return res.status(400).json({ error: 'outputDir_required' })
+    }
+    const outputDir = path.resolve(String(outputDirRaw))
+    const status = req.body?.status ? String(req.body.status) : INVOICE_STATUS.APPROVED
+
+    const filter = status === 'all' ? {} : { status }
+    const invoices = await workflow.listInvoices(filter)
+
+    const expenseTypeMap = new Map()
+    const projectMap = new Map()
+
+    if (dataLayer) {
+      const expenseTypes = await dataLayer.expenseTypes.list()
+      for (const t of expenseTypes) {
+        const id = t?.id ? String(t.id) : null
+        if (!id) continue
+        const name = t?.nazwa ? String(t.nazwa) : ''
+        expenseTypeMap.set(id, name)
+      }
+      const projects = await dataLayer.projects.list()
+      for (const p of projects) {
+        const id = p?.id ? String(p.id) : null
+        if (!id) continue
+        const name = p?.nazwa ? String(p.nazwa) : ''
+        projectMap.set(id, name)
+      }
+    }
+
+    let exported = 0
+    let skippedNoFile = 0
+
+    for (const inv of invoices) {
+      if (!inv || !inv.id) {
+        continue
+      }
+
+      const invoiceId = String(inv.id)
+      const expenseTypeId = inv.expenseTypeId ? String(inv.expenseTypeId) : null
+      const projectId = inv.projectId ? String(inv.projectId) : null
+
+      const expenseTypeName = expenseTypeId ? (expenseTypeMap.get(expenseTypeId) || '') : ''
+      const projectName = projectId ? (projectMap.get(projectId) || '') : ''
+
+      const expenseFolder = sanitizePathSegment(expenseTypeId ? `${expenseTypeId}${expenseTypeName ? `_${expenseTypeName}` : ''}` : '', 'unassigned-expense-type')
+      const projectFolder = sanitizePathSegment(projectId ? `${projectId}${projectName ? `_${projectName}` : ''}` : '', 'unassigned-project')
+
+      let fileBuf = null
+      let fileName = inv.fileName ? String(inv.fileName) : null
+      let fileType = inv.fileType ? String(inv.fileType) : null
+
+      if (dataLayer && typeof dataLayer.invoices.getFile === 'function') {
+        const info = await dataLayer.invoices.getFile(invoiceId)
+        fileBuf = info?.file || null
+        fileName = info?.fileName || fileName
+        fileType = info?.fileType || fileType
+      } else {
+        const fullInvoice = await workflow.inbox.getInvoice(invoiceId)
+        fileBuf = normalizeFileToBufferForExport(fullInvoice?.originalFile)
+        fileName = fileName || fullInvoice?.fileName || null
+        fileType = fileType || fullInvoice?.fileType || null
+      }
+
+      if (!fileBuf) {
+        skippedNoFile++
+        continue
+      }
+
+      let docName = fileName ? String(fileName) : null
+      if (!docName) {
+        const ext = inferFileExtension(fileType) || ''
+        const base = inv.invoiceNumber ? String(inv.invoiceNumber) : invoiceId
+        docName = `${base}${ext}`
+      }
+      docName = sanitizePathSegment(docName, invoiceId)
+
+      const targetDir = path.join(outputDir, expenseFolder, projectFolder)
+      await fs.promises.mkdir(targetDir, { recursive: true })
+
+      let targetPath = path.join(targetDir, docName)
+      if (fs.existsSync(targetPath)) {
+        const ext = path.extname(docName)
+        const base = ext ? docName.slice(0, -ext.length) : docName
+        targetPath = path.join(targetDir, `${base}_${invoiceId}${ext}`)
+      }
+
+      await fs.promises.writeFile(targetPath, fileBuf)
+      exported++
+    }
+
+    res.json({ ok: true, outputDir, status, exported, skippedNoFile, total: invoices.length })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }

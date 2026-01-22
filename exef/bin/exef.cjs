@@ -26,6 +26,7 @@ const COMMANDS = {
   'inbox approve': 'Zatwierdź fakturę',
   'inbox reject': 'Odrzuć fakturę',
   'inbox export': 'Eksportuj zatwierdzone faktury',
+  'inbox export-files': 'Eksportuj pliki faktur do folderów: [typ wydatku]/[projekt]/[dokument]',
   'inbox assign': 'Przypisz projekt/typ/etykiety do faktury',
   'projects list': 'Lista projektów',
   'projects add': 'Dodaj projekt',
@@ -597,6 +598,29 @@ async function cmdInboxExport(args, options) {
   }
 }
 
+async function cmdInboxExportFiles(args, options) {
+  const outputDir = options['output-dir'] || options.outputDir || options.output
+  if (!outputDir) {
+    error('Podaj katalog wyjściowy: exef inbox export-files --output-dir <katalog>', options)
+  }
+
+  const status = options.status || 'approved'
+
+  const res = await request('POST', '/inbox/export/files', {
+    baseUrl: options.url,
+    body: {
+      outputDir: path.resolve(String(outputDir)),
+      status,
+    },
+  })
+
+  if (!res.ok) {
+    error(`Błąd eksportu plików: ${res.data?.error || res.status}`, options)
+  }
+
+  output(res.data, options)
+}
+
 async function cmdInboxAssign(args, options) {
   const id = args[0]
   if (!id) {
@@ -1028,10 +1052,12 @@ async function main() {
         await cmdInboxReject(restArgs, options)
       } else if (subcmd === 'export') {
         await cmdInboxExport(restArgs, options)
+      } else if (subcmd === 'export-files') {
+        await cmdInboxExportFiles(restArgs, options)
       } else if (subcmd === 'assign') {
         await cmdInboxAssign(restArgs, options)
       } else {
-        error(`Nieznana podkomenda inbox: ${subcmd}. Użyj: exef inbox --help`)
+        error(`Nieznana podkomenda inbox: ${subcmd}. Użyj: exef inbox --help`, options)
       }
     } else if (cmd === 'projects') {
       if (subcmd === 'list' || !subcmd) {

@@ -67,6 +67,7 @@ npm run build:cli
 | `exef inbox approve <id>` | Zatwierdź |
 | `exef inbox reject <id>` | Odrzuć |
 | `exef inbox export` | Eksportuj |
+| `exef inbox export-files --output-dir <dir> [--status approved|all]` | Eksportuj pliki faktur do folderów: `[typ wydatku]/[projekt]/[dokument]` |
 
 ### KSeF
 
@@ -161,6 +162,9 @@ exef inbox export --format csv --output faktury.csv
 
 # Eksport do JSON
 exef inbox export --format json --output faktury.json
+
+# Eksport plików faktur (PDF/JPG/PNG/XML) do folderów wg typu wydatku i projektu
+exef inbox export-files --output-dir ./exported --status approved
 ```
 
 ### Integracja z KSeF
@@ -195,6 +199,7 @@ exef ksef download 1234567890-20260122-ABCDEF123456-01 --output faktura.xml
 | `exef inbox approve <id>` | `POST /inbox/invoices/:id/approve` |
 | `exef inbox reject <id>` | `POST /inbox/invoices/:id/reject` |
 | `exef inbox export` | `POST /inbox/export` |
+| `exef inbox export-files` | `POST /inbox/export/files` |
 | `exef ksef auth` | `POST /ksef/auth/token` |
 | `exef ksef session open` | `POST /ksef/sessions/online/open` |
 | `exef ksef session close` | `POST /ksef/sessions/online/close` |
