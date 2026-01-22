@@ -44,7 +44,7 @@ echo ""
 echo "Starting mock storage services..."
 cd "$PROJECT_DIR"
 
-docker-compose up -d mock-dropbox-api mock-gdrive-api mock-onedrive-api mock-nextcloud-api
+docker-compose up -d --build mock-dropbox-api mock-gdrive-api mock-onedrive-api mock-nextcloud-api
 
 # Wait for services to be healthy
 echo ""
