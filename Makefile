@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-lint exef-clean exef-cli exef-cli-build exef-cli-install
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install
 
 # Default target
 help:
@@ -22,6 +22,7 @@ help:
 	@echo "  exef-cli            - Run exef CLI (usage: make exef-cli ARGS='inbox list')"
 	@echo "  exef-test           - Run exef unit tests"
 	@echo "  exef-test-api       - Run exef API integration tests against local service"
+	@echo "  exef-test-gui       - Open GUI test interface in browser (http://localhost:3030/test)"
 	@echo "  exef-lint           - Run linter on exef code"
 	@echo "  exef-clean          - Clean exef build artifacts"
 	@echo ""
@@ -161,11 +162,20 @@ install:
 	@cd exef && /usr/share/nodejs/corepack/shims/npm install
 	@echo "Installing Python dependencies..."
 	@if [ -f requirements-dev.txt ]; then \
-		if pip install -r requirements-dev.txt 2>/dev/null; then \
-			echo "Python dependencies installed successfully"; \
+		if command -v pipx >/dev/null 2>&1; then \
+			echo "Using pipx for Python packages..."; \
+			for pkg in $$(cat requirements-dev.txt | grep -v '^#' | grep -v '^$$'); do \
+				pipx install "$$pkg" 2>/dev/null || echo "Skipping $$pkg (not a pipx package)"; \
+			done; \
+		elif command -v pip3 >/dev/null 2>&1; then \
+			echo "Using pip3 with --break-system-packages..."; \
+			pip3 install --break-system-packages -r requirements-dev.txt 2>/dev/null || \
+			(echo "Trying system package installation..." && \
+			sudo apt-get update >/dev/null 2>&1 && \
+			sudo apt-get install -y python3-pytest python3-requests python3-yaml 2>/dev/null || \
+			echo "Please install Python packages manually or use virtual environment"); \
 		else \
-			echo "Python installation failed - using virtual environment recommended"; \
-			echo "Run: python3 -m venv venv && source venv/bin/activate && pip install -r requirements-dev.txt"; \
+			echo "Python/pip not found. Please install Python3 and pip"; \
 		fi; \
 	fi
 	@echo "Initializing submodules..."
@@ -191,6 +201,11 @@ exef-test:
 exef-test-api:
 	@echo "Running exef API integration tests..."
 	@cd exef && node test/test-inbox.cjs
+
+exef-test-gui:
+	@echo "Opening GUI test interface..."
+	@echo "Starting local service and opening browser..."
+	@cd exef && (npm run local &) && sleep 2 && xdg-open http://127.0.0.1:3030/test/ 2>/dev/null || open http://127.0.0.1:3030/test/ 2>/dev/null || echo "Open http://127.0.0.1:3030/test/ in your browser"
 
 exef-lint:
 	@echo "Running linter on exef code..."

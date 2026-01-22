@@ -237,6 +237,28 @@ Testy używają przykładowych faktur z `exef/test/fixtures/`:
 - `sample-invoice.json` - faktura w formacie JSON
 - `sample-invoice.xml` - faktura KSeF XML (FA3)
 
+### Testy GUI (make exef-test-gui)
+
+Interaktywny interfejs do testowania API w przeglądarce:
+
+```bash
+# Uruchom local-service i otwórz przeglądarkę
+make exef-test-gui
+
+# Lub ręcznie:
+make exef-local-dev &
+# Otwórz: http://127.0.0.1:3030/test/
+```
+
+**Funkcje GUI:**
+- Testowanie wszystkich endpointów API
+- Formularze z parametrami dla każdego testu
+- Podgląd odpowiedzi JSON
+- Uruchamianie wszystkich testów jednym kliknięciem
+- Log wyników testów
+
+![GUI Tests](exef/test/gui/screenshot.png)
+
 ## CLI (Command Line Interface)
 
 ExEF udostępnia CLI do zarządzania fakturami z poziomu terminala.
@@ -307,6 +329,7 @@ Pełna dokumentacja CLI: [`exef/docs/CLI.md`](exef/docs/CLI.md)
 - `make exef-cli ARGS="..."` - uruchomienie CLI
 - `make exef-test` - testy jednostkowe
 - `make exef-test-api` - testy integracyjne API
+- `make exef-test-gui` - testy GUI w przeglądarce
 - `make exef-lint` - linter
 - `make exef-clean` - czyszczenie artefaktów
 
