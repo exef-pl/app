@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # Mock Google Vision API
+  mock-google-vision-api:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.google-vision
+    container_name: exef-mock-google-vision
+    ports:
+      - "8095:8095"
+    environment:
+      PORT: 8095
+      MOCK_TEXT: |
+        Faktura: FV/2026/01/001
+        NIP: 1234567890
+        Data: 2026-01-22
+        Kwota: 1230.00 PLN
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8095/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Local service under test
+  exef-local-service:
+    build:
+      context: ../..
+      dockerfile: docker/ocr-tests/Dockerfile.local-service
+    container_name: exef-ocr-local-service
+    depends_on:
+      mock-google-vision-api:
+        condition: service_healthy
+    ports:
+      - "3035:3030"
+    environment:
+      - NODE_ENV=test
+      - EXEF_LOCAL_SERVICE_HOST=0.0.0.0
+      - EXEF_LOCAL_SERVICE_PORT=3030
+      - EXEF_LOCAL_SERVICE_PORT_MAX_TRIES=1
+      - EXEF_STORAGE_BACKEND=sqlite
+      - EXEF_DB_PATH=/data/exef.sqlite
+      - EXEF_SETTINGS_FILE_PATH=/data/settings.json
+      - EXEF_OCR_PROVIDER=google-vision
+      - EXEF_OCR_GOOGLE_VISION_API_URL=http://mock-google-vision-api:8095/v1/images:annotate
+      - EXEF_OCR_GOOGLE_VISION_KEY=test-key
+      - EXEF_OCR_GOOGLE_VISION_TIMEOUT_MS=10000
+    volumes:
+      - ocr-test-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3030/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Test runner
+  test-runner:
+    build:
+      context: ../..
+      dockerfile: docker/ocr-tests/Dockerfile.test-runner
+    container_name: exef-ocr-test-runner
+    depends_on:
+      exef-local-service:
+        condition: service_healthy
+    environment:
+      - EXEF_TEST_URL=http://exef-local-service:3030
+      - NODE_ENV=test
+    volumes:
+      - ../../src:/app/src:ro
+      - ../../test:/app/test:ro
+      - ./tests:/app/tests:ro
+      - ./results:/app/results
+    command: ["npm", "run", "test:ocr"]
+
+volumes:
+  ocr-test-data:
+
+networks:
+  default:
+    name: exef-ocr-test-network

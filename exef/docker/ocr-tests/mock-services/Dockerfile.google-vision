@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --production
+
+COPY google-vision-mock-server.js ./
+
+EXPOSE 8095
+
+CMD ["node", "google-vision-mock-server.js"]

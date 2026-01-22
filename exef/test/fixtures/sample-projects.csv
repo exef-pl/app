@@ -1,0 +1,4 @@
+ID,Nazwa,Klient,NIP,Budżet,Status,Opis
+p_marketing_2026_01,"Marketing 2026-01","ACME Sp. z o.o.","1234567890","15000","aktywny","Koszty kampanii marketingowej"
+p_saas_core,"SaaS Core","Twoja Firma","","0","w_trakcie","Rozwój produktu"
+p_inwestycje_it,"Inwestycje IT","Twoja Firma","","25000","planowanie","Zakupy sprzętu/oprogramowania"

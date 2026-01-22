@@ -1,0 +1,5 @@
+ID,Nazwa,Kolor,Opis
+l_vat,"VAT","#22c55e","Faktury związane z VAT"
+l_zus,"ZUS","#0ea5e9","Składki i dokumenty ZUS"
+l_paliwo,"Paliwo","#f59e0b","Koszty paliwa/transport"
+l_abonament,"Abonament","#a855f7","Abonamenty i subskrypcje"

@@ -1,0 +1,14 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+RUN mkdir -p /app/results
+
+CMD ["npm", "run", "test:ocr"]

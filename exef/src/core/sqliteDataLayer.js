@@ -12,6 +12,78 @@ function safeJsonParse(raw, fallback) {
   }
 }
 
+function stripOriginalFileForJson(invoice) {
+  if (!invoice || typeof invoice !== 'object') {
+    return invoice
+  }
+  const copy = { ...invoice }
+  delete copy.originalFile
+  return copy
+}
+
+function normalizeFileToBuffer(value) {
+  if (!value) {
+    return null
+  }
+
+  if (Buffer.isBuffer(value)) {
+    return value
+  }
+
+  if (value && typeof value === 'object' && value.type === 'Buffer' && Array.isArray(value.data)) {
+    return Buffer.from(value.data)
+  }
+
+  if (Array.isArray(value) && value.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
+    return Buffer.from(value)
+  }
+
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) {
+      return null
+    }
+    const dataUrlMatch = trimmed.match(/^data:([^;]+);base64,(.*)$/i)
+    if (dataUrlMatch) {
+      return Buffer.from(dataUrlMatch[2], 'base64')
+    }
+
+    const base64Candidate = trimmed.replace(/\s/g, '')
+    const looksBase64 =
+      base64Candidate.length >= 64 &&
+      base64Candidate.length % 4 === 0 &&
+      /^[a-z0-9+/]+=*$/i.test(base64Candidate)
+
+    if (looksBase64) {
+      try {
+        return Buffer.from(base64Candidate, 'base64')
+      } catch (_e) {
+        return Buffer.from(trimmed, 'utf8')
+      }
+    }
+
+    return Buffer.from(trimmed, 'utf8')
+  }
+
+  return null
+}
+
+function normalizeDbBlob(value) {
+  if (!value) {
+    return null
+  }
+  if (Buffer.isBuffer(value)) {
+    return value
+  }
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value)
+  }
+  if (Array.isArray(value) && value.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
+    return Buffer.from(value)
+  }
+  return null
+}
+
 class SqliteKeyValueRepo {
   constructor(db) {
     this.db = db
@@ -176,6 +248,10 @@ class SqliteInvoiceStore {
         '  issue_date TEXT,',
         '  gross_amount REAL,',
         '  currency TEXT,',
+        '  file_name TEXT,',
+        '  file_type TEXT,',
+        '  file_size INTEGER,',
+        '  file_blob BLOB,',
         '  created_at TEXT,',
         '  updated_at TEXT,',
         '  json TEXT NOT NULL',
@@ -185,6 +261,65 @@ class SqliteInvoiceStore {
         'CREATE INDEX IF NOT EXISTS idx_invoices_created_at ON invoices(created_at);',
       ].join('\n')
     )
+
+    const columns = await this.db.all('PRAGMA table_info(invoices)')
+    const names = new Set(columns.map((c) => String(c.name)))
+    const alter = async (sql) => {
+      await this.db.exec(sql)
+    }
+    if (!names.has('file_name')) {
+      await alter('ALTER TABLE invoices ADD COLUMN file_name TEXT')
+    }
+    if (!names.has('file_type')) {
+      await alter('ALTER TABLE invoices ADD COLUMN file_type TEXT')
+    }
+    if (!names.has('file_size')) {
+      await alter('ALTER TABLE invoices ADD COLUMN file_size INTEGER')
+    }
+    if (!names.has('file_blob')) {
+      await alter('ALTER TABLE invoices ADD COLUMN file_blob BLOB')
+    }
+
+    await this._migrateFilesToBlobs()
+  }
+
+  async _migrateFilesToBlobs() {
+    const cols = await this.db.all('PRAGMA table_info(invoices)')
+    const names = new Set(cols.map((c) => String(c.name)))
+    if (!names.has('file_blob')) {
+      return
+    }
+
+    const rows = await this.db.all(
+      'SELECT id, json, file_blob, file_name, file_type, file_size FROM invoices WHERE file_blob IS NULL'
+    )
+
+    for (const row of rows) {
+      const inv = row?.json ? safeJsonParse(row.json, null) : null
+      if (!inv || typeof inv !== 'object') {
+        continue
+      }
+      if (!inv.originalFile) {
+        continue
+      }
+
+      const fileBuf = normalizeFileToBuffer(inv.originalFile)
+      if (!fileBuf) {
+        continue
+      }
+
+      const fileName = inv.fileName ? String(inv.fileName) : null
+      const fileType = inv.fileType ? String(inv.fileType) : null
+      const fileSize = inv.fileSize != null ? Number(inv.fileSize) : fileBuf.length
+      const json = JSON.stringify(stripOriginalFileForJson({ ...inv, id: String(inv.id || row.id) }))
+
+      await this.db.run(
+        'UPDATE invoices SET file_name = ?, file_type = ?, file_size = ?, file_blob = ?, json = ? WHERE id = ?',
+        [fileName, fileType, fileSize, fileBuf, json, String(row.id)]
+      )
+    }
+
+    await this.db.persist()
   }
 
   async save(invoice) {
@@ -201,15 +336,22 @@ class SqliteInvoiceStore {
     const issueDate = invoice?.issueDate ? String(invoice.issueDate) : null
     const grossAmount = invoice?.grossAmount != null ? Number(invoice.grossAmount) : null
     const currency = invoice?.currency ? String(invoice.currency) : null
+    const fileName = invoice?.fileName ? String(invoice.fileName) : null
+    const fileType = invoice?.fileType ? String(invoice.fileType) : null
+
+    const fileBuf = normalizeFileToBuffer(invoice?.originalFile)
+    const fileSize = invoice?.fileSize != null
+      ? Number(invoice.fileSize)
+      : (fileBuf ? fileBuf.length : null)
     const createdAt = invoice?.createdAt ? String(invoice.createdAt) : nowIso()
     const updatedAt = invoice?.updatedAt ? String(invoice.updatedAt) : nowIso()
 
-    const json = JSON.stringify({ ...invoice, id, createdAt, updatedAt })
+    const json = JSON.stringify(stripOriginalFileForJson({ ...invoice, id, createdAt, updatedAt }))
 
     await this.db.run(
       [
-        'INSERT INTO invoices(id, status, source, contractor_nip, issue_date, gross_amount, currency, created_at, updated_at, json)',
-        'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO invoices(id, status, source, contractor_nip, issue_date, gross_amount, currency, file_name, file_type, file_size, file_blob, created_at, updated_at, json)',
+        'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         'ON CONFLICT(id) DO UPDATE SET',
         '  status=excluded.status,',
         '  source=excluded.source,',
@@ -217,19 +359,49 @@ class SqliteInvoiceStore {
         '  issue_date=excluded.issue_date,',
         '  gross_amount=excluded.gross_amount,',
         '  currency=excluded.currency,',
+        '  file_name=excluded.file_name,',
+        '  file_type=excluded.file_type,',
+        '  file_size=excluded.file_size,',
+        '  file_blob=excluded.file_blob,',
         '  created_at=excluded.created_at,',
         '  updated_at=excluded.updated_at,',
         '  json=excluded.json',
       ].join('\n'),
-      [id, status, source, contractorNip, issueDate, grossAmount, currency, createdAt, updatedAt, json]
+      [
+        id,
+        status,
+        source,
+        contractorNip,
+        issueDate,
+        grossAmount,
+        currency,
+        fileName,
+        fileType,
+        fileSize,
+        fileBuf,
+        createdAt,
+        updatedAt,
+        json,
+      ]
     )
 
     await this.db.persist()
   }
 
   async get(id) {
-    const row = await this.db.get('SELECT json FROM invoices WHERE id = ? LIMIT 1', [String(id)])
-    return row ? safeJsonParse(row.json, null) : null
+    const row = await this.db.get('SELECT json, file_blob, file_name, file_type, file_size FROM invoices WHERE id = ? LIMIT 1', [String(id)])
+    const invoice = row ? safeJsonParse(row.json, null) : null
+    if (!invoice) {
+      return null
+    }
+    const fileBuf = normalizeDbBlob(row.file_blob)
+    return {
+      ...invoice,
+      originalFile: fileBuf,
+      fileName: invoice.fileName ?? row.file_name ?? null,
+      fileType: invoice.fileType ?? row.file_type ?? null,
+      fileSize: invoice.fileSize ?? row.file_size ?? (fileBuf ? fileBuf.length : null),
+    }
   }
 
   async list(_filter = {}) {
@@ -255,7 +427,24 @@ class SqliteInvoiceStore {
       ' ORDER BY created_at DESC'
 
     const rows = await this.db.all(sql, params)
-    return rows.map((r) => safeJsonParse(r.json, null)).filter(Boolean)
+    return rows
+      .map((r) => safeJsonParse(r.json, null))
+      .filter(Boolean)
+      .map((inv) => stripOriginalFileForJson(inv))
+  }
+
+  async getFile(id) {
+    const row = await this.db.get('SELECT file_blob, file_name, file_type, file_size FROM invoices WHERE id = ? LIMIT 1', [String(id)])
+    if (!row) {
+      return null
+    }
+    const fileBuf = normalizeDbBlob(row.file_blob)
+    return {
+      file: fileBuf,
+      fileName: row.file_name || null,
+      fileType: row.file_type || null,
+      fileSize: row.file_size != null ? Number(row.file_size) : (fileBuf ? fileBuf.length : null),
+    }
   }
 
   async delete(id) {

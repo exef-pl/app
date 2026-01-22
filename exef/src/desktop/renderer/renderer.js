@@ -856,11 +856,11 @@ async function runActionFromUrl(action, invoiceId) {
 
   try {
     if (normalized === 'process') {
-      const ok = confirm('Czy uruchomić przetwarzanie faktury?');
-      if (ok) {
+      //const ok = confirm('Czy uruchomić przetwarzanie faktury?');
+      //if (ok) {
         await fetch(`${url}/inbox/invoices/${invoiceId}/process`, { method: 'POST' });
         await refresh();
-      }
+      //}
     }
     if (normalized === 'approve') {
       const ok = confirm('Czy zatwierdzić fakturę?');
@@ -916,11 +916,13 @@ async function loadStats() {
     document.getElementById('statApproved').textContent = stats.byStatus?.approved || 0;
 
     const badge = document.getElementById('newBadge');
-    if (pending > 0) {
-      badge.textContent = pending;
-      badge.style.display = 'inline';
-    } else {
-      badge.style.display = 'none';
+    if (badge) {
+      if (pending > 0) {
+        badge.textContent = pending;
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
     }
   } catch (e) {
     console.error('Failed to load stats:', e);
@@ -1524,6 +1526,48 @@ function downloadJson(filename, data) {
   downloadBlob(filename, blob);
 }
 
+function parseCsvLine(line) {
+  const out = [];
+  let cur = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        const next = line[i + 1];
+        if (next === '"') {
+          cur += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        cur += ch;
+      }
+      continue;
+    }
+
+    if (ch === '"') {
+      inQuotes = true;
+      continue;
+    }
+    if (ch === ',') {
+      out.push(cur.trim());
+      cur = '';
+      continue;
+    }
+    cur += ch;
+  }
+  out.push(cur.trim());
+  return out;
+}
+
+function csvEscape(value) {
+  const raw = value === null || value === undefined ? '' : String(value);
+  return `"${raw.replace(/"/g, '""')}"`;
+}
+
 async function selectFile(accept) {
   return new Promise((resolve) => {
     const input = document.createElement('input');
@@ -1552,6 +1596,174 @@ function arrayBufferToBase64(buffer) {
     binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
+}
+
+function base64ToUint8Array(base64) {
+  const binary = atob(String(base64 || '').replace(/\s/g, ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function looksLikeBase64String(value) {
+  const s = String(value || '').trim().replace(/\s/g, '');
+  if (s.length < 64 || s.length % 4 !== 0) {
+    return false;
+  }
+  return /^[a-z0-9+/]+=*$/i.test(s);
+}
+
+function isXmlLike({ fileType, fileName, content } = {}) {
+  const ft = String(fileType || '').toLowerCase();
+  const fn = String(fileName || '').toLowerCase();
+  if (ft.includes('xml') || fn.endsWith('.xml')) {
+    return true;
+  }
+  if (typeof content === 'string') {
+    const s = content.trim();
+    return s.startsWith('<?xml') || (s.startsWith('<') && s.includes('</'));
+  }
+  return false;
+}
+
+function normalizeInvoiceFileContent(invoice) {
+  const fileName = invoice?.fileName || 'invoice';
+  const fileType = invoice?.fileType || guessMimeTypeFromFileName(fileName);
+  const raw = invoice?.originalFile;
+
+  if (!raw) {
+    return { kind: 'none', fileName, fileType };
+  }
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (isXmlLike({ fileType, fileName, content: trimmed })) {
+      return { kind: 'text', fileName, fileType: 'application/xml', text: trimmed };
+    }
+
+    const dataUrlMatch = trimmed.match(/^data:([^;]+);base64,(.*)$/i);
+    if (dataUrlMatch) {
+      const mime = dataUrlMatch[1] || fileType;
+      const bytes = base64ToUint8Array(dataUrlMatch[2] || '');
+      const blob = new Blob([bytes], { type: mime || 'application/octet-stream' });
+      return { kind: 'blob', fileName, fileType: mime, blob };
+    }
+
+    if (looksLikeBase64String(trimmed)) {
+      const bytes = base64ToUint8Array(trimmed);
+      const blob = new Blob([bytes], { type: fileType || 'application/octet-stream' });
+      return { kind: 'blob', fileName, fileType, blob };
+    }
+
+    return { kind: 'text', fileName, fileType: fileType || 'text/plain', text: trimmed };
+  }
+
+  if (raw && typeof raw === 'object' && raw.type === 'Buffer' && Array.isArray(raw.data)) {
+    const bytes = new Uint8Array(raw.data);
+    const blob = new Blob([bytes], { type: fileType || 'application/octet-stream' });
+    return { kind: 'blob', fileName, fileType, blob };
+  }
+
+  if (Array.isArray(raw) && raw.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
+    const bytes = new Uint8Array(raw);
+    const blob = new Blob([bytes], { type: fileType || 'application/octet-stream' });
+    return { kind: 'blob', fileName, fileType, blob };
+  }
+
+  return { kind: 'unknown', fileName, fileType };
+}
+
+async function openInvoicePreview(invoiceId) {
+  const invoice = await getInvoiceById(invoiceId);
+  if (!invoice) {
+    showNotification('Nie znaleziono faktury', 'error');
+    return;
+  }
+
+  const normalized = normalizeInvoiceFileContent(invoice);
+  if (normalized.kind === 'none') {
+    showNotification('Brak pliku do podglądu', 'error');
+    return;
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 980px;">
+      <div class="modal-header">
+        <h2>Podgląd: ${invoice.invoiceNumber || normalized.fileName || 'Faktura'}</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="subtle" style="margin-bottom: 10px;">${normalized.fileName || ''} ${normalized.fileType ? `(<code>${normalized.fileType}</code>)` : ''}</div>
+        <div id="invoicePreviewContainer" style="border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); overflow: hidden;"></div>
+        <div class="form-actions" style="margin-top: 12px; flex-wrap: wrap;">
+          <button id="openInvoiceDetailsBtn">Szczegóły</button>
+          <button id="downloadInvoiceFileBtn" class="primary">Pobierz</button>
+          <button class="cancel-btn">Zamknij</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const close = () => modal.remove();
+  modal.querySelector('.close-btn').addEventListener('click', close);
+  modal.querySelector('.cancel-btn').addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+
+  modal.querySelector('#openInvoiceDetailsBtn').addEventListener('click', () => {
+    close();
+    window.openInvoicePage(invoiceId);
+  });
+
+  const previewEl = modal.querySelector('#invoicePreviewContainer');
+  let blobUrl = null;
+  try {
+    if (normalized.kind === 'blob' && normalized.blob) {
+      blobUrl = URL.createObjectURL(normalized.blob);
+
+      const ft = String(normalized.fileType || '').toLowerCase();
+      const fn = String(normalized.fileName || '').toLowerCase();
+
+      if (ft.includes('pdf') || fn.endsWith('.pdf')) {
+        previewEl.innerHTML = `<iframe src="${blobUrl}" style="width:100%; height: 72vh; border:0;"></iframe>`;
+      } else if (ft.startsWith('image/') || fn.endsWith('.png') || fn.endsWith('.jpg') || fn.endsWith('.jpeg') || fn.endsWith('.gif') || fn.endsWith('.webp')) {
+        previewEl.innerHTML = `<div style="padding: 10px; display:flex; justify-content:center;"><img src="${blobUrl}" style="max-width:100%; height:auto; border-radius: 8px; border:1px solid var(--border); background: var(--surface);"></div>`;
+      } else {
+        previewEl.innerHTML = `<iframe src="${blobUrl}" style="width:100%; height: 72vh; border:0;"></iframe>`;
+      }
+
+      modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
+        downloadBlob(normalized.fileName || 'invoice', normalized.blob);
+      });
+    } else if (normalized.kind === 'text') {
+      previewEl.innerHTML = `<pre style="white-space: pre-wrap; margin:0; padding: 12px; max-height: 72vh; overflow:auto;">${(normalized.text || '').replace(/</g, '&lt;')}</pre>`;
+      modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
+        const blob = new Blob([normalized.text || ''], { type: normalized.fileType || 'text/plain;charset=utf-8' });
+        downloadBlob(normalized.fileName || 'invoice.txt', blob);
+      });
+    } else {
+      previewEl.innerHTML = `<div class="empty" style="padding: 20px;">Nieobsługiwany format pliku</div>`;
+      modal.querySelector('#downloadInvoiceFileBtn').addEventListener('click', () => {
+        showNotification('Nie można pobrać: nieznany format', 'error');
+      });
+    }
+  } finally {
+    modal.addEventListener('remove', () => {
+      if (blobUrl) {
+        try {
+          URL.revokeObjectURL(blobUrl);
+        } catch (_e) {
+        }
+      }
+    });
+  }
 }
 
 async function exportDataBundle() {
@@ -2740,33 +2952,106 @@ async function importProjectsFromCSV(file) {
     return;
   }
   
-  const headers = lines[0].split(',').map(h => h.trim());
-  let imported = 0;
-  let errors = 0;
-  
+  const items = [];
   for (let i = 1; i < lines.length; i++) {
-    try {
-      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-      if (values.length >= 2 && values[0]) {
-        const project = {
-          id: values[0],
-          nazwa: values[1],
-          klient: values[2] || '',
-          nip: values[3] || '',
-          budzet: values[4] || 0,
-          status: values[5] || 'aktywny',
-          opis: values[6] || ''
-        };
-        
-        await createProject(project);
-        imported++;
-      }
-    } catch (e) {
-      errors++;
+    const values = parseCsvLine(lines[i]).map((v) => v.replace(/^"|"$/g, '').trim());
+    if (values.length >= 2 && values[0]) {
+      items.push({
+        id: values[0],
+        nazwa: values[1],
+        klient: values[2] || '',
+        nip: values[3] || '',
+        budzet: values[4] || 0,
+        status: values[5] || 'aktywny',
+        opis: values[6] || ''
+      });
     }
   }
-  
-  showNotification(`Zaimportowano ${imported} projektów${errors > 0 ? ` (${errors} błędów)` : ''}`, errors > 0 ? 'warning' : 'success');
+
+  if (!items.length) {
+    showNotification('Brak poprawnych rekordów w pliku CSV', 'error');
+    return;
+  }
+
+  const res = await fetch(`${url}/projects/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `import_failed_${res.status}`);
+  }
+
+  await loadProjects();
+  showNotification(`Import projektów: +${data?.created || 0} / zakt.: ${data?.updated || 0}`, 'success');
+}
+
+async function exportProjectsCsv() {
+  if (!projects.length) {
+    await loadProjects();
+  }
+  const header = 'ID,Nazwa,Klient,NIP,Budżet,Status,Opis';
+  const lines = [header];
+  (projects || []).forEach((p) => {
+    lines.push(
+      `${csvEscape(p.id)},${csvEscape(p.nazwa)},${csvEscape(p.klient || '')},${csvEscape(p.nip || '')},${csvEscape(p.budzet != null ? p.budzet : 0)},${csvEscape(p.status || '')},${csvEscape(p.opis || '')}`
+    );
+  });
+  downloadBlob('projects.csv', new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
+}
+
+async function importLabelsFromCsv(file) {
+  const text = await file.text();
+  const lines = text.split('\n').filter(line => line.trim());
+
+  if (lines.length < 2) {
+    showNotification('Plik CSV jest pusty', 'error');
+    return;
+  }
+
+  const items = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCsvLine(lines[i]).map((v) => v.replace(/^"|"$/g, '').trim());
+    if (values.length >= 2 && values[0]) {
+      items.push({
+        id: values[0],
+        nazwa: values[1],
+        kolor: values[2] || '',
+        opis: values[3] || '',
+      });
+    }
+  }
+
+  if (!items.length) {
+    showNotification('Brak poprawnych rekordów w pliku CSV', 'error');
+    return;
+  }
+
+  const res = await fetch(`${url}/labels/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `import_failed_${res.status}`);
+  }
+
+  await loadLabels();
+  showNotification(`Import etykiet: +${data?.created || 0} / zakt.: ${data?.updated || 0}`, 'success');
+}
+
+async function exportLabelsCsv() {
+  if (!labels.length) {
+    await loadLabels();
+  }
+  const header = 'ID,Nazwa,Kolor,Opis';
+  const lines = [header];
+  (labels || []).forEach((l) => {
+    lines.push(`${csvEscape(l.id)},${csvEscape(l.nazwa)},${csvEscape(l.kolor || '')},${csvEscape(l.opis || '')}`);
+  });
+  downloadBlob('labels.csv', new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
 }
 
 document.querySelectorAll('.tab').forEach(tab => {
@@ -2804,9 +3089,67 @@ if (projectsAddBtn) {
   projectsAddBtn.addEventListener('click', () => showProjectForm());
 }
 
+const projectsImportBtn = document.getElementById('projectsImportBtn');
+if (projectsImportBtn) {
+  projectsImportBtn.addEventListener('click', async () => {
+    try {
+      const file = await selectFile('.csv,text/csv');
+      if (!file) {
+        return;
+      }
+      await importProjectsFromCSV(file);
+      if (activePage === 'projects') {
+        await renderProjectsPage();
+      }
+    } catch (e) {
+      showNotification('Błąd importu projektów: ' + e.message, 'error');
+    }
+  });
+}
+
+const projectsExportBtn = document.getElementById('projectsExportBtn');
+if (projectsExportBtn) {
+  projectsExportBtn.addEventListener('click', async () => {
+    try {
+      await exportProjectsCsv();
+    } catch (e) {
+      showNotification('Błąd exportu projektów: ' + e.message, 'error');
+    }
+  });
+}
+
 const labelsAddBtn = document.getElementById('labelsAddBtn');
 if (labelsAddBtn) {
   labelsAddBtn.addEventListener('click', () => showLabelForm());
+}
+
+const labelsImportBtn = document.getElementById('labelsImportBtn');
+if (labelsImportBtn) {
+  labelsImportBtn.addEventListener('click', async () => {
+    try {
+      const file = await selectFile('.csv,text/csv');
+      if (!file) {
+        return;
+      }
+      await importLabelsFromCsv(file);
+      if (activePage === 'labels') {
+        await renderLabelsPage();
+      }
+    } catch (e) {
+      showNotification('Błąd importu etykiet: ' + e.message, 'error');
+    }
+  });
+}
+
+const labelsExportBtn = document.getElementById('labelsExportBtn');
+if (labelsExportBtn) {
+  labelsExportBtn.addEventListener('click', async () => {
+    try {
+      await exportLabelsCsv();
+    } catch (e) {
+      showNotification('Błąd exportu etykiet: ' + e.message, 'error');
+    }
+  });
 }
 
 const settingsReloadBtn = document.getElementById('settingsReloadBtn');
@@ -3012,6 +3355,10 @@ window.showProjectAssignModal = function(invoiceId) {
 };
 
 window.openInvoiceDetails = function(invoiceId, options = {}) {
+  return openInvoicePreview(invoiceId);
+};
+
+window.openInvoicePage = function(invoiceId, options = {}) {
   const syncUrl = options.syncUrl !== false;
   if (syncUrl) {
     setUrlState({ invoice: invoiceId, modal: null }, { replace: false });
@@ -3191,7 +3538,7 @@ async function showInvoiceDetailsModal(invoiceId, options = {}) {
 
   document.getElementById('openInvoicePageBtn').addEventListener('click', () => {
     close();
-    window.openInvoiceDetails(invoiceId);
+    window.openInvoicePage(invoiceId);
   });
 }
 

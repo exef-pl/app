@@ -407,18 +407,24 @@ function mergeEnvSettings(existingSettings, envSettings) {
 
   if (envSettings?.ocr && typeof envSettings.ocr === 'object') {
     result.ocr = result.ocr && typeof result.ocr === 'object' ? { ...result.ocr } : {}
-    if (envSettings.ocr.provider) {
-      const currentProvider = String(result.ocr.provider || '').trim().toLowerCase()
-      const nextProvider = String(envSettings.ocr.provider || '').trim().toLowerCase()
-      if (shouldPreferEnv || !currentProvider || currentProvider === 'tesseract') {
-        result.ocr.provider = nextProvider
-      }
+    const existingProvider = String(result.ocr.provider || '').trim().toLowerCase()
+    const envProvider = envSettings.ocr.provider ? String(envSettings.ocr.provider).trim() : null
+    if (envProvider && (!existingProvider || existingProvider === 'tesseract')) {
+      result.ocr.provider = envProvider
     }
+
     const existingApi = result.ocr.api && typeof result.ocr.api === 'object' ? result.ocr.api : {}
     const envApi = envSettings.ocr.api && typeof envSettings.ocr.api === 'object' ? envSettings.ocr.api : {}
-    result.ocr.api = shouldPreferEnv
-      ? { ...existingApi, ...envApi }
-      : { ...envApi, ...existingApi }
+    const mergedApi = { ...existingApi }
+    for (const [key, value] of Object.entries(envApi)) {
+      if (value === undefined || value === null || value === '') {
+        continue
+      }
+      if (mergedApi[key] === undefined || mergedApi[key] === null || mergedApi[key] === '') {
+        mergedApi[key] = value
+      }
+    }
+    result.ocr.api = mergedApi
   }
 
   return result
@@ -447,6 +453,78 @@ function normalizeStringArray(value) {
     return []
   }
   return Array.from(new Set(value.map((v) => String(v)).map((v) => v.trim()).filter(Boolean)))
+}
+
+function csvEscape(value) {
+  const raw = value === null || value === undefined ? '' : String(value)
+  const safe = raw.replace(/"/g, '""')
+  return `"${safe}"`
+}
+
+function parseCsvLine(line) {
+  const out = []
+  let cur = ''
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        const next = line[i + 1]
+        if (next === '"') {
+          cur += '"'
+          i++
+        } else {
+          inQuotes = false
+        }
+      } else {
+        cur += ch
+      }
+      continue
+    }
+
+    if (ch === '"') {
+      inQuotes = true
+      continue
+    }
+    if (ch === ',') {
+      out.push(cur.trim())
+      cur = ''
+      continue
+    }
+    cur += ch
+  }
+  out.push(cur.trim())
+  return out
+}
+
+function normalizeProjectsImportItems(items) {
+  const list = Array.isArray(items) ? items : []
+  return list
+    .filter((p) => p && typeof p === 'object')
+    .map((p) => ({
+      id: p.id != null ? String(p.id).trim() : '',
+      nazwa: p.nazwa != null ? String(p.nazwa).trim() : '',
+      klient: p.klient != null ? String(p.klient) : '',
+      nip: p.nip != null ? String(p.nip) : '',
+      budzet: p.budzet != null && p.budzet !== '' ? Number(p.budzet) : 0,
+      status: p.status != null ? String(p.status) : 'aktywny',
+      opis: p.opis != null ? String(p.opis) : '',
+    }))
+    .filter((p) => p.id && p.nazwa)
+}
+
+function normalizeLabelsImportItems(items) {
+  const list = Array.isArray(items) ? items : []
+  return list
+    .filter((l) => l && typeof l === 'object')
+    .map((l) => ({
+      id: l.id != null ? String(l.id).trim() : '',
+      nazwa: l.nazwa != null ? String(l.nazwa).trim() : '',
+      kolor: l.kolor != null ? String(l.kolor) : '',
+      opis: l.opis != null ? String(l.opis) : '',
+    }))
+    .filter((l) => l.id && l.nazwa)
 }
 
 function getActiveKsefAccount(currentSettings) {
@@ -1587,6 +1665,80 @@ app.get('/projects', async (_req, res) => {
   }
 })
 
+app.post('/projects/import', async (req, res) => {
+  try {
+    const items = normalizeProjectsImportItems(req.body?.items || req.body)
+    if (!items.length) {
+      return res.status(400).json({ error: 'no_items' })
+    }
+
+    if (dataLayer) {
+      let created = 0
+      let updated = 0
+      for (const p of items) {
+        const existing = await dataLayer.projects.get(p.id)
+        await dataLayer.projects.upsert({
+          ...(existing || {}),
+          ...p,
+        })
+        if (existing) {
+          updated++
+        } else {
+          created++
+        }
+      }
+      const projects = await dataLayer.projects.list()
+      return res.json({ ok: true, created, updated, total: projects.length })
+    }
+
+    const existingMap = new Map()
+    if (fs.existsSync(projectsFilePath)) {
+      const content = fs.readFileSync(projectsFilePath, 'utf8')
+      const lines = content.split('\n').filter((line) => line.trim())
+      if (lines.length >= 2) {
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCsvLine(lines[i])
+          const id = values[0] ? String(values[0]).trim() : ''
+          if (!id) continue
+          existingMap.set(id, {
+            id,
+            nazwa: values[1] || '',
+            klient: values[2] || '',
+            nip: values[3] || '',
+            budzet: values[4] || 0,
+            status: values[5] || 'aktywny',
+            opis: values[6] || '',
+          })
+        }
+      }
+    }
+
+    let created = 0
+    let updated = 0
+    for (const p of items) {
+      if (existingMap.has(p.id)) {
+        updated++
+      } else {
+        created++
+      }
+      existingMap.set(p.id, p)
+    }
+
+    const header = 'ID,Nazwa,Klient,NIP,Budżet,Status,Opis'
+    const lines = [header]
+    for (const p of Array.from(existingMap.values())) {
+      lines.push(
+        `${csvEscape(p.id)},${csvEscape(p.nazwa)},${csvEscape(p.klient || '')},${csvEscape(p.nip || '')},${csvEscape(p.budzet != null ? p.budzet : 0)},${csvEscape(p.status || 'aktywny')},${csvEscape(p.opis || '')}`
+      )
+    }
+    fs.mkdirSync(path.dirname(projectsFilePath), { recursive: true })
+    fs.writeFileSync(projectsFilePath, lines.join('\n'), 'utf8')
+    return res.json({ ok: true, created, updated, total: existingMap.size })
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
 app.get('/expense-types', async (_req, res) => {
   try {
     if (dataLayer) {
@@ -1818,6 +1970,77 @@ app.get('/labels', async (_req, res) => {
     res.json({ labels })
   } catch (err) {
     res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/labels/import', async (req, res) => {
+  try {
+    const items = normalizeLabelsImportItems(req.body?.items || req.body)
+    if (!items.length) {
+      return res.status(400).json({ error: 'no_items' })
+    }
+
+    if (dataLayer) {
+      let created = 0
+      let updated = 0
+      for (const l of items) {
+        const existing = await dataLayer.labels.get(l.id)
+        await dataLayer.labels.upsert({
+          ...(existing || {}),
+          ...l,
+        })
+        if (existing) {
+          updated++
+        } else {
+          created++
+        }
+      }
+      const labels = await dataLayer.labels.list()
+      return res.json({ ok: true, created, updated, total: labels.length })
+    }
+
+    const existingMap = new Map()
+    if (fs.existsSync(labelsFilePath)) {
+      const content = fs.readFileSync(labelsFilePath, 'utf8')
+      const lines = content.split('\n').filter((line) => line.trim())
+      if (lines.length >= 2) {
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCsvLine(lines[i])
+          const id = values[0] ? String(values[0]).trim() : ''
+          if (!id) continue
+          existingMap.set(id, {
+            id,
+            nazwa: values[1] || '',
+            kolor: values[2] || '',
+            opis: values[3] || '',
+          })
+        }
+      }
+    }
+
+    let created = 0
+    let updated = 0
+    for (const l of items) {
+      if (existingMap.has(l.id)) {
+        updated++
+      } else {
+        created++
+      }
+      existingMap.set(l.id, l)
+    }
+
+    const header = 'ID,Nazwa,Kolor,Opis'
+    const lines = [header]
+    for (const l of Array.from(existingMap.values())) {
+      lines.push(
+        `${csvEscape(l.id)},${csvEscape(l.nazwa)},${csvEscape(l.kolor || '')},${csvEscape(l.opis || '')}`
+      )
+    }
+    fs.mkdirSync(path.dirname(labelsFilePath), { recursive: true })
+    fs.writeFileSync(labelsFilePath, lines.join('\n'), 'utf8')
+    return res.json({ ok: true, created, updated, total: existingMap.size })
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }
 })
 

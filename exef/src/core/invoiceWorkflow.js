@@ -171,9 +171,9 @@ class InvoiceWorkflow extends EventEmitter {
       description: suggestion.description,
     })
 
-    await this.inbox.setStatus(invoiceId, INVOICE_STATUS.DESCRIBED)
+    const finalInvoice = await this.inbox.setStatus(invoiceId, INVOICE_STATUS.DESCRIBED)
 
-    return described
+    return finalInvoice || described
   }
 
   async approveInvoice(invoiceId, overrides = {}) {
