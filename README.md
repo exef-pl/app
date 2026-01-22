@@ -197,6 +197,130 @@ EXEF_INVOICE_STORE_PATH=./data/invoices.json
 EXEF_WATCH_PATHS=/home/user/Faktury,/home/user/Do-opisania
 ```
 
+### Moduły pomocnicze
+
+| Moduł | Plik | Opis |
+|-------|------|------|
+| Invoice Builder | `src/core/invoiceBuilder.js` | Fluent builder dla faktur (EntityBuilder, InvoiceLineBuilder, InvoiceBuilder) |
+| Validators | `src/core/validators.js` | Walidacja NIP, IBAN, kwot, dat + formatowanie PLN |
+
+Przykład użycia buildera:
+
+```javascript
+const { EntityBuilder, InvoiceBuilder, InvoiceLineBuilder, VAT_RATES } = require('./src/core/invoiceBuilder')
+
+const seller = EntityBuilder.create()
+  .withName('Firma Sp. z o.o.')
+  .withNip('1234567890')
+  .withAddress('ul. Testowa', '1', 'Warszawa', '00-001')
+  .build()
+
+const invoice = InvoiceBuilder.vatInvoice('FV/2026/01/001', '2026-01-22', seller, buyer)
+  .addLine(InvoiceLineBuilder.simple('Usługa', 1, 1000, VAT_RATES.VAT_23))
+  .calculateTotals()
+  .build()
+```
+
+## Testowanie
+
+### Testy API (make exef-test-api)
+
+```bash
+# Uruchom local-service w tle
+make exef-local-dev &
+
+# Uruchom testy API
+make exef-test-api
+```
+
+Testy używają przykładowych faktur z `exef/test/fixtures/`:
+- `sample-invoice.json` - faktura w formacie JSON
+- `sample-invoice.xml` - faktura KSeF XML (FA3)
+
+## CLI (Command Line Interface)
+
+ExEF udostępnia CLI do zarządzania fakturami z poziomu terminala.
+
+### Instalacja
+
+```bash
+# Z npm (globalnie)
+cd exef && npm link
+
+# Lub bezpośrednio
+node exef/bin/exef.cjs <komenda>
+
+# Lub przez make
+make exef-cli ARGS="inbox list"
+```
+
+### Podstawowe komendy
+
+```bash
+# Sprawdź status usługi
+exef health
+
+# Lista faktur
+exef inbox list
+exef inbox list --status pending
+exef inbox list --source ksef --json
+
+# Statystyki
+exef inbox stats
+
+# Dodaj fakturę
+exef inbox add --file faktura.pdf --source scanner
+exef inbox add --file faktura.xml --source ksef
+
+# Przetwórz i zatwierdź
+exef inbox process <id>
+exef inbox approve <id> --category hosting --mpk IT-001
+
+# Eksport
+exef inbox export --format csv --output faktury.csv
+
+# KSeF
+exef ksef auth --token <token> --nip <nip>
+exef ksef poll --since 2026-01-01
+```
+
+### Mapowanie CLI ↔ REST API
+
+| CLI | REST API |
+|-----|----------|
+| `exef inbox list` | `GET /inbox/invoices` |
+| `exef inbox stats` | `GET /inbox/stats` |
+| `exef inbox add` | `POST /inbox/invoices` |
+| `exef inbox process <id>` | `POST /inbox/invoices/:id/process` |
+| `exef inbox approve <id>` | `POST /inbox/invoices/:id/approve` |
+| `exef inbox export` | `POST /inbox/export` |
+| `exef ksef poll` | `POST /inbox/ksef/poll` |
+
+Pełna dokumentacja CLI: [`exef/docs/CLI.md`](exef/docs/CLI.md)
+
+### Dostępne komendy Makefile
+
+**Development:**
+- `make exef-install` - instalacja zależności
+- `make exef-dev` - uruchomienie web service (dev)
+- `make exef-local-dev` - uruchomienie local service (dev)
+- `make exef-cli ARGS="..."` - uruchomienie CLI
+- `make exef-test` - testy jednostkowe
+- `make exef-test-api` - testy integracyjne API
+- `make exef-lint` - linter
+- `make exef-clean` - czyszczenie artefaktów
+
+**Build:**
+- `make exef-web-docker` - Docker image dla web
+- `make exef-web-up` - uruchomienie Docker Compose
+- `make exef-local-build` - binarka local-service
+- `make exef-local-packages` - paczki deb/rpm
+- `make exef-desktop-build` - AppImage/instalatory
+- `make exef-desktop-test` - smoke test desktop
+- `make exef-cli-build` - binarka CLI standalone
+- `make exef-cli-install` - instalacja CLI globalnie
+- `make exef-all` - wszystkie artefakty
+
 ## Release / tagowanie (make push)
 
 W tym repo tagowanie i wersjonowanie jest zautomatyzowane.

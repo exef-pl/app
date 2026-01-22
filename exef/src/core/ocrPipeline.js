@@ -97,7 +97,18 @@ class OcrPipeline extends EventEmitter {
     const fileType = invoice.fileType || ''
 
     if (!fileBuffer) {
-      throw new Error('No file content for OCR')
+      return {
+        source: invoice.source,
+        confidence: 0,
+        rawText: null,
+        invoiceNumber: invoice.invoiceNumber || null,
+        issueDate: invoice.issueDate || null,
+        sellerNip: invoice.contractorNip || null,
+        sellerName: invoice.contractorName || null,
+        grossAmount: invoice.grossAmount || null,
+        currency: invoice.currency || 'PLN',
+        note: 'No file content for OCR - using metadata',
+      }
     }
 
     let ocrResult

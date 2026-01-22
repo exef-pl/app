@@ -9,16 +9,21 @@
   },
   "private": true,
   "main": "src/desktop/main.js",
+  "bin": {
+    "exef": "./bin/exef.cjs"
+  },
   "scripts": {
     "web": "node src/web/server.js",
     "local": "node src/local-service/server.js",
     "desktop": "electron .",
+    "cli": "node bin/exef.cjs",
     "dev:web": "nodemon src/web/server.js",
     "dev:local": "nodemon src/local-service/server.js",
     "build:desktop": "electron-builder --publish never",
     "build:local:bin": "pkg src/local-service/server.js --targets node18-linux-x64 --output dist/exef-local-service && pkg src/local-service/server.js --targets node18-win-x64 --output dist/exef-local-service.exe",
     "build:local:packages": "docker run --rm -v \"$PWD\":/work -w /work ghcr.io/goreleaser/nfpm:v2.43.0 package -f packaging/local-service/nfpm.yaml -p deb -p rpm",
-    "test": "node -e \"console.log('no tests yet')\""
+    "build:cli": "pkg bin/exef.cjs --targets node18-linux-x64 --output dist/exef && pkg bin/exef.cjs --targets node18-win-x64 --output dist/exef.exe",
+    "test": "node test/test-inbox.cjs"
   },
   "dependencies": {
     "cors": "^2.8.5",

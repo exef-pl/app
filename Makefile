@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push exef-install exef-dev exef-local-dev exef-test exef-test-api exef-lint exef-clean
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push exef-install exef-dev exef-local-dev exef-test exef-test-api exef-lint exef-clean exef-cli exef-cli-build exef-cli-install
 
 # Default target
 help:
@@ -18,6 +18,7 @@ help:
 	@echo "  exef-install        - Install exef dependencies (npm install)"
 	@echo "  exef-dev            - Run exef web service in development mode"
 	@echo "  exef-local-dev      - Run exef local service in development mode"
+	@echo "  exef-cli            - Run exef CLI (usage: make exef-cli ARGS='inbox list')"
 	@echo "  exef-test           - Run exef unit tests"
 	@echo "  exef-test-api       - Run exef API integration tests against local service"
 	@echo "  exef-lint           - Run linter on exef code"
@@ -31,6 +32,8 @@ help:
 	@echo "  exef-local-packages - Build linux deb+rpm packages for local service (via nfpm docker)"
 	@echo "  exef-desktop-build  - Build desktop app installers (AppImage/deb/rpm + Windows NSIS)"
 	@echo "  exef-desktop-test   - Smoke-test desktop app on Linux (start local-service, verify health, launch AppImage)"
+	@echo "  exef-cli-build      - Build standalone CLI binary (linux+windows)"
+	@echo "  exef-cli-install    - Install CLI globally (npm link)"
 	@echo "  exef-all            - Build all 3 exef artifacts"
 	@echo ""
 	@echo "  Release:"
@@ -181,6 +184,17 @@ exef-clean:
 	@rm -f exef/.exef-local-service.port
 	@rm -f exef/*.deb exef/*.rpm
 	@echo "Clean complete."
+
+exef-cli:
+	@cd exef && node bin/exef.cjs $(ARGS)
+
+exef-cli-build:
+	@echo "Building exef CLI binaries..."
+	@cd exef && /usr/share/nodejs/corepack/shims/npm run build:cli
+
+exef-cli-install:
+	@echo "Installing exef CLI globally..."
+	@cd exef && /usr/share/nodejs/corepack/shims/npm link
 
 # Release automation: bump version, generate docs/v/<tag>/, commit, tag and push
 push:

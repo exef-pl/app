@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExEF - Testy GUI</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --success: #16a34a;
+      --warning: #ca8a04;
+      --danger: #dc2626;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 { font-size: 1.5rem; }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+
+    .status-dot.ok { background: #22c55e; }
+    .status-dot.error { background: #ef4444; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 300px 1fr 400px;
+      gap: 20px;
+    }
+
+    @media (max-width: 1200px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .test-list { list-style: none; }
+
+    .test-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .test-item:hover { background: var(--bg); }
+
+    .test-item.active { background: #dbeafe; }
+
+    .test-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .test-badge.get { background: #dcfce7; color: #16a34a; }
+    .test-badge.post { background: #fef3c7; color: #ca8a04; }
+
+    .test-result {
+      font-size: 0.8rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .test-result.pass { background: #dcfce7; color: #16a34a; }
+    .test-result.fail { background: #fee2e2; color: #dc2626; }
+    .test-result.pending { background: #f1f5f9; color: #64748b; }
+
+    .form-group { margin-bottom: 12px; }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: var(--muted);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      font-family: monospace;
+      font-size: 0.8rem;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn:hover { opacity: 0.9; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-secondary { background: #e2e8f0; color: var(--text); }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .response-panel {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 6px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      max-height: 400px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .response-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .response-status {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .response-status.ok { background: #22c55e; color: white; }
+    .response-status.error { background: #ef4444; color: white; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-box {
+      text-align: center;
+      padding: 16px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .run-all-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      flex: 1;
+      margin: 0 20px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--success);
+      transition: width 0.3s;
+    }
+
+    .log-entry {
+      padding: 4px 0;
+      border-bottom: 1px solid #334155;
+    }
+
+    .log-entry.success { color: #4ade80; }
+    .log-entry.error { color: #f87171; }
+    .log-entry.info { color: #60a5fa; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>ExEF - Testy GUI</h1>
+      <div class="status-bar">
+        <span id="apiUrl">http://127.0.0.1:3030</span>
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">sprawdzanie...</span>
+      </div>
+    </header>
+
+    <div class="run-all-bar">
+      <button class="btn btn-success" id="runAllBtn" onclick="runAllTests()">
+        Uruchom wszystkie testy
+      </button>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+      <span id="progressText">0 / 0</span>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Testy API</h2>
+        <ul class="test-list" id="testList"></ul>
+      </div>
+
+      <div class="card">
+        <h2 id="testTitle">Wybierz test</h2>
+        <div id="testForm"></div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="runTestBtn" onclick="runSelectedTest()" disabled>
+            Uruchom test
+          </button>
+          <button class="btn btn-secondary" onclick="clearForm()">
+            Wyczyść
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Odpowiedź</h2>
+        <div class="response-header">
+          <span>Status:</span>
+          <span class="response-status" id="responseStatus">-</span>
+        </div>
+        <div class="response-panel" id="responsePanel">
+          Brak odpowiedzi
+        </div>
+
+        <h2 style="margin-top: 20px;">Log testów</h2>
+        <div class="response-panel" id="testLog" style="max-height: 200px;">
+          Gotowy do testów...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = localStorage.getItem('exef_api_url') || 'http://127.0.0.1:3030';
+    document.getElementById('apiUrl').textContent = API_URL;
+
+    const TESTS = [
+      { id: 'health', name: 'Health Check', method: 'GET', endpoint: '/health', params: [] },
+      { id: 'inbox-stats', name: 'Inbox Stats', method: 'GET', endpoint: '/inbox/stats', params: [] },
+      { id: 'inbox-list', name: 'Inbox List', method: 'GET', endpoint: '/inbox/invoices', params: [
+        { name: 'status', type: 'select', options: ['', 'pending', 'ocr', 'described', 'approved', 'rejected'] },
+        { name: 'source', type: 'select', options: ['', 'email', 'scanner', 'storage', 'ksef'] }
+      ]},
+      { id: 'inbox-get', name: 'Inbox Get', method: 'GET', endpoint: '/inbox/invoices/:id', params: [
+        { name: 'id', type: 'text', required: true, placeholder: 'ID faktury' }
+      ]},
+      { id: 'inbox-add', name: 'Inbox Add', method: 'POST', endpoint: '/inbox/invoices', params: [
+        { name: 'source', type: 'select', options: ['scanner', 'email', 'storage', 'ksef'] },
+        { name: 'invoiceNumber', type: 'text', placeholder: 'FV/2026/01/001' },
+        { name: 'contractorNip', type: 'text', placeholder: '1234567890' },
+        { name: 'contractorName', type: 'text', placeholder: 'Nazwa kontrahenta' },
+        { name: 'grossAmount', type: 'number', placeholder: '1230.00' },
+        { name: 'issueDate', type: 'date' }
+      ]},
+      { id: 'inbox-process', name: 'Inbox Process', method: 'POST', endpoint: '/inbox/invoices/:id/process', params: [
+        { name: 'id', type: 'text', required: true, placeholder: 'ID faktury' }
+      ]},
+      { id: 'inbox-approve', name: 'Inbox Approve', method: 'POST', endpoint: '/inbox/invoices/:id/approve', params: [
+        { name: 'id', type: 'text', required: true, placeholder: 'ID faktury' },
+        { name: 'category', type: 'text', placeholder: 'Kategoria' },
+        { name: 'mpk', type: 'text', placeholder: 'MPK' },
+        { name: 'description', type: 'text', placeholder: 'Opis' }
+      ]},
+      { id: 'inbox-reject', name: 'Inbox Reject', method: 'POST', endpoint: '/inbox/invoices/:id/reject', params: [
+        { name: 'id', type: 'text', required: true, placeholder: 'ID faktury' },
+        { name: 'reason', type: 'text', placeholder: 'Powód odrzucenia' }
+      ]},
+      { id: 'inbox-export', name: 'Inbox Export', method: 'POST', endpoint: '/inbox/export', params: [
+        { name: 'format', type: 'select', options: ['csv', 'json', 'xlsx'] }
+      ]},
+      { id: 'ksef-auth', name: 'KSeF Auth', method: 'POST', endpoint: '/ksef/auth/token', params: [
+        { name: 'token', type: 'text', placeholder: 'Token autoryzacji' },
+        { name: 'nip', type: 'text', placeholder: 'NIP' }
+      ]},
+      { id: 'ksef-poll', name: 'KSeF Poll', method: 'POST', endpoint: '/inbox/ksef/poll', params: [
+        { name: 'since', type: 'date' }
+      ]}
+    ];
+
+    let selectedTest = null;
+    let testResults = {};
+
+    function init() {
+      renderTestList();
+      checkHealth();
+    }
+
+    async function checkHealth() {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+
+      try {
+        const res = await fetch(`${API_URL}/health`);
+        if (res.ok) {
+          dot.className = 'status-dot ok';
+          text.textContent = 'połączono';
+        } else {
+          throw new Error('not ok');
+        }
+      } catch (e) {
+        dot.className = 'status-dot error';
+        text.textContent = 'brak połączenia';
+      }
+    }
+
+    function renderTestList() {
+      const list = document.getElementById('testList');
+      list.innerHTML = TESTS.map(test => `
+        <li class="test-item" data-id="${test.id}" onclick="selectTest('${test.id}')">
+          <span>${test.name}</span>
+          <span>
+            <span class="test-badge ${test.method.toLowerCase()}">${test.method}</span>
+            <span class="test-result pending" id="result-${test.id}">-</span>
+          </span>
+        </li>
+      `).join('');
+    }
+
+    function selectTest(id) {
+      selectedTest = TESTS.find(t => t.id === id);
+      if (!selectedTest) return;
+
+      document.querySelectorAll('.test-item').forEach(el => el.classList.remove('active'));
+      document.querySelector(`[data-id="${id}"]`).classList.add('active');
+
+      document.getElementById('testTitle').textContent = `${selectedTest.name} - ${selectedTest.method} ${selectedTest.endpoint}`;
+      document.getElementById('runTestBtn').disabled = false;
+
+      renderForm(selectedTest);
+    }
+
+    function renderForm(test) {
+      const form = document.getElementById('testForm');
+
+      if (test.params.length === 0) {
+        form.innerHTML = '<p style="color: var(--muted);">Ten test nie wymaga parametrów.</p>';
+        return;
+      }
+
+      form.innerHTML = test.params.map(param => {
+        if (param.type === 'select') {
+          return `
+            <div class="form-group">
+              <label>${param.name}${param.required ? ' *' : ''}</label>
+              <select id="param-${param.name}">
+                ${param.options.map(opt => `<option value="${opt}">${opt || '(brak)'}</option>`).join('')}
+              </select>
+            </div>
+          `;
+        } else if (param.type === 'textarea') {
+          return `
+            <div class="form-group">
+              <label>${param.name}${param.required ? ' *' : ''}</label>
+              <textarea id="param-${param.name}" placeholder="${param.placeholder || ''}"></textarea>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="form-group">
+              <label>${param.name}${param.required ? ' *' : ''}</label>
+              <input type="${param.type}" id="param-${param.name}" placeholder="${param.placeholder || ''}">
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    function clearForm() {
+      selectedTest?.params.forEach(param => {
+        const el = document.getElementById(`param-${param.name}`);
+        if (el) el.value = '';
+      });
+    }
+
+    function getFormValues() {
+      if (!selectedTest) return {};
+
+      const values = {};
+      selectedTest.params.forEach(param => {
+        const el = document.getElementById(`param-${param.name}`);
+        if (el && el.value) {
+          values[param.name] = param.type === 'number' ? parseFloat(el.value) : el.value;
+        }
+      });
+      return values;
+    }
+
+    async function runSelectedTest() {
+      if (!selectedTest) return;
+
+      const values = getFormValues();
+      await executeTest(selectedTest, values);
+    }
+
+    async function executeTest(test, values = {}) {
+      let endpoint = test.endpoint;
+      const queryParams = [];
+      const bodyParams = {};
+
+      if (test.method === 'GET') {
+        test.params.forEach(param => {
+          if (param.name === 'id' && values.id) {
+            endpoint = endpoint.replace(':id', values.id);
+          } else if (values[param.name]) {
+            queryParams.push(`${param.name}=${encodeURIComponent(values[param.name])}`);
+          }
+        });
+        if (queryParams.length > 0) {
+          endpoint += '?' + queryParams.join('&');
+        }
+      } else {
+        test.params.forEach(param => {
+          if (param.name === 'id' && values.id) {
+            endpoint = endpoint.replace(':id', values.id);
+          } else if (values[param.name] !== undefined) {
+            bodyParams[param.name] = values[param.name];
+          }
+        });
+
+        if (test.id === 'inbox-add') {
+          const metadata = {};
+          ['invoiceNumber', 'contractorNip', 'contractorName', 'grossAmount', 'issueDate'].forEach(key => {
+            if (bodyParams[key]) {
+              metadata[key] = bodyParams[key];
+              delete bodyParams[key];
+            }
+          });
+          bodyParams.metadata = metadata;
+        }
+      }
+
+      const fetchOptions = {
+        method: test.method,
+        headers: { 'Content-Type': 'application/json' }
+      };
+
+      if (test.method === 'POST' && Object.keys(bodyParams).length > 0) {
+        fetchOptions.body = JSON.stringify(bodyParams);
+      }
+
+      const statusEl = document.getElementById('responseStatus');
+      const panelEl = document.getElementById('responsePanel');
+      const resultEl = document.getElementById(`result-${test.id}`);
+
+      try {
+        const startTime = Date.now();
+        const res = await fetch(`${API_URL}${endpoint}`, fetchOptions);
+        const duration = Date.now() - startTime;
+
+        let data;
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          data = await res.json();
+        } else {
+          data = await res.text();
+        }
+
+        statusEl.textContent = `${res.status} (${duration}ms)`;
+        statusEl.className = `response-status ${res.ok ? 'ok' : 'error'}`;
+        panelEl.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+
+        testResults[test.id] = res.ok;
+        resultEl.textContent = res.ok ? 'PASS' : 'FAIL';
+        resultEl.className = `test-result ${res.ok ? 'pass' : 'fail'}`;
+
+        log(`${test.name}: ${res.ok ? 'PASS' : 'FAIL'} (${res.status}) - ${duration}ms`, res.ok ? 'success' : 'error');
+
+        return res.ok;
+      } catch (e) {
+        statusEl.textContent = 'ERROR';
+        statusEl.className = 'response-status error';
+        panelEl.textContent = e.message;
+
+        testResults[test.id] = false;
+        resultEl.textContent = 'FAIL';
+        resultEl.className = 'test-result fail';
+
+        log(`${test.name}: ERROR - ${e.message}`, 'error');
+
+        return false;
+      }
+    }
+
+    async function runAllTests() {
+      const btn = document.getElementById('runAllBtn');
+      btn.disabled = true;
+      btn.textContent = 'Uruchamianie...';
+
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+
+      testResults = {};
+      document.querySelectorAll('.test-result').forEach(el => {
+        el.textContent = '-';
+        el.className = 'test-result pending';
+      });
+
+      log('Rozpoczynam testy...', 'info');
+
+      let passed = 0;
+      let total = TESTS.length;
+
+      for (let i = 0; i < TESTS.length; i++) {
+        const test = TESTS[i];
+        progressText.textContent = `${i + 1} / ${total}`;
+        progressFill.style.width = `${((i + 1) / total) * 100}%`;
+
+        let values = {};
+        if (test.id === 'inbox-get' || test.id === 'inbox-process' || test.id === 'inbox-approve' || test.id === 'inbox-reject') {
+          continue;
+        }
+
+        const result = await executeTest(test, values);
+        if (result) passed++;
+
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      log(`\nZakończono: ${passed} / ${total - 4} testów przeszło pomyślnie`, passed === total - 4 ? 'success' : 'error');
+
+      btn.disabled = false;
+      btn.textContent = 'Uruchom wszystkie testy';
+    }
+
+    function log(message, type = 'info') {
+      const logEl = document.getElementById('testLog');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    init();
+  </script>
+</body>
+</html>
