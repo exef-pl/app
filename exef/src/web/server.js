@@ -18,6 +18,10 @@ app.use(express.json({ limit: '10mb' }))
 
 app.use('/test', express.static(path.join(__dirname, '../../test/gui')))
 
+app.get('/', (_req, res) => {
+  res.redirect('/test/')
+})
+
 const ksef = createKsefFacade({})
 
 const store = createStore({

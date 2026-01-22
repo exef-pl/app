@@ -53,6 +53,10 @@ app.use(express.json({ limit: '10mb' }))
 
 app.use('/test', express.static(path.join(__dirname, '../../test/gui')))
 
+app.get('/', (_req, res) => {
+  res.redirect('/test/')
+})
+
 // Serve desktop renderer with CSP override
 app.use('/', (req, res, next) => {
   if (req.path === '/' || req.path.endsWith('.html')) {
@@ -247,6 +251,207 @@ app.post('/inbox/ksef/poll', async (req, res) => {
       await workflow.addManualInvoice('ksef', null, invData)
     }
     res.json({ added: invoices.length, invoices })
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+// Projects management endpoints
+app.get('/projects', async (_req, res) => {
+  try {
+    const projectsPath = path.join(__dirname, '../../data/projects.csv')
+    if (!fs.existsSync(projectsPath)) {
+      return res.json({ projects: [] })
+    }
+    
+    const content = fs.readFileSync(projectsPath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+    
+    if (lines.length < 2) {
+      return res.json({ projects: [] })
+    }
+    
+    const headers = lines[0].split(',').map(h => h.trim())
+    const projects = []
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values.length === headers.length && values[0]) {
+        const project = {}
+        headers.forEach((header, index) => {
+          project[header.toLowerCase()] = values[index]
+        })
+        projects.push(project)
+      }
+    }
+    
+    res.json({ projects })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/projects', async (req, res) => {
+  try {
+    const { id, nazwa, klient, nip, budzet, status, opis } = req.body
+    
+    if (!id || !nazwa) {
+      return res.status(400).json({ error: 'ID and Nazwa are required' })
+    }
+    
+    const projectsPath = path.join(__dirname, '../../data/projects.csv')
+    let content = ''
+    
+    if (fs.existsSync(projectsPath)) {
+      content = fs.readFileSync(projectsPath, 'utf8')
+      const lines = content.split('\n').filter(line => line.trim())
+      
+      // Check if project already exists
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+        if (values[0] === id) {
+          return res.status(400).json({ error: 'Project with this ID already exists' })
+        }
+      }
+      
+      // Keep only header line
+      content = lines[0] + '\n'
+    } else {
+      // Create new file with header
+      content = 'ID,Nazwa,Klient,NIP,Budżet,Status,Opis\n'
+    }
+    
+    // Add new project
+    const newLine = `${id},"${nazwa}","${klient || ''}","${nip || ''}",${budzet || 0},"${status || 'aktywny'}","${opis || ''}"\n`
+    fs.writeFileSync(projectsPath, content + newLine, 'utf8')
+    
+    res.status(201).json({ 
+      id, 
+      nazwa, 
+      klient, 
+      nip, 
+      budzet, 
+      status, 
+      opis,
+      message: 'Project created successfully' 
+    })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.put('/projects/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { nazwa, klient, nip, budzet, status, opis } = req.body
+    
+    const projectsPath = path.join(__dirname, '../../data/projects.csv')
+    if (!fs.existsSync(projectsPath)) {
+      return res.status(404).json({ error: 'Projects file not found' })
+    }
+    
+    const content = fs.readFileSync(projectsPath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+    
+    if (lines.length < 2) {
+      return res.status(404).json({ error: 'No projects found' })
+    }
+    
+    let projectFound = false
+    const updatedLines = [lines[0]] // Keep header
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values[0] === id) {
+        projectFound = true
+        const updatedProject = {
+          id,
+          nazwa: nazwa || values[1],
+          klient: klient || values[2],
+          nip: nip || values[3],
+          budzet: budzet || values[4],
+          status: status || values[5],
+          opis: opis || values[6]
+        }
+        const updatedLine = `${id},"${updatedProject.nazwa}","${updatedProject.klient}","${updatedProject.nip}",${updatedProject.budzet},"${updatedProject.status}","${updatedProject.opis}"`
+        updatedLines.push(updatedLine)
+      } else {
+        updatedLines.push(lines[i])
+      }
+    }
+    
+    if (!projectFound) {
+      return res.status(404).json({ error: 'Project not found' })
+    }
+    
+    fs.writeFileSync(projectsPath, updatedLines.join('\n'), 'utf8')
+    
+    res.json({ 
+      id, 
+      nazwa, 
+      klient, 
+      nip, 
+      budzet, 
+      status, 
+      opis,
+      message: 'Project updated successfully' 
+    })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.delete('/projects/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    
+    const projectsPath = path.join(__dirname, '../../data/projects.csv')
+    if (!fs.existsSync(projectsPath)) {
+      return res.status(404).json({ error: 'Projects file not found' })
+    }
+    
+    const content = fs.readFileSync(projectsPath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+    
+    if (lines.length < 2) {
+      return res.status(404).json({ error: 'No projects found' })
+    }
+    
+    let projectFound = false
+    const updatedLines = [lines[0]] // Keep header
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values[0] !== id) {
+        updatedLines.push(lines[i])
+      } else {
+        projectFound = true
+      }
+    }
+    
+    if (!projectFound) {
+      return res.status(404).json({ error: 'Project not found' })
+    }
+    
+    fs.writeFileSync(projectsPath, updatedLines.join('\n'), 'utf8')
+    
+    res.json({ message: 'Project deleted successfully' })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+// Assign invoice to project
+app.post('/inbox/invoices/:id/assign', async (req, res) => {
+  try {
+    const { projectId } = req.body
+    
+    if (!projectId) {
+      return res.status(400).json({ error: 'Project ID is required' })
+    }
+    
+    const invoice = await workflow.assignInvoiceToProject(req.params.id, projectId)
+    res.json(invoice)
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }

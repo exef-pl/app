@@ -205,11 +205,14 @@ exef-test-api:
 exef-test-gui:
 	@echo "Opening GUI test interface..."
 	@echo "Starting local service and opening browser..."
-	@cd exef && (/usr/share/nodejs/corepack/shims/npm run local &) && sleep 3 && \
-	PORT=$$(cat .exef-local-service.port 2>/dev/null || echo "3030") && \
-	xdg-open http://127.0.0.1:$$PORT/test/ 2>/dev/null || \
-	open http://127.0.0.1:$$PORT/test/ 2>/dev/null || \
-	echo "Open http://127.0.0.1:$$PORT/test/ in your browser"
+	@cd exef && (/usr/share/nodejs/corepack/shims/npm run local &) && \
+	for i in 1 2 3 4 5 6 7 8 9 10; do \
+		[ -f .exef-local-service.port ] && break; \
+		sleep 1; \
+	done; \
+	PORT=$$(cat .exef-local-service.port 2>/dev/null || echo "3030"); \
+	URL="http://127.0.0.1:$$PORT/test/"; \
+	xdg-open "$$URL" 2>/dev/null || open "$$URL" 2>/dev/null || echo "Open $$URL in your browser"
 
 exef-lint:
 	@echo "Running linter on exef code..."

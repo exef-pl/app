@@ -230,6 +230,31 @@ class InvoiceWorkflow extends EventEmitter {
   addDescriptionRule(rule) {
     this.autoDescribe.addRule(rule)
   }
+
+  async assignInvoiceToProject(invoiceId, projectId) {
+    try {
+      const invoice = await this.inbox.getInvoice(invoiceId)
+      if (!invoice) {
+        throw new Error('Invoice not found')
+      }
+
+      // Update invoice with project assignment
+      const updatedInvoice = {
+        ...invoice,
+        projectId,
+        assignedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+
+      await this.inbox.updateInvoice(invoiceId, updatedInvoice)
+      
+      this.emit('invoice:assigned', { invoice: updatedInvoice, projectId })
+      
+      return updatedInvoice
+    } catch (error) {
+      throw new Error(`Failed to assign invoice to project: ${error.message}`)
+    }
+  }
 }
 
 function createInvoiceWorkflow(options = {}) {

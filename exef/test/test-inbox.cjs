@@ -3,7 +3,26 @@
 const fs = require('node:fs')
 const path = require('node:path')
 
-const BASE_URL = process.env.EXEF_TEST_URL || 'http://127.0.0.1:3030'
+function resolveBaseUrl() {
+  if (process.env.EXEF_TEST_URL) {
+    return process.env.EXEF_TEST_URL
+  }
+
+  try {
+    const portFile = path.join(__dirname, '..', '.exef-local-service.port')
+    if (fs.existsSync(portFile)) {
+      const port = String(fs.readFileSync(portFile, 'utf8')).trim()
+      if (port) {
+        return `http://127.0.0.1:${port}`
+      }
+    }
+  } catch (_e) {
+  }
+
+  return 'http://127.0.0.1:3030'
+}
+
+const BASE_URL = resolveBaseUrl()
 
 async function testHealth() {
   console.log('\n[TEST] GET /health')
