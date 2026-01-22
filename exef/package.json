@@ -2,7 +2,6 @@
   "name": "exef",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "main": "src/desktop/main.js",
   "scripts": {
     "web": "node src/web/server.js",
@@ -11,7 +10,8 @@
     "dev:web": "nodemon src/web/server.js",
     "dev:local": "nodemon src/local-service/server.js",
     "build:desktop": "electron-builder --publish never",
-    "build:local:bin": "pkg src/local-service/server.js --targets node20-linux-x64,node20-win-x64 --output dist/local-service",
+    "build:local:bin": "pkg src/local-service/server.js --targets node20-linux-x64 --output dist/exef-local-service && pkg src/local-service/server.js --targets node20-win-x64 --output dist/exef-local-service.exe",
+    "build:local:packages": "docker run --rm -v \"$PWD\":/work -w /work ghcr.io/goreleaser/nfpm:v2.43.0 package -f packaging/local-service/nfpm.yaml -p deb -p rpm",
     "test": "node -e \"console.log('no tests yet')\""
   },
   "dependencies": {

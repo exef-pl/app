@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-local-build exef-desktop-build exef-all push
 
 # Default target
 help:
@@ -10,7 +10,13 @@ help:
 	@echo "  update-submodules  - Update all submodules to latest commits"
 	@echo "  generate-indexes   - Generate code2logic indexes for each project"
 	@echo "  indexes            - Alias for generate-indexes"
-	@echo "  analyze-all         - Generate indexes + write analysis_report.md"
+	@echo "  analyze-all        - Generate indexes + write analysis_report.md"
+	@echo "  exef-web-docker     - Build docker image for exef web service (VPS)"
+	@echo "  exef-local-build    - Build local service binaries (linux+windows via pkg)"
+	@echo "  exef-local-packages - Build linux deb+rpm packages for local service (via nfpm docker)"
+	@echo "  exef-desktop-build  - Build desktop app installers (AppImage/deb/rpm + Windows NSIS)"
+	@echo "  exef-all            - Build all 3 exef artifacts"
+	@echo "  push               - Bump version + generate docs/v/<tag>/ + tag + push"
 	@echo "  clean              - Remove all generated index files"
 	@echo "  help               - Show this help message"
 
@@ -44,8 +50,8 @@ update-submodules:
 generate-indexes:
 	@echo "Generating code2logic indexes for all projects..."
 	@for dir in */; do \
-		if [ -d "$$dir" ] && ( [ -f "$$dir/.git" ] || [ -d "$$dir/.git" ] ); then \
-			project_name=$$(basename "$$dir"); \
+		project_name=$$(basename "$$dir"); \
+		if [ -d "$$dir" ] && ( [ -f "$$dir/.git" ] || [ -d "$$dir/.git" ] || [ "$$project_name" = "exef" ] ); then \
 			echo "Processing $$project_name..."; \
 			if command -v code2logic >/dev/null 2>&1; then \
 				rm -f "$$project_name.functions.toon" "$$project_name.toon-schema.json"; \
@@ -53,7 +59,7 @@ generate-indexes:
 				echo "Generated $$project_name.functions.toon and $$project_name.toon-schema.json" || \
 				echo "Failed to generate index for $$project_name"; \
 			else \
-				echo "code2logic command not found. Please install it (e.g. pyhrton package) first."; \
+				echo "code2logic command not found. Please install it (e.g. python package) first."; \
 			fi; \
 		fi; \
 	done
@@ -86,3 +92,28 @@ analyze-all: generate-indexes
 	@echo "## Generated Files" >> analysis_report.md
 	@ls -la *.functions.toon *.toon-schema.json >> analysis_report.md
 	@echo "Analysis report saved to analysis_report.md"
+
+exef-web-docker:
+	@echo "Building exef web docker image..."
+	@cd exef && docker build -t exef-web:latest -f docker/web/Dockerfile .
+
+exef-local-build:
+	@echo "Building exef local service binaries (pkg)..."
+	@cd exef && npm install
+	@cd exef && npm run build:local:bin
+
+exef-local-packages: exef-local-build
+	@echo "Building exef local service packages (deb+rpm via nfpm docker)..."
+	@cd exef && docker run --rm -v "$$PWD":/work -w /work ghcr.io/goreleaser/nfpm:v2.43.0 package -f packaging/local-service/nfpm.yaml -p deb -p rpm
+
+exef-desktop-build:
+	@echo "Building exef desktop app installers (electron-builder)..."
+	@cd exef && npm install
+	@cd exef && npm run build:desktop
+
+exef-all: exef-web-docker exef-local-packages exef-desktop-build
+	@echo "All exef artifacts built."
+
+# Release automation: bump version, generate docs/v/<tag>/, commit, tag and push
+push:
+	@node scripts/release.cjs

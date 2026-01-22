@@ -1,0 +1,15 @@
+name: exef-local-service
+arch: amd64
+platform: linux
+version: 0.1.0
+section: default
+priority: optional
+maintainer: exef
+description: ExEF local KSeF service
+contents:
+  - src: dist/exef-local-service
+    dst: /usr/local/bin/exef-local-service
+    file_info:
+      mode: 0755
+  - src: packaging/local-service/exef-local-service.service
+    dst: /etc/systemd/system/exef-local-service.service

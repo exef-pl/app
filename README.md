@@ -1,4 +1,4 @@
- # exef-pl/app
+# exef-pl/app
 
 To repozytorium jest agregatorem projektów związanych z KSeF (Krajowy System e-Faktur):
 
@@ -73,14 +73,14 @@ docker compose -f exef/docker-compose.yml up --build
 Uruchomienie developerskie:
 
 ```bash
-npm --prefix exef install
-npm --prefix exef run local
+npm install
+npm run local
 ```
 
 Build binarki (obecnie przez `pkg`):
 
 ```bash
-npm --prefix exef run build:local:bin
+npm run build:local:bin
 ```
 
 ### 3) Desktop app (binarka: Linux/Windows)
@@ -88,13 +88,48 @@ npm --prefix exef run build:local:bin
 Uruchomienie:
 
 ```bash
-npm --prefix exef install
-npm --prefix exef run desktop
+npm install
+npm run desktop
 ```
 
 Build instalatorów/paczek:
 
 ```bash
-npm --prefix exef run build:desktop
+npm run build:desktop
 ```
+
+## Release / tagowanie (make push)
+
+W tym repo tagowanie i wersjonowanie jest zautomatyzowane.
+
+Zasada:
+
+- robisz zmiany i commitujesz,
+- uruchamiasz `make push`.
+
+`make push`:
+
+- podbija wersję (plik `VERSION`),
+- generuje wpisy release w `docs/v/<tag>/`:
+  - `docs/v/<tag>/changelog.md`
+  - `docs/v/<tag>/todo.md`
+- tworzy commit release,
+- tworzy tag `vX.Y.Z`,
+- wykonuje `git push --follow-tags`.
+
+Typ bumpu możesz ustawić przez `BUMP`:
+
+```bash
+BUMP=patch make push
+BUMP=minor make push
+BUMP=major make push
+```
+
+## Testowanie
+
+Szczegóły są w `docs/TESTING.md`.
+
+## 🤝 Kontrybucja
+
+Zasady kontrybucji są w `docs/CONTRIBUTING.md`.
 
