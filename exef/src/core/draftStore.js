@@ -70,7 +70,49 @@ class JsonFileStore {
   }
 }
 
+class SqliteStore {
+  constructor(options = {}) {
+    if (options.dataLayer) {
+      this.layer = options.dataLayer
+    } else {
+      const { createSqliteDataLayer } = require('./sqliteDataLayer')
+      this.layer = createSqliteDataLayer({ dbPath: options.dbPath })
+    }
+    this._initPromise = null
+  }
+
+  async _init() {
+    if (!this._initPromise) {
+      this._initPromise = this.layer.init()
+    }
+    return this._initPromise
+  }
+
+  async save(invoice) {
+    await this._init()
+    return this.layer.invoices.save(invoice)
+  }
+
+  async get(id) {
+    await this._init()
+    return this.layer.invoices.get(id)
+  }
+
+  async list(filter = {}) {
+    await this._init()
+    return this.layer.invoices.list(filter)
+  }
+
+  async delete(id) {
+    await this._init()
+    return this.layer.invoices.delete(id)
+  }
+}
+
 function createStore(options = {}) {
+  if (options.backend === 'sqlite' || options.dbPath || options.dataLayer) {
+    return new SqliteStore(options)
+  }
   if (options.filePath) {
     return new JsonFileStore(options.filePath)
   }
@@ -80,5 +122,6 @@ function createStore(options = {}) {
 module.exports = {
   InMemoryStore,
   JsonFileStore,
+  SqliteStore,
   createStore,
 }

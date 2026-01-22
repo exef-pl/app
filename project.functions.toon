@@ -1,24 +1,210 @@
 project: exef
-generated: "2026-01-22T08:32:02.424453"
-modules[7]{path,lang,items}:
+generated: "2026-01-22T12:52:13.655134"
+modules[19]{path,lang,items}:
+  src/core/storageSync.js,javascript,32
+  src/core/emailWatcher.js,javascript,13
+  src/core/sqliteDb.js,javascript,12
+  src/core/invoiceWorkflow.js,javascript,25
   src/core/listen.js,javascript,4
-  src/core/ksefFacade.js,javascript,15
-  src/web/server.js,javascript,0
+  src/core/sqliteDataLayer.js,javascript,27
+  src/core/validators.js,javascript,18
+  src/core/draftStore.js,javascript,19
+  src/core/exportService.js,javascript,12
+  src/core/ksefFacade.js,javascript,16
+  src/core/autoDescribe.js,javascript,15
+  src/core/ocrPipeline.js,javascript,16
+  src/core/invoiceBuilder.js,javascript,39
+  src/core/unifiedInbox.js,javascript,15
+  src/web/server.js,javascript,1
   src/desktop/preload.js,javascript,2
   src/desktop/main.js,javascript,1
-  src/local-service/server.js,javascript,1
-  src/desktop/renderer/renderer.js,javascript,1
+  src/local-service/server.js,javascript,16
+  src/desktop/renderer/renderer.js,javascript,65
 
 function_details:
+  src/core/storageSync.js:
+    functions[32]{name,kind,sig,loc,async,lines,cc,does}:
+      createStorageSync,function,() -> None,796-798,false,3,1,creates storage sync
+      StorageSync.constructor,method,() -> None,15-32,false,18,1,constructor
+      StorageSync.getState,method,() -> None,34-39,false,6,1,retrieves state
+      StorageSync.setState,method,(state) -> None,41-51,false,11,1,updates state
+      StorageSync.start,method,() -> None,53-61,true,9,1,starts
+      StorageSync.stop,method,() -> None,63-70,false,8,1,stops
+      StorageSync._poll,method,() -> None,72-80,true,9,1,poll
+      StorageSync.syncNewFiles,method,() -> None,82-110,true,29,1,sync new files
+      StorageSync._getSortedConnections,method,(connections) -> None,112-134,false,23,1,retrieves sorted connections
+      StorageSync._syncConnection,method,(conn) -> None,136-148,true,13,1,sync connection
+      StorageSync._syncLocalFolder,method,() -> None,150-206,true,57,1,sync local folder
+      StorageSync._syncDropbox,method,() -> None,208-223,true,16,1,sync dropbox
+      StorageSync._syncDropboxConnection,method,(conn) -> None,225-325,true,101,1,sync dropbox connection
+      StorageSync._downloadDropboxFile,method,"(accessToken, dropboxPath) -> None",327-341,true,15,1,download dropbox file
+      StorageSync._syncGdrive,method,() -> None,343-358,true,16,1,sync gdrive
+      StorageSync._syncGdriveConnection,method,(conn) -> None,360-485,true,126,1,sync gdrive connection
+      StorageSync._getGdriveAccessToken,method,(conn) -> None,487-490,false,4,1,retrieves gdrive access token
+      StorageSync._getGdriveRefreshToken,method,(conn) -> None,492-495,false,4,1,retrieves gdrive refresh token
+      StorageSync._getGdriveClientId,method,(conn) -> None,497-500,false,4,1,retrieves gdrive client id
+      StorageSync._getGdriveClientSecret,method,(conn) -> None,502-505,false,4,1,retrieves gdrive client secret
+      StorageSync._applyGdriveAccessToken,method,"(conn, accessToken, expiresInSeconds) -> None",507-537,false,31,1,apply gdrive access token
+      StorageSync._refreshGdriveAccessToken,method,(conn) -> None,539-578,true,40,1,refresh gdrive access token
+      StorageSync._downloadGdriveFile,method,() -> None,580-617,true,38,1,download gdrive file
+      StorageSync._syncNextcloudConnection,method,(conn) -> None,619-734,true,116,1,sync nextcloud connection
+      StorageSync._getMimeType,method,(ext) -> None,736-745,false,10,1,retrieves mime type
+      StorageSync._isInvoiceFileName,method,(fileNameOrPath) -> None,747-750,false,4,1,is invoice file name
+      StorageSync.addWatchPath,method,(pathToWatch) -> None,752-756,false,5,1,creates watch path
+      StorageSync.setWatchPaths,method,(paths) -> None,758-772,false,15,1,updates watch paths
+      StorageSync.removeWatchPath,method,(pathToRemove) -> None,774-776,false,3,1,deletes watch path
+      StorageSync.setOauthConfig,method,(config) -> None,778-785,false,8,1,updates oauth config
+      StorageSync.setConnections,method,(connections) -> None,787-789,false,3,1,updates connections
+      StorageSync.clearProcessedCache,method,() -> None,791-793,false,3,1,deletes processed cache
+  src/core/emailWatcher.js:
+    functions[13]{name,kind,sig,loc,async,lines,cc,does}:
+      createEmailWatcher,function,() -> None,181-183,false,3,1,creates email watcher
+      EmailWatcher.constructor,method,() -> None,12-22,false,11,1,constructor
+      EmailWatcher.start,method,() -> None,24-32,true,9,1,starts
+      EmailWatcher.stop,method,() -> None,34-41,false,8,1,stops
+      EmailWatcher._poll,method,() -> None,43-52,true,10,1,poll
+      EmailWatcher.checkForInvoices,method,() -> None,54-83,true,30,1,checks for invoices
+      EmailWatcher._fetchEmails,method,() -> None,85-94,true,10,1,retrieves emails
+      EmailWatcher._fetchImap,method,() -> None,96-111,true,16,1,retrieves imap
+      EmailWatcher._fetchGmailOauth,method,() -> None,113-128,true,16,1,retrieves gmail oauth
+      EmailWatcher._fetchOutlookOauth,method,() -> None,130-144,true,15,1,retrieves outlook oauth
+      EmailWatcher._filterInvoiceAttachments,method,(attachments) -> None,146-158,false,13,1,filters invoice attachments
+      EmailWatcher.setImapConfig,method,(config) -> None,160-169,false,10,1,updates imap config
+      EmailWatcher.setOauthConfig,method,(config) -> None,171-178,false,8,1,updates oauth config
+  src/core/sqliteDb.js:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      loadSqlJs,function,() -> None,6-18,true,13,1,retrieves sql js
+      createSqliteDb,function,() -> None,130-132,false,3,1,creates sqlite db
+      SqliteDb.constructor,method,() -> None,21-27,false,7,1,constructor
+      SqliteDb._init,method,() -> None,29-49,true,21,1,creates
+      SqliteDb.exec,method,(sql) -> None,51-54,true,4,1,exec
+      SqliteDb.all,method,(sql) -> None,56-69,true,14,1,all
+      SqliteDb.get,method,(sql) -> None,71-74,true,4,1,retrieves
+      SqliteDb.run,method,(sql) -> None,76-84,true,9,1,starts
+      SqliteDb.transaction,method,(fn) -> None,86-97,true,12,1,transaction
+      SqliteDb.persist,method,() -> None,99-115,true,17,1,caches
+      SqliteDb.exportFileBuffer,method,() -> None,117-121,true,5,1,export file buffer
+      SqliteDb.importFileBuffer,method,(buffer) -> None,123-127,true,5,1,import file buffer
+  src/core/invoiceWorkflow.js:
+    functions[25]{name,kind,sig,loc,async,lines,cc,does}:
+      createInvoiceWorkflow,function,() -> None,325-327,false,3,1,creates invoice workflow
+      InvoiceWorkflow.constructor,method,() -> None,13-48,false,36,1,constructor
+      InvoiceWorkflow._setupEventForwarding,method,() -> None,50-60,false,11,1,initializes event forwarding
+      InvoiceWorkflow.start,method,() -> None,62-67,true,6,1,starts
+      InvoiceWorkflow.stop,method,() -> None,69-74,false,6,1,stops
+      InvoiceWorkflow._startKsefPolling,method,() -> None,76-82,false,7,1,starts ksef polling
+      InvoiceWorkflow._stopKsefPolling,method,() -> None,84-89,false,6,1,stops ksef polling
+      InvoiceWorkflow._pollKsef,method,() -> None,91-115,true,25,1,poll ksef
+      InvoiceWorkflow.setKsefAccessToken,method,(token) -> None,117-122,false,6,1,updates ksef access token
+      InvoiceWorkflow.processInvoice,method,(invoiceId) -> None,124-158,true,35,1,processes invoice
+      InvoiceWorkflow.approveInvoice,method,(invoiceId) -> None,160-172,true,13,1,approve invoice
+      InvoiceWorkflow.rejectInvoice,method,"(invoiceId, reason) -> None",174-177,true,4,1,reject invoice
+      InvoiceWorkflow.exportApproved,method,(format) -> None,179-182,true,4,1,export approved
+      InvoiceWorkflow.getStats,method,() -> None,184-186,true,3,1,retrieves stats
+      InvoiceWorkflow.listInvoices,method,() -> None,188-190,true,3,1,list invoices
+      InvoiceWorkflow.getInvoice,method,(id) -> None,192-194,true,3,1,retrieves invoice
+      InvoiceWorkflow.addManualInvoice,method,"(source, file, metadata) -> None",196-198,true,3,1,creates manual invoice
+      InvoiceWorkflow.configureEmail,method,(config) -> None,200-207,false,8,1,initializes email
+      InvoiceWorkflow.configureStorage,method,(config) -> None,209-225,false,17,1,initializes storage
+      InvoiceWorkflow.configureOcr,method,(config) -> None,227-234,false,8,1,initializes ocr
+      InvoiceWorkflow.configureExport,method,(config) -> None,236-243,false,8,1,initializes export
+      InvoiceWorkflow.addDescriptionRule,method,(rule) -> None,245-247,false,3,1,creates description rule
+      InvoiceWorkflow.assignInvoiceToProject,method,"(invoiceId, projectId) -> None",249-272,true,24,1,assign invoice to project
+      InvoiceWorkflow.assignInvoiceToExpenseType,method,"(invoiceId, expenseTypeId) -> None",274-296,true,23,1,assign invoice to expense type
+      InvoiceWorkflow.assignInvoiceToLabels,method,"(invoiceId, labelIds) -> None",298-322,true,25,1,assign invoice to labels
   src/core/listen.js:
     functions[4]{name,kind,sig,loc,async,lines,cc,does}:
       isPortNumber,function,(value) -> None,3-5,false,3,1,is port number
       canBind,function,"(host, port) -> None",7-22,false,16,1,checks bind
       findAvailablePort,function,() -> None,24-47,true,24,1,retrieves available port
       listenWithFallback,function,(app) -> None,49-73,true,25,1,handles with fallback
+  src/core/sqliteDataLayer.js:
+    functions[27]{name,kind,sig,loc,async,lines,cc,does}:
+      nowIso,function,() -> None,3-5,false,3,1,now iso
+      safeJsonParse,function,"(raw, fallback) -> None",7-13,false,7,1,safe json parse
+      initDataLayer,function,(layer) -> None,277-284,true,8,1,creates data layer
+      createSqliteDataLayer,function,() -> None,286-372,false,87,1,creates sqlite data layer
+      SqliteKeyValueRepo.constructor,method,(db) -> None,16-18,false,3,1,constructor
+      SqliteKeyValueRepo.init,method,() -> None,20-31,true,12,1,creates
+      SqliteKeyValueRepo.get,method,(key) -> None,33-36,true,4,1,retrieves
+      SqliteKeyValueRepo.set,method,"(key, value) -> None",38-44,true,7,1,updates
+      SqliteJsonRepo.constructor,method,"(db, tableName) -> None",48-51,false,4,1,constructor
+      SqliteJsonRepo.init,method,() -> None,53-63,true,11,1,creates
+      SqliteJsonRepo.list,method,() -> None,65-68,true,4,1,list
+      SqliteJsonRepo.get,method,(id) -> None,70-73,true,4,1,retrieves
+      SqliteJsonRepo.upsert,method,(obj) -> None,75-88,true,14,1,upsert
+      SqliteJsonRepo.delete,method,(id) -> None,90-93,true,4,1,deletes
+      SqliteJsonRepo.replaceAll,method,(items) -> None,95-103,true,9,1,replace all
+      SqliteContractorsRepo.constructor,method,(db) -> None,107-109,false,3,1,constructor
+      SqliteContractorsRepo.init,method,() -> None,111-122,true,12,1,creates
+      SqliteContractorsRepo.upsertFromInvoice,method,(invoice) -> None,124-135,true,12,1,upsert from invoice
+      SqliteContractorsRepo.list,method,() -> None,137-140,true,4,1,list
+      SqliteContractorsRepo.replaceAll,method,(items) -> None,142-159,true,18,1,replace all
+      SqliteInvoiceStore.constructor,method,"(db, contractorsRepo) -> None",163-166,false,4,1,constructor
+      SqliteInvoiceStore.init,method,() -> None,168-188,true,21,1,creates
+      SqliteInvoiceStore.save,method,(invoice) -> None,190-228,true,39,1,caches
+      SqliteInvoiceStore.get,method,(id) -> None,230-233,true,4,1,retrieves
+      SqliteInvoiceStore.list,method,() -> None,235-259,true,25,1,list
+      SqliteInvoiceStore.delete,method,(id) -> None,261-264,true,4,1,deletes
+      SqliteInvoiceStore.replaceAll,method,(items) -> None,266-274,true,9,1,replace all
+  src/core/validators.js:
+    functions[18]{name,kind,sig,loc,async,lines,cc,does}:
+      sanitizeNip,function,(nip) -> None,1-3,false,3,1,sanitize nip
+      isValidNip,function,(nip) -> None,5-20,false,16,1,is valid nip
+      isValidIban,function,(iban) -> None,22-42,false,21,1,is valid iban
+      isValidPolishIban,function,(iban) -> None,44-50,false,7,1,is valid polish iban
+      formatIban,function,(iban) -> None,52-55,false,4,1,formats iban
+      isValidEmail,function,(email) -> None,57-60,false,4,1,is valid email
+      isValidKsefNumber,function,(ksefNumber) -> None,62-65,false,4,1,is valid ksef number
+      isValidInvoiceNumber,function,(invoiceNumber) -> None,67-70,false,4,1,is valid invoice number
+      isValidAmount,function,(amount) -> None,72-75,false,4,1,is valid amount
+      isValidDate,function,(dateStr) -> None,77-81,false,5,1,is valid date
+      isValidVatRate,function,(rate) -> None,83-86,false,4,1,is valid vat rate
+      round2,function,(n) -> None,88-90,false,3,1,round2
+      formatPLN,function,(n) -> None,92-97,false,6,1,formats pln
+      formatAmount,function,(n) -> None,99-104,false,6,1,formats amount
+      parseAmount,function,(input) -> None,106-114,false,9,1,parses amount
+      calcVat,function,"(netAmount, vatRate) -> None",116-121,false,6,1,calc vat
+      calcGross,function,"(netAmount, vatRate) -> None",123-125,false,3,1,calc gross
+      calcNet,function,"(grossAmount, vatRate) -> None",127-132,false,6,1,calc net
+  src/core/draftStore.js:
+    functions[19]{name,kind,sig,loc,async,lines,cc,does}:
+      createStore,function,() -> None,112-120,false,9,1,creates store
+      InMemoryStore.constructor,method,() -> None,5-7,false,3,1,constructor
+      InMemoryStore.save,method,(invoice) -> None,9-11,true,3,1,caches
+      InMemoryStore.get,method,(id) -> None,13-15,true,3,1,retrieves
+      InMemoryStore.list,method,() -> None,17-19,true,3,1,list
+      InMemoryStore.delete,method,(id) -> None,21-23,true,3,1,deletes
+      JsonFileStore.constructor,method,(filePath) -> None,27-31,false,5,1,constructor
+      JsonFileStore._load,method,() -> None,33-43,false,11,1,retrieves
+      JsonFileStore._persist,method,() -> None,45-52,false,8,1,caches
+      JsonFileStore.save,method,(invoice) -> None,54-57,true,4,1,caches
+      JsonFileStore.get,method,(id) -> None,59-61,true,3,1,retrieves
+      JsonFileStore.list,method,() -> None,63-65,true,3,1,list
+      JsonFileStore.delete,method,(id) -> None,67-70,true,4,1,deletes
+      SqliteStore.constructor,method,() -> None,74-82,false,9,1,constructor
+      SqliteStore._init,method,() -> None,84-89,true,6,1,creates
+      SqliteStore.save,method,(invoice) -> None,91-94,true,4,1,caches
+      SqliteStore.get,method,(id) -> None,96-99,true,4,1,retrieves
+      SqliteStore.list,method,() -> None,101-104,true,4,1,list
+      SqliteStore.delete,method,(id) -> None,106-109,true,4,1,deletes
+  src/core/exportService.js:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      createExportService,function,() -> None,221-223,false,3,1,creates export service
+      ExportService.constructor,method,() -> None,12-16,false,5,1,constructor
+      ExportService.exportInvoices,method,"(invoices, format) -> None",18-42,true,25,1,export invoices
+      ExportService.toCsv,method,(invoices) -> None,44-95,true,52,1,converts csv
+      ExportService.toXlsx,method,(invoices) -> None,97-111,true,15,1,converts xlsx
+      ExportService.toJson,method,(invoices) -> None,113-122,true,10,1,converts json
+      ExportService.toWfirma,method,(invoices) -> None,124-140,true,17,1,converts wfirma
+      ExportService._sendToWfirma,method,(invoice) -> None,142-158,true,17,1,sends to wfirma
+      ExportService.sendWebhook,method,"(invoices, webhookUrl) -> None",160-194,true,35,1,sends webhook
+      ExportService.generateAccountantLink,method,(invoices) -> None,196-206,true,11,1,creates accountant link
+      ExportService.setWfirmaConfig,method,(config) -> None,208-214,false,7,1,updates wfirma config
+      ExportService.setWebhookUrl,method,(url) -> None,216-218,false,3,1,updates webhook url
   src/core/ksefFacade.js:
-    functions[15]{name,kind,sig,loc,async,lines,cc,does}:
-      createKsefFacade,function,(options) -> None,294-296,false,3,1,creates ksef facade
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      createKsefFacade,function,(options) -> None,325-327,false,3,1,creates ksef facade
       KsefFacade.constructor,method,() -> None,16-23,false,8,1,constructor
       KsefFacade.authenticateWithKsefToken,method,() -> None,25-38,true,14,1,validates with ksef token
       KsefFacade.openOnlineSession,method,() -> None,40-60,true,21,1,starts online session
@@ -33,6 +219,103 @@ function_details:
       KsefFacade.wrapPem,method,(certificateBase64) -> None,242-245,false,4,1,wrap pem
       KsefFacade.requestJson,method,() -> None,247-261,true,15,1,request json
       KsefFacade.requestRaw,method,() -> None,263-291,true,29,1,request raw
+      KsefFacade.pollNewInvoices,method,() -> None,293-322,true,30,1,poll new invoices
+  src/core/autoDescribe.js:
+    functions[15]{name,kind,sig,loc,async,lines,cc,does}:
+      createAutoDescribeEngine,function,() -> None,268-270,false,3,1,creates auto describe engine
+      AutoDescribeEngine.constructor,method,() -> None,18-24,false,7,1,constructor
+      AutoDescribeEngine.suggest,method,(invoiceData) -> None,26-53,true,28,1,suggest
+      AutoDescribeEngine._suggestFromHistory,method,(invoiceData) -> None,55-97,true,43,1,suggest from history
+      AutoDescribeEngine._suggestFromRules,method,(invoiceData) -> None,99-114,false,16,1,suggest from rules
+      AutoDescribeEngine._matchRule,method,"(rule, invoiceData) -> None",116-163,false,48,1,filters rule
+      AutoDescribeEngine._suggestFromAi,method,(invoiceData) -> None,165-181,true,17,1,suggest from ai
+      AutoDescribeEngine._pickBestSuggestion,method,(suggestions) -> None,183-197,false,15,1,pick best suggestion
+      AutoDescribeEngine._getTopKey,method,(counts) -> None,199-209,false,11,1,retrieves top key
+      AutoDescribeEngine.findContractorHistory,method,(nip) -> None,211-221,true,11,1,retrieves contractor history
+      AutoDescribeEngine.saveToHistory,method,(invoice) -> None,223-248,true,26,1,caches to history
+      AutoDescribeEngine.addRule,method,(rule) -> None,250-252,false,3,1,creates rule
+      AutoDescribeEngine.removeRule,method,(name) -> None,254-256,false,3,1,deletes rule
+      AutoDescribeEngine.setAiConfig,method,(config) -> None,258-261,false,4,1,updates ai config
+      AutoDescribeEngine.disableAi,method,() -> None,263-265,false,3,1,disable ai
+  src/core/ocrPipeline.js:
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      createOcrPipeline,function,() -> None,421-423,false,3,1,creates ocr pipeline
+      OcrPipeline.constructor,method,() -> None,14-26,false,13,1,constructor
+      OcrPipeline.process,method,(invoice) -> None,28-46,true,19,1,processes
+      OcrPipeline.parseKsefXml,method,(invoice) -> None,48-77,true,30,1,parses ksef xml
+      OcrPipeline._extractFromKsefXml,method,(xml) -> None,79-104,false,26,1,parses from ksef xml
+      OcrPipeline.runOcr,method,(invoice) -> None,106-171,true,66,1,starts ocr
+      OcrPipeline._runTesseract,method,"(fileBuffer, fileType) -> None",173-222,true,50,1,starts tesseract
+      OcrPipeline._inferExtension,method,(fileType) -> None,224-231,false,8,1,infer extension
+      OcrPipeline._normalizeFileContent,method,(value) -> None,233-284,false,52,1,normalize file content
+      OcrPipeline._shouldParseXml,method,() -> None,286-297,false,12,1,checks parse xml
+      OcrPipeline._spawnCapture,method,"(command, args, timeoutMs) -> None",299-337,false,39,1,spawn capture
+      OcrPipeline._runGoogleVision,method,(fileBuffer) -> None,339-355,true,17,1,starts google vision
+      OcrPipeline._runAzureOcr,method,(fileBuffer) -> None,357-371,true,15,1,starts azure ocr
+      OcrPipeline._extractInvoiceData,method,(text) -> None,373-410,false,38,1,parses invoice data
+      OcrPipeline.setProvider,method,(provider) -> None,412-414,false,3,1,updates provider
+      OcrPipeline.setApiConfig,method,(config) -> None,416-418,false,3,1,updates api config
+  src/core/invoiceBuilder.js:
+    functions[39]{name,kind,sig,loc,async,lines,cc,does}:
+      generateInvoiceNumber,function,() -> None,279-284,false,6,1,creates invoice number
+      EntityBuilder.constructor,method,() -> None,13-21,false,9,1,constructor
+      EntityBuilder.withName,method,(name) -> None,23-26,false,4,1,with name
+      EntityBuilder.withNip,method,(nip) -> None,28-31,false,4,1,with nip
+      EntityBuilder.withAddress,method,"(street, houseNumber, city, postalCode) -> None",33-43,false,11,1,with address
+      EntityBuilder.withEmail,method,(email) -> None,45-48,false,4,1,with email
+      EntityBuilder.withPhone,method,(phone) -> None,50-53,false,4,1,with phone
+      EntityBuilder.build,method,() -> None,55-57,false,3,1,creates
+      EntityBuilder.create,method,() -> None,59-61,false,3,1,creates
+      InvoiceLineBuilder.constructor,method,() -> None,65-79,false,15,1,constructor
+      InvoiceLineBuilder.withLineNumber,method,(num) -> None,81-84,false,4,1,with line number
+      InvoiceLineBuilder.withProduct,method,(name) -> None,86-90,false,5,1,with product
+      InvoiceLineBuilder.withQuantity,method,(quantity) -> None,92-96,false,5,1,with quantity
+      InvoiceLineBuilder.withUnitPrice,method,(amount) -> None,98-101,false,4,1,with unit price
+      InvoiceLineBuilder.withNetAmount,method,(amount) -> None,103-106,false,4,1,with net amount
+      InvoiceLineBuilder.withVatRate,method,(rate) -> None,108-111,false,4,1,with vat rate
+      InvoiceLineBuilder.withDiscount,method,(discount) -> None,113-116,false,4,1,with discount
+      InvoiceLineBuilder.calculateAmounts,method,() -> None,118-130,false,13,1,processes amounts
+      InvoiceLineBuilder.build,method,() -> None,132-134,false,3,1,creates
+      InvoiceLineBuilder.create,method,() -> None,136-138,false,3,1,creates
+      InvoiceLineBuilder.simple,method,"(name, quantity, unitPrice) -> None",140-148,false,9,1,simple
+      InvoiceBuilder.constructor,method,() -> None,152-173,false,22,1,constructor
+      InvoiceBuilder.withInvoiceNumber,method,(number) -> None,175-178,false,4,1,with invoice number
+      InvoiceBuilder.withInvoiceType,method,(type) -> None,180-183,false,4,1,with invoice type
+      InvoiceBuilder.withIssueDate,method,(date) -> None,185-188,false,4,1,with issue date
+      InvoiceBuilder.withSaleDate,method,(date) -> None,190-193,false,4,1,with sale date
+      InvoiceBuilder.withDueDate,method,(date) -> None,195-198,false,4,1,with due date
+      InvoiceBuilder.withCurrency,method,(currency) -> None,200-203,false,4,1,with currency
+      InvoiceBuilder.withPaymentMethod,method,(method) -> None,205-208,false,4,1,with payment method
+      InvoiceBuilder.withSeller,method,(seller) -> None,210-213,false,4,1,with seller
+      InvoiceBuilder.withBuyer,method,(buyer) -> None,215-218,false,4,1,with buyer
+      InvoiceBuilder.withBankAccount,method,(account) -> None,220-223,false,4,1,with bank account
+      InvoiceBuilder.withNotes,method,(notes) -> None,225-228,false,4,1,with notes
+      InvoiceBuilder.addLine,method,(line) -> None,230-233,false,4,1,creates line
+      InvoiceBuilder.addLines,method,(lines) -> None,235-238,false,4,1,creates lines
+      InvoiceBuilder.calculateTotals,method,() -> None,240-258,false,19,1,processes totals
+      InvoiceBuilder.build,method,() -> None,260-262,false,3,1,creates
+      InvoiceBuilder.create,method,() -> None,264-266,false,3,1,creates
+      InvoiceBuilder.vatInvoice,method,"(invoiceNumber, issueDate, seller, buyer) -> None",268-276,false,9,1,vat invoice
+  src/core/unifiedInbox.js:
+    functions[15]{name,kind,sig,loc,async,lines,cc,does}:
+      createUnifiedInbox,function,() -> None,276-278,false,3,1,creates unified inbox
+      UnifiedInbox.constructor,method,() -> None,21-28,false,8,1,constructor
+      UnifiedInbox.generateId,method,() -> None,30-32,false,3,1,creates id
+      UnifiedInbox.addInvoice,method,"(source, file) -> None",34-102,true,69,1,creates invoice
+      UnifiedInbox._ensureSourceKeyIndexLoaded,method,() -> None,104-117,true,14,1,ensure source key index loaded
+      UnifiedInbox._loadSourceKeyIndex,method,() -> None,119-137,true,19,1,retrieves source key index
+      UnifiedInbox._findBySourceKey,method,(sourceKey) -> None,139-147,true,9,1,retrieves by source key
+      UnifiedInbox.getInvoiceBySourceKey,method,(sourceKey) -> None,149-154,true,6,1,retrieves invoice by source key
+      UnifiedInbox.getInvoice,method,(id) -> None,156-161,true,6,1,retrieves invoice
+      UnifiedInbox.updateInvoice,method,"(id, updates) -> None",163-193,true,31,1,updates invoice
+      UnifiedInbox.setStatus,method,"(id, status) -> None",195-208,true,14,1,updates status
+      UnifiedInbox.listInvoices,method,() -> None,210-231,true,22,1,list invoices
+      UnifiedInbox.getPendingCount,method,() -> None,233-237,true,5,1,retrieves pending count
+      UnifiedInbox.getStats,method,() -> None,239-253,true,15,1,retrieves stats
+      UnifiedInbox.deleteInvoice,method,(id) -> None,255-273,true,19,1,deletes invoice
+  src/web/server.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      parseJsonEnv,function,"(name, fallbackValue) -> None",31-42,false,12,1,parses json env
   src/desktop/preload.js:
     functions[2]{name,kind,sig,loc,async,lines,cc,does}:
       readPortFile,function,(filePath) -> None,7-21,false,15,1,retrieves port file
@@ -41,8 +324,87 @@ function_details:
     functions[1]{name,kind,sig,loc,async,lines,cc,does}:
       createWindow,function,() -> None,7-17,false,11,1,creates window
   src/local-service/server.js:
-    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
-      writePortFile,function,"(filePath, portNumber) -> None",84-93,false,10,1,logs port file
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      canUseSqliteBackend,function,() -> None,61-68,false,8,1,checks use sqlite backend
+      getDefaultSettings,function,() -> None,72-90,false,19,1,retrieves default settings
+      readJsonFile,function,"(filePath, fallbackValue) -> None",92-103,false,12,1,retrieves json file
+      writeJsonFile,function,"(filePath, value) -> None",105-108,false,4,1,logs json file
+      normalizeStringArray,function,(value) -> None,110-115,false,6,1,normalize string array
+      loadSettings,function,() -> None,117-146,false,30,1,retrieves settings
+      parseCssColor,function,(input) -> None,152-183,false,32,1,parses css color
+      srgbToLinear,function,(channel) -> None,185-188,false,4,1,srgb to linear
+      relativeLuminance,function,(rgb) -> None,190-195,false,6,1,relative luminance
+      contrastRatio,function,"(fgRgb, bgRgb) -> None",197-203,false,7,1,contrast ratio
+      normalizePalette,function,(input) -> None,205-223,false,19,1,normalize palette
+      buildContrastChecks,function,(palette) -> None,225-263,false,39,1,creates contrast checks
+      getSettingsFromBackend,function,() -> None,265-281,true,17,1,retrieves settings from backend
+      setSettingsToBackend,function,(nextSettings) -> None,283-290,true,8,1,updates settings to backend
+      pushWorkflowEvent,function,"(type, payload) -> None",459-464,false,6,1,sends workflow event
+      writePortFile,function,"(filePath, portNumber) -> None",1608-1617,false,10,1,logs port file
   src/desktop/renderer/renderer.js:
-    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
-      check,function,() -> None,5-16,true,12,1,checks
+    functions[65]{name,kind,sig,loc,async,lines,cc,does}:
+      setApiUrl,function,(nextUrl) -> None,3-13,false,11,1,updates api url
+      fetchJsonWithTimeout,function,"(fullUrl, timeoutMs) -> None",17-35,true,19,1,retrieves json with timeout
+      resolveApiBaseUrl,function,() -> None,37-106,true,70,1,resolve api base url
+      applyTheme,function,(nextTheme) -> None,138-153,false,16,1,apply theme
+      persistThemeToApi,function,(nextTheme) -> None,155-164,true,10,1,caches theme to api
+      cycleTheme,function,() -> None,166-171,false,6,1,cycle theme
+      readCssVar,function,(varName) -> None,175-177,false,3,1,retrieves css var
+      getComputedThemePalette,function,() -> None,179-196,false,18,1,retrieves computed theme palette
+      runContrastReport,function,() -> None,198-262,true,65,1,starts contrast report
+      getUrlState,function,() -> None,268-278,false,11,1,retrieves url state
+      setUrlState,function,(next) -> None,280-299,false,20,1,updates url state
+      updateToggleViewButton,function,() -> None,301-305,false,5,1,updates toggle view button
+      setViewMode,function,(nextMode) -> None,307-316,false,10,1,updates view mode
+      setActiveFilter,function,(nextFilter) -> None,318-334,false,17,1,updates active filter
+      closeActiveUrlModal,function,() -> None,336-341,false,6,1,stops active url modal
+      syncUiFromUrl,function,() -> None,343-387,true,45,1,sync ui from url
+      setActivePage,function,(nextPage) -> None,389-430,false,42,1,updates active page
+      runActionFromUrl,function,"(action, invoiceId) -> None",432-459,true,28,1,starts action from url
+      checkConnection,function,() -> None,461-477,true,17,1,checks connection
+      loadStats,function,() -> None,479-506,true,28,1,retrieves stats
+      getInvoiceById,function,(invoiceId) -> None,516-530,true,15,1,retrieves invoice by id
+      loadInvoices,function,() -> None,532-547,true,16,1,retrieves invoices
+      renderInvoices,function,() -> None,549-718,false,170,1,formats invoices
+      renderInvoicesTable,function,(container) -> None,720-872,false,153,1,formats invoices table
+      exportApproved,function,() -> None,912-920,false,9,1,export approved
+      refresh,function,() -> None,922-928,true,7,1,refresh
+      loadProjects,function,() -> None,931-944,true,14,1,retrieves projects
+      loadExpenseTypes,function,() -> None,946-959,true,14,1,retrieves expense types
+      updateProjectSelects,function,() -> None,961-978,false,18,1,updates project selects
+      loadLabels,function,() -> None,980-993,true,14,1,retrieves labels
+      createLabel,function,(data) -> None,995-1008,true,14,1,creates label
+      updateLabel,function,"(id, data) -> None",1010-1023,true,14,1,updates label
+      deleteLabel,function,(id) -> None,1025-1037,true,13,1,deletes label
+      assignInvoiceToLabels,function,"(invoiceId, labelIds) -> None",1039-1057,true,19,1,assign invoice to labels
+      loadSettings,function,() -> None,1059-1070,true,12,1,retrieves settings
+      downloadBlob,function,"(filename, blob) -> None",1072-1081,false,10,1,download blob
+      downloadJson,function,"(filename, data) -> None",1083-1086,false,4,1,download json
+      selectFile,function,(accept) -> None,1088-1099,true,12,1,retrieves file
+      readFileAsText,function,(file) -> None,1101-1103,true,3,1,retrieves file as text
+      readFileAsArrayBuffer,function,(file) -> None,1105-1107,true,3,1,retrieves file as array buffer
+      arrayBufferToBase64,function,(buffer) -> None,1109-1116,false,8,1,array buffer to base64
+      exportDataBundle,function,() -> None,1118-1125,true,8,1,export data bundle
+      importDataBundle,function,(bundle) -> None,1127-1138,true,12,1,import data bundle
+      exportEntity,function,(entity) -> None,1140-1147,true,8,1,export entity
+      importEntity,function,"(entity, payload) -> None",1149-1160,true,12,1,import entity
+      exportSqliteFile,function,() -> None,1162-1170,true,9,1,export sqlite file
+      importSqliteFile,function,(file) -> None,1172-1185,true,14,1,import sqlite file
+      saveSettings,function,(nextSettings) -> None,1187-1208,true,22,1,caches settings
+      renderSettingsPage,function,() -> None,1210-1518,true,309,1,formats settings page
+      assignInvoiceToExpenseType,function,"(invoiceId, expenseTypeId) -> None",1520-1538,true,19,1,assign invoice to expense type
+      showNotification,function,(message) -> None,1540-1568,false,29,1,show notification
+      assignInvoiceToProject,function,"(invoiceId, projectId) -> None",1570-1588,true,19,1,assign invoice to project
+      renderProjectsPage,function,() -> None,1590-1597,true,8,1,formats projects page
+      renderLabelsPage,function,() -> None,1599-1663,true,65,1,formats labels page
+      showLabelForm,function,() -> None,1665-1730,false,66,1,show label form
+      showProjectsManager,function,() -> None,1732-1800,true,69,1,show projects manager
+      renderProjectsList,function,(container) -> None,1802-1865,true,64,1,formats projects list
+      showProjectForm,function,() -> None,1867-1949,false,83,1,show project form
+      createProject,function,(data) -> None,1951-1964,true,14,1,creates project
+      updateProject,function,"(id, data) -> None",1966-1979,true,14,1,updates project
+      deleteProject,function,(id) -> None,1981-1993,true,13,1,deletes project
+      importProjectsFromCSV,function,(file) -> None,1995-2031,true,37,1,import projects from csv
+      showInvoiceListPage,function,() -> None,2261-2268,false,8,1,show invoice list page
+      showInvoiceDetailsPage,function,(invoiceId) -> None,2270-2378,true,109,1,show invoice details page
+      showInvoiceDetailsModal,function,(invoiceId) -> None,2380-2435,true,56,1,show invoice details modal

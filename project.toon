@@ -1,0 +1,128 @@
+# exef | 19f 8513L | javascript:19
+# Keys: M=modules, D=details, i=imports, c=classes, f=functions, m=methods
+M[19]:
+  src/core/storageSync.js,666
+  src/core/emailWatcher.js,145
+  src/core/sqliteDb.js,114
+  src/core/invoiceWorkflow.js,271
+  src/core/listen.js,60
+  src/core/sqliteDataLayer.js,327
+  src/core/validators.js,127
+  src/core/draftStore.js,107
+  src/core/exportService.js,182
+  src/core/ksefFacade.js,279
+  src/core/autoDescribe.js,257
+  src/core/ocrPipeline.js,357
+  src/core/invoiceBuilder.js,246
+  src/core/unifiedInbox.js,242
+  src/web/server.js,210
+  src/desktop/preload.js,34
+  src/desktop/main.js,27
+  src/local-service/server.js,1428
+  src/desktop/renderer/renderer.js,2169
+D:
+  src/core/storageSync.js:
+    e: StorageSync,createStorageSync
+    StorageSync: constructor(0),getState(0),setState(1),start(0),stop(0)
+    createStorageSync()->None
+  src/core/emailWatcher.js:
+    e: EmailWatcher,createEmailWatcher
+    EmailWatcher: constructor(0),start(0),stop(0),_poll(0),checkForInvoices(0)
+    createEmailWatcher()->None
+  src/core/sqliteDb.js:
+    e: loadSqlJs,SqliteDb,createSqliteDb
+    SqliteDb: constructor(0),_init(0),exec(1),all(1),get(1)
+    loadSqlJs()->None
+    createSqliteDb()->None
+  src/core/invoiceWorkflow.js:
+    e: createInvoiceWorkflow,InvoiceWorkflow
+    InvoiceWorkflow: constructor(0),_setupEventForwarding(0),start(0),stop(0),_startKsefPolling(0)
+    createInvoiceWorkflow()->None
+  src/core/listen.js:
+    e: isPortNumber,canBind,listenWithFallback,findAvailablePort
+    isPortNumber(value)->None
+    canBind(host;port)->None
+    findAvailablePort()->None
+    listenWithFallback(app)->None
+  src/core/sqliteDataLayer.js:
+    e: initDataLayer,safeJsonParse,SqliteJsonRepo,SqliteContractorsRepo,SqliteInvoiceStore,createSqliteDataLayer,nowIso,SqliteKeyValueRepo
+    SqliteKeyValueRepo: constructor(1),init(0),get(1),set(2)
+    SqliteJsonRepo: constructor(2),init(0),list(0),get(1),upsert(1)
+    SqliteContractorsRepo: constructor(1),init(0),upsertFromInvoice(1),list(0),replaceAll(1)
+    SqliteInvoiceStore: constructor(2),init(0),save(1),get(1),list(0)
+    nowIso()->None
+    safeJsonParse(raw;fallback)->None
+    initDataLayer(layer)->None
+    createSqliteDataLayer()->None
+  src/core/validators.js:
+    e: formatAmount,isValidPolishIban,calcVat,calcGross,formatIban,isValidNip,sanitizeNip,isValidIban
+    sanitizeNip(nip)->None
+    isValidNip(nip)->None
+    isValidIban(iban)->None
+    isValidPolishIban(iban)->None
+    formatIban(iban)->None
+    isValidEmail(email)->None
+    isValidKsefNumber(ksefNumber)->None
+    isValidInvoiceNumber(invoiceNumber)->None
+  src/core/draftStore.js:
+    e: createStore,JsonFileStore,SqliteStore,InMemoryStore
+    InMemoryStore: constructor(0),save(1),get(1),list(0),delete(1)
+    JsonFileStore: constructor(1),_load(0),_persist(0),save(1),get(1)
+    SqliteStore: constructor(0),_init(0),save(1),get(1),list(0)
+    createStore()->None
+  src/core/exportService.js:
+    e: ExportService,createExportService
+    ExportService: constructor(0),exportInvoices(2),toCsv(1),toXlsx(1),toJson(1)
+    createExportService()->None
+  src/core/ksefFacade.js:
+    e: createKsefFacade,KsefFacade
+    KsefFacade: constructor(0),authenticateWithKsefToken(0),openOnlineSession(0),closeOnlineSession(0),sendOnlineInvoice(0)
+    createKsefFacade(options)->None
+  src/core/autoDescribe.js:
+    e: createAutoDescribeEngine,AutoDescribeEngine
+    AutoDescribeEngine: constructor(0),suggest(1),_suggestFromHistory(1),_suggestFromRules(1),_matchRule(2)
+    createAutoDescribeEngine()->None
+  src/core/ocrPipeline.js:
+    e: createOcrPipeline,OcrPipeline
+    OcrPipeline: constructor(0),process(1),parseKsefXml(1),_extractFromKsefXml(1),runOcr(1)
+    createOcrPipeline()->None
+  src/core/invoiceBuilder.js:
+    e: generateInvoiceNumber,InvoiceLineBuilder,InvoiceBuilder,EntityBuilder
+    EntityBuilder: constructor(0),withName(1),withNip(1),withAddress(4),withEmail(1)
+    InvoiceLineBuilder: constructor(0),withLineNumber(1),withProduct(1),withQuantity(1),withUnitPrice(1)
+    InvoiceBuilder: constructor(0),withInvoiceNumber(1),withInvoiceType(1),withIssueDate(1),withSaleDate(1)
+    generateInvoiceNumber()->None
+  src/core/unifiedInbox.js:
+    e: UnifiedInbox,createUnifiedInbox
+    UnifiedInbox: constructor(0),generateId(0),addInvoice(2),_ensureSourceKeyIndexLoaded(0),_loadSourceKeyIndex(0)
+    createUnifiedInbox()->None
+  src/web/server.js:
+    e: parseJsonEnv
+    parseJsonEnv(name;fallbackValue)->None
+  src/desktop/preload.js:
+    e: readPortFile,resolveLocalServiceBaseUrl
+    readPortFile(filePath)->None
+    resolveLocalServiceBaseUrl()->None
+  src/desktop/main.js:
+    e: createWindow
+    createWindow()->None
+  src/local-service/server.js:
+    e: loadSettings,contrastRatio,writeJsonFile,normalizeStringArray,relativeLuminance,srgbToLinear,buildContrastChecks,getDefaultSettings
+    canUseSqliteBackend()->None
+    getDefaultSettings()->None
+    readJsonFile(filePath;fallbackValue)->None
+    writeJsonFile(filePath;value)->None
+    normalizeStringArray(value)->None
+    loadSettings()->None
+    parseCssColor(input)->None
+    srgbToLinear(channel)->None
+  src/desktop/renderer/renderer.js:
+    e: readFileAsText,cycleTheme,runContrastReport,renderInvoicesTable,getComputedThemePalette,loadProjects,assignInvoiceToExpenseType,importEntity
+    setApiUrl(nextUrl)->None
+    fetchJsonWithTimeout(fullUrl;timeoutMs)->None
+    resolveApiBaseUrl()->None
+    applyTheme(nextTheme)->None
+    persistThemeToApi(nextTheme)->None
+    cycleTheme()->None
+    readCssVar(varName)->None
+    getComputedThemePalette()->None

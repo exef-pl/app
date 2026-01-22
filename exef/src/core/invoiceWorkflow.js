@@ -25,6 +25,7 @@ class InvoiceWorkflow extends EventEmitter {
     this.storageSync = createStorageSync({
       inbox: this.inbox,
       watchPaths: options.watchPaths || [],
+      connections: Array.isArray(options.storageConnections) ? options.storageConnections : [],
       pollInterval: options.storagePollInterval || 60000,
     })
 
@@ -50,8 +51,11 @@ class InvoiceWorkflow extends EventEmitter {
     this.inbox.on('invoice:added', (inv) => this.emit('invoice:added', inv))
     this.inbox.on('invoice:updated', (inv) => this.emit('invoice:updated', inv))
     this.emailWatcher.on('invoice:found', (inv) => this.emit('email:invoice', inv))
+    this.emailWatcher.on('error', (err) => this.emit('email:error', err))
     this.storageSync.on('invoice:found', (inv) => this.emit('storage:invoice', inv))
+    this.storageSync.on('error', (err) => this.emit('storage:error', err))
     this.ocrPipeline.on('processed', (data) => this.emit('ocr:processed', data))
+    this.ocrPipeline.on('error', (data) => this.emit('ocr:error', data))
     this.autoDescribe.on('suggested', (data) => this.emit('describe:suggested', data))
   }
 
@@ -96,7 +100,11 @@ class InvoiceWorkflow extends EventEmitter {
       })
 
       for (const invData of invoices) {
-        await this.inbox.addInvoice(INVOICE_SOURCE.KSEF, null, invData)
+        const ksefKey = invData?.ksefReferenceNumber || invData?.ksefId || null
+        await this.inbox.addInvoice(INVOICE_SOURCE.KSEF, null, {
+          ...invData,
+          sourceKey: ksefKey ? `ksef:${String(ksefKey)}` : null,
+        })
       }
 
       this.ksefLastPoll = new Date().toISOString()
@@ -207,6 +215,9 @@ class InvoiceWorkflow extends EventEmitter {
           this.storageSync.addWatchPath(p)
         }
       }
+    }
+    if (config.connections && typeof this.storageSync.setConnections === 'function') {
+      this.storageSync.setConnections(config.connections)
     }
     if (config.oauth) {
       this.storageSync.setOauthConfig(config.oauth)

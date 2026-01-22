@@ -1,4 +1,8 @@
 const EventEmitter = require('node:events')
+const { spawn } = require('node:child_process')
+const fs = require('node:fs/promises')
+const os = require('node:os')
+const path = require('node:path')
 
 const OCR_PROVIDERS = {
   TESSERACT: 'tesseract',
@@ -12,6 +16,13 @@ class OcrPipeline extends EventEmitter {
     this.provider = options.provider || OCR_PROVIDERS.TESSERACT
     this.apiConfig = options.apiConfig || null
     this.ksefParser = options.ksefParser || null
+    this.tesseract = {
+      binary: options.tesseract?.binary || 'tesseract',
+      lang: options.tesseract?.lang || 'pol',
+      psm: options.tesseract?.psm ?? 3,
+      oem: options.tesseract?.oem ?? 1,
+      timeoutMs: options.tesseract?.timeoutMs ?? 60000,
+    }
   }
 
   async process(invoice) {
@@ -93,8 +104,34 @@ class OcrPipeline extends EventEmitter {
   }
 
   async runOcr(invoice) {
-    const fileBuffer = invoice.originalFile
     const fileType = invoice.fileType || ''
+    const fileName = invoice.fileName || ''
+    const fileBuffer = this._normalizeFileContent(invoice.originalFile, { fileType, fileName })
+
+    if (this._shouldParseXml({ fileType, fileName, fileBuffer })) {
+      const xmlContent =
+        typeof invoice.originalFile === 'string'
+          ? invoice.originalFile
+          : fileBuffer?.toString('utf8')
+      const extracted = this._extractFromKsefXml(xmlContent || '')
+      return {
+        source: invoice.source,
+        confidence: 100,
+        rawText: null,
+        invoiceNumber: extracted.invoiceNumber,
+        issueDate: extracted.issueDate,
+        dueDate: extracted.dueDate,
+        sellerNip: extracted.sellerNip,
+        sellerName: extracted.sellerName,
+        buyerNip: extracted.buyerNip,
+        buyerName: extracted.buyerName,
+        netAmount: extracted.netAmount,
+        vatAmount: extracted.vatAmount,
+        grossAmount: extracted.grossAmount,
+        currency: extracted.currency,
+        items: extracted.items,
+      }
+    }
 
     if (!fileBuffer) {
       return {
@@ -134,17 +171,169 @@ class OcrPipeline extends EventEmitter {
   }
 
   async _runTesseract(fileBuffer, fileType) {
-    // Placeholder - requires tesseract.js
-    // const Tesseract = require('tesseract.js')
-    // const { data } = await Tesseract.recognize(fileBuffer, 'pol')
-    // return { text: data.text, confidence: data.confidence }
+    const ext = this._inferExtension(fileType)
 
-    this.emit('tesseract:run', { size: fileBuffer.length })
+    this.emit('tesseract:run', { size: fileBuffer.length, fileType, ext })
 
-    return {
-      text: '',
-      confidence: 0,
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'exef-ocr-'))
+    const inputPath = path.join(dir, `input${ext}`)
+
+    try {
+      await fs.writeFile(inputPath, fileBuffer)
+
+      const args = [
+        inputPath,
+        'stdout',
+        '-l',
+        this.tesseract.lang,
+        '--psm',
+        String(this.tesseract.psm),
+        '--oem',
+        String(this.tesseract.oem),
+      ]
+
+      const { stdout, stderr, exitCode } = await this._spawnCapture(
+        this.tesseract.binary,
+        args,
+        this.tesseract.timeoutMs
+      )
+
+      if (exitCode !== 0) {
+        const hint =
+          exitCode === null
+            ? ' (timeout)'
+            : ''
+        const msg = (stderr || '').trim()
+        throw new Error(`Tesseract OCR failed${hint}${msg ? `: ${msg}` : ''}`)
+      }
+
+      return {
+        text: (stdout || '').trim(),
+        confidence: null,
+      }
+    } catch (e) {
+      if (e && e.code === 'ENOENT') {
+        throw new Error('Tesseract binary not found. Install `tesseract-ocr` and ensure `tesseract` is on PATH.')
+      }
+      throw e
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true })
     }
+  }
+
+  _inferExtension(fileType) {
+    const ft = String(fileType || '').toLowerCase()
+    if (ft.includes('pdf')) return '.pdf'
+    if (ft.includes('png')) return '.png'
+    if (ft.includes('jpeg') || ft.includes('jpg')) return '.jpg'
+    if (ft.includes('tiff') || ft.includes('tif')) return '.tif'
+    return '.bin'
+  }
+
+  _normalizeFileContent(value, { fileType, fileName } = {}) {
+    if (!value) {
+      return null
+    }
+
+    if (Buffer.isBuffer(value)) {
+      return value
+    }
+
+    if (value && typeof value === 'object' && value.type === 'Buffer' && Array.isArray(value.data)) {
+      return Buffer.from(value.data)
+    }
+
+    if (Array.isArray(value) && value.every((n) => Number.isInteger(n) && n >= 0 && n <= 255)) {
+      return Buffer.from(value)
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+
+      if (this._shouldParseXml({ fileType, fileName, fileBuffer: trimmed })) {
+        return Buffer.from(trimmed, 'utf8')
+      }
+
+      const dataUrlMatch = trimmed.match(/^data:([^;]+);base64,(.*)$/i)
+      if (dataUrlMatch) {
+        try {
+          return Buffer.from(dataUrlMatch[2], 'base64')
+        } catch (_e) {
+          return Buffer.from(trimmed, 'utf8')
+        }
+      }
+
+      const base64Candidate = trimmed.replace(/\s/g, '')
+      const looksBase64 =
+        base64Candidate.length >= 64 &&
+        base64Candidate.length % 4 === 0 &&
+        /^[a-z0-9+/]+=*$/i.test(base64Candidate)
+
+      if (looksBase64) {
+        try {
+          return Buffer.from(base64Candidate, 'base64')
+        } catch (_e) {
+          return Buffer.from(trimmed, 'utf8')
+        }
+      }
+
+      return Buffer.from(trimmed, 'utf8')
+    }
+
+    return null
+  }
+
+  _shouldParseXml({ fileType, fileName, fileBuffer }) {
+    const ft = String(fileType || '').toLowerCase()
+    const fn = String(fileName || '').toLowerCase()
+    if (ft.includes('xml') || fn.endsWith('.xml')) {
+      return true
+    }
+    if (typeof fileBuffer === 'string') {
+      const s = fileBuffer.trim()
+      return s.startsWith('<?xml') || (s.startsWith('<') && s.includes('</'))
+    }
+    return false
+  }
+
+  _spawnCapture(command, args, timeoutMs) {
+    return new Promise((resolve, reject) => {
+      const child = spawn(command, args, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+
+      let stdout = ''
+      let stderr = ''
+      let killed = false
+
+      const t = setTimeout(() => {
+        killed = true
+        try {
+          child.kill('SIGKILL')
+        } catch (_e) {
+        }
+      }, Math.max(1000, Number(timeoutMs) || 60000))
+
+      child.stdout.setEncoding('utf8')
+      child.stderr.setEncoding('utf8')
+
+      child.stdout.on('data', (d) => {
+        stdout += d
+      })
+      child.stderr.on('data', (d) => {
+        stderr += d
+      })
+
+      child.on('error', (err) => {
+        clearTimeout(t)
+        reject(err)
+      })
+
+      child.on('close', (code) => {
+        clearTimeout(t)
+        resolve({ stdout, stderr, exitCode: killed ? null : code })
+      })
+    })
   }
 
   async _runGoogleVision(fileBuffer) {

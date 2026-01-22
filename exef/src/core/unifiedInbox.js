@@ -22,6 +22,9 @@ class UnifiedInbox extends EventEmitter {
     super()
     this.invoices = new Map()
     this.store = options.store || null
+    this._sourceKeyIndex = new Map()
+    this._sourceKeyIndexLoaded = false
+    this._sourceKeyIndexLoadPromise = null
   }
 
   generateId() {
@@ -29,6 +32,14 @@ class UnifiedInbox extends EventEmitter {
   }
 
   async addInvoice(source, file, metadata = {}) {
+    const incomingSourceKey = metadata?.sourceKey || metadata?.ingestKey || null
+    if (incomingSourceKey) {
+      const existing = await this._findBySourceKey(String(incomingSourceKey))
+      if (existing) {
+        return existing
+      }
+    }
+
     const id = this.generateId()
     const normalizedLabelIds = Array.isArray(metadata.labelIds)
       ? metadata.labelIds.map((v) => String(v)).map((v) => v.trim()).filter(Boolean)
@@ -41,6 +52,15 @@ class UnifiedInbox extends EventEmitter {
       fileName: metadata.fileName || null,
       fileType: metadata.fileType || null,
       fileSize: metadata.fileSize || null,
+      sourceKey: metadata.sourceKey || metadata.ingestKey || null,
+      sourcePath: metadata.sourcePath || null,
+      storageType: metadata.storageType || null,
+      storageProviderId: metadata.storageProviderId || null,
+      storageId: metadata.storageId || null,
+      remoteUrl: metadata.remoteUrl || null,
+      emailSubject: metadata.emailSubject || null,
+      emailFrom: metadata.emailFrom || null,
+      emailDate: metadata.emailDate || null,
       ksefId: metadata.ksefId || null,
       ksefReferenceNumber: metadata.ksefReferenceNumber || null,
       contractorNip: metadata.contractorNip || null,
@@ -69,12 +89,68 @@ class UnifiedInbox extends EventEmitter {
 
     this.invoices.set(id, invoice)
 
+    if (invoice.sourceKey) {
+      this._sourceKeyIndex.set(String(invoice.sourceKey), invoice.id)
+    }
+
     if (this.store) {
       await this.store.save(invoice)
     }
 
     this.emit('invoice:added', invoice)
     return invoice
+  }
+
+  async _ensureSourceKeyIndexLoaded() {
+    if (this._sourceKeyIndexLoaded) {
+      return
+    }
+
+    if (this._sourceKeyIndexLoadPromise) {
+      await this._sourceKeyIndexLoadPromise
+      return
+    }
+
+    this._sourceKeyIndexLoadPromise = this._loadSourceKeyIndex()
+    await this._sourceKeyIndexLoadPromise
+    this._sourceKeyIndexLoadPromise = null
+  }
+
+  async _loadSourceKeyIndex() {
+
+    if (this.store) {
+      const all = await this.store.list()
+      for (const inv of all) {
+        if (inv && inv.sourceKey) {
+          this._sourceKeyIndex.set(String(inv.sourceKey), String(inv.id))
+        }
+      }
+    } else {
+      for (const inv of this.invoices.values()) {
+        if (inv && inv.sourceKey) {
+          this._sourceKeyIndex.set(String(inv.sourceKey), String(inv.id))
+        }
+      }
+    }
+
+    this._sourceKeyIndexLoaded = true
+  }
+
+  async _findBySourceKey(sourceKey) {
+    const needle = String(sourceKey)
+    await this._ensureSourceKeyIndexLoaded()
+    const id = this._sourceKeyIndex.get(needle)
+    if (!id) {
+      return null
+    }
+    return this.getInvoice(id)
+  }
+
+  async getInvoiceBySourceKey(sourceKey) {
+    if (!sourceKey) {
+      return null
+    }
+    return this._findBySourceKey(String(sourceKey))
   }
 
   async getInvoice(id) {
@@ -90,6 +166,8 @@ class UnifiedInbox extends EventEmitter {
       throw new Error(`Invoice ${id} not found`)
     }
 
+    const prevSourceKey = invoice.sourceKey ? String(invoice.sourceKey) : null
+
     const updated = {
       ...invoice,
       ...updates,
@@ -97,6 +175,14 @@ class UnifiedInbox extends EventEmitter {
     }
 
     this.invoices.set(id, updated)
+
+    const nextSourceKey = updated.sourceKey ? String(updated.sourceKey) : null
+    if (prevSourceKey && prevSourceKey !== nextSourceKey) {
+      this._sourceKeyIndex.delete(prevSourceKey)
+    }
+    if (nextSourceKey) {
+      this._sourceKeyIndex.set(nextSourceKey, String(updated.id))
+    }
 
     if (this.store) {
       await this.store.save(updated)
@@ -173,6 +259,10 @@ class UnifiedInbox extends EventEmitter {
     }
 
     this.invoices.delete(id)
+
+    if (invoice.sourceKey) {
+      this._sourceKeyIndex.delete(String(invoice.sourceKey))
+    }
 
     if (this.store) {
       await this.store.delete(id)

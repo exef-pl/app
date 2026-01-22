@@ -1,6 +1,109 @@
-const url = window.exef?.localServiceBaseUrl ?? 'http://127.0.0.1:3030';
+let url = window.exef?.localServiceBaseUrl ?? (localStorage.getItem('exef_api_url') || 'http://127.0.0.1:3030');
 
-document.getElementById('url').textContent = url;
+function setApiUrl(nextUrl) {
+  url = String(nextUrl || '').trim();
+  if (!url) {
+    url = 'http://127.0.0.1:3030';
+  }
+  localStorage.setItem('exef_api_url', url);
+  const el = document.getElementById('url');
+  if (el) {
+    el.textContent = url;
+  }
+}
+
+setApiUrl(url);
+
+async function fetchJsonWithTimeout(fullUrl, timeoutMs) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(fullUrl, { signal: controller.signal });
+    if (!res.ok) {
+      return null;
+    }
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return null;
+    }
+    return await res.json();
+  } catch (_e) {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+async function resolveApiBaseUrl() {
+  if (window.exef?.localServiceBaseUrl) {
+    setApiUrl(window.exef.localServiceBaseUrl);
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('api') || params.get('apiUrl');
+  if (fromQuery) {
+    setApiUrl(fromQuery);
+    return;
+  }
+
+  if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+    const origin = window.location.origin;
+    if (origin && origin !== 'null') {
+      const originHealth = await fetchJsonWithTimeout(`${origin}/health`, 600);
+      if (originHealth?.service === 'exef-local-service') {
+        setApiUrl(origin);
+        return;
+      }
+    }
+  }
+
+  const currentHealth = await fetchJsonWithTimeout(`${url}/health`, 600);
+  if (currentHealth?.service === 'exef-local-service') {
+    return;
+  }
+
+  const hosts = Array.from(new Set([
+    window.location.hostname,
+    '127.0.0.1',
+    'localhost',
+  ].filter(Boolean)));
+
+  const ports = [];
+  for (let i = 0; i < 50; i++) {
+    ports.push(3030 + i);
+  }
+
+  const candidates = [];
+  for (const host of hosts) {
+    for (const port of ports) {
+      candidates.push(`http://${host}:${port}`);
+    }
+  }
+
+  const startedAt = Date.now();
+  const budgetMs = 5000;
+  const batchSize = 8;
+
+  for (let i = 0; i < candidates.length; i += batchSize) {
+    if (Date.now() - startedAt > budgetMs) {
+      return;
+    }
+
+    const batch = candidates.slice(i, i + batchSize);
+    const results = await Promise.all(
+      batch.map(async (candidate) => {
+        const health = await fetchJsonWithTimeout(`${candidate}/health`, 450);
+        return health?.service === 'exef-local-service' ? candidate : null;
+      })
+    );
+    const found = results.find(Boolean);
+    if (found) {
+      setApiUrl(found);
+      return;
+    }
+  }
+}
 
 const SOURCE_ICONS = {
   email: '📧',
@@ -22,18 +125,152 @@ let currentFilter = '';
 let invoices = [];
 let projects = [];
 let expenseTypes = [];
+let labels = [];
+let settings = null;
 let currentInvoice = null;
 
 let viewMode = localStorage.getItem('exef_invoice_view') || 'cards';
 
+const THEMES = ['white', 'dark', 'warm'];
+const storedTheme = localStorage.getItem('exef_theme');
+let theme = storedTheme || 'white';
+
+function applyTheme(nextTheme, options = {}) {
+  const normalized = String(nextTheme || '').trim().toLowerCase();
+  theme = THEMES.includes(normalized) ? normalized : 'white';
+
+  const persist = options.persist !== false;
+
+  document.body.dataset.theme = theme;
+  if (persist) {
+    localStorage.setItem('exef_theme', theme);
+  }
+
+  const btn = document.getElementById('themeBtn');
+  if (btn) {
+    btn.textContent = `Motyw: ${theme}`;
+  }
+}
+
+async function persistThemeToApi(nextTheme) {
+  try {
+    await fetch(`${url}/ui/theme`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ theme: nextTheme }),
+    });
+  } catch (_e) {
+  }
+}
+
+function cycleTheme() {
+  const idx = THEMES.indexOf(theme);
+  const next = THEMES[(idx + 1) % THEMES.length] || 'white';
+  applyTheme(next);
+  persistThemeToApi(next);
+}
+
+applyTheme(theme, { persist: !!storedTheme });
+
+function readCssVar(varName) {
+  return getComputedStyle(document.body).getPropertyValue(varName).trim();
+}
+
+function getComputedThemePalette() {
+  return {
+    bg: readCssVar('--bg'),
+    surface: readCssVar('--surface'),
+    surface2: readCssVar('--surface-2'),
+    border: readCssVar('--border'),
+    text: readCssVar('--text'),
+    muted: readCssVar('--muted'),
+    primary: readCssVar('--primary'),
+    primaryContrast: readCssVar('--primary-contrast'),
+    navActiveBg: readCssVar('--nav-active-bg'),
+    navActiveText: readCssVar('--nav-active-text'),
+    surfaceHover: readCssVar('--surface-hover'),
+    codeBg: readCssVar('--code-bg'),
+    suggestionBg: readCssVar('--suggestion-bg'),
+    suggestionText: readCssVar('--suggestion-text'),
+  };
+}
+
+async function runContrastReport() {
+  const container = document.getElementById('contrastReport');
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = '<div class="subtle">Testuję kontrast…</div>';
+
+  try {
+    const palette = getComputedThemePalette();
+    const res = await fetch(`${url}/ui/contrast/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ palette }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Contrast report failed (${res.status})`);
+    }
+
+    const data = await res.json();
+    const checks = Array.isArray(data.checks) ? data.checks : [];
+    if (!checks.length) {
+      container.innerHTML = '<div class="empty" style="padding: 12px;">Brak wyników</div>';
+      return;
+    }
+
+    const rows = checks.map((c) => {
+      const ok = c.passesAA ? 'OK' : 'FAIL';
+      const okStyle = c.passesAA ? 'color:#16a34a; font-weight:600;' : 'color:#dc2626; font-weight:600;';
+      return `
+        <tr>
+          <td>${c.name || ''}</td>
+          <td><code>${c.fg}</code></td>
+          <td><code>${c.bg}</code></td>
+          <td>${typeof c.ratio === 'number' ? c.ratio.toFixed(2) : c.ratio}</td>
+          <td><span style="${okStyle}">${ok}</span></td>
+        </tr>
+      `;
+    }).join('');
+
+    container.innerHTML = `
+      <div style="margin-top: 8px;" class="subtle">WCAG AA (tekst normalny): 4.5+</div>
+      <div class="invoice-table-wrapper" style="margin-top: 10px;">
+        <table class="invoices-table" style="min-width: 700px;">
+          <thead>
+            <tr>
+              <th>Para</th>
+              <th>FG</th>
+              <th>BG</th>
+              <th>Ratio</th>
+              <th>AA</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch (e) {
+    container.innerHTML = `<div class="empty" style="padding: 12px;">Błąd testu kontrastu: ${e.message}</div>`;
+  }
+}
+
 let activeUrlModal = null;
 let pageMode = 'list';
+let activePage = 'inbox';
 
 function getUrlState() {
   const params = new URLSearchParams(window.location.search);
   return {
     view: params.get('view'),
     filter: params.get('filter'),
+    page: params.get('page'),
     modal: params.get('modal'),
     invoice: params.get('invoice'),
     action: params.get('action'),
@@ -105,6 +342,16 @@ function closeActiveUrlModal() {
 
 async function syncUiFromUrl() {
   const state = getUrlState();
+
+  const nextPage = state.page || 'inbox';
+  if (nextPage !== activePage) {
+    setActivePage(nextPage, { syncUrl: false });
+  }
+
+  if ((state.invoice || state.modal) && activePage !== 'inbox') {
+    setActivePage('inbox', { syncUrl: false });
+  }
+
   const nextView = state.view === 'table' || state.view === 'cards' ? state.view : null;
   if (nextView && nextView !== viewMode) {
     setViewMode(nextView, { syncUrl: false });
@@ -132,14 +379,53 @@ async function syncUiFromUrl() {
   }
 
   closeActiveUrlModal();
-  if (state.modal === 'projects') {
-    await showProjectsManager({ syncUrl: false });
-  } else if (state.modal === 'expenseTypes') {
-    await showExpenseTypesManager({ syncUrl: false });
-  } else if (state.modal === 'assign' && state.invoice) {
+  if (state.modal === 'assign' && state.invoice) {
     await showAssignModal(state.invoice, { syncUrl: false });
   } else if (state.modal === 'invoice' && state.invoice) {
     await showInvoiceDetailsModal(state.invoice, { syncUrl: false });
+  }
+}
+
+function setActivePage(nextPage, options = {}) {
+  const syncUrl = options.syncUrl !== false;
+  const normalized = nextPage === 'projects' || nextPage === 'labels' || nextPage === 'settings' ? nextPage : 'inbox';
+  activePage = normalized;
+
+  const pages = {
+    inbox: document.getElementById('pageInbox'),
+    projects: document.getElementById('pageProjects'),
+    labels: document.getElementById('pageLabels'),
+    settings: document.getElementById('pageSettings'),
+  };
+
+  Object.entries(pages).forEach(([key, el]) => {
+    if (!el) {
+      return;
+    }
+    el.style.display = key === normalized ? '' : 'none';
+  });
+
+  document.querySelectorAll('.nav-btn').forEach((btn) => btn.classList.remove('active'));
+  const activeBtn = document.querySelector(`.nav-btn[data-page="${normalized}"]`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+  }
+
+  closeActiveUrlModal();
+  if (normalized !== 'inbox' && pageMode !== 'list') {
+    showInvoiceListPage({ syncUrl: false });
+  }
+
+  if (syncUrl) {
+    setUrlState({ page: normalized, invoice: null, modal: null }, { replace: false });
+  }
+
+  if (normalized === 'projects') {
+    renderProjectsPage();
+  } else if (normalized === 'labels') {
+    renderLabelsPage();
+  } else if (normalized === 'settings') {
+    renderSettingsPage();
   }
 }
 
@@ -177,8 +463,8 @@ async function checkConnection() {
   const connStatus = document.getElementById('connStatus');
 
   try {
-    const res = await fetch(`${url}/health`);
-    if (res.ok) {
+    const data = await fetchJsonWithTimeout(`${url}/health`, 800);
+    if (data?.service === 'exef-local-service') {
       connDot.className = 'connection-dot ok';
       connStatus.textContent = 'połączono';
       return true;
@@ -200,6 +486,11 @@ async function loadStats() {
     const pending = (stats.byStatus?.pending || 0) + (stats.byStatus?.ocr || 0);
     document.getElementById('statPending').textContent = pending;
 
+    const describedEl = document.getElementById('statDescribed');
+    if (describedEl) {
+      describedEl.textContent = stats.byStatus?.described || 0;
+    }
+
     document.getElementById('statApproved').textContent = stats.byStatus?.approved || 0;
 
     const badge = document.getElementById('newBadge');
@@ -215,9 +506,6 @@ async function loadStats() {
 }
 
 window.assignInvoiceToProjectFromTable = async function(invoiceId, projectId) {
-  if (!projectId) {
-    return;
-  }
   await assignInvoiceToProject(invoiceId, projectId);
 };
 
@@ -245,6 +533,9 @@ async function loadInvoices() {
   try {
     const filterParam = currentFilter ? `?status=${currentFilter}` : '';
     const res = await fetch(`${url}/inbox/invoices${filterParam}`);
+    if (!res.ok) {
+      throw new Error('Failed to load invoices');
+    }
     const data = await res.json();
     invoices = data.invoices || [];
     renderInvoices();
@@ -275,6 +566,9 @@ function renderInvoices() {
   }
 
   container.innerHTML = invoices.map(inv => {
+    const projectSelectionMode = settings?.ui?.invoicesTable?.projectSelection || 'select';
+    const expenseTypeSelectionMode = settings?.ui?.invoicesTable?.expenseTypeSelection || 'select';
+
     const icon = SOURCE_ICONS[inv.source] || '📄';
     const statusLabel = STATUS_LABELS[inv.status] || inv.status;
     const statusClass = `status-${inv.status}`;
@@ -293,33 +587,106 @@ function renderInvoices() {
     if (inv.status === 'pending' || inv.status === 'ocr') {
       actions = `
         <button onclick="processInvoice('${inv.id}')">Przetwórz</button>
-        <button onclick="showAssignModal('${inv.id}')">Przypisz</button>
         <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
       `;
     } else if (inv.status === 'described') {
       actions = `
         <button class="success" onclick="approveInvoice('${inv.id}')">Zatwierdź</button>
         <button onclick="editInvoice('${inv.id}')">Edytuj</button>
-        <button onclick="showAssignModal('${inv.id}')">Przypisz</button>
         <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
         <button class="danger" onclick="rejectInvoice('${inv.id}')">Odrzuć</button>
       `;
     } else if (inv.status === 'approved') {
       actions = `
         <span style="color: #16a34a;">✓ Zatwierdzona</span>
-        <button onclick="showAssignModal('${inv.id}')">Przypisz</button>
         <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
       `;
     }
 
-    const projectInfo = inv.projectId ? (() => {
-      const project = projects.find(p => p.id === inv.projectId);
-      return project ? `<div style="font-size: 12px; color: #6b7280; margin-top: 4px;">📁 Projekt: ${project.nazwa}</div>` : '';
-    })() : '';
+    let projectControl = '';
+    if (projectSelectionMode === 'select') {
+      const projectOptions = [`<option value="">—</option>`].concat(
+        projects.map((p) => {
+          const selected = inv.projectId && p?.id && inv.projectId === p.id ? 'selected' : '';
+          return `<option value="${p.id}" ${selected}>${p.nazwa || p.id}</option>`;
+        })
+      ).join('');
 
-    const expenseTypeInfo = inv.expenseTypeId ? (() => {
-      const expenseType = expenseTypes.find(t => t.id === inv.expenseTypeId);
-      return expenseType ? `<div style="font-size: 12px; color: #6b7280; margin-top: 4px;">🏷️ Typ: ${expenseType.nazwa}</div>` : '';
+      projectControl = `
+        <div style="flex:1; min-width: 240px;">
+          <div class="subtle" style="margin-bottom: 6px;">📁 Projekt</div>
+          <select onchange="assignInvoiceToProjectFromTable('${inv.id}', this.value)">${projectOptions}</select>
+        </div>
+      `;
+    } else {
+      const list = projects.map((p) => {
+        const checked = inv.projectId && p?.id && inv.projectId === p.id ? 'checked' : '';
+        const disabled = p?.id ? '' : 'disabled';
+        const label = (p && (p.nazwa || p.id)) ? (p.nazwa || p.id) : '';
+        return `
+          <label style="display:flex; align-items:center; gap:8px; margin:4px 0; font-size: 13px;">
+            <input type="radio" name="card-project-${inv.id}" value="${p?.id || ''}" ${checked} ${disabled}
+              onchange="assignInvoiceToProjectFromTable('${inv.id}','${p?.id || ''}')" />
+            <span>${label}</span>
+          </label>
+        `;
+      }).join('');
+
+      projectControl = `
+        <div style="flex:1; min-width: 240px;">
+          <div class="subtle" style="margin-bottom: 6px;">📁 Projekt</div>
+          <div style="max-height: 120px; overflow:auto; padding-right: 6px;">
+            ${list}
+          </div>
+        </div>
+      `;
+    }
+
+    let expenseTypeControl = '';
+    if (expenseTypeSelectionMode === 'select') {
+      const expenseTypeOptions = [`<option value="">—</option>`].concat(
+        expenseTypes.map((t) => {
+          const selected = inv.expenseTypeId && t?.id && inv.expenseTypeId === t.id ? 'selected' : '';
+          return `<option value="${t.id}" ${selected}>${t.nazwa}</option>`;
+        })
+      ).join('');
+
+      expenseTypeControl = `
+        <div style="flex:1; min-width: 240px;">
+          <div class="subtle" style="margin-bottom: 6px;">🏷️ Typ wydatku</div>
+          <select onchange="assignInvoiceToExpenseTypeFromTable('${inv.id}', this.value)">${expenseTypeOptions}</select>
+        </div>
+      `;
+    } else {
+      const list = expenseTypes.map((t) => {
+        const checked = inv.expenseTypeId && t?.id && inv.expenseTypeId === t.id ? 'checked' : '';
+        return `
+          <label style="display:flex; align-items:center; gap:8px; margin:4px 0; font-size: 13px;">
+            <input type="radio" name="card-expense-${inv.id}" value="${t.id}" ${checked}
+              onchange="assignInvoiceToExpenseTypeFromTable('${inv.id}', '${t.id}')" />
+            <span>${t.nazwa}</span>
+          </label>
+        `;
+      }).join('');
+
+      expenseTypeControl = `
+        <div style="flex:1; min-width: 240px;">
+          <div class="subtle" style="margin-bottom: 6px;">🏷️ Typ wydatku</div>
+          <div style="max-height: 120px; overflow:auto; padding-right: 6px;">
+            ${list}
+          </div>
+        </div>
+      `;
+    }
+
+    const labelsInfo = Array.isArray(inv.labelIds) && inv.labelIds.length ? (() => {
+      const chips = inv.labelIds.map((labelId) => {
+        const label = labels.find((l) => l.id === labelId);
+        const name = label?.nazwa || labelId;
+        const color = label?.kolor || '#e5e7eb';
+        return `<span class="label-chip"><span class="label-dot" style="background:${color}"></span>${name}</span>`;
+      }).join('');
+      return `<div style="margin-top: 6px;">${chips}</div>`;
     })() : '';
 
     return `
@@ -339,8 +706,11 @@ function renderInvoices() {
           <div class="card-amount">${amount}</div>
         </div>
         ${suggestion ? `<div style="margin-bottom: 8px;">${suggestion}</div>` : ''}
-        ${projectInfo}
-        ${expenseTypeInfo}
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start; margin-top: 10px;">
+          ${expenseTypeControl}
+          ${projectControl}
+        </div>
+        ${labelsInfo}
         <div class="card-actions">${actions}</div>
       </div>
     `;
@@ -353,10 +723,18 @@ function renderInvoicesTable(container) {
     return;
   }
 
-  const projectHeaders = projects.map((p) => {
-    const label = p?.nazwa || p?.id || '';
-    return `<th class="project-col" title="${label}">${label}</th>`;
-  }).join('');
+  const projectSelectionMode = settings?.ui?.invoicesTable?.projectSelection || 'select';
+  const expenseTypeSelectionMode = settings?.ui?.invoicesTable?.expenseTypeSelection || 'select';
+
+  const configLink = `<a href="?page=settings" onclick="window.navigateToSettings(); return false;" style="text-decoration:none; margin-left:6px;" title="Konfiguracja">⚙</a>`;
+
+  const projectHeaders = projectSelectionMode === 'radio'
+    ? projects.map((p, idx) => {
+      const label = p?.nazwa || p?.id || '';
+      const link = idx === 0 ? configLink : '';
+      return `<th class="project-col" title="${label}">${label}${link}</th>`;
+    }).join('')
+    : '';
 
   const rows = invoices.map((inv) => {
     const icon = SOURCE_ICONS[inv.source] || '📄';
@@ -366,25 +744,76 @@ function renderInvoicesTable(container) {
       ? `${Number(inv.grossAmount).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} ${inv.currency || 'PLN'}`
       : '—';
 
-    const projectCells = projects.map((p) => {
-      const checked = inv.projectId && p?.id && inv.projectId === p.id ? 'checked' : '';
-      const disabled = p?.id ? '' : 'disabled';
-      return `
-        <td class="center project-col">
-          <div class="project-radio">
-            <input type="radio" name="project-${inv.id}" value="${p?.id || ''}" ${checked} ${disabled}
-              onchange="assignInvoiceToProjectFromTable('${inv.id}','${p?.id || ''}')" />
+    let projectCell = '';
+    if (projectSelectionMode === 'select') {
+      const projectOptions = [`<option value="">—</option>`].concat(
+        projects.map((p) => {
+          const selected = inv.projectId && p?.id && inv.projectId === p.id ? 'selected' : '';
+          return `<option value="${p.id}" ${selected}>${p.nazwa || p.id}</option>`;
+        })
+      ).join('');
+
+      projectCell = `
+        <td>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <select onchange="assignInvoiceToProjectFromTable('${inv.id}', this.value)">${projectOptions}</select>
+            ${configLink}
           </div>
         </td>
       `;
-    }).join('');
+    } else {
+      projectCell = projects.map((p) => {
+        const checked = inv.projectId && p?.id && inv.projectId === p.id ? 'checked' : '';
+        const disabled = p?.id ? '' : 'disabled';
+        return `
+          <td class="center project-col">
+            <div class="project-radio">
+              <input type="radio" name="project-${inv.id}" value="${p?.id || ''}" ${checked} ${disabled}
+                onchange="assignInvoiceToProjectFromTable('${inv.id}','${p?.id || ''}')" />
+            </div>
+          </td>
+        `;
+      }).join('');
+    }
 
-    const expenseTypeOptions = [`<option value="">—</option>`].concat(
-      expenseTypes.map((t) => {
-        const selected = inv.expenseTypeId && t?.id && inv.expenseTypeId === t.id ? 'selected' : '';
-        return `<option value="${t.id}" ${selected}>${t.nazwa}</option>`;
-      })
-    ).join('');
+    let expenseTypeCell = '';
+    if (expenseTypeSelectionMode === 'select') {
+      const expenseTypeOptions = [`<option value="">—</option>`].concat(
+        expenseTypes.map((t) => {
+          const selected = inv.expenseTypeId && t?.id && inv.expenseTypeId === t.id ? 'selected' : '';
+          return `<option value="${t.id}" ${selected}>${t.nazwa}</option>`;
+        })
+      ).join('');
+
+      expenseTypeCell = `
+        <td>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <select onchange="assignInvoiceToExpenseTypeFromTable('${inv.id}', this.value)">${expenseTypeOptions}</select>
+            ${configLink}
+          </div>
+        </td>
+      `;
+    } else {
+      const list = expenseTypes.map((t) => {
+        const checked = inv.expenseTypeId && t?.id && inv.expenseTypeId === t.id ? 'checked' : '';
+        return `
+          <label style="display:flex; align-items:center; gap:6px; margin:4px 0;">
+            <input type="radio" name="expense-${inv.id}" value="${t.id}" ${checked}
+              onchange="assignInvoiceToExpenseTypeFromTable('${inv.id}', '${t.id}')" />
+            <span>${t.nazwa}</span>
+          </label>
+        `;
+      }).join('');
+
+      expenseTypeCell = `
+        <td>
+          <div style="display:flex; align-items:flex-start; gap:6px;">
+            <div style="max-height: 96px; overflow:auto; padding-right:6px;">${list}</div>
+            ${configLink}
+          </div>
+        </td>
+      `;
+    }
 
     let actions = '';
     if (inv.status === 'pending' || inv.status === 'ocr') {
@@ -408,14 +837,16 @@ function renderInvoicesTable(container) {
         <td><span class="${statusClass}">${statusLabel}</span></td>
         <td>${amount}</td>
         <td class="muted">${inv.issueDate || '—'}</td>
-        <td>
-          <select onchange="assignInvoiceToExpenseTypeFromTable('${inv.id}', this.value)">${expenseTypeOptions}</select>
-        </td>
-        ${projectCells}
+        ${expenseTypeCell}
+        ${projectCell}
         <td>${actions}</td>
       </tr>
     `;
   }).join('');
+
+  const projectHeaderCells = projectSelectionMode === 'select'
+    ? `<th>Projekt</th>`
+    : projectHeaders;
 
   container.innerHTML = `
     <div class="invoice-table-wrapper">
@@ -428,7 +859,7 @@ function renderInvoicesTable(container) {
             <th>Kwota</th>
             <th>Data</th>
             <th>Typ wydatku</th>
-            ${projectHeaders}
+            ${projectHeaderCells}
             <th>Akcje</th>
           </tr>
         </thead>
@@ -478,34 +909,21 @@ window.editInvoice = function(id) {
   alert('Edycja faktury ' + id + ' - funkcja w przygotowaniu');
 };
 
-async function exportApproved() {
-  try {
-    const res = await fetch(`${url}/inbox/export`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ format: 'csv' }),
-    });
-    const result = await res.json();
-    if (result.content) {
-      const blob = new Blob([result.content], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'faktury_zatwierdzone.csv';
-      link.click();
-    } else if (result.filePath) {
-      alert('Wyeksportowano do: ' + result.filePath);
-    } else {
-      alert('Eksport zakończony');
-    }
-  } catch (e) {
-    alert('Błąd eksportu: ' + e.message);
-  }
+function exportApproved() {
+  const link = document.createElement('a');
+  link.href = `${url}/inbox/export.csv`;
+  link.download = 'faktury_zatwierdzone.csv';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 async function refresh() {
   await loadStats();
   await loadProjects();
   await loadExpenseTypes();
+  await loadLabels();
   await loadInvoices();
 }
 
@@ -513,6 +931,9 @@ async function refresh() {
 async function loadProjects() {
   try {
     const res = await fetch(`${url}/projects`);
+    if (!res.ok) {
+      throw new Error('Failed to load projects');
+    }
     const data = await res.json();
     projects = data.projects || [];
     updateProjectSelects();
@@ -525,208 +946,54 @@ async function loadProjects() {
 async function loadExpenseTypes() {
   try {
     const res = await fetch(`${url}/expense-types`);
+    if (!res.ok) {
+      throw new Error('Failed to load expense types');
+    }
     const data = await res.json();
     expenseTypes = data.expenseTypes || [];
     renderInvoices();
   } catch (e) {
     console.error('Failed to load expense types:', e);
+    expenseTypes = [];
   }
 }
 
 function updateProjectSelects() {
-  const selects = document.querySelectorAll('.project-select');
-  selects.forEach(select => {
-    const currentValue = select.value;
-    select.innerHTML = '<option value="">-- wybierz projekt --</option>';
-    
-    projects.forEach(project => {
-      const option = document.createElement('option');
-      option.value = project.id;
-      option.textContent = `${project.nazwa} (${project.klient || 'brak klienta'})`;
-      select.appendChild(option);
-    });
-    
-    if (currentValue) {
-      select.value = currentValue;
-    }
-  });
-}
-
-async function showExpenseTypesManager(options = {}) {
-  if (options && typeof options.preventDefault === 'function') {
-    options = {};
-  }
-  const syncUrl = options.syncUrl !== false;
-  if (syncUrl) {
-    setUrlState({ modal: 'expenseTypes', invoice: null }, { replace: false });
-  }
-
-  const modal = document.createElement('div');
-  modal.className = 'modal';
-  modal.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Typy wydatków</h2>
-        <button class="close-btn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="projects-toolbar">
-          <button class="add-expense-type-btn primary">+ Dodaj typ</button>
-        </div>
-        <div class="expense-types-list"></div>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-  activeUrlModal = modal;
-
-  const close = () => {
-    modal.remove();
-    if (activeUrlModal === modal) {
-      activeUrlModal = null;
-    }
-    if (syncUrl) {
-      setUrlState({ modal: null, ...(pageMode === 'list' ? { invoice: null } : {}) }, { replace: false });
-    }
-  };
-
-  modal.querySelector('.close-btn').addEventListener('click', close);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) close();
-  });
-
-  await renderExpenseTypesList(modal.querySelector('.expense-types-list'));
-
-  modal.querySelector('.add-expense-type-btn').addEventListener('click', () => {
-    showExpenseTypeForm();
-  });
-}
-
-async function renderExpenseTypesList(container) {
-  container.innerHTML = '';
-
-  await loadExpenseTypes();
-
-  if (expenseTypes.length === 0) {
-    container.innerHTML = '<p class="empty">Brak typów wydatków</p>';
+  const selects = Array.from(document.querySelectorAll('select.project-select'));
+  if (!selects.length) {
     return;
   }
 
-  const table = document.createElement('table');
-  table.className = 'projects-table';
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nazwa</th>
-        <th>Opis</th>
-        <th>Akcje</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  `;
+  const optionsHtml = [`<option value="">—</option>`].concat(
+    projects.map((p) => `<option value="${p.id}">${p.nazwa || p.id}</option>`)
+  ).join('');
 
-  const tbody = table.querySelector('tbody');
-  expenseTypes.forEach(t => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${t.id}</td>
-      <td>${t.nazwa}</td>
-      <td>${t.opis || '-'}</td>
-      <td>
-        <button class="edit-expense-type-btn" data-id="${t.id}">Edytuj</button>
-        <button class="delete-expense-type-btn danger" data-id="${t.id}">Usuń</button>
-      </td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  container.appendChild(table);
-
-  container.querySelectorAll('.edit-expense-type-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const id = e.target.dataset.id;
-      const type = expenseTypes.find(x => x.id === id);
-      showExpenseTypeForm(type);
-    });
-  });
-
-  container.querySelectorAll('.delete-expense-type-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const id = e.target.dataset.id;
-      if (confirm('Czy na pewno usunąć ten typ wydatku?')) {
-        await deleteExpenseType(id);
-        await renderExpenseTypesList(container);
-      }
-    });
-  });
-}
-
-function showExpenseTypeForm(expenseType = null) {
-  const modal = document.createElement('div');
-  modal.className = 'modal';
-  modal.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>${expenseType ? 'Edytuj typ wydatku' : 'Dodaj typ wydatku'}</h2>
-        <button class="close-btn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form class="expense-type-form">
-          <div class="form-group">
-            <label>ID typu:</label>
-            <input type="text" name="id" value="${expenseType?.id || ''}" ${expenseType ? 'readonly' : ''} required>
-          </div>
-          <div class="form-group">
-            <label>Nazwa:</label>
-            <input type="text" name="nazwa" value="${expenseType?.nazwa || ''}" required>
-          </div>
-          <div class="form-group">
-            <label>Opis:</label>
-            <textarea name="opis" rows="3">${expenseType?.opis || ''}</textarea>
-          </div>
-          <div class="form-actions">
-            <button type="submit" class="primary">${expenseType ? 'Zapisz zmiany' : 'Dodaj typ'}</button>
-            <button type="button" class="cancel-btn">Anuluj</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  const close = () => modal.remove();
-  modal.querySelector('.close-btn').addEventListener('click', close);
-  modal.querySelector('.cancel-btn').addEventListener('click', close);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) close();
-  });
-
-  modal.querySelector('.expense-type-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-    try {
-      if (expenseType) {
-        await updateExpenseType(expenseType.id, data);
-        showNotification('Typ wydatku zaktualizowany', 'success');
-      } else {
-        await createExpenseType(data);
-        showNotification('Typ wydatku dodany', 'success');
-      }
-      close();
-      await loadExpenseTypes();
-      renderInvoices();
-    } catch (err) {
-      showNotification('Błąd: ' + (err?.message || err), 'error');
+  selects.forEach((sel) => {
+    const current = sel.value;
+    sel.innerHTML = optionsHtml;
+    if (current) {
+      sel.value = current;
     }
   });
 }
 
-async function createExpenseType(data) {
-  const res = await fetch(`${url}/expense-types`, {
+async function loadLabels() {
+  try {
+    const res = await fetch(`${url}/labels`);
+    if (!res.ok) {
+      throw new Error('Failed to load labels');
+    }
+    const data = await res.json();
+    labels = data.labels || [];
+    renderInvoices();
+  } catch (e) {
+    console.error('Failed to load labels:', e);
+    labels = [];
+  }
+}
+
+async function createLabel(data) {
+  const res = await fetch(`${url}/labels`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -734,14 +1001,14 @@ async function createExpenseType(data) {
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to create expense type');
+    throw new Error(error.error || 'Failed to create label');
   }
 
   return await res.json();
 }
 
-async function updateExpenseType(id, data) {
-  const res = await fetch(`${url}/expense-types/${id}`, {
+async function updateLabel(id, data) {
+  const res = await fetch(`${url}/labels/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -749,43 +1016,504 @@ async function updateExpenseType(id, data) {
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to update expense type');
+    throw new Error(error.error || 'Failed to update label');
   }
 
   return await res.json();
 }
 
-async function deleteExpenseType(id) {
-  const res = await fetch(`${url}/expense-types/${id}`, {
+async function deleteLabel(id) {
+  const res = await fetch(`${url}/labels/${id}`, {
     method: 'DELETE'
   });
 
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.error || 'Failed to delete expense type');
+    throw new Error(error.error || 'Failed to delete label');
   }
 
-  await loadExpenseTypes();
-  showNotification('Typ wydatku usunięty', 'success');
+  await loadLabels();
+  showNotification('Etykieta usunięta', 'success');
 }
 
-async function assignInvoiceToProject(invoiceId, projectId) {
+async function assignInvoiceToLabels(invoiceId, labelIds) {
   try {
-    const res = await fetch(`${url}/inbox/invoices/${invoiceId}/assign`, {
+    const res = await fetch(`${url}/inbox/invoices/${invoiceId}/assign-labels`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projectId })
+      body: JSON.stringify({ labelIds: Array.isArray(labelIds) ? labelIds : [] })
     });
-    
-    if (res.ok) {
-      await loadInvoices();
-      showNotification('Faktura przypisana do projektu', 'success');
-    } else {
+
+    if (!res.ok) {
       const error = await res.json();
       throw new Error(error.error || 'Assignment failed');
     }
+
+    await loadInvoices();
   } catch (e) {
-    showNotification('Błąd przypisania: ' + e.message, 'error');
+    showNotification('Błąd przypisania etykiet: ' + e.message, 'error');
+  }
+
+}
+
+async function loadSettings() {
+  const res = await fetch(`${url}/settings`);
+  if (!res.ok) {
+    throw new Error(`Failed to load settings (${res.status})`);
+  }
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new Error('Failed to load settings (invalid_response)');
+  }
+  settings = await res.json();
+  return settings;
+}
+
+function downloadBlob(filename, blob) {
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(link.href), 2000);
+}
+
+function downloadJson(filename, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
+  downloadBlob(filename, blob);
+}
+
+async function selectFile(accept) {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = accept || '';
+    input.onchange = (e) => {
+      const file = e.target.files && e.target.files[0];
+      resolve(file || null);
+    };
+    input.click();
+  });
+}
+
+async function readFileAsText(file) {
+  return file.text();
+}
+
+async function readFileAsArrayBuffer(file) {
+  return file.arrayBuffer();
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+async function exportDataBundle() {
+  const res = await fetch(`${url}/data/export`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `export_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function importDataBundle(bundle) {
+  const res = await fetch(`${url}/data/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(bundle)
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `import_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function exportEntity(entity) {
+  const res = await fetch(`${url}/data/export/${entity}`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `export_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function importEntity(entity, payload) {
+  const res = await fetch(`${url}/data/import/${entity}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `import_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function exportSqliteFile() {
+  const link = document.createElement('a');
+  link.href = `${url}/db/export.sqlite`;
+  link.download = 'exef.sqlite';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function importSqliteFile(file) {
+  const buffer = await readFileAsArrayBuffer(file);
+  const base64 = arrayBufferToBase64(buffer);
+  const res = await fetch(`${url}/db/import.sqlite`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ base64 }),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `import_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function saveSettings(nextSettings) {
+  const res = await fetch(`${url}/settings`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(nextSettings)
+  });
+
+  if (!res.ok) {
+    try {
+      const err = await res.json();
+      throw new Error(err.error || `Failed to save settings (${res.status})`);
+    } catch (_e) {
+      throw new Error(`Failed to save settings (${res.status})`);
+    }
+  }
+
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    settings = await res.json();
+  }
+  return settings;
+}
+
+async function renderSettingsPage() {
+  const container = document.getElementById('settingsPageContent');
+  if (!container) {
+    return;
+  }
+
+  try {
+    await loadSettings();
+  } catch (e) {
+    container.innerHTML = `<div class="empty">Błąd wczytania konfiguracji: ${e.message}</div>`;
+    return;
+  }
+
+  const localPaths = settings?.channels?.localFolders?.paths || [];
+  const projectSelection = settings?.ui?.invoicesTable?.projectSelection || 'select';
+  const expenseTypeSelection = settings?.ui?.invoicesTable?.expenseTypeSelection || 'select';
+  const uiTheme = settings?.ui?.theme || 'white';
+  const emailAccounts = settings?.channels?.email?.accounts || [];
+  const ksefAccounts = settings?.channels?.ksef?.accounts || [];
+  const remoteConnections = settings?.channels?.remoteStorage?.connections || [];
+  const printers = settings?.channels?.devices?.printers || [];
+  const scanners = settings?.channels?.devices?.scanners || [];
+  const otherSources = settings?.channels?.other?.sources || [];
+
+  if (!projects.length) {
+    await loadProjects();
+  }
+  if (!labels.length) {
+    await loadLabels();
+  }
+
+  const projectsHtml = projects.length
+    ? `<div class="subtle" style="margin-bottom:8px;">Liczba projektów: ${projects.length}</div>` +
+      `<div>${projects.map((p) => `<span class="label-chip">📁 ${p.nazwa || p.id}</span>`).join('')}</div>`
+    : '<div class="empty" style="padding: 12px;">Brak projektów</div>';
+
+  const labelsHtml = labels.length
+    ? `<div class="subtle" style="margin-bottom:8px;">Liczba etykiet: ${labels.length}</div>` +
+      `<div>${labels.map((l) => {
+        const color = l.kolor || '#e5e7eb';
+        return `<span class="label-chip"><span class="label-dot" style="background:${color}"></span>${l.nazwa || l.id}</span>`;
+      }).join('')}</div>`
+    : '<div class="empty" style="padding: 12px;">Brak etykiet</div>';
+
+  container.innerHTML = `
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <div>
+          <div class="page-title" style="margin-bottom:0;">Import / eksport danych</div>
+          <div class="subtle">Pełna baza (SQLite/JSON) oraz import/export poszczególnych encji.</div>
+        </div>
+      </div>
+
+      <div class="form-actions" style="flex-wrap: wrap;">
+        <button id="settingsExportBundleBtn" class="primary">Eksport JSON (całość)</button>
+        <button id="settingsImportBundleBtn">Import JSON (całość)</button>
+        <button id="settingsExportSqliteBtn">Eksport SQLite</button>
+        <button id="settingsImportSqliteBtn">Import SQLite</button>
+      </div>
+
+      <div class="form-group">
+        <label>Encja:</label>
+        <select id="settingsEntitySelect">
+          <option value="projects">projekty</option>
+          <option value="labels">etykiety</option>
+          <option value="expense-types">typy wydatków</option>
+          <option value="invoices">faktury</option>
+          <option value="contractors">kontrahenci</option>
+          <option value="settings">konfiguracja</option>
+        </select>
+      </div>
+      <div class="form-actions" style="flex-wrap: wrap;">
+        <button id="settingsExportEntityBtn">Eksport encji</button>
+        <button id="settingsImportEntityBtn">Import encji</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header">
+        <div>
+          <div class="page-title" style="margin-bottom:0;">Listy</div>
+          <div class="subtle">Szybki podgląd i edycja list używanych do przypisywania dokumentów.</div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div style="flex:1; min-width: 280px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:600;">Projekty</div>
+            <div>
+              <button id="settingsGoProjectsBtn">Otwórz</button>
+            </div>
+          </div>
+          ${projectsHtml}
+        </div>
+
+        <div style="flex:1; min-width: 280px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <div style="font-weight:600;">Etykiety</div>
+            <div>
+              <button id="settingsGoLabelsBtn">Otwórz</button>
+            </div>
+          </div>
+          ${labelsHtml}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="page-title" style="margin-bottom:0;">Kanały dostępu do dokumentów</div>
+          <div class="subtle">Poniżej możesz skonfigurować źródła dokumentów. Na tym etapie część integracji to stuby w backendzie (Email/Dropbox/GDrive).</div>
+        </div>
+      </div>
+
+    <div class="form-group">
+      <label>Wybór projektu w tabeli:</label>
+      <select id="settingsProjectSelection">
+        <option value="select" ${projectSelection === 'select' ? 'selected' : ''}>Select (kompaktowy)</option>
+        <option value="radio" ${projectSelection === 'radio' ? 'selected' : ''}>Radio</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Wybór typu wydatku w tabeli:</label>
+      <select id="settingsExpenseTypeSelection">
+        <option value="select" ${expenseTypeSelection === 'select' ? 'selected' : ''}>Select (kompaktowy)</option>
+        <option value="radio" ${expenseTypeSelection === 'radio' ? 'selected' : ''}>Radio</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Motyw UI:</label>
+      <select id="settingsTheme">
+        <option value="white" ${uiTheme === 'white' ? 'selected' : ''}>white</option>
+        <option value="dark" ${uiTheme === 'dark' ? 'selected' : ''}>dark</option>
+        <option value="warm" ${uiTheme === 'warm' ? 'selected' : ''}>warm</option>
+      </select>
+      <div class="subtle" style="margin-top:6px;">Motyw możesz też przełączać w headerze.</div>
+    </div>
+
+    <div class="form-group">
+      <label>Tester kontrastu (WCAG):</label>
+      <button id="contrastRunBtn" type="button">Uruchom test</button>
+      <div id="contrastReport"></div>
+    </div>
+
+    <div class="form-group">
+      <label>Lokalne foldery (1 linia = 1 ścieżka):</label>
+      <textarea id="settingsLocalFolders" rows="4">${localPaths.join('\n')}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Email accounts (JSON):</label>
+      <textarea id="settingsEmailAccounts" rows="5">${JSON.stringify(emailAccounts, null, 2)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>KSeF accounts (JSON):</label>
+      <textarea id="settingsKsefAccounts" rows="5">${JSON.stringify(ksefAccounts, null, 2)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Zdalny storage connections (JSON):</label>
+      <textarea id="settingsRemoteStorage" rows="5">${JSON.stringify(remoteConnections, null, 2)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Drukarki (JSON):</label>
+      <textarea id="settingsPrinters" rows="4">${JSON.stringify(printers, null, 2)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Skanery (JSON):</label>
+      <textarea id="settingsScanners" rows="4">${JSON.stringify(scanners, null, 2)}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Inne źródła (JSON):</label>
+      <textarea id="settingsOtherSources" rows="4">${JSON.stringify(otherSources, null, 2)}</textarea>
+    </div>
+    </div>
+  `;
+
+  const goProjectsBtn = document.getElementById('settingsGoProjectsBtn');
+  if (goProjectsBtn) {
+    goProjectsBtn.addEventListener('click', () => setActivePage('projects'));
+  }
+  const goLabelsBtn = document.getElementById('settingsGoLabelsBtn');
+  if (goLabelsBtn) {
+    goLabelsBtn.addEventListener('click', () => setActivePage('labels'));
+  }
+
+  const themeSelect = document.getElementById('settingsTheme');
+  if (themeSelect) {
+    themeSelect.addEventListener('change', () => {
+      applyTheme(themeSelect.value);
+    });
+  }
+
+  const contrastBtn = document.getElementById('contrastRunBtn');
+  if (contrastBtn) {
+    contrastBtn.addEventListener('click', runContrastReport);
+  }
+
+  const exportBundleBtn = document.getElementById('settingsExportBundleBtn');
+  if (exportBundleBtn) {
+    exportBundleBtn.addEventListener('click', async () => {
+      try {
+        const bundle = await exportDataBundle();
+        downloadJson('exef-data.json', bundle);
+        showNotification('Wyeksportowano JSON', 'success');
+      } catch (e) {
+        showNotification('Błąd eksportu: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const importBundleBtn = document.getElementById('settingsImportBundleBtn');
+  if (importBundleBtn) {
+    importBundleBtn.addEventListener('click', async () => {
+      try {
+        const file = await selectFile('.json,application/json');
+        if (!file) {
+          return;
+        }
+        const raw = await readFileAsText(file);
+        const parsed = JSON.parse(raw);
+        await importDataBundle(parsed);
+        await refresh();
+        await renderSettingsPage();
+        showNotification('Zaimportowano JSON', 'success');
+      } catch (e) {
+        showNotification('Błąd importu: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const exportSqliteBtn = document.getElementById('settingsExportSqliteBtn');
+  if (exportSqliteBtn) {
+    exportSqliteBtn.addEventListener('click', async () => {
+      try {
+        await exportSqliteFile();
+      } catch (e) {
+        showNotification('Błąd eksportu SQLite: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const importSqliteBtn = document.getElementById('settingsImportSqliteBtn');
+  if (importSqliteBtn) {
+    importSqliteBtn.addEventListener('click', async () => {
+      try {
+        const file = await selectFile('.sqlite,application/x-sqlite3');
+        if (!file) {
+          return;
+        }
+        await importSqliteFile(file);
+        await refresh();
+        await renderSettingsPage();
+        showNotification('Zaimportowano SQLite', 'success');
+      } catch (e) {
+        showNotification('Błąd importu SQLite: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const exportEntityBtn = document.getElementById('settingsExportEntityBtn');
+  if (exportEntityBtn) {
+    exportEntityBtn.addEventListener('click', async () => {
+      try {
+        const entity = document.getElementById('settingsEntitySelect')?.value || 'projects';
+        const data = await exportEntity(entity);
+        downloadJson(`exef-${entity}.json`, data);
+        showNotification('Wyeksportowano encję', 'success');
+      } catch (e) {
+        showNotification('Błąd eksportu encji: ' + e.message, 'error');
+      }
+    });
+  }
+
+  const importEntityBtn = document.getElementById('settingsImportEntityBtn');
+  if (importEntityBtn) {
+    importEntityBtn.addEventListener('click', async () => {
+      try {
+        const entity = document.getElementById('settingsEntitySelect')?.value || 'projects';
+        const file = await selectFile('.json,application/json');
+        if (!file) {
+          return;
+        }
+        const raw = await readFileAsText(file);
+        const parsed = JSON.parse(raw);
+        if (entity === 'settings') {
+          const item = parsed?.item && typeof parsed.item === 'object' ? parsed.item : parsed;
+          await importEntity(entity, { item });
+        } else {
+          const items = Array.isArray(parsed?.items) ? parsed.items : (Array.isArray(parsed) ? parsed : []);
+          await importEntity(entity, { items });
+        }
+        await refresh();
+        await renderSettingsPage();
+        showNotification('Zaimportowano encję', 'success');
+      } catch (e) {
+        showNotification('Błąd importu encji: ' + e.message, 'error');
+      }
+    });
   }
 }
 
@@ -837,6 +1565,168 @@ function showNotification(message, type = 'info') {
     notification.style.transform = 'translateX(100%)';
     setTimeout(() => notification.remove(), 300);
   }, 3000);
+}
+
+async function assignInvoiceToProject(invoiceId, projectId) {
+  try {
+    const res = await fetch(`${url}/inbox/invoices/${invoiceId}/assign`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: projectId || null })
+    });
+
+    if (res.ok) {
+      await loadInvoices();
+      showNotification('Faktura przypisana do projektu', 'success');
+    } else {
+      const error = await res.json().catch(() => ({}));
+      throw new Error(error.error || 'Assignment failed');
+    }
+  } catch (e) {
+    showNotification('Błąd przypisania: ' + e.message, 'error');
+  }
+}
+
+async function renderProjectsPage() {
+  await loadProjects();
+  const container = document.getElementById('projectsPageList');
+  if (!container) {
+    return;
+  }
+  await renderProjectsList(container);
+}
+
+async function renderLabelsPage() {
+  await loadLabels();
+  const container = document.getElementById('labelsPageList');
+  if (!container) {
+    return;
+  }
+
+  if (!labels.length) {
+    container.innerHTML = '<p class="empty">Brak etykiet</p>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'projects-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nazwa</th>
+        <th>Kolor</th>
+        <th>Opis</th>
+        <th>Akcje</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector('tbody');
+  labels.forEach((label) => {
+    const row = document.createElement('tr');
+    const color = label.kolor || '';
+    row.innerHTML = `
+      <td>${label.id}</td>
+      <td>${label.nazwa}</td>
+      <td><span class="label-chip"><span class="label-dot" style="background:${color || '#e5e7eb'}"></span>${color || '-'}</span></td>
+      <td>${label.opis || '-'}</td>
+      <td>
+        <button class="edit-label-btn" data-id="${label.id}">Edytuj</button>
+        <button class="delete-label-btn danger" data-id="${label.id}">Usuń</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  container.innerHTML = '';
+  container.appendChild(table);
+
+  container.querySelectorAll('.edit-label-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id;
+      const label = labels.find((l) => l.id === id);
+      showLabelForm(label);
+    });
+  });
+
+  container.querySelectorAll('.delete-label-btn').forEach((btn) => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.target.dataset.id;
+      if (confirm('Czy na pewno usunąć tę etykietę?')) {
+        await deleteLabel(id);
+        await renderLabelsPage();
+      }
+    });
+  });
+}
+
+function showLabelForm(label = null) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>${label ? 'Edytuj etykietę' : 'Dodaj etykietę'}</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="label-form">
+          <div class="form-group">
+            <label>ID etykiety:</label>
+            <input type="text" name="id" value="${label?.id || ''}" ${label ? 'readonly' : ''} required>
+          </div>
+          <div class="form-group">
+            <label>Nazwa:</label>
+            <input type="text" name="nazwa" value="${label?.nazwa || ''}" required>
+          </div>
+          <div class="form-group">
+            <label>Kolor (np. #22c55e):</label>
+            <input type="text" name="kolor" value="${label?.kolor || ''}">
+          </div>
+          <div class="form-group">
+            <label>Opis:</label>
+            <textarea name="opis" rows="3">${label?.opis || ''}</textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="primary">${label ? 'Zapisz zmiany' : 'Dodaj etykietę'}</button>
+            <button type="button" class="cancel-btn">Anuluj</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const close = () => modal.remove();
+  modal.querySelector('.close-btn').addEventListener('click', close);
+  modal.querySelector('.cancel-btn').addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+
+  modal.querySelector('.label-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      if (label) {
+        await updateLabel(label.id, data);
+        showNotification('Etykieta zaktualizowana', 'success');
+      } else {
+        await createLabel(data);
+        showNotification('Etykieta dodana', 'success');
+      }
+      close();
+      await loadLabels();
+      await renderLabelsPage();
+    } catch (err) {
+      showNotification('Błąd: ' + (err?.message || err), 'error');
+    }
+  });
 }
 
 async function showProjectsManager(options = {}) {
@@ -1151,8 +2041,93 @@ document.getElementById('toggleViewBtn').addEventListener('click', () => {
   setViewMode(viewMode === 'table' ? 'cards' : 'table');
 });
 document.getElementById('exportBtn').addEventListener('click', exportApproved);
-document.getElementById('projectsBtn').addEventListener('click', () => showProjectsManager());
-document.getElementById('expenseTypesBtn').addEventListener('click', () => showExpenseTypesManager());
+document.getElementById('projectsBtn').addEventListener('click', () => setActivePage('projects'));
+
+const themeBtn = document.getElementById('themeBtn');
+if (themeBtn) {
+  themeBtn.addEventListener('click', cycleTheme);
+}
+
+const expenseTypesBtn = document.getElementById('expenseTypesBtn');
+if (expenseTypesBtn) {
+  expenseTypesBtn.addEventListener('click', () => showExpenseTypesManager());
+}
+
+document.querySelectorAll('.nav-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const page = btn.dataset.page;
+    setActivePage(page);
+  });
+});
+
+const projectsAddBtn = document.getElementById('projectsAddBtn');
+if (projectsAddBtn) {
+  projectsAddBtn.addEventListener('click', () => showProjectForm());
+}
+
+const labelsAddBtn = document.getElementById('labelsAddBtn');
+if (labelsAddBtn) {
+  labelsAddBtn.addEventListener('click', () => showLabelForm());
+}
+
+const settingsReloadBtn = document.getElementById('settingsReloadBtn');
+if (settingsReloadBtn) {
+  settingsReloadBtn.addEventListener('click', () => renderSettingsPage());
+}
+
+const settingsSaveBtn = document.getElementById('settingsSaveBtn');
+if (settingsSaveBtn) {
+  settingsSaveBtn.addEventListener('click', async () => {
+    try {
+      const uiTheme = document.getElementById('settingsTheme')?.value || 'white';
+      const projectSelection = document.getElementById('settingsProjectSelection')?.value || 'select';
+      const expenseTypeSelection = document.getElementById('settingsExpenseTypeSelection')?.value || 'select';
+
+      const localFoldersRaw = document.getElementById('settingsLocalFolders')?.value || '';
+      const paths = localFoldersRaw.split('\n').map((v) => v.trim()).filter(Boolean);
+
+      const parseJson = (id) => {
+        const raw = document.getElementById(id)?.value || '[]';
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : parsed;
+      };
+
+      const emailAccounts = parseJson('settingsEmailAccounts');
+      const ksefAccounts = parseJson('settingsKsefAccounts');
+      const remoteConnections = parseJson('settingsRemoteStorage');
+      const printers = parseJson('settingsPrinters');
+      const scanners = parseJson('settingsScanners');
+      const otherSources = parseJson('settingsOtherSources');
+
+      await saveSettings({
+        ui: {
+          theme: uiTheme,
+          invoicesTable: {
+            projectSelection,
+            expenseTypeSelection,
+          },
+        },
+        channels: {
+          localFolders: { paths },
+          email: { accounts: emailAccounts },
+          ksef: { accounts: ksefAccounts, activeAccountId: settings?.channels?.ksef?.activeAccountId || null },
+          remoteStorage: { connections: remoteConnections },
+          devices: { printers, scanners },
+          other: { sources: otherSources },
+        },
+      });
+
+      showNotification('Konfiguracja zapisana', 'success');
+      await renderSettingsPage();
+
+      if (!storedTheme) {
+        applyTheme(uiTheme, { persist: false });
+      }
+    } catch (e) {
+      showNotification('Błąd zapisu konfiguracji: ' + e.message, 'error');
+    }
+  });
+}
 
 window.showAssignModal = async function(invoiceId, options = {}) {
   const syncUrl = options.syncUrl !== false;
@@ -1189,6 +2164,10 @@ window.showAssignModal = async function(invoiceId, options = {}) {
           <label>Typ wydatku:</label>
           <select id="assignExpenseTypeSelect"></select>
         </div>
+        <div class="form-group">
+          <label>Etykiety:</label>
+          <div id="assignLabelsList"></div>
+        </div>
         <div class="form-actions">
           <button class="primary" id="assignBtn">Zapisz</button>
           <button class="cancel-btn">Anuluj</button>
@@ -1213,6 +2192,29 @@ window.showAssignModal = async function(invoiceId, options = {}) {
     expenseSelect.value = invoice.expenseTypeId;
   }
 
+  const labelsContainer = document.getElementById('assignLabelsList');
+  if (labelsContainer) {
+    if (!labels.length) {
+      await loadLabels();
+    }
+    const selected = Array.isArray(invoice.labelIds) ? invoice.labelIds : [];
+    if (!labels.length) {
+      labelsContainer.innerHTML = '<div class="subtle">Brak etykiet</div>';
+    } else {
+      labelsContainer.innerHTML = labels.map((l) => {
+        const checked = selected.includes(l.id) ? 'checked' : '';
+        const color = l.kolor || '#e5e7eb';
+        return `
+          <label style="display:flex; align-items:center; gap:8px; margin:6px 0; font-size: 14px;">
+            <input type="checkbox" class="assign-label-checkbox" value="${l.id}" ${checked} />
+            <span class="label-dot" style="background:${color}"></span>
+            <span>${l.nazwa}</span>
+          </label>
+        `;
+      }).join('');
+    }
+  }
+
   const close = () => {
     modal.remove();
     if (activeUrlModal === modal) {
@@ -1233,10 +2235,13 @@ window.showAssignModal = async function(invoiceId, options = {}) {
     const projectId = document.getElementById('assignProjectSelect').value;
     const expenseTypeId = document.getElementById('assignExpenseTypeSelect').value;
 
-    if (projectId) {
-      await assignInvoiceToProject(invoiceId, projectId);
-    }
+    const labelIds = Array.from(document.querySelectorAll('.assign-label-checkbox'))
+      .filter((el) => el.checked)
+      .map((el) => el.value);
+
+    await assignInvoiceToProject(invoiceId, projectId);
     await assignInvoiceToExpenseType(invoiceId, expenseTypeId);
+    await assignInvoiceToLabels(invoiceId, labelIds);
     close();
   });
 };
@@ -1285,6 +2290,24 @@ async function showInvoiceDetailsPage(invoiceId, options = {}) {
     expenseTypes.map((t) => `<option value="${t.id}">${t.nazwa}</option>`)
   ).join('');
 
+  if (!labels.length) {
+    await loadLabels();
+  }
+  const selectedLabels = Array.isArray(invoice.labelIds) ? invoice.labelIds : [];
+  const labelsOptions = labels.length
+    ? labels.map((l) => {
+      const checked = selectedLabels.includes(l.id) ? 'checked' : '';
+      const color = l.kolor || '#e5e7eb';
+      return `
+        <label style="display:flex; align-items:center; gap:8px; margin:6px 0; font-size: 14px;">
+          <input type="checkbox" class="details-label-checkbox" value="${l.id}" ${checked} />
+          <span class="label-dot" style="background:${color}"></span>
+          <span>${l.nazwa}</span>
+        </label>
+      `;
+    }).join('')
+    : '<div class="subtle">Brak etykiet</div>';
+
   container.innerHTML = `
     <div class="card">
       <div class="card-header">
@@ -1311,6 +2334,11 @@ async function showInvoiceDetailsPage(invoiceId, options = {}) {
         <select id="detailsExpenseTypeSelect">${expenseOptions}</select>
       </div>
 
+      <div class="form-group">
+        <label>Etykiety:</label>
+        <div id="detailsLabelsList">${labelsOptions}</div>
+      </div>
+
       <div class="form-actions">
         <button id="saveDetailsAssignmentsBtn" class="primary">Zapisz</button>
         <button id="openAssignModalBtn">Otwórz w modalu</button>
@@ -1333,10 +2361,13 @@ async function showInvoiceDetailsPage(invoiceId, options = {}) {
     const projectId = document.getElementById('detailsProjectSelect').value;
     const expenseTypeId = document.getElementById('detailsExpenseTypeSelect').value;
 
-    if (projectId) {
-      await assignInvoiceToProject(invoiceId, projectId);
-    }
+    const labelIds = Array.from(document.querySelectorAll('.details-label-checkbox'))
+      .filter((el) => el.checked)
+      .map((el) => el.value);
+
+    await assignInvoiceToProject(invoiceId, projectId);
     await assignInvoiceToExpenseType(invoiceId, expenseTypeId);
+    await assignInvoiceToLabels(invoiceId, labelIds);
     await refresh();
     await showInvoiceDetailsPage(invoiceId, { syncUrl: false });
   });
@@ -1404,18 +2435,31 @@ async function showInvoiceDetailsModal(invoiceId, options = {}) {
 }
 
 (async function init() {
+  await resolveApiBaseUrl();
   const connected = await checkConnection();
   if (connected) {
     const state = getUrlState();
+    if (state.page) {
+      setActivePage(state.page, { syncUrl: false });
+    }
     if (state.view === 'table' || state.view === 'cards') {
       setViewMode(state.view, { syncUrl: false });
     }
     if (state.filter !== null) {
       setActiveFilter(state.filter || '', { syncUrl: false, load: false });
     }
+    try {
+      await loadSettings();
+      if (!storedTheme && settings?.ui?.theme) {
+        applyTheme(settings.ui.theme, { persist: false });
+      }
+    } catch (_e) {
+      settings = null;
+    }
     await loadStats();
     await loadProjects();
     await loadExpenseTypes();
+    await loadLabels();
     await loadInvoices();
     await syncUiFromUrl();
   }
@@ -1424,3 +2468,7 @@ async function showInvoiceDetailsModal(invoiceId, options = {}) {
 window.addEventListener('popstate', () => {
   syncUiFromUrl();
 });
+
+window.navigateToSettings = function() {
+  setActivePage('settings');
+};

@@ -27,7 +27,7 @@ function bumpVersion(v, bumpType) {
 }
 
 function ensureCleanGitTree(root) {
-  const status = sh('git status --porcelain', { cwd: root });
+  const status = sh('git status --porcelain --ignore-submodules=all', { cwd: root });
   if (status) {
     throw new Error('Working tree is not clean. Commit or stash changes before running make push.');
   }
@@ -107,7 +107,7 @@ function main() {
 
   shInherit(`git commit -m "chore(release): ${tag}"`, { cwd: root });
   shInherit(`git tag -a ${tag} -m "${tag}"`, { cwd: root });
-  shInherit('git push --follow-tags', { cwd: root });
+  shInherit('git -c push.recurseSubmodules=no push --follow-tags', { cwd: root });
 
   process.stdout.write(`\nRelease complete: ${tag}\n`);
   process.stdout.write(`Docs: docs/v/${tag}/changelog.md\n`);

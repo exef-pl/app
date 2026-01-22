@@ -60,10 +60,15 @@ class EmailWatcher extends EventEmitter {
 
       for (const attachment of attachments) {
         if (this.inbox) {
+          const emailId = email?.id || email?.messageId || email?.uid || null
+          const sourceKey = emailId
+            ? `email:${String(emailId)}:${String(attachment.filename || '')}`
+            : `email:${String(email?.from || '')}:${String(email?.date || '')}:${String(attachment.filename || '')}:${String(attachment.size || '')}`
           const invoice = await this.inbox.addInvoice('email', attachment.content, {
             fileName: attachment.filename,
             fileType: attachment.contentType,
             fileSize: attachment.size,
+            sourceKey,
             emailSubject: email.subject,
             emailFrom: email.from,
             emailDate: email.date,

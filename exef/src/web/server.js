@@ -27,10 +27,35 @@ const ksef = createKsefFacade({})
 const store = createStore({
   filePath: process.env.EXEF_INVOICE_STORE_PATH || './data/invoices.json',
 })
+
+function parseJsonEnv(name, fallbackValue) {
+  try {
+    const raw = process.env[name]
+    if (!raw) {
+      return fallbackValue
+    }
+    const parsed = JSON.parse(String(raw))
+    return parsed
+  } catch (_e) {
+    return fallbackValue
+  }
+}
+
+const storageConnections = parseJsonEnv('EXEF_REMOTE_STORAGE_CONNECTIONS', [])
+const remoteStorageState = parseJsonEnv('EXEF_REMOTE_STORAGE_STATE', null)
 const workflow = createInvoiceWorkflow({
   store,
   ksefFacade: ksef,
   watchPaths: process.env.EXEF_WATCH_PATHS ? process.env.EXEF_WATCH_PATHS.split(',') : [],
+  storageConnections: Array.isArray(storageConnections) ? storageConnections : [],
+})
+
+if (remoteStorageState && workflow?.storageSync && typeof workflow.storageSync.setState === 'function') {
+  workflow.storageSync.setState(remoteStorageState)
+}
+
+workflow.start().catch((err) => {
+  process.stderr.write(`${err?.stack ?? err}\n`)
 })
 
 app.get('/health', (_req, res) => {
