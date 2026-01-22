@@ -1,0 +1,178 @@
+project: ksef_cli
+generated: "2026-01-22T07:16:43.151575"
+modules[13]{path,lang,items}:
+  sample/test.py,python,9
+  tests/test1.py,python,70
+  tests/helper.py,python,17
+  tests/__init__.py,python,0
+  tests/test0.py,python,3
+  ksef_cli/ksef_log.py,python,10
+  ksef_cli/__init__.py,python,0
+  ksef_cli/__main__.py,python,0
+  ksef_cli/readp12.py,python,2
+  ksef_cli/ksef_cli.py,python,12
+  ksef_cli/ksef_tokens.py,python,2
+  ksef_cli/main.py,python,3
+  ksef_cli/ksef_conf.py,python,12
+
+function_details:
+  sample/test.py:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      wez_logger,function,() -> None,10-11,false,2,1,wez logger
+      test1,function,() -> None,14-17,false,4,1,test1
+      test2,function,() -> None,20-22,false,3,1,test2
+      test3,function,() -> None,25-31,false,7,1,test3
+      test4,function,() -> None,34-40,false,7,1,test4
+      test5,function,() -> None,43-52,false,10,1,test5
+      test6,function,() -> None,55-64,false,10,1,test6
+      test7,function,() -> None,67-76,false,10,1,test7
+      test8,function,() -> None,79-81,false,3,1,test8
+  tests/test1.py:
+    functions[70]{name,kind,sig,loc,async,lines,cc,does}:
+      _wez_res,function,"(output:str) -> dict",17-20,false,4,1,wez res
+      _run_main_res,function,"(argv:list[str], output:str) -> tuple[bool, str]",23-28,false,6,1,starts main res
+      _wynik_wsadowo,function,"(output, ok, errmsg) -> tuple[bool, str]",74-90,false,17,2,wynik wsadowo
+      AKsefCli.odczytaj_faktury_zakupowe,method,"(C:CONF, output:str, nip:str, data_od:str, data_do:str) -> tuple[bool, str]",34-35,false,2,1,odczytaj faktury zakupowe
+      AKsefCli.wez_fakture,method,"(C:CONF, output:str, nip:str, ksef_number:str) -> tuple[bool, str]",38-39,false,2,1,wez fakture
+      AKsefCli.wyslij_fakture,method,"(C:CONF, output:str, nip:str, invoice_path:str) -> tuple[bool, str]",42-43,false,2,1,wyslij fakture
+      AKsefCli.wez_upo,method,"(C:CONF, output:str, nip:str, ksef_numer:str) -> tuple[bool, str]",46-47,false,2,1,wez upo
+      TestKsefCli.odczytaj_faktury_zakupowe,method,"(C:CONF, output:str, nip:str, data_od:str, data_do:str) -> tuple[bool, str]",53-56,false,4,1,odczytaj faktury zakupowe
+      TestKsefCli.wez_fakture,method,"(C:CONF, output:str, nip:str, ksef_number:str) -> tuple[bool, str]",59-61,false,3,1,wez fakture
+      TestKsefCli.wyslij_fakture,method,"(C:CONF, output:str, nip:str, invoice_path:str) -> tuple[bool, str]",64-66,false,3,1,wyslij fakture
+      TestKsefCli.wez_upo,method,"(C:CONF, output:str, nip:str, ksef_numer:str) -> tuple[bool, str]",69-71,false,3,1,wez upo
+      TestWsadowoKsefCli.wyslij_fakture,method,"(C:CONF, output:str, nip:str, invoice_path:str) -> tuple[bool, str]",96-101,false,6,1,wyslij fakture
+      TestWsadowoMainKsefCli.wyslij_fakture,method,"(C:CONF, output:str, nip:str, invoice_path:str) -> tuple[bool, str]",107-111,false,5,1,wyslij fakture
+      TestKsefCliMain.odczytaj_faktury_zakupowe,method,"(C:CONF, output:str, nip:str, data_od:str, data_do:str) -> tuple[bool, str]",117-119,false,3,1,odczytaj faktury zakupowe
+      TestKsefCliMain.wez_fakture,method,"(C:CONF, output:str, nip:str, ksef_number:str) -> tuple[bool, str]",122-124,false,3,1,wez fakture
+      TestKsefCliMain.wyslij_fakture,method,"(C:CONF, output:str, nip:str, invoice_path:str) -> tuple[bool, str]",127-129,false,3,1,wyslij fakture
+      TestKsefCliMain.wez_upo,method,"(C:CONF, output:str, nip:str, ksef_numer:str) -> tuple[bool, str]",132-134,false,3,1,wez upo
+      TokenKsefCO.setUpClass,method,() -> None,143-144,false,2,1,updates up class
+      CertKsefCO.setUpClass,method,() -> None,153-154,false,2,1,updates up class
+      AbstractTestKSEFCLI._test_odczytaj_faktury_zakupowe_brak_nip,method,"(A:AKsefCli) -> None",162-168,false,7,1,checks odczytaj faktury zakupowe brak nip
+      AbstractTestKSEFCLI._test_odczytaj_faktury_zakupowe_bledy_token,method,"(A:AKsefCli) -> None",170-175,false,6,1,checks odczytaj faktury zakupowe bledy token
+      AbstractTestKSEFCLI._test_pobierz_faktury_zakupowe,method,"(A:AKsefCli) -> None",177-206,false,30,1,checks pobierz faktury zakupowe
+      AbstractTestKSEFCLI._test_wyslij_bledna_fakture,method,"(A:AKsefCli) -> None",208-223,false,16,1,checks wyslij bledna fakture
+      AbstractTestKSEFCLI._test_wyslij_fakture_sprzedazy,method,"(A:AKsefCli) -> None",225-246,false,22,1,checks wyslij fakture sprzedazy
+      AbstractTestKSEFCLI._test_wez_upo_nie_istnieje,method,"(A:AKsefCli) -> None",248-256,false,9,1,checks wez upo nie istnieje
+      AbstractTestKSEFCLI._test_wez_upo_dla_faktury,method,"(A:AKsefCli) -> None",258-272,false,15,1,checks wez upo dla faktury
+      AbstractTestKSEFCLI._test_faktura_zakupowa_blad,method,"(A:AKsefCli) -> None",274-289,false,16,2,checks faktura zakupowa blad
+      AbstractTestKSEFCLI._test_faktura_zakupowa,method,"(A:AKsefCli) -> None",291-302,false,12,1,checks faktura zakupowa
+      TestKSEFCli.test_token_nip_no,method,() -> None,313-316,false,4,1,checks token nip no
+      TestKSEFCli.test_token_nip_wrong_env,method,() -> None,318-321,false,4,1,checks token nip wrong env
+      TestKSEFCli.test_token_nip_end_env,method,() -> None,323-328,false,6,1,checks token nip end env
+      TestKSEFCli.test_usun_katalog_roboczy,method,() -> None,330-334,false,5,1,checks usun katalog roboczy
+      TestKSEFCli.test_odczytaj_faktury_zakupowe_brak_nip,method,() -> None,336-337,false,2,1,checks odczytaj faktury zakupowe brak nip
+      TestKSEFCli.test_odczytaj_faktury_zakupowe_bledy_token,method,() -> None,339-340,false,2,1,checks odczytaj faktury zakupowe bledy token
+      TestKSEFCli.test_wyslij_bledna_fakture,method,() -> None,342-343,false,2,1,checks wyslij bledna fakture
+      TestKSEFCli.test_wyslij_fakture_sprzedazy,method,() -> None,345-346,false,2,1,checks wyslij fakture sprzedazy
+      TestKSEFCli.test_wez_upo_nie_istnieje,method,() -> None,348-349,false,2,1,checks wez upo nie istnieje
+      TestKSEFCli.test_wez_upo_dla_faktury,method,() -> None,351-352,false,2,1,checks wez upo dla faktury
+      TestKSEFCli.test_faktura_zakupowa_blad,method,() -> None,354-355,false,2,1,checks faktura zakupowa blad
+      TestKSEFCli.test_faktura_zakupowa,method,() -> None,357-358,false,2,1,checks faktura zakupowa
+      TestKSEFCli.test_pobierz_faktury_zakupowe,method,() -> None,360-361,false,2,1,checks pobierz faktury zakupowe
+      TestKSEFCliCert.test_wyslij_bledna_fakture,method,() -> None,372-373,false,2,1,checks wyslij bledna fakture
+      TestKSEFCliCert.test_wyslij_fakture_sprzedazy,method,() -> None,375-376,false,2,1,checks wyslij fakture sprzedazy
+      TestKSEFCliCert.test_wez_upo_nie_istnieje,method,() -> None,378-379,false,2,1,checks wez upo nie istnieje
+      TestKSEFCliCert.test_wez_upo_dla_faktury,method,() -> None,381-382,false,2,1,checks wez upo dla faktury
+      TestKSEFCliCert.test_faktura_zakupowa_blad,method,() -> None,384-385,false,2,1,checks faktura zakupowa blad
+      TestKSEFCliCert.test_faktura_zakupowa,method,() -> None,387-388,false,2,1,checks faktura zakupowa
+      TestKSEFCliCert.test_pobierz_faktury_zakupowe,method,() -> None,390-391,false,2,1,checks pobierz faktury zakupowe
+      TestKSEFCliMain.test_main_odczytaj_faktury_zakupowe_brak_nip,method,() -> None,398-399,false,2,1,checks main odczytaj faktury zakupowe brak nip
+      TestKSEFCliMain.test_main_odczytaj_faktury_zakupowe_bledy_token,method,() -> None,401-402,false,2,1,checks main odczytaj faktury zakupowe bledy token
+      TestKSEFCliMain.test_main_wyslij_bledna_fakture,method,() -> None,404-405,false,2,1,checks main wyslij bledna fakture
+      TestKSEFCliMain.test_main_pobierz_faktury_zakupowe,method,() -> None,407-408,false,2,1,checks main pobierz faktury zakupowe
+      TestKSEFCliMain.test_main_wyslij_fakture_sprzedazy,method,() -> None,410-411,false,2,1,checks main wyslij fakture sprzedazy
+      TestKSEFCliMain.test_main_wez_upo_nie_istnieje,method,() -> None,413-414,false,2,1,checks main wez upo nie istnieje
+      TestKSEFCliMain.test_main_wez_upo_dla_faktury,method,() -> None,416-417,false,2,1,checks main wez upo dla faktury
+      TestKSEFCliMain.test_main_faktura_zakupowa_blad,method,() -> None,419-420,false,2,1,checks main faktura zakupowa blad
+      TestKSEFCliMain.test_main_faktura_zakupowa,method,() -> None,422-423,false,2,1,checks main faktura zakupowa
+      TestKSEFWsadowe.test_wyslij_bledna_fakture,method,() -> None,430-431,false,2,1,checks wyslij bledna fakture
+      TestKSEFWsadowe.test_wyslij_fakture_sprzedazy,method,() -> None,433-434,false,2,1,checks wyslij fakture sprzedazy
+      TestKSEFWsadowe.test_wez_upo_dla_faktury,method,() -> None,436-437,false,2,1,checks wez upo dla faktury
+      TestKSEFWsadowe.test_faktura_zakupowa_blad,method,() -> None,439-440,false,2,1,checks faktura zakupowa blad
+      TestKSEFWsadowe.test_faktura_zakupowa,method,() -> None,442-443,false,2,1,checks faktura zakupowa
+      TestKSEFWsadowoMain.test_wyslij_bledna_fakture,method,() -> None,450-451,false,2,1,checks wyslij bledna fakture
+      TestKSEFWsadowoMain.test_wyslij_fakture_sprzedazy,method,() -> None,453-454,false,2,1,checks wyslij fakture sprzedazy
+      TestKSEFWsadowoMain.test_wez_upo_dla_faktury,method,() -> None,456-457,false,2,1,checks wez upo dla faktury
+      TestKSEFWsadowoMain.test_faktura_zakupowa_blad,method,() -> None,459-460,false,2,1,checks faktura zakupowa blad
+      TestKSEFWsadowoMain.test_faktura_zakupowa,method,() -> None,462-463,false,2,1,checks faktura zakupowa
+      TestKSEFWsadowoDuzoFaktur.setUpClass,method,() -> None,472-473,false,2,1,updates up class
+      TestKSEFWsadowoDuzoFaktur._przygotuj_paczke,method,() -> None,482-490,false,9,2,przygotuj paczke
+      TestKSEFWsadowoDuzoFaktur.test_wysylka_wiele_faktur,method,() -> None,492-520,false,29,2,checks wysylka wiele faktur
+  tests/helper.py:
+    functions[17]{name,kind,sig,loc,async,lines,cc,does}:
+      _workdir,function,() -> str,22-23,false,2,1,workdir
+      _daj_dir,function,"() -> tuple[str, str]",26-29,false,4,1,daj dir
+      _daj_dir_cert,function,"() -> tuple[str, str]",32-35,false,4,1,daj dir cert
+      CO,function,() -> None,38-40,false,3,1,co
+      CO_CERT,function,() -> None,43-45,false,3,1,co cert
+      ustaw_E,function,() -> None,48-50,false,3,1,ustaw e
+      temp_dir,function,() -> str,53-57,false,5,2,temp dir
+      temp_dir_remove_xml,function,() -> None,60-66,false,7,3,temp dir remove xml
+      _temp_dir,function,"(f:str) -> str",69-71,false,3,1,temp dir
+      temp_res,function,() -> str,74-75,false,2,1,temp res
+      temp_ojosn,function,() -> None,78-79,false,2,1,temp ojosn
+      _today,function,() -> None,82-83,false,2,1,today
+      _gen_numer_faktury,function,() -> None,86-89,false,4,1,gen numer faktury
+      testdatadir,function,"(filexml:str) -> str",92-94,false,3,1,testdatadir
+      prepare_invoice_faktur,function,"(patt:str, faktura:str) -> tuple[str, str]",97-108,false,12,1,prepare invoice faktur
+      prepare_invoice,function,"(patt:str) -> str",111-114,false,4,1,prepare invoice
+      daj_przedzial,function,"() -> tuple[str, str]",117-122,false,6,1,daj przedzial
+  tests/test0.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      TestKSEFCLI_ERROR.test_initialization_error,method,() -> None,10-13,false,4,1,checks initialization error
+      TestKSEFCLI_ERROR.test_nip_no_cert,method,() -> None,15-18,false,4,1,checks nip no cert
+      TestKSEFCLI_ERROR.test_autentykacja_cert,method,() -> None,20-27,false,8,1,checks autentykacja cert
+  ksef_cli/ksef_log.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      _toiso_str,function,"(t:float) -> str",10-11,false,2,1,toiso str
+      _def_logger,function,"(C:CONF, nip:str) -> None",14-21,false,8,2,def logger
+      _A.__init__,method,"(C:CONF, nip:str) -> None",25-27,false,3,1,creates
+      _A.nip,method,() -> str,30-31,false,2,1,nip
+      _A.C,method,() -> CONF,34-35,false,2,1,c
+      E.__init__,method,"(C:CONF, nip:str, action:int, output:Any) -> None",56-60,false,5,1,creates
+      E.koniec,method,"(res:bool, errmess:str, res_dict=None) -> None",62-93,false,32,8,koniec
+      LOGGER.__init__,method,"(C:CONF, nip:str) -> None",98-101,false,4,1,creates
+      LOGGER.genE,method,"(action:int, output:Any) -> E",103-104,false,2,1,gen e
+      LOGGER.logger,method,() -> None,107-108,false,2,1,logger
+  ksef_cli/readp12.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      _load_pfx,function,"(file_path, password) -> None",5-11,false,7,1,retrieves pfx
+      read_cert,function,"(file_path:str, password:str) -> tuple[bytes, bytes]",14-16,false,3,1,retrieves cert
+  ksef_cli/ksef_cli.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      _daj_cert,function,"(conf_path:str, t:TOKEN) -> tuple[bytes, bytes]",18-26,false,9,2,daj cert
+      KSEFCLI.ksef_action,method,"(action:int) -> None",32-71,false,40,1,ksef action
+      KSEFCLI.from_os_env,method,"(nip:str) -> None",74-76,false,3,1,from os env
+      KSEFCLI.__init__,method,"(C:CONF, nip:str) -> None",78-79,false,2,1,creates
+      KSEFCLI.clean_nip_dir,method,"(res_pathname:str) -> None",81-88,false,8,2,clean nip dir
+      KSEFCLI.czytaj_faktury_zakupowe,method,"(K:KSEFSDK, data_od:str, data_do:str) -> tuple[dict, str]",91-96,false,6,1,czytaj faktury zakupowe
+      KSEFCLI._zapisz_upo,method,"(ksef_numer:str, upo:str) -> None",98-102,false,5,1,zapisz upo
+      KSEFCLI._zapamiętaj_fakture,method,"(ksef_numer:str, invoice_path:str) -> None",104-109,false,6,1,zapamiętaj fakture
+      KSEFCLI.wyslij_fakture_do_ksef,method,"(K:KSEFSDK, invoice_path:str) -> tuple[dict, str]",112-130,false,19,2,wyslij fakture do ksef
+      KSEFCLI.wez_upo,method,"(res_pathname:str, ksef_number:str) -> tuple[bool, str]",132-152,false,21,4,wez upo
+      KSEFCLI.wez_fakture,method,"(K:KSEFSDK, ksef_number:str) -> tuple[dict, str]",155-161,false,7,1,wez fakture
+      KSEFCLI.wyslij_wsadowo_do_ksef,method,"(K:KSEFSDK, faktury_dir:str) -> tuple[dict, str]",164-214,false,51,10,wyslij wsadowo do ksef
+  ksef_cli/ksef_tokens.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      is_cert,function,"(t:TOKEN) -> bool",18-19,false,2,2,is cert
+      odczytaj_tokny,function,"(C:CONF, nip:str) -> TOKEN",27-53,false,27,5,odczytaj tokny
+  ksef_cli/main.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      printhelp,function,() -> None,25-29,false,5,1,printhelp
+      run_main,function,(argv) -> None,32-54,false,23,5,starts main
+      main,function,() -> None,57-58,false,2,1,main
+  ksef_cli/ksef_conf.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      CONF.__init__,method,"(ksef_conf_path:str, ksef_work_path:str) -> None",9-11,false,3,1,creates
+      CONF.test_ustaw_os_env,method,"(ksef_conf:str, ksef_dir:str) -> None",14-16,false,3,1,checks ustaw os env
+      CONF.ksef_conf_path,method,() -> str,19-20,false,2,1,ksef conf path
+      CONF.from_os_env,method,() -> None,23-33,false,11,3,from os env
+      CONF.work_nip_dir,method,"(nip:str) -> str",35-39,false,5,2,work nip dir
+      CONF._get_work_subdirectory,method,"(nip:str, dir:str) -> str",41-45,false,5,2,retrieves work subdirectory
+      CONF.get_nip_log_file,method,"(nip:str) -> str",47-48,false,2,1,retrieves nip log file
+      CONF.get_log_file,method,() -> str,50-51,false,2,1,retrieves log file
+      CONF.get_nip_events_file,method,"(nip:str) -> str",53-54,false,2,1,retrieves nip events file
+      CONF.get_events_file,method,() -> str,56-57,false,2,1,retrieves events file
+      CONF.get_invoice_upo,method,"(nip:str, ksef_numer:str) -> str",59-61,false,3,1,retrieves invoice upo
+      CONF.get_invoice_faktura,method,"(nip:str, ksef_numer:str) -> str",63-65,false,3,1,retrieves invoice faktura

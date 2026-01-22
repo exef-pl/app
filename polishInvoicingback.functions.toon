@@ -1,0 +1,124 @@
+project: polishInvoicingback
+generated: "2026-01-22T07:16:49.910978"
+modules[19]{path,lang,items}:
+  test-local-gus.js,javascript,1
+  start.js,javascript,0
+  verify-mock-mode.js,javascript,1
+  test-deployed-mock.js,javascript,2
+  test-gus-regon.js,javascript,1
+  src/index.ts,typescript,0
+  src/server.ts,typescript,0
+  frontend-integration/ksefService.js,javascript,18
+  frontend-integration/useKsef.tsx,typescript,0
+  frontend-integration/ksefService.ts,typescript,17
+  frontend-integration/useKsef.template.tsx,typescript,0
+  src/services/gus-regon.ts,typescript,11
+  src/middleware/errorHandler.ts,typescript,1
+  src/routes/ksef.ts,typescript,3
+  src/routes/gus.ts,typescript,0
+  src/mock/test-mock-ksef.js,javascript,1
+  src/mock/ksef-mock-server.ts,typescript,6
+  src/config/ksef-config.ts,typescript,5
+  src/utils/keepAlive.ts,typescript,7
+
+function_details:
+  test-local-gus.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      testLocalGUS,function,() -> None,9-64,true,56,1,checks local gus
+  verify-mock-mode.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      quickVerify,function,() -> None,4-36,true,33,1,quick verify
+  test-deployed-mock.js:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      testDeployedMockService,function,() -> None,9-173,true,165,1,checks deployed mock service
+      testMultipleUrls,function,() -> None,176-206,true,31,1,checks multiple urls
+  test-gus-regon.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      testGUSRegonWorkflow,function,() -> None,8-207,true,200,1,checks gus regon workflow
+  frontend-integration/ksefService.js:
+    functions[18]{name,kind,sig,loc,async,lines,cc,does}:
+      apiRequest,function,(endpoint) -> None,29-64,true,36,1,api request
+      KsefService.constructor,method,() -> None,70-73,false,4,1,constructor
+      KsefService.setSessionToken,method,(token) -> None,78-81,false,4,1,updates session token
+      KsefService.setEnvironment,method,(env) -> None,86-89,false,4,1,updates environment
+      KsefService.getAuthHeaders,method,() -> None,94-100,false,7,1,retrieves auth headers
+      KsefService.requestAuthorizationChallenge,method,(nip) -> None,110-129,true,20,1,request authorization challenge
+      KsefService.completeAuthentication,method,(signedXmlBase64) -> None,135-156,true,22,1,complete authentication
+      KsefService.initializeSessionWithToken,method,"(nip, authToken) -> None",162-184,true,23,1,initializes session with token
+      KsefService.sendInvoice,method,(invoiceXmlBase64) -> None,194-217,true,24,1,sends invoice
+      KsefService.queryInvoices,method,"(dateFrom, dateTo) -> None",222-249,true,28,1,retrieves invoices
+      KsefService.getInvoice,method,(ksefId) -> None,254-271,true,18,1,retrieves invoice
+      KsefService.getInvoiceStatus,method,(referenceNumber) -> None,276-293,true,18,1,retrieves invoice status
+      KsefService.terminateSession,method,() -> None,298-320,true,23,1,stops session
+      KsefService.checkHealth,method,() -> None,329-338,true,10,1,checks health
+      KsefService.xmlToBase64,method,(xmlString) -> None,343-345,false,3,1,xml to base64
+      KsefService.base64ToXml,method,(base64String) -> None,350-352,false,3,1,base64 to xml
+      KsefService.isAuthenticated,method,() -> None,357-359,false,3,1,is authenticated
+      KsefService.getSessionInfo,method,() -> None,364-370,false,7,1,retrieves session info
+  frontend-integration/ksefService.ts:
+    functions[17]{name,kind,sig,loc,async,lines,cc,does}:
+      apiRequest,function,"(endpoint: string, options: RequestInit) -> Promise<T>",146-181,true,36,1,api request
+      KsefService.setSessionToken,method,"(token: string) -> void",194-197,false,4,1,updates session token
+      KsefService.setEnvironment,method,"(env: 'test' | 'demo' | 'prod') -> void",202-205,false,4,1,updates environment
+      KsefService.getAuthHeaders,method,"() -> Record<string, string>",210-216,false,7,1,retrieves auth headers
+      KsefService.requestAuthorizationChallenge,method,"(nip: string, userType: 'onip' | 'operson') -> Promise<AuthorizationChallengeResponse>",226-248,true,23,1,request authorization challenge
+      KsefService.completeAuthentication,method,"(signedXmlBase64: string) -> Promise<AuthenticationResponse>",254-275,true,22,1,complete authentication
+      KsefService.initializeSessionWithToken,method,"(nip: string, authToken: string) -> Promise<AuthenticationResponse>",281-303,true,23,1,initializes session with token
+      KsefService.sendInvoice,method,"(invoiceXmlBase64: string, contentType: 'xml' | 'gzip' | 'zip') -> Promise<SendInvoiceResponse>",313-339,true,27,1,sends invoice
+      KsefService.queryInvoices,method,"(dateFrom: string, dateTo: string, options: Partial<QueryInvoicesRequest>) -> Promise<QueryInvoicesResponse>",344-375,true,32,1,retrieves invoices
+      KsefService.getInvoice,method,"(ksefId: string) -> Promise<GetInvoiceResponse>",380-397,true,18,1,retrieves invoice
+      KsefService.getInvoiceStatus,method,"(referenceNumber: string) -> Promise<InvoiceStatusResponse>",402-419,true,18,1,retrieves invoice status
+      KsefService.terminateSession,method,() -> Promise<any>,424-446,true,23,1,stops session
+      KsefService.checkHealth,method,() -> Promise<HealthResponse>,455-464,true,10,1,checks health
+      KsefService.xmlToBase64,method,"(xmlString: string) -> string",469-471,false,3,1,xml to base64
+      KsefService.base64ToXml,method,"(base64String: string) -> string",476-478,false,3,1,base64 to xml
+      KsefService.isAuthenticated,method,() -> boolean,483-485,false,3,1,is authenticated
+      KsefService.getSessionInfo,method,() -> SessionInfo,490-496,false,7,1,retrieves session info
+  src/services/gus-regon.ts:
+    functions[11]{name,kind,sig,loc,async,lines,cc,does}:
+      GUSRegonService.constructor,method,() -> None,138-140,false,3,1,constructor
+      GUSRegonService.getConfig,method,(useTestEnvironment?) -> GUSConfig,142-179,false,38,1,retrieves config
+      GUSRegonService.login,method,(useTestEnvironment?) -> Promise<string>,184-229,true,46,1,login
+      GUSRegonService.logout,method,() -> Promise<boolean>,234-259,true,26,1,logout
+      GUSRegonService.searchByNIP,method,"(nip: string, useTestEnvironment?) -> Promise<GUSResponse>",264-295,true,32,1,filters by nip
+      GUSRegonService.searchByREGON,method,"(regon: string, useTestEnvironment?) -> Promise<GUSResponse>",300-332,true,33,1,filters by regon
+      GUSRegonService.getCompanyDetails,method,"(regon: string, useTestEnvironment?) -> Promise<GUSResponse>",337-362,true,26,1,retrieves company details
+      GUSRegonService.parseCompanyResponse,method,"(response: AxiosResponse, searchType: string, searchValue: string) -> Promise<GUSResponse>",367-430,true,64,1,parses company response
+      GUSRegonService.parseDetailedResponse,method,"(response: AxiosResponse) -> Promise<GUSResponse>",435-501,true,67,1,parses detailed response
+      GUSRegonService.validateNIP,method,"(nip: string) -> boolean",506-525,false,20,1,validates nip
+      GUSRegonService.validateREGON,method,"(regon: string) -> boolean",530-552,false,23,1,validates regon
+  src/middleware/errorHandler.ts:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      errorHandler,function,"(err: Error, req: Request, res: Response, next: NextFunction) -> None",3-32,false,30,1,error handler
+  src/routes/ksef.ts:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      getKsefUrl,function,(environment?) -> None,62-65,false,4,1,retrieves ksef url
+      getKsefPublicKey,function,(environment?) -> None,68-88,true,21,1,retrieves ksef public key
+      getAuthorisationChallenge,function,"(contextIdentifier: { type: string; identifier: string }, environment?) -> None",91-116,true,26,1,retrieves authorisation challenge
+  src/mock/test-mock-ksef.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      testMockKSeFWorkflow,function,() -> None,8-178,true,171,1,checks mock k se f workflow
+  src/mock/ksef-mock-server.ts:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      generateReferenceNumber,function,() -> None,12-18,false,7,1,creates reference number
+      generateKSeFNumber,function,"(nip: string) -> None",20-26,false,7,1,creates k se f number
+      generateSessionToken,function,() -> None,28-30,false,3,1,creates session token
+      generateChallenge,function,() -> None,32-38,false,7,1,creates challenge
+      createSuccessResponse,function,"(data: any) -> None",41-45,false,5,1,creates success response
+      createErrorResponse,function,"(code: number, description: string, serviceCtx) -> None",47-59,false,13,1,creates error response
+  src/config/ksef-config.ts:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      getKSeFConfig,function,() -> None,20-51,false,32,1,retrieves k se f config
+      getKSeFUrl,function,(endpoint?) -> None,53-64,false,12,1,retrieves k se f url
+      isMockMode,function,() -> None,69-71,false,3,1,is mock mode
+      getMockHeaders,function,() -> None,73-79,false,7,1,retrieves mock headers
+      getRealKSeFHeaders,function,() -> None,81-87,false,7,1,retrieves real k se f headers
+  src/utils/keepAlive.ts:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      KeepAliveService.constructor,method,() -> None,22-28,false,7,1,constructor
+      KeepAliveService.start,method,() -> void,33-58,false,26,1,starts
+      KeepAliveService.stop,method,() -> void,63-69,false,7,1,stops
+      KeepAliveService.ping,method,() -> Promise<void>,74-102,true,29,1,ping
+      KeepAliveService.getConfig,method,() -> KeepAliveConfig,107-109,false,3,1,retrieves config
+      KeepAliveService.isRunning,method,() -> boolean,114-116,false,3,1,is running
+      KeepAliveService.getStatus,method,() -> None,121-138,false,18,1,retrieves status

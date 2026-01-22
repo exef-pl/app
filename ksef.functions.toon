@@ -1,0 +1,1878 @@
+project: ksef
+generated: "2026-01-22T07:16:39.745761"
+modules[393]{path,lang,items}:
+  xmlvalid.py,python,12
+  x-sign-signxml-xml.py,python,2
+  rlogger.py,python,0
+  t-04-token-01-create.py,python,1
+  t-04-cert-03-create-02-status.py,python,1
+  qr_codes_generator.py,python,9
+  t-50-get-fa-package.py,python,4
+  ksefconfig.py,python,3
+  t-04-cert-02-enrollments.py,python,1
+  x-ksefno.py,python,0
+  t-04-cert-01-limit.py,python,1
+  t-api-auth-token.py,python,1
+  t-api-auth-refresh.py,python,1
+  t-10-session-batch.py,python,12
+  t-04-token-02-list.py,python,1
+  t-10-session-01-list.py,python,1
+  t-02-test-data-osoba-01-create.py,python,1
+  t-50-get-fa-list.py,python,1
+  x-sign-endesive-xml.py,python,2
+  fv.py,python,3
+  t-04-cert-03-create-03-get.py,python,1
+  t-01-cert-make.py,python,1
+  t-03-auth-02-sign.py,python,2
+  t-03-auth-07-token.py,python,2
+  t-02-test-data-firma-01-create.py,python,1
+  t-04-cert-04-revoke.py,python,1
+  x-openapi-python-client-git.py,python,0
+  t-20-add-fv.py,python,10
+  t-03-auth-03-xades.py,python,1
+  t-03-auth-04-reference.py,python,1
+  t-10-session-online.py,python,13
+  t-00-setup.py,python,3
+  t-04-cert-05-list.py,python,1
+  t-02-test-data-osoba-01-remove.py,python,1
+  t-03-auth-06-refresh.py,python,1
+  t-02-test-data-firma-02-remove.py,python,1
+  t-02-test-data-firma-03-perm-01-grant.py,python,1
+  ksefcert.py,python,10
+  t-03-auth-01-challenge.py,python,1
+  t-50-get-fa-get.py,python,1
+  t-03-auth-05-redeem.py,python,1
+  t-api-auth-challenge.py,python,1
+  t-02-test-data-firma-03-perm-02-query.py,python,1
+  t-04-cert-03-create-01-csr.py,python,1
+  openapi_python_client/config.py,python,2
+  openapi_python_client/cli.py,python,6
+  openapi_python_client/__init__.py,python,15
+  openapi_python_client/__main__.py,python,0
+  openapi_python_client/utils.py,python,12
+  cert/test_ecdsa_der_raw.py,python,2
+  cert/ecdsa_der_raw.py,python,4
+  cert/p12-ksef.py,python,10
+  ksefproject/ksefproject/errors.py,python,1
+  ksefproject/ksefproject/__init__.py,python,0
+  ksefproject/ksefproject/client.py,python,22
+  ksefproject/ksefproject/types.py,python,2
+  ksefproject/ksefproject/models/entity_subject_details_type.py,python,1
+  ksefproject/ksefproject/models/authentication_list_response.py,python,2
+  ksefproject/ksefproject/models/session_status_response.py,python,2
+  ksefproject/ksefproject/models/subordinate_entity_roles_query_request.py,python,2
+  ksefproject/ksefproject/models/eu_entity_permission.py,python,2
+  ksefproject/ksefproject/models/query_certificates_response.py,python,2
+  ksefproject/ksefproject/models/retrieve_certificates_list_item.py,python,2
+  ksefproject/ksefproject/models/authentication_method.py,python,1
+  ksefproject/ksefproject/models/indirect_permission_type.py,python,1
+  ksefproject/ksefproject/models/personal_permission_type.py,python,1
+  ksefproject/ksefproject/models/enrollment_subject_limits_override.py,python,2
+  ksefproject/ksefproject/models/invoice_status_info_extensions_type_0.py,python,7
+  ksefproject/ksefproject/models/retrieve_certificates_response.py,python,2
+  ksefproject/ksefproject/models/invoicing_mode.py,python,1
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_context_identifier.py,python,2
+  ksefproject/ksefproject/models/subordinate_role_subordinate_entity_identifier.py,python,2
+  ksefproject/ksefproject/models/invoice_query_filters.py,python,2
+  ksefproject/ksefproject/models/status_info.py,python,2
+  ksefproject/ksefproject/models/send_invoice_request.py,python,2
+  ksefproject/ksefproject/models/query_person_permissions_response.py,python,2
+  ksefproject/ksefproject/models/part_upload_request_headers.py,python,7
+  ksefproject/ksefproject/models/entity_roles_parent_entity_identifier.py,python,2
+  ksefproject/ksefproject/models/person_permissions_author_identifier_type.py,python,1
+  ksefproject/ksefproject/models/attachment_permission_grant_request.py,python,2
+  ksefproject/ksefproject/models/subunit_permissions_author_identifier.py,python,2
+  ksefproject/ksefproject/models/form_code.py,python,2
+  ksefproject/ksefproject/models/token_context_identifier_type_identifier.py,python,2
+  ksefproject/ksefproject/models/subordinate_entity_role_type.py,python,1
+  ksefproject/ksefproject/models/person_permissions_target_identifier_type.py,python,1
+  ksefproject/ksefproject/models/certificate_limit.py,python,2
+  ksefproject/ksefproject/models/permissions_subject_entity_details.py,python,2
+  ksefproject/ksefproject/models/entity_permissions_subordinate_entity_identifier_type.py,python,1
+  ksefproject/ksefproject/models/eu_entity_permissions_query_request.py,python,2
+  ksefproject/ksefproject/models/eu_entity_permissions_author_identifier_type.py,python,1
+  ksefproject/ksefproject/models/certificate_subject_limits_override.py,python,2
+  ksefproject/ksefproject/models/test_data_permission_type.py,python,1
+  ksefproject/ksefproject/models/query_invoices_metadata_response.py,python,2
+  ksefproject/ksefproject/models/sessions_query_response_item.py,python,2
+  ksefproject/ksefproject/models/test_data_permissions_grant_request.py,python,2
+  ksefproject/ksefproject/models/personal_permissions_authorized_identifier.py,python,2
+  ksefproject/ksefproject/models/invoice_query_subject_type.py,python,1
+  ksefproject/ksefproject/models/certificate_list_item.py,python,2
+  ksefproject/ksefproject/models/check_attachment_permission_status_response.py,python,2
+  ksefproject/ksefproject/models/indirect_permissions_grant_request.py,python,2
+  ksefproject/ksefproject/models/entity_authorizations_authorized_entity_identifier_type.py,python,1
+  ksefproject/ksefproject/models/invoice_metadata_authorized_subject.py,python,2
+  ksefproject/ksefproject/models/peppol_provider.py,python,2
+  ksefproject/ksefproject/models/person_permissions_context_identifier_type.py,python,1
+  ksefproject/ksefproject/models/init_token_authentication_request.py,python,2
+  ksefproject/ksefproject/models/entity_authorization_permissions_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/person_identifier_type.py,python,1
+  ksefproject/ksefproject/models/certificate_enrollment_status_response.py,python,2
+  ksefproject/ksefproject/models/query_personal_permissions_response.py,python,2
+  ksefproject/ksefproject/models/id_document.py,python,2
+  ksefproject/ksefproject/models/subunit.py,python,2
+  ksefproject/ksefproject/models/permissions_operation_status_response.py,python,2
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_context_identifier_type.py,python,1
+  ksefproject/ksefproject/models/subunit_permissions_authorized_identifier.py,python,2
+  ksefproject/ksefproject/models/revoke_certificate_request.py,python,2
+  ksefproject/ksefproject/models/encryption_info.py,python,2
+  ksefproject/ksefproject/models/authentication_operation_status_response.py,python,2
+  ksefproject/ksefproject/models/person_remove_request.py,python,2
+  ksefproject/ksefproject/models/too_many_requests_response_status.py,python,7
+  ksefproject/ksefproject/models/subunit_permission_scope.py,python,1
+  ksefproject/ksefproject/models/api_rate_limits_override.py,python,2
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_grant_request.py,python,2
+  ksefproject/ksefproject/models/eu_entity_permissions_author_identifier.py,python,2
+  ksefproject/ksefproject/models/permissions_subject_person_by_fingerprint_details.py,python,2
+  ksefproject/ksefproject/models/query_tokens_response.py,python,2
+  ksefproject/ksefproject/models/permissions_subject_entity_by_fingerprint_details.py,python,2
+  ksefproject/ksefproject/models/entity_authorizations_authorized_entity_identifier.py,python,2
+  ksefproject/ksefproject/models/entity_permissions_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/session_type.py,python,1
+  ksefproject/ksefproject/models/invoice_metadata_seller.py,python,2
+  ksefproject/ksefproject/models/permissions_subject_entity_by_identifier_details.py,python,2
+  ksefproject/ksefproject/models/person_permissions_target_identifier.py,python,2
+  ksefproject/ksefproject/models/invoice_query_date_range.py,python,2
+  ksefproject/ksefproject/models/entity_authorization_permissions_grant_request.py,python,2
+  ksefproject/ksefproject/models/entity_authorizations_author_identifier_type.py,python,1
+  ksefproject/ksefproject/models/subordinate_entity_role.py,python,2
+  ksefproject/ksefproject/models/test_data_authorized_identifier_type.py,python,1
+  ksefproject/ksefproject/models/token_context_identifier_type.py,python,1
+  ksefproject/ksefproject/models/eu_entity_permission_subject_details.py,python,2
+  ksefproject/ksefproject/models/token_author_identifier_type_identifier.py,python,2
+  ksefproject/ksefproject/models/batch_session_context_limits_override.py,python,2
+  ksefproject/ksefproject/models/authentication_init_response.py,python,2
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/person_permissions_author_identifier.py,python,2
+  ksefproject/ksefproject/models/token_status_response.py,python,2
+  ksefproject/ksefproject/models/indirect_permissions_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/invoice_query_date_type.py,python,1
+  ksefproject/ksefproject/models/export_invoices_response.py,python,2
+  ksefproject/ksefproject/models/batch_file_part_info.py,python,2
+  ksefproject/ksefproject/models/person_permissions_context_identifier.py,python,2
+  ksefproject/ksefproject/models/ksef_certificate_type.py,python,1
+  ksefproject/ksefproject/models/certificate_enrollment_data_response.py,python,2
+  ksefproject/ksefproject/models/personal_permissions_authorized_identifier_type.py,python,1
+  ksefproject/ksefproject/models/invoice_query_buyer_identifier.py,python,2
+  ksefproject/ksefproject/models/attachment_permission_revoke_request.py,python,2
+  ksefproject/ksefproject/models/subunit_permissions_subunit_identifier.py,python,2
+  ksefproject/ksefproject/models/indirect_permissions_target_identifier.py,python,2
+  ksefproject/ksefproject/models/personal_permissions_context_identifier.py,python,2
+  ksefproject/ksefproject/models/too_many_requests_response.py,python,7
+  ksefproject/ksefproject/models/personal_permissions_target_identifier_type.py,python,1
+  ksefproject/ksefproject/models/subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/authentication_context_identifier.py,python,2
+  ksefproject/ksefproject/models/entity_authorization_permissions_query_request.py,python,2
+  ksefproject/ksefproject/models/__init__.py,python,0
+  ksefproject/ksefproject/models/effective_subject_limits.py,python,2
+  ksefproject/ksefproject/models/entity_permissions_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/set_session_limits_request.py,python,2
+  ksefproject/ksefproject/models/query_eu_entity_permissions_response.py,python,2
+  ksefproject/ksefproject/models/permissions_subject_person_details.py,python,2
+  ksefproject/ksefproject/models/person_permission_subject_details.py,python,2
+  ksefproject/ksefproject/models/authentication_list_item.py,python,2
+  ksefproject/ksefproject/models/certificate_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/personal_permission_scope.py,python,1
+  ksefproject/ksefproject/models/enroll_certificate_request.py,python,2
+  ksefproject/ksefproject/models/certificate_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/invoice_query_form_type.py,python,1
+  ksefproject/ksefproject/models/online_session_effective_context_limits.py,python,2
+  ksefproject/ksefproject/models/personal_permissions_query_request.py,python,2
+  ksefproject/ksefproject/models/query_subordinate_entity_roles_response.py,python,2
+  ksefproject/ksefproject/models/open_online_session_request.py,python,2
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/invoice_export_status_response.py,python,2
+  ksefproject/ksefproject/models/part_upload_request.py,python,2
+  ksefproject/ksefproject/models/entity_subject_by_identifier_details_type.py,python,1
+  ksefproject/ksefproject/models/personal_permissions_target_identifier.py,python,2
+  ksefproject/ksefproject/models/person_subject_details_type.py,python,1
+  ksefproject/ksefproject/models/eu_entity_permissions_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/upo_response.py,python,2
+  ksefproject/ksefproject/models/entity_permission.py,python,2
+  ksefproject/ksefproject/models/effective_api_rate_limits.py,python,2
+  ksefproject/ksefproject/models/invoice_metadata_buyer.py,python,2
+  ksefproject/ksefproject/models/eu_entity_permissions_grant_request.py,python,2
+  ksefproject/ksefproject/models/certificate_list_item_status.py,python,1
+  ksefproject/ksefproject/models/query_type.py,python,1
+  ksefproject/ksefproject/models/batch_session_effective_context_limits.py,python,2
+  ksefproject/ksefproject/models/test_data_permission.py,python,2
+  ksefproject/ksefproject/models/allowed_ips.py,python,2
+  ksefproject/ksefproject/models/third_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/test_data_context_identifier.py,python,2
+  ksefproject/ksefproject/models/person_permissions_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/subunit_permissions_query_request.py,python,2
+  ksefproject/ksefproject/models/sessions_query_response.py,python,2
+  ksefproject/ksefproject/models/subunit_permissions_author_identifier_type.py,python,1
+  ksefproject/ksefproject/models/subject_create_request.py,python,2
+  ksefproject/ksefproject/models/invoice_type.py,python,1
+  ksefproject/ksefproject/models/authentication_challenge_response.py,python,2
+  ksefproject/ksefproject/models/token_author_identifier_type.py,python,1
+  ksefproject/ksefproject/models/authentication_token_status.py,python,1
+  ksefproject/ksefproject/models/open_online_session_response.py,python,2
+  ksefproject/ksefproject/models/invoice_permission_type.py,python,1
+  ksefproject/ksefproject/models/certificate_limits_response.py,python,2
+  ksefproject/ksefproject/models/session_invoices_response.py,python,2
+  ksefproject/ksefproject/models/query_certificates_request.py,python,2
+  ksefproject/ksefproject/models/entity_by_fingerprint_details.py,python,2
+  ksefproject/ksefproject/models/session_invoice_status_response.py,python,2
+  ksefproject/ksefproject/models/invoice_metadata_buyer_identifier.py,python,2
+  ksefproject/ksefproject/models/effective_api_rate_limit_values.py,python,2
+  ksefproject/ksefproject/models/person_details.py,python,2
+  ksefproject/ksefproject/models/open_batch_session_response.py,python,2
+  ksefproject/ksefproject/models/entity_authorization_grant.py,python,2
+  ksefproject/ksefproject/models/person_by_fingerprint_with_identifier_details.py,python,2
+  ksefproject/ksefproject/models/authorization_policy.py,python,2
+  ksefproject/ksefproject/models/set_rate_limits_request.py,python,2
+  ksefproject/ksefproject/models/invoice_export_request.py,python,2
+  ksefproject/ksefproject/models/common_session_status.py,python,1
+  ksefproject/ksefproject/models/person_permissions_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/invoice_metadata_third_subject.py,python,2
+  ksefproject/ksefproject/models/person_permissions_grant_request.py,python,2
+  ksefproject/ksefproject/models/indirect_permissions_target_identifier_type.py,python,1
+  ksefproject/ksefproject/models/batch_file_info.py,python,2
+  ksefproject/ksefproject/models/eu_entity_permissions_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/subunit_permissions_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/entity_authorization_permissions_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/entity_role.py,python,2
+  ksefproject/ksefproject/models/invoice_metadata_third_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/subject_remove_request.py,python,2
+  ksefproject/ksefproject/models/eu_entity_permissions_query_permission_type.py,python,1
+  ksefproject/ksefproject/models/person_permissions_query_request.py,python,2
+  ksefproject/ksefproject/models/query_entity_roles_response.py,python,2
+  ksefproject/ksefproject/models/entity_permissions_subordinate_entity_identifier.py,python,2
+  ksefproject/ksefproject/models/query_entity_authorization_permissions_response.py,python,2
+  ksefproject/ksefproject/models/entity_role_type.py,python,1
+  ksefproject/ksefproject/models/invoice_status_info.py,python,2
+  ksefproject/ksefproject/models/subunit_permissions_subunit_identifier_type.py,python,1
+  ksefproject/ksefproject/models/entity_details.py,python,2
+  ksefproject/ksefproject/models/entity_authorization_permission_type.py,python,1
+  ksefproject/ksefproject/models/send_invoice_response.py,python,2
+  ksefproject/ksefproject/models/personal_permission.py,python,2
+  ksefproject/ksefproject/models/authentication_tokens_response.py,python,2
+  ksefproject/ksefproject/models/certificate_effective_subject_limits.py,python,2
+  ksefproject/ksefproject/models/subject_type.py,python,1
+  ksefproject/ksefproject/models/test_data_authorized_identifier.py,python,2
+  ksefproject/ksefproject/models/buyer_identifier_type.py,python,1
+  ksefproject/ksefproject/models/token_permission_type.py,python,1
+  ksefproject/ksefproject/models/exception_response.py,python,2
+  ksefproject/ksefproject/models/public_key_certificate.py,python,2
+  ksefproject/ksefproject/models/person_by_fingerprint_without_identifier_details.py,python,2
+  ksefproject/ksefproject/models/person_subject_by_fingerprint_details_type.py,python,1
+  ksefproject/ksefproject/models/entity_subject_by_fingerprint_details_type.py,python,1
+  ksefproject/ksefproject/models/open_batch_session_request.py,python,2
+  ksefproject/ksefproject/models/public_key_certificate_usage.py,python,1
+  ksefproject/ksefproject/models/invoice_query_amount.py,python,2
+  ksefproject/ksefproject/models/query_subunit_permissions_response.py,python,2
+  ksefproject/ksefproject/models/online_session_context_limits_override.py,python,2
+  ksefproject/ksefproject/models/entity_authorizations_authorizing_entity_identifier_type.py,python,1
+  ksefproject/ksefproject/models/eu_entity_permission_type.py,python,1
+  ksefproject/ksefproject/models/exception_info.py,python,2
+  ksefproject/ksefproject/models/entity_permission_type.py,python,1
+  ksefproject/ksefproject/models/permission_state.py,python,1
+  ksefproject/ksefproject/models/authentication_token_refresh_response.py,python,2
+  ksefproject/ksefproject/models/eu_entity_details.py,python,2
+  ksefproject/ksefproject/models/api_rate_limit_values_override.py,python,2
+  ksefproject/ksefproject/models/entity_roles_parent_entity_identifier_type.py,python,1
+  ksefproject/ksefproject/models/set_subject_limits_request.py,python,2
+  ksefproject/ksefproject/models/entity_authorizations_author_identifier.py,python,2
+  ksefproject/ksefproject/models/person_create_request.py,python,2
+  ksefproject/ksefproject/models/currency_code.py,python,1
+  ksefproject/ksefproject/models/subunit_permissions_context_identifier.py,python,2
+  ksefproject/ksefproject/models/invoice_package.py,python,2
+  ksefproject/ksefproject/models/query_peppol_providers_response.py,python,2
+  ksefproject/ksefproject/models/sort_order.py,python,1
+  ksefproject/ksefproject/models/subunit_permissions_context_identifier_type.py,python,1
+  ksefproject/ksefproject/models/indirect_permissions_subject_identifier_type.py,python,1
+  ksefproject/ksefproject/models/personal_permissions_context_identifier_type.py,python,1
+  ksefproject/ksefproject/models/person_permissions_authorized_identifier_type.py,python,1
+  ksefproject/ksefproject/models/authentication_context_identifier_type.py,python,1
+  ksefproject/ksefproject/models/amount_type.py,python,1
+  ksefproject/ksefproject/models/person_permissions_authorized_identifier.py,python,2
+  ksefproject/ksefproject/models/test_data_context_identifier_type.py,python,1
+  ksefproject/ksefproject/models/exception_details.py,python,2
+  ksefproject/ksefproject/models/permissions_operation_response.py,python,2
+  ksefproject/ksefproject/models/eu_entity_permission_subject_details_type.py,python,1
+  ksefproject/ksefproject/models/enrollment_effective_subject_limits.py,python,2
+  ksefproject/ksefproject/models/upo_page_response.py,python,2
+  ksefproject/ksefproject/models/person_identifier.py,python,2
+  ksefproject/ksefproject/models/permissions_eu_entity_details.py,python,2
+  ksefproject/ksefproject/models/person_permission.py,python,2
+  ksefproject/ksefproject/models/person_permission_scope.py,python,1
+  ksefproject/ksefproject/models/subunit_permission.py,python,2
+  ksefproject/ksefproject/models/person_permission_type.py,python,1
+  ksefproject/ksefproject/models/token_info.py,python,2
+  ksefproject/ksefproject/models/invoice_metadata.py,python,2
+  ksefproject/ksefproject/models/entity_permissions_grant_request.py,python,2
+  ksefproject/ksefproject/models/person_permission_subject_details_type.py,python,1
+  ksefproject/ksefproject/models/person_permissions_query_type.py,python,1
+  ksefproject/ksefproject/models/generate_token_request.py,python,2
+  ksefproject/ksefproject/models/test_data_permissions_revoke_request.py,python,2
+  ksefproject/ksefproject/models/generate_token_response.py,python,2
+  ksefproject/ksefproject/models/subunit_permissions_subject_identifier.py,python,2
+  ksefproject/ksefproject/models/subunit_permissions_grant_request.py,python,2
+  ksefproject/ksefproject/models/invoice_package_part.py,python,2
+  ksefproject/ksefproject/models/retrieve_certificates_request.py,python,2
+  ksefproject/ksefproject/models/subordinate_role_subordinate_entity_identifier_type.py,python,1
+  ksefproject/ksefproject/models/effective_context_limits.py,python,2
+  ksefproject/ksefproject/models/query_tokens_response_item.py,python,2
+  ksefproject/ksefproject/models/certificate_revocation_reason.py,python,1
+  ksefproject/ksefproject/models/enroll_certificate_response.py,python,2
+  ksefproject/ksefproject/models/entity_authorizations_authorizing_entity_identifier.py,python,2
+  ksefproject/ksefproject/api/__init__.py,python,0
+  ksefproject/ksefproject/api/sessions/__init__.py,python,0
+  ksefproject/ksefproject/api/publickey/__init__.py,python,0
+  ksefproject/ksefproject/api/peppol/__init__.py,python,0
+  ksefproject/ksefproject/api/sendonline/__init__.py,python,0
+  ksefproject/ksefproject/api/status/__init__.py,python,0
+  ksefproject/ksefproject/api/tokens/__init__.py,python,0
+  ksefproject/ksefproject/api/invoices/__init__.py,python,0
+  ksefproject/ksefproject/api/limits/__init__.py,python,0
+  ksefproject/ksefproject/api/sendbatch/__init__.py,python,0
+  ksefproject/ksefproject/api/auth/__init__.py,python,0
+  ksefproject/ksefproject/api/operations/__init__.py,python,0
+  ksefproject/ksefproject/api/testdata/__init__.py,python,0
+  ksefproject/ksefproject/api/certificates/__init__.py,python,0
+  ksefproject/ksefproject/api/permissions/__init__.py,python,0
+  openapi_python_client/schema/__init__.py,python,0
+  openapi_python_client/schema/data_type.py,python,0
+  openapi_python_client/schema/parameter_location.py,python,0
+  openapi_python_client/parser/errors.py,python,0
+  openapi_python_client/parser/__init__.py,python,0
+  openapi_python_client/parser/responses.py,python,14
+  openapi_python_client/parser/openapi.py,python,13
+  openapi_python_client/parser/bodies.py,python,2
+  openapi_python_client/parser/properties/merge_properties.py,python,8
+  openapi_python_client/parser/properties/boolean.py,python,2
+  openapi_python_client/parser/properties/string.py,python,4
+  openapi_python_client/parser/properties/protocol.py,python,12
+  openapi_python_client/parser/properties/date.py,python,3
+  openapi_python_client/parser/properties/const.py,python,7
+  openapi_python_client/parser/properties/schemas.py,python,8
+  openapi_python_client/parser/properties/int.py,python,2
+  openapi_python_client/parser/properties/any.py,python,2
+  openapi_python_client/parser/properties/__init__.py,python,9
+  openapi_python_client/parser/properties/datetime.py,python,3
+  openapi_python_client/parser/properties/enum_property.py,python,6
+  openapi_python_client/parser/properties/file.py,python,3
+  openapi_python_client/parser/properties/model_property.py,python,15
+  openapi_python_client/parser/properties/none.py,python,2
+  openapi_python_client/parser/properties/union.py,python,11
+  openapi_python_client/parser/properties/uuid.py,python,3
+  openapi_python_client/parser/properties/property.py,python,0
+  openapi_python_client/parser/properties/float.py,python,2
+  openapi_python_client/parser/properties/list_property.py,python,8
+  openapi_python_client/parser/properties/literal_enum_property.py,python,7
+  openapi_python_client/schema/openapi_schema_pydantic/external_documentation.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/response.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/parameter.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/request_body.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/schema.py,python,2
+  openapi_python_client/schema/openapi_schema_pydantic/license.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/xml.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/header.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/oauth_flows.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/tag.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/server.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/components.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/__init__.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/link.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/path_item.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/operation.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/discriminator.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/responses.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/contact.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/callback.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/paths.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/encoding.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/info.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/security_scheme.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/media_type.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/open_api.py,python,1
+  openapi_python_client/schema/openapi_schema_pydantic/security_requirement.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/oauth_flow.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/server_variable.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/example.py,python,0
+  openapi_python_client/schema/openapi_schema_pydantic/reference.py,python,1
+
+function_details:
+  xmlvalid.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      download,function,(url) -> None,14-34,false,21,5,download
+      main,function,() -> None,155-210,false,56,14,main
+      DTDResolver.resolve,method,"(url, id, context) -> None",37-39,false,3,1,resolve
+      Parser.__init__,method,(xml) -> None,48-51,false,4,1,creates
+      Deklaracja.__init__,method,(xml) -> None,54-66,false,13,1,creates
+      Deklaracja.prepare,method,() -> None,68-77,false,10,2,prepare
+      Deklaracja.getxsd,method,() -> None,79-82,false,4,2,getxsd
+      Deklaracja.getxsl,method,() -> None,84-87,false,4,2,getxsl
+      Deklaracja.validate,method,() -> None,89-104,false,16,2,validates
+      Deklaracja.showerror,method,(e) -> None,106-108,false,3,2,showerror
+      Deklaracja.html,method,() -> None,110-121,false,12,1,html
+      XADESParser.__init__,method,(xml) -> None,124-153,false,30,3,creates
+  x-sign-signxml-xml.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      load_pfx,function,"(file_path, password) -> None",15-17,false,3,1,retrieves pfx
+      main,function,() -> None,20-42,false,23,2,main
+  t-04-token-01-create.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,10-42,false,33,3,main
+  t-04-cert-03-create-02-status.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,12-38,false,27,3,main
+  qr_codes_generator.py:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      base64url_encode,function,"(data:bytes) -> str",12-13,false,2,1,base64url encode
+      compute_invoice_hash_from_bytes,function,"(invoice_bytes:bytes) -> bytes",15-16,false,2,1,processes invoice hash from bytes
+      compute_invoice_hash_base64url_from_bytes,function,"(data:bytes) -> str",18-20,false,3,1,processes invoice hash base64url from bytes
+      get_cert_serial_number_hex,function,(cert) -> str,22-27,false,6,2,retrieves cert serial number hex
+      get_seller_nip_and_issue_date_from_invoice_xml_bytes,function,"(invoice_bytes:bytes) -> tuple[str, datetime]",30-58,false,29,8,retrieves seller nip and issue date from invoice xml bytes
+      generate_qr_image,function,"(url:str, label:str, output_path:str) -> None",61-112,false,52,3,creates qr image
+      build_invoice_verification_url,function,"(nip:str, issue_date:datetime, invoice_hash_base64url:str, base_url:str='https://ksef-test.mf.gov.pl') -> str",114-154,false,41,1,Buduje URL do weryfikacji faktury (KOD I).
+      get_offline_cert_path_sign_proc,function,"(private_key, ecdsa_sign_format:Literal[ieee_p1363,der]='ieee_p1363') -> None",157-202,false,46,1,retrieves offline cert path sign proc
+      build_certificate_verification_url,function,"(seller_nip:str, context_identifier_type:Literal[Nip,InternalId,NipVatUe,PeppolId], context_identifier_value:str, certificate_serial:str, invoice_hash_base64url:str, private_key, base_url:str='https://ksef-test.mf.gov.pl', ecdsa_signature_format:Literal[ieee_p1363,der]='ieee_p1363') -> str",205-302,false,98,1,Buduje URL do weryfikacji certyfikatu KSeF (KOD II).
+  t-50-get-fa-package.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      ensure_output_dir,function,"(path:Path) -> Path",23-25,false,3,1,ensure output dir
+      decrypt_aes_cbc,function,"(data:bytes, key:bytes, iv:bytes) -> bytes",27-35,false,9,2,decrypt aes cbc
+      unzip_package,function,"(zip_bytes:bytes, output_dir:Path) -> List[Path]",38-48,false,11,2,unzip package
+      main,function,() -> None,50-181,false,132,16,main
+  ksefconfig.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      Config.__init__,method,"(firma:int=1, osoba:bool=False, initialize:bool=False) -> None",13-40,false,28,5,creates
+      Config.loadcertificate,method,(cert_data) -> None,42-46,false,5,1,loadcertificate
+      Config.getcertificte,method,(token=True) -> None,48-55,false,8,5,getcertificte
+  t-04-cert-02-enrollments.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,9-28,false,20,2,main
+  t-04-cert-01-limit.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,9-28,false,20,2,main
+  t-api-auth-token.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,32-107,false,76,5,main
+  t-api-auth-refresh.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,11-21,false,11,1,main
+  t-10-session-batch.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,323-357,false,35,11,main
+      KSeFError.__init__,method,"(msg, text) -> None",24-26,false,3,1,creates
+      KSeFInvoiceSender.__init__,method,(cfg) -> None,45-67,false,23,3,creates
+      KSeFInvoiceSender.session_save,method,() -> None,69-71,false,3,1,session save
+      KSeFInvoiceSender.zip_create,method,() -> None,73-134,false,62,6,zip create
+      KSeFInvoiceSender.session_open,method,() -> None,136-186,false,51,5,session open
+      KSeFInvoiceSender.session_send,method,() -> None,188-221,false,34,7,session send
+      KSeFInvoiceSender.session_close,method,() -> None,223-235,false,13,2,session close
+      KSeFInvoiceSender.session_status,method,() -> None,237-256,false,20,4,session status
+      KSeFInvoiceSender.session_upo,method,() -> None,258-270,false,13,3,session upo
+      KSeFInvoiceSender.session_failed_invoices,method,() -> None,272-288,false,17,3,session failed invoices
+      KSeFInvoiceSender.session_invoices,method,() -> None,290-321,false,32,5,session invoices
+  t-04-token-02-list.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,9-28,false,20,2,main
+  t-10-session-01-list.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,9-39,false,31,2,main
+  t-02-test-data-osoba-01-create.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-25,false,18,1,main
+  t-50-get-fa-list.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,9-44,false,36,5,main
+  x-sign-endesive-xml.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      load_pfx,function,"(file_path, password) -> None",16-18,false,3,1,retrieves pfx
+      main,function,() -> None,21-69,false,49,3,main
+  fv.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,113-115,false,3,1,main
+      Main.faktura,method,"(f1, f2) -> None",10-102,false,93,1,faktura
+      Main.main,method,() -> None,104-111,false,8,2,main
+  t-04-cert-03-create-03-get.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,12-38,false,27,2,main
+  t-01-cert-make.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,7-23,false,17,4,main
+  t-03-auth-02-sign.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      load_pfx,function,"(file_path, password) -> None",14-20,false,7,1,retrieves pfx
+      main,function,() -> None,26-107,false,82,8,main
+  t-03-auth-07-token.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      timegm,function,(tuple) -> None,20-26,false,7,1,timegm
+      main,function,() -> None,28-83,false,56,4,main
+  t-02-test-data-firma-01-create.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-25,false,18,1,main
+  t-04-cert-04-revoke.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,12-34,false,23,2,main
+  t-20-add-fv.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,350-410,false,61,12,main
+      KSeFInvoiceSender.__init__,method,(cfg) -> None,30-41,false,12,1,creates
+      KSeFInvoiceSender.get_headers,method,() -> None,43-48,false,6,1,Zwraca nagłówki HTTP z tokenem autoryzacji
+      KSeFInvoiceSender.get_ksef_public_key,method,() -> None,50-117,false,68,8,Pobiera klucz publiczny KSeF do szyfrowania z API.
+      KSeFInvoiceSender.encrypt_invoice,method,(invoice_xml) -> None,119-166,false,48,3,Szyfruje fakturę AES + RSA zgodnie z wymaganiami KSeF
+      KSeFInvoiceSender.calculate_hash,method,(data) -> None,168-172,false,5,2,Oblicza hash SHA-256 i koduje w Base64
+      KSeFInvoiceSender.open_online_session,method,() -> None,174-244,false,71,3,Otwiera sesję online do wysyłki faktury
+      KSeFInvoiceSender.send_invoice,method,(invoice_xml) -> None,246-290,false,45,3,Wysyła fakturę do otwartej sesji
+      KSeFInvoiceSender.check_invoice_status,method,"(invoice_ref, max_attempts=99999) -> None",292-330,false,39,8,Sprawdza status przetwarzania faktury
+      KSeFInvoiceSender.close_session,method,() -> None,332-347,false,16,3,Zamyka sesję online
+  t-03-auth-03-xades.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-31,false,24,2,main
+  t-03-auth-04-reference.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-31,false,24,2,main
+  t-10-session-online.py:
+    functions[13]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,252-275,false,24,7,main
+      KSeFError.__init__,method,"(msg, text) -> None",20-22,false,3,1,creates
+      KSeFInvoiceSender.__init__,method,(cfg) -> None,34-61,false,28,4,creates
+      KSeFInvoiceSender.session_save,method,() -> None,63-65,false,3,1,session save
+      KSeFInvoiceSender.session_open,method,() -> None,67-108,false,42,2,session open
+      KSeFInvoiceSender.session_close,method,() -> None,110-123,false,14,3,session close
+      KSeFInvoiceSender.get_ksef_public_key,method,() -> None,125-127,false,3,1,retrieves ksef public key
+      KSeFInvoiceSender.calculate_hash,method,(data) -> None,129-132,false,4,2,processes hash
+      KSeFInvoiceSender.encrypt_invoice,method,(invoice_bytes) -> None,134-160,false,27,1,encrypt invoice
+      KSeFInvoiceSender.send_invoice,method,(invoice) -> None,162-199,false,38,3,sends invoice
+      KSeFInvoiceSender.check_invoice_status,method,(invoice) -> None,201-227,false,27,3,checks invoice status
+      KSeFInvoiceSender.status,method,() -> None,229-231,false,3,3,status
+      KSeFInvoiceSender.upo,method,(invoice) -> None,233-250,false,18,3,upo
+  t-00-setup.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      nip,function,() -> None,13-29,false,17,4,nip
+      pesel,function,"(dt=None, sex=0, rnd=0) -> None",32-70,false,39,17,pesel
+      main,function,() -> None,73-95,false,23,5,main
+  t-04-cert-05-list.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,11-47,false,37,5,main
+  t-02-test-data-osoba-01-remove.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-19,false,12,1,main
+  t-03-auth-06-refresh.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-28,false,21,2,main
+  t-02-test-data-firma-02-remove.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-19,false,12,1,main
+  t-02-test-data-firma-03-perm-01-grant.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-52,false,45,1,main
+  ksefcert.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      Certificate.key_create,method,() -> rsa.RSAPrivateKey,20-23,false,4,1,key create
+      Certificate.key_save,method,"(fname:str, key:Any, password:str) -> None",25-44,false,20,2,key save
+      Certificate.key_load,method,"(fname:str, password:str) -> PrivateKeyTypes",46-51,false,6,1,key load
+      Certificate.pk12_save,method,"(name:bytes, cert:Any, key:Any, fname:str, password:str) -> None",53-71,false,19,1,pk12 save
+      Certificate.pk12_load,method,"(fname:str, password:str) -> tuple[PrivateKeyTypes | None, x509.Certificate | None, list[x509.Certificate]]",73-77,false,5,1,pk12 load
+      Certificate.cert_load,method,"(fname:str) -> x509.Certificate",79-81,false,3,1,cert load
+      Certificate.cert_save,method,"(fname:str, data:Any) -> None",83-87,false,5,1,cert save
+      Certificate.csr_load,method,"(fname:str) -> x509.CertificateSigningRequest",89-91,false,3,1,csr load
+      Certificate.csr_create,method,"(key:Any, country:Any[str,None]=None, organization:Any[str,None]=None, organizationIdentifier:Any[str,None]=None, commonname:Any[str,None]=None) -> x509.CertificateSigningRequest",93-118,false,26,3,csr create
+      Certificate.createcert,method,"(key:Any, fn:Any, ln:Any, cn:str, nip:Any=None, pesel:Any=None) -> x509.Certificate",120-190,false,71,3,createcert
+  t-03-auth-01-challenge.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,7-39,false,33,1,main
+  t-50-get-fa-get.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,9-24,false,16,2,main
+  t-03-auth-05-redeem.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-28,false,21,2,main
+  t-api-auth-challenge.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,8-39,false,32,1,main
+  t-02-test-data-firma-03-perm-02-query.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,9-34,false,26,1,main
+  t-04-cert-03-create-01-csr.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,12-63,false,52,2,main
+  openapi_python_client/config.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      ConfigFile.load_from_path,method,"(path:Path) -> \"ConfigFile\"",53-62,false,10,2,Creates a Config from provided JSON or YAML file and sets a bunch of globals fro...
+      Config.from_sources,method,"(config_file:ConfigFile, meta_type:MetaType, document_source:Union[Path,str], file_encoding:str, overwrite:bool, output_path:Optional[Path]) -> \"Config\"",89-130,false,42,5,from sources
+  openapi_python_client/cli.py:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      _version_callback,function,"(value:bool) -> None",16-19,false,4,2,version callback
+      _process_config,function,"(url:Optional[str], path:Optional[Path], config_path:Optional[Path], meta_type:MetaType, file_encoding:str, overwrite:bool, output_path:Optional[Path]) -> Config",22-58,false,37,10,processes config
+      cli,function,"(version:bool=typer.Option(False, '--version', callback=_version_callback, help='Print the version and exit')) -> None",65-68,false,4,1,Generate a Python client from an OpenAPI document
+      _print_parser_error,function,"(err:GeneratorError, color:str) -> None",71-82,false,12,4,logs parser error
+      handle_errors,function,"(errors:Sequence[GeneratorError], fail_on_warning:bool=False) -> None",85-123,false,39,7,Turn custom errors into formatted error messages
+      generate,function,"(url:Optional[str]=typer.Option(None, help='A URL to read the OpenAPI document from'), path:Optional[Path]=typer.Option(None, help='A path to the OpenAPI document'), custom_template_path:Optional[Path]=typer.Option(None, help='A path to a directory containing custom template(s)', file_okay=False, dir_okay=True, readable=True, resolve_path=True), meta:MetaType=typer.Option(MetaType.POETRY, help='The type of metadata you want to generate.'), file_encoding:str=typer.Option('utf-8', help='Encoding used when writing generated'), config_path:Optional[Path]=typer.Option(None, '--config', help='Path to the config file to use'), fail_on_warning:bool=False, overwrite:bool=typer.Option(False, help='Overwrite the existing client if it exists')) -> None",127-169,false,43,1,Generate a new OpenAPI Client library
+  openapi_python_client/__init__.py:
+    functions[15]{name,kind,sig,loc,async,lines,cc,does}:
+      _get_project_for_url_or_path,function,"(config:Config, custom_template_path:Optional[Path]=None) -> Union[Project, GeneratorError]",293-307,false,15,3,retrieves project for url or path
+      generate,function,"(config:Config) -> Sequence[GeneratorError]",310-327,false,18,2,Generate the client library
+      _load_yaml_or_json,function,"(data:bytes, content_type:Optional[str]) -> Union[dict[str, Any], GeneratorError]",330-341,false,12,4,retrieves yaml or json
+      _get_document,function,"(source:Union[str, Path], timeout:int) -> Union[dict[str, Any], GeneratorError]",344-362,false,19,4,retrieves document
+      Project.__init__,method,() -> None,40-106,false,67,8,creates
+      Project.build,method,"() -> Sequence[GeneratorError]",108-122,false,15,3,Create the project from templates
+      Project._run_post_hooks,method,() -> None,124-126,false,3,2,starts post hooks
+      Project._run_command,method,"(cmd:str) -> None",128-148,false,21,4,starts command
+      Project._get_errors,method,"() -> list[GeneratorError]",150-156,false,7,2,retrieves errors
+      Project._create_package,method,() -> None,158-173,false,16,3,creates package
+      Project._build_metadata,method,() -> None,175-194,false,20,3,creates metadata
+      Project._build_pyproject_toml,method,() -> None,196-203,false,8,1,creates pyproject toml
+      Project._build_setup_py,method,() -> None,205-211,false,7,1,creates setup py
+      Project._build_models,method,() -> None,213-247,false,35,5,creates models
+      Project._build_api,method,() -> None,249-290,false,42,3,creates api
+  openapi_python_client/utils.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      sanitize,function,"(value:str) -> str",46-48,false,3,1,"Removes every character that isn't 0-9, A-Z, a-z, or a known delimiter"
+      split_words,function,"(value:str) -> list[str]",51-56,false,6,3,Split a string on words and known delimiters
+      fix_reserved_words,function,"(value:str) -> str",64-76,false,13,3,"Using reserved Python words as identifiers in generated code causes problems, so..."
+      snake_case,function,"(value:str) -> str",79-82,false,4,1,Converts to snake_case
+      pascal_case,function,"(value:str) -> str",85-89,false,5,3,Converts to PascalCase
+      kebab_case,function,"(value:str) -> str",92-95,false,4,1,Converts to kebab-case
+      remove_string_escapes,function,"(value:str) -> str",98-106,false,9,1,Used when parsing string-literal defaults to prevent escaping the string to writ...
+      get_content_type,function,"(content_type:str, config:Config) -> str | None",109-122,false,14,2,"Given a string representing a content type with optional parameters, returns the..."
+      PythonIdentifier.__new__,method,"(value:str, prefix:str, skip_snake_case:bool=False) -> PythonIdentifier",17-25,false,9,4,creates
+      PythonIdentifier.__deepcopy__,method,"(_:Any) -> PythonIdentifier",27-28,false,2,1,deepcopy
+      ClassName.__new__,method,"(value:str, prefix:str) -> ClassName",34-40,false,7,2,creates
+      ClassName.__deepcopy__,method,"(_:Any) -> ClassName",42-43,false,2,1,deepcopy
+  cert/test_ecdsa_der_raw.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      test_known_der_to_raw_and_back,function,() -> None,6-16,false,11,1,checks known der to raw and back
+      test_roundtrip_random,function,() -> None,19-29,false,11,3,checks roundtrip random
+  cert/ecdsa_der_raw.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      _int_to_fixed_bytes,function,"(value:int, length:int) -> bytes",15-17,false,3,1,int to fixed bytes
+      _fixed_bytes_to_int,function,"(b:bytes) -> int",20-21,false,2,1,fixed bytes to int
+      der_to_raw,function,"(der_sig:bytes, field_size:int) -> bytes",24-99,false,76,10,Convert a DER-encoded ECDSA signature to raw format (r||s).
+      raw_to_der,function,"(raw_sig:bytes) -> bytes",102-136,false,35,3,Convert raw (r||s) signature to ASN.1/DER encoded signature.
+  cert/p12-ksef.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,121-132,false,12,1,main
+      X.key_load,method,"(fname, password=None) -> None",31-38,false,8,2,key load
+      X.key_save_pub,method,"(fname, key) -> None",40-47,false,8,1,key save pub
+      X.key_save_priv,method,"(fname, key, password) -> None",49-68,false,20,2,key save priv
+      X.cert_load,method,(fname) -> None,70-72,false,3,1,cert load
+      X.cert_save,method,"(fname, data) -> None",74-78,false,5,1,cert save
+      X.pk12_load,method,"(fname, password) -> None",80-84,false,5,1,pk12 load
+      X.pk12_save,method,"(fname, p12, password) -> None",86-88,false,3,1,pk12 save
+      X.pk12_save,method,"(fname, name, key, cert, othercerts, password) -> None",90-100,false,11,1,pk12 save
+      X.show,method,(cert) -> None,102-120,false,19,8,show
+  ksefproject/ksefproject/errors.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      UnexpectedStatus.__init__,method,"(status_code:int, content:bytes) -> None",6-12,false,7,1,creates
+  ksefproject/ksefproject/client.py:
+    functions[22]{name,kind,sig,loc,async,lines,cc,does}:
+      Client.with_headers,method,"(headers:dict[str,str]) -> \"Client\"",50-56,false,7,3,Get a new client matching this one with additional headers
+      Client.with_cookies,method,"(cookies:dict[str,str]) -> \"Client\"",58-64,false,7,3,Get a new client matching this one with additional cookies
+      Client.with_timeout,method,"(timeout:Any) -> \"Client\"",66-72,false,7,3,Get a new client matching this one with a new timeout (in seconds)
+      Client.set_httpx_client,method,"(client:Any) -> \"Client\"",74-80,false,7,1,Manually set the underlying httpx.Client
+      Client.get_httpx_client,method,() -> httpx.Client,82-94,false,13,2,"Get the underlying httpx.Client, constructing a new one if not previously set"
+      Client.__enter__,method,"() -> \"Client\"",96-99,false,4,1,Enter a context manager for self.client—you cannot enter twice (see httpx docs)
+      Client.__exit__,method,() -> None,101-103,false,3,1,Exit a context manager for internal httpx.Client (see httpx docs)
+      Client.set_async_httpx_client,method,"(async_client:Any) -> \"Client\"",105-111,false,7,1,Manually the underlying httpx.AsyncClient
+      Client.get_async_httpx_client,method,() -> httpx.AsyncClient,113-125,false,13,2,"Get the underlying httpx.AsyncClient, constructing a new one if not previously s..."
+      Client.__aenter__,method,"() -> \"Client\"",127-130,true,4,1,Enter a context manager for underlying httpx.AsyncClient—you cannot enter twice...
+      Client.__aexit__,method,() -> None,132-134,true,3,1,Exit a context manager for underlying httpx.AsyncClient (see httpx docs)
+      AuthenticatedClient.with_headers,method,"(headers:dict[str,str]) -> \"AuthenticatedClient\"",184-190,false,7,3,Get a new client matching this one with additional headers
+      AuthenticatedClient.with_cookies,method,"(cookies:dict[str,str]) -> \"AuthenticatedClient\"",192-198,false,7,3,Get a new client matching this one with additional cookies
+      AuthenticatedClient.with_timeout,method,"(timeout:Any) -> \"AuthenticatedClient\"",200-206,false,7,3,Get a new client matching this one with a new timeout (in seconds)
+      AuthenticatedClient.set_httpx_client,method,"(client:Any) -> \"AuthenticatedClient\"",208-214,false,7,1,Manually set the underlying httpx.Client
+      AuthenticatedClient.get_httpx_client,method,() -> httpx.Client,216-229,false,14,3,"Get the underlying httpx.Client, constructing a new one if not previously set"
+      AuthenticatedClient.__enter__,method,"() -> \"AuthenticatedClient\"",231-234,false,4,1,Enter a context manager for self.client—you cannot enter twice (see httpx docs)
+      AuthenticatedClient.__exit__,method,() -> None,236-238,false,3,1,Exit a context manager for internal httpx.Client (see httpx docs)
+      AuthenticatedClient.set_async_httpx_client,method,"(async_client:Any) -> \"AuthenticatedClient\"",240-246,false,7,1,Manually the underlying httpx.AsyncClient
+      AuthenticatedClient.get_async_httpx_client,method,() -> httpx.AsyncClient,248-261,false,14,3,"Get the underlying httpx.AsyncClient, constructing a new one if not previously s..."
+      AuthenticatedClient.__aenter__,method,"() -> \"AuthenticatedClient\"",263-266,true,4,1,Enter a context manager for underlying httpx.AsyncClient—you cannot enter twice...
+      AuthenticatedClient.__aexit__,method,() -> None,268-270,true,3,1,Exit a context manager for underlying httpx.AsyncClient (see httpx docs)
+  ksefproject/ksefproject/types.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      Unset.__bool__,method,"() -> Literal[False]",11-12,false,2,1,bool
+      File.to_tuple,method,() -> FileTypes,35-37,false,3,1,Return a tuple representation that httpx will accept for multipart/form-data
+  ksefproject/ksefproject/models/entity_subject_details_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntitySubjectDetailsType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/authentication_list_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationListResponse.to_dict,method,"() -> dict[str, Any]",41-65,false,25,4,converts dict
+      AuthenticationListResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",70-98,false,29,2,from dict
+  ksefproject/ksefproject/models/session_status_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionStatusResponse.to_dict,method,"() -> dict[str, Any]",57-119,false,63,13,converts dict
+      SessionStatusResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",124-224,false,101,1,from dict
+  ksefproject/ksefproject/models/subordinate_entity_roles_query_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubordinateEntityRolesQueryRequest.to_dict,method,"() -> dict[str, Any]",42-60,false,19,4,converts dict
+      SubordinateEntityRolesQueryRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",65-92,false,28,1,from dict
+  ksefproject/ksefproject/models/eu_entity_permission.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermission.to_dict,method,"() -> dict[str, Any]",72-137,false,66,10,converts dict
+      EuEntityPermission.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",142-247,false,106,1,from dict
+  ksefproject/ksefproject/models/query_certificates_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryCertificatesResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QueryCertificatesResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/retrieve_certificates_list_item.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      RetrieveCertificatesListItem.to_dict,method,"() -> dict[str, Any]",43-62,false,20,1,converts dict
+      RetrieveCertificatesListItem.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",67-87,false,21,1,from dict
+  ksefproject/ksefproject/models/authentication_method.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationMethod.__str__,method,() -> str,12-13,false,2,1,str
+  ksefproject/ksefproject/models/indirect_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      IndirectPermissionType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/personal_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionType.__str__,method,() -> str,13-14,false,2,1,str
+  ksefproject/ksefproject/models/enrollment_subject_limits_override.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EnrollmentSubjectLimitsOverride.to_dict,method,"() -> dict[str, Any]",35-50,false,16,3,converts dict
+      EnrollmentSubjectLimitsOverride.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",55-71,false,17,1,from dict
+  ksefproject/ksefproject/models/invoice_status_info_extensions_type_0.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceStatusInfoExtensionsType0.to_dict,method,"() -> dict[str, Any]",33-41,false,9,2,converts dict
+      InvoiceStatusInfoExtensionsType0.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",46-64,false,19,2,from dict
+      InvoiceStatusInfoExtensionsType0.additional_keys,method,"() -> list[str]",67-68,false,2,1,additional keys
+      InvoiceStatusInfoExtensionsType0.__getitem__,method,"(key:str) -> Union[None, str]",70-71,false,2,1,getitem
+      InvoiceStatusInfoExtensionsType0.__setitem__,method,"(key:str, value:Union[None,str]) -> None",73-74,false,2,1,setitem
+      InvoiceStatusInfoExtensionsType0.__delitem__,method,"(key:str) -> None",76-77,false,2,1,delitem
+      InvoiceStatusInfoExtensionsType0.__contains__,method,"(key:str) -> bool",79-80,false,2,1,contains
+  ksefproject/ksefproject/models/retrieve_certificates_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      RetrieveCertificatesResponse.to_dict,method,"() -> dict[str, Any]",35-51,false,17,2,converts dict
+      RetrieveCertificatesResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",56-73,false,18,2,from dict
+  ksefproject/ksefproject/models/invoicing_mode.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoicingMode.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_context_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityAdministrationPermissionsContextIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      EuEntityAdministrationPermissionsContextIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/subordinate_role_subordinate_entity_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubordinateRoleSubordinateEntityIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      SubordinateRoleSubordinateEntityIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/invoice_query_filters.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceQueryFilters.to_dict,method,"() -> dict[str, Any]",99-225,false,127,31,converts dict
+      InvoiceQueryFilters.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",230-441,false,212,1,from dict
+  ksefproject/ksefproject/models/status_info.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      StatusInfo.to_dict,method,"() -> dict[str, Any]",40-65,false,26,4,converts dict
+      StatusInfo.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",70-100,false,31,1,from dict
+  ksefproject/ksefproject/models/send_invoice_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SendInvoiceRequest.to_dict,method,"() -> dict[str, Any]",51-85,false,35,4,converts dict
+      SendInvoiceRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",90-124,false,35,1,from dict
+  ksefproject/ksefproject/models/query_person_permissions_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryPersonPermissionsResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QueryPersonPermissionsResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/part_upload_request_headers.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      PartUploadRequestHeaders.to_dict,method,"() -> dict[str, Any]",32-40,false,9,2,converts dict
+      PartUploadRequestHeaders.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",45-63,false,19,2,from dict
+      PartUploadRequestHeaders.additional_keys,method,"() -> list[str]",66-67,false,2,1,additional keys
+      PartUploadRequestHeaders.__getitem__,method,"(key:str) -> Union[None, str]",69-70,false,2,1,getitem
+      PartUploadRequestHeaders.__setitem__,method,"(key:str, value:Union[None,str]) -> None",72-73,false,2,1,setitem
+      PartUploadRequestHeaders.__delitem__,method,"(key:str) -> None",75-76,false,2,1,delitem
+      PartUploadRequestHeaders.__contains__,method,"(key:str) -> bool",78-79,false,2,1,contains
+  ksefproject/ksefproject/models/entity_roles_parent_entity_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityRolesParentEntityIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      EntityRolesParentEntityIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/person_permissions_author_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsAuthorIdentifierType.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/attachment_permission_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AttachmentPermissionGrantRequest.to_dict,method,"() -> dict[str, Any]",32-42,false,11,1,converts dict
+      AttachmentPermissionGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",47-55,false,9,1,from dict
+  ksefproject/ksefproject/models/subunit_permissions_author_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsAuthorIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      SubunitPermissionsAuthorIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/form_code.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      FormCode.to_dict,method,"() -> dict[str, Any]",36-52,false,17,1,converts dict
+      FormCode.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/token_context_identifier_type_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TokenContextIdentifierTypeIdentifier.to_dict,method,"() -> dict[str, Any]",40-53,false,14,1,converts dict
+      TokenContextIdentifierTypeIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-72,false,15,1,from dict
+  ksefproject/ksefproject/models/subordinate_entity_role_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubordinateEntityRoleType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/person_permissions_target_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsTargetIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/certificate_limit.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateLimit.to_dict,method,"() -> dict[str, Any]",34-47,false,14,1,converts dict
+      CertificateLimit.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",52-63,false,12,1,from dict
+  ksefproject/ksefproject/models/permissions_subject_entity_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionsSubjectEntityDetails.to_dict,method,"() -> dict[str, Any]",43-64,false,22,3,converts dict
+      PermissionsSubjectEntityDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",69-94,false,26,1,from dict
+  ksefproject/ksefproject/models/entity_permissions_subordinate_entity_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityPermissionsSubordinateEntityIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/eu_entity_permissions_query_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionsQueryRequest.to_dict,method,"() -> dict[str, Any]",44-82,false,39,9,converts dict
+      EuEntityPermissionsQueryRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",87-140,false,54,1,from dict
+  ksefproject/ksefproject/models/eu_entity_permissions_author_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionsAuthorIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/certificate_subject_limits_override.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateSubjectLimitsOverride.to_dict,method,"() -> dict[str, Any]",35-50,false,16,3,converts dict
+      CertificateSubjectLimitsOverride.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",55-71,false,17,1,from dict
+  ksefproject/ksefproject/models/test_data_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataPermissionType.__str__,method,() -> str,12-13,false,2,1,str
+  ksefproject/ksefproject/models/query_invoices_metadata_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryInvoicesMetadataResponse.to_dict,method,"() -> dict[str, Any]",59-91,false,33,5,converts dict
+      QueryInvoicesMetadataResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",96-140,false,45,2,from dict
+  ksefproject/ksefproject/models/sessions_query_response_item.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionsQueryResponseItem.to_dict,method,"() -> dict[str, Any]",55-94,false,40,4,converts dict
+      SessionsQueryResponseItem.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",99-156,false,58,1,from dict
+  ksefproject/ksefproject/models/test_data_permissions_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataPermissionsGrantRequest.to_dict,method,"() -> dict[str, Any]",41-65,false,25,2,converts dict
+      TestDataPermissionsGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",70-101,false,32,2,from dict
+  ksefproject/ksefproject/models/personal_permissions_authorized_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionsAuthorizedIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      PersonalPermissionsAuthorizedIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/invoice_query_subject_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceQuerySubjectType.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/certificate_list_item.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateListItem.to_dict,method,"() -> dict[str, Any]",78-123,false,46,4,converts dict
+      CertificateListItem.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",128-200,false,73,1,from dict
+  ksefproject/ksefproject/models/check_attachment_permission_status_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CheckAttachmentPermissionStatusResponse.to_dict,method,"() -> dict[str, Any]",43-64,false,22,5,converts dict
+      CheckAttachmentPermissionStatusResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",69-98,false,30,1,from dict
+  ksefproject/ksefproject/models/indirect_permissions_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      IndirectPermissionsGrantRequest.to_dict,method,"() -> dict[str, Any]",60-97,false,38,5,converts dict
+      IndirectPermissionsGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",102-157,false,56,2,from dict
+  ksefproject/ksefproject/models/entity_authorizations_authorized_entity_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationsAuthorizedEntityIdentifierType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/invoice_metadata_authorized_subject.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceMetadataAuthorizedSubject.to_dict,method,"() -> dict[str, Any]",45-66,false,22,3,converts dict
+      InvoiceMetadataAuthorizedSubject.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",71-93,false,23,1,from dict
+  ksefproject/ksefproject/models/peppol_provider.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PeppolProvider.to_dict,method,"() -> dict[str, Any]",39-55,false,17,1,converts dict
+      PeppolProvider.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",60-77,false,18,1,from dict
+  ksefproject/ksefproject/models/person_permissions_context_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsContextIdentifierType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/init_token_authentication_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InitTokenAuthenticationRequest.to_dict,method,"() -> dict[str, Any]",47-75,false,29,4,converts dict
+      InitTokenAuthenticationRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",80-120,false,41,1,from dict
+  ksefproject/ksefproject/models/entity_authorization_permissions_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationPermissionsSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",40-53,false,14,1,converts dict
+      EntityAuthorizationPermissionsSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-72,false,15,1,from dict
+  ksefproject/ksefproject/models/person_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonIdentifierType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/certificate_enrollment_status_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateEnrollmentStatusResponse.to_dict,method,"() -> dict[str, Any]",46-68,false,23,3,converts dict
+      CertificateEnrollmentStatusResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",73-102,false,30,1,from dict
+  ksefproject/ksefproject/models/query_personal_permissions_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryPersonalPermissionsResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QueryPersonalPermissionsResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/id_document.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      IdDocument.to_dict,method,"() -> dict[str, Any]",38-54,false,17,1,converts dict
+      IdDocument.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/subunit.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      Subunit.to_dict,method,"() -> dict[str, Any]",34-47,false,14,1,converts dict
+      Subunit.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",52-63,false,12,1,from dict
+  ksefproject/ksefproject/models/permissions_operation_status_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionsOperationStatusResponse.to_dict,method,"() -> dict[str, Any]",35-46,false,12,1,converts dict
+      PermissionsOperationStatusResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",51-63,false,13,1,from dict
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_context_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityAdministrationPermissionsContextIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/subunit_permissions_authorized_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsAuthorizedIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      SubunitPermissionsAuthorizedIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/revoke_certificate_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      RevokeCertificateRequest.to_dict,method,"() -> dict[str, Any]",41-58,false,18,4,converts dict
+      RevokeCertificateRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",63-89,false,27,1,from dict
+  ksefproject/ksefproject/models/encryption_info.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EncryptionInfo.to_dict,method,"() -> dict[str, Any]",38-51,false,14,1,converts dict
+      EncryptionInfo.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",56-67,false,12,1,from dict
+  ksefproject/ksefproject/models/authentication_operation_status_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationOperationStatusResponse.to_dict,method,"() -> dict[str, Any]",62-107,false,46,9,converts dict
+      AuthenticationOperationStatusResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",112-189,false,78,1,from dict
+  ksefproject/ksefproject/models/person_remove_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonRemoveRequest.to_dict,method,"() -> dict[str, Any]",32-42,false,11,1,converts dict
+      PersonRemoveRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",47-55,false,9,1,from dict
+  ksefproject/ksefproject/models/too_many_requests_response_status.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      TooManyRequestsResponseStatus.to_dict,method,"() -> dict[str, Any]",40-58,false,19,1,converts dict
+      TooManyRequestsResponseStatus.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",63-80,false,18,1,from dict
+      TooManyRequestsResponseStatus.additional_keys,method,"() -> list[str]",83-84,false,2,1,additional keys
+      TooManyRequestsResponseStatus.__getitem__,method,"(key:str) -> Any",86-87,false,2,1,getitem
+      TooManyRequestsResponseStatus.__setitem__,method,"(key:str, value:Any) -> None",89-90,false,2,1,setitem
+      TooManyRequestsResponseStatus.__delitem__,method,"(key:str) -> None",92-93,false,2,1,delitem
+      TooManyRequestsResponseStatus.__contains__,method,"(key:str) -> bool",95-96,false,2,1,contains
+  ksefproject/ksefproject/models/subunit_permission_scope.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionScope.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/api_rate_limits_override.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      ApiRateLimitsOverride.to_dict,method,"() -> dict[str, Any]",57-101,false,45,1,converts dict
+      ApiRateLimitsOverride.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",106-184,false,79,1,from dict
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityAdministrationPermissionsGrantRequest.to_dict,method,"() -> dict[str, Any]",55-84,false,30,1,converts dict
+      EuEntityAdministrationPermissionsGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",89-128,false,40,1,from dict
+  ksefproject/ksefproject/models/eu_entity_permissions_author_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionsAuthorIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      EuEntityPermissionsAuthorIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/permissions_subject_person_by_fingerprint_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionsSubjectPersonByFingerprintDetails.to_dict,method,"() -> dict[str, Any]",57-105,false,49,10,converts dict
+      PermissionsSubjectPersonByFingerprintDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",110-192,false,83,1,from dict
+  ksefproject/ksefproject/models/query_tokens_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryTokensResponse.to_dict,method,"() -> dict[str, Any]",41-65,false,25,4,converts dict
+      QueryTokensResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",70-98,false,29,2,from dict
+  ksefproject/ksefproject/models/permissions_subject_entity_by_fingerprint_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionsSubjectEntityByFingerprintDetails.to_dict,method,"() -> dict[str, Any]",42-63,false,22,3,converts dict
+      PermissionsSubjectEntityByFingerprintDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",68-93,false,26,1,from dict
+  ksefproject/ksefproject/models/entity_authorizations_authorized_entity_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationsAuthorizedEntityIdentifier.to_dict,method,"() -> dict[str, Any]",40-53,false,14,1,converts dict
+      EntityAuthorizationsAuthorizedEntityIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-72,false,15,1,from dict
+  ksefproject/ksefproject/models/entity_permissions_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityPermissionsSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      EntityPermissionsSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/session_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/invoice_metadata_seller.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceMetadataSeller.to_dict,method,"() -> dict[str, Any]",37-55,false,19,3,converts dict
+      InvoiceMetadataSeller.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",60-79,false,20,1,from dict
+  ksefproject/ksefproject/models/permissions_subject_entity_by_identifier_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionsSubjectEntityByIdentifierDetails.to_dict,method,"() -> dict[str, Any]",37-50,false,14,1,converts dict
+      PermissionsSubjectEntityByIdentifierDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",55-69,false,15,1,from dict
+  ksefproject/ksefproject/models/person_permissions_target_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsTargetIdentifier.to_dict,method,"() -> dict[str, Any]",45-63,false,19,3,converts dict
+      PersonPermissionsTargetIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",68-90,false,23,1,from dict
+  ksefproject/ksefproject/models/invoice_query_date_range.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceQueryDateRange.to_dict,method,"() -> dict[str, Any]",56-87,false,32,6,converts dict
+      InvoiceQueryDateRange.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",92-141,false,50,1,from dict
+  ksefproject/ksefproject/models/entity_authorization_permissions_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationPermissionsGrantRequest.to_dict,method,"() -> dict[str, Any]",47-68,false,22,1,converts dict
+      EntityAuthorizationPermissionsGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",73-101,false,29,1,from dict
+  ksefproject/ksefproject/models/entity_authorizations_author_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationsAuthorIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/subordinate_entity_role.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubordinateEntityRole.to_dict,method,"() -> dict[str, Any]",47-67,false,21,1,converts dict
+      SubordinateEntityRole.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",72-99,false,28,1,from dict
+  ksefproject/ksefproject/models/test_data_authorized_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataAuthorizedIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/token_context_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      TokenContextIdentifierType.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/eu_entity_permission_subject_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionSubjectDetails.to_dict,method,"() -> dict[str, Any]",56-99,false,44,10,converts dict
+      EuEntityPermissionSubjectDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",104-181,false,78,1,from dict
+  ksefproject/ksefproject/models/token_author_identifier_type_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TokenAuthorIdentifierTypeIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      TokenAuthorIdentifierTypeIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/batch_session_context_limits_override.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      BatchSessionContextLimitsOverride.to_dict,method,"() -> dict[str, Any]",36-52,false,17,1,converts dict
+      BatchSessionContextLimitsOverride.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/authentication_init_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationInitResponse.to_dict,method,"() -> dict[str, Any]",37-51,false,15,1,converts dict
+      AuthenticationInitResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",56-71,false,16,1,from dict
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityAdministrationPermissionsSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      EuEntityAdministrationPermissionsSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/person_permissions_author_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsAuthorIdentifier.to_dict,method,"() -> dict[str, Any]",46-64,false,19,3,converts dict
+      PersonPermissionsAuthorIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",69-91,false,23,1,from dict
+  ksefproject/ksefproject/models/token_status_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TokenStatusResponse.to_dict,method,"() -> dict[str, Any]",68-125,false,58,8,converts dict
+      TokenStatusResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",130-218,false,89,2,from dict
+  ksefproject/ksefproject/models/indirect_permissions_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      IndirectPermissionsSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      IndirectPermissionsSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/invoice_query_date_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceQueryDateType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/export_invoices_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      ExportInvoicesResponse.to_dict,method,"() -> dict[str, Any]",32-42,false,11,1,converts dict
+      ExportInvoicesResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",47-55,false,9,1,from dict
+  ksefproject/ksefproject/models/batch_file_part_info.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      BatchFilePartInfo.to_dict,method,"() -> dict[str, Any]",36-52,false,17,1,converts dict
+      BatchFilePartInfo.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/person_permissions_context_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsContextIdentifier.to_dict,method,"() -> dict[str, Any]",40-53,false,14,1,converts dict
+      PersonPermissionsContextIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-72,false,15,1,from dict
+  ksefproject/ksefproject/models/ksef_certificate_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefCertificateType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/certificate_enrollment_data_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateEnrollmentDataResponse.to_dict,method,"() -> dict[str, Any]",49-110,false,62,13,converts dict
+      CertificateEnrollmentDataResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",115-192,false,78,1,from dict
+  ksefproject/ksefproject/models/personal_permissions_authorized_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionsAuthorizedIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/invoice_query_buyer_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceQueryBuyerIdentifier.to_dict,method,"() -> dict[str, Any]",43-61,false,19,3,converts dict
+      InvoiceQueryBuyerIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",66-88,false,23,1,from dict
+  ksefproject/ksefproject/models/attachment_permission_revoke_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AttachmentPermissionRevokeRequest.to_dict,method,"() -> dict[str, Any]",41-61,false,21,4,converts dict
+      AttachmentPermissionRevokeRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",66-95,false,30,1,from dict
+  ksefproject/ksefproject/models/subunit_permissions_subunit_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsSubunitIdentifier.to_dict,method,"() -> dict[str, Any]",40-53,false,14,1,converts dict
+      SubunitPermissionsSubunitIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-72,false,15,1,from dict
+  ksefproject/ksefproject/models/indirect_permissions_target_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      IndirectPermissionsTargetIdentifier.to_dict,method,"() -> dict[str, Any]",46-64,false,19,3,converts dict
+      IndirectPermissionsTargetIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",69-91,false,23,1,from dict
+  ksefproject/ksefproject/models/personal_permissions_context_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionsContextIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      PersonalPermissionsContextIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/too_many_requests_response.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      TooManyRequestsResponse.to_dict,method,"() -> dict[str, Any]",40-51,false,12,1,converts dict
+      TooManyRequestsResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",56-70,false,15,1,from dict
+      TooManyRequestsResponse.additional_keys,method,"() -> list[str]",73-74,false,2,1,additional keys
+      TooManyRequestsResponse.__getitem__,method,"(key:str) -> Any",76-77,false,2,1,getitem
+      TooManyRequestsResponse.__setitem__,method,"(key:str, value:Any) -> None",79-80,false,2,1,setitem
+      TooManyRequestsResponse.__delitem__,method,"(key:str) -> None",82-83,false,2,1,delitem
+      TooManyRequestsResponse.__contains__,method,"(key:str) -> bool",85-86,false,2,1,contains
+  ksefproject/ksefproject/models/personal_permissions_target_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionsTargetIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubjectIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/authentication_context_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationContextIdentifier.to_dict,method,"() -> dict[str, Any]",35-48,false,14,1,converts dict
+      AuthenticationContextIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",53-67,false,15,1,from dict
+  ksefproject/ksefproject/models/entity_authorization_permissions_query_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationPermissionsQueryRequest.to_dict,method,"() -> dict[str, Any]",56-103,false,48,11,converts dict
+      EntityAuthorizationPermissionsQueryRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",108-189,false,82,1,from dict
+  ksefproject/ksefproject/models/effective_subject_limits.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EffectiveSubjectLimits.to_dict,method,"() -> dict[str, Any]",41-70,false,30,7,converts dict
+      EffectiveSubjectLimits.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",75-124,false,50,1,from dict
+  ksefproject/ksefproject/models/entity_permissions_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityPermissionsSubjectIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/set_session_limits_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SetSessionLimitsRequest.to_dict,method,"() -> dict[str, Any]",38-53,false,16,1,converts dict
+      SetSessionLimitsRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-77,false,20,1,from dict
+  ksefproject/ksefproject/models/query_eu_entity_permissions_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryEuEntityPermissionsResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QueryEuEntityPermissionsResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/permissions_subject_person_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionsSubjectPersonDetails.to_dict,method,"() -> dict[str, Any]",59-107,false,49,10,converts dict
+      PermissionsSubjectPersonDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",112-194,false,83,1,from dict
+  ksefproject/ksefproject/models/person_permission_subject_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionSubjectDetails.to_dict,method,"() -> dict[str, Any]",57-100,false,44,10,converts dict
+      PersonPermissionSubjectDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",105-182,false,78,1,from dict
+  ksefproject/ksefproject/models/authentication_list_item.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationListItem.to_dict,method,"() -> dict[str, Any]",66-118,false,53,10,converts dict
+      AuthenticationListItem.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",123-206,false,84,1,from dict
+  ksefproject/ksefproject/models/certificate_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateSubjectIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/personal_permission_scope.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionScope.__str__,method,() -> str,13-14,false,2,1,str
+  ksefproject/ksefproject/models/enroll_certificate_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EnrollCertificateRequest.to_dict,method,"() -> dict[str, Any]",50-76,false,27,4,converts dict
+      EnrollCertificateRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",81-119,false,39,1,from dict
+  ksefproject/ksefproject/models/certificate_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      CertificateSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/invoice_query_form_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceQueryFormType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/online_session_effective_context_limits.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      OnlineSessionEffectiveContextLimits.to_dict,method,"() -> dict[str, Any]",36-52,false,17,1,converts dict
+      OnlineSessionEffectiveContextLimits.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/personal_permissions_query_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionsQueryRequest.to_dict,method,"() -> dict[str, Any]",62-116,false,55,14,converts dict
+      PersonalPermissionsQueryRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",121-217,false,97,1,from dict
+  ksefproject/ksefproject/models/query_subordinate_entity_roles_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QuerySubordinateEntityRolesResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QuerySubordinateEntityRolesResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/open_online_session_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      OpenOnlineSessionRequest.to_dict,method,"() -> dict[str, Any]",38-53,false,16,1,converts dict
+      OpenOnlineSessionRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-77,false,20,1,from dict
+  ksefproject/ksefproject/models/eu_entity_administration_permissions_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityAdministrationPermissionsSubjectIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/invoice_export_status_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceExportStatusResponse.to_dict,method,"() -> dict[str, Any]",49-91,false,43,10,converts dict
+      InvoiceExportStatusResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",96-172,false,77,1,from dict
+  ksefproject/ksefproject/models/part_upload_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PartUploadRequest.to_dict,method,"() -> dict[str, Any]",41-61,false,21,1,converts dict
+      PartUploadRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",66-87,false,22,1,from dict
+  ksefproject/ksefproject/models/entity_subject_by_identifier_details_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntitySubjectByIdentifierDetailsType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/personal_permissions_target_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionsTargetIdentifier.to_dict,method,"() -> dict[str, Any]",46-64,false,19,3,converts dict
+      PersonalPermissionsTargetIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",69-91,false,23,1,from dict
+  ksefproject/ksefproject/models/person_subject_details_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonSubjectDetailsType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/eu_entity_permissions_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionsSubjectIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/upo_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      UpoResponse.to_dict,method,"() -> dict[str, Any]",35-51,false,17,2,converts dict
+      UpoResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",56-73,false,18,2,from dict
+  ksefproject/ksefproject/models/entity_permission.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityPermission.to_dict,method,"() -> dict[str, Any]",37-51,false,15,2,converts dict
+      EntityPermission.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",56-70,false,15,1,from dict
+  ksefproject/ksefproject/models/effective_api_rate_limits.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EffectiveApiRateLimits.to_dict,method,"() -> dict[str, Any]",57-101,false,45,1,converts dict
+      EffectiveApiRateLimits.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",106-184,false,79,1,from dict
+  ksefproject/ksefproject/models/invoice_metadata_buyer.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceMetadataBuyer.to_dict,method,"() -> dict[str, Any]",40-59,false,20,3,converts dict
+      InvoiceMetadataBuyer.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",64-87,false,24,1,from dict
+  ksefproject/ksefproject/models/eu_entity_permissions_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionsGrantRequest.to_dict,method,"() -> dict[str, Any]",46-72,false,27,2,converts dict
+      EuEntityPermissionsGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",77-110,false,34,2,from dict
+  ksefproject/ksefproject/models/certificate_list_item_status.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateListItemStatus.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/query_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/batch_session_effective_context_limits.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      BatchSessionEffectiveContextLimits.to_dict,method,"() -> dict[str, Any]",36-52,false,17,1,converts dict
+      BatchSessionEffectiveContextLimits.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/test_data_permission.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataPermission.to_dict,method,"() -> dict[str, Any]",35-48,false,14,1,converts dict
+      TestDataPermission.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",53-67,false,15,1,from dict
+  ksefproject/ksefproject/models/allowed_ips.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AllowedIps.to_dict,method,"() -> dict[str, Any]",42-85,false,44,10,converts dict
+      AllowedIps.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",90-152,false,63,1,from dict
+  ksefproject/ksefproject/models/third_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      ThirdSubjectIdentifierType.__str__,method,() -> str,10-11,false,2,1,str
+  ksefproject/ksefproject/models/test_data_context_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataContextIdentifier.to_dict,method,"() -> dict[str, Any]",35-48,false,14,1,converts dict
+      TestDataContextIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",53-67,false,15,1,from dict
+  ksefproject/ksefproject/models/person_permissions_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsSubjectIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/subunit_permissions_query_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsQueryRequest.to_dict,method,"() -> dict[str, Any]",43-61,false,19,4,converts dict
+      SubunitPermissionsQueryRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",66-93,false,28,1,from dict
+  ksefproject/ksefproject/models/sessions_query_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionsQueryResponse.to_dict,method,"() -> dict[str, Any]",41-65,false,25,4,converts dict
+      SessionsQueryResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",70-98,false,29,2,from dict
+  ksefproject/ksefproject/models/subunit_permissions_author_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsAuthorIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/subject_create_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubjectCreateRequest.to_dict,method,"() -> dict[str, Any]",50-92,false,43,8,converts dict
+      SubjectCreateRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",97-162,false,66,1,from dict
+  ksefproject/ksefproject/models/invoice_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceType.__str__,method,() -> str,17-18,false,2,1,str
+  ksefproject/ksefproject/models/authentication_challenge_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationChallengeResponse.to_dict,method,"() -> dict[str, Any]",39-55,false,17,1,converts dict
+      AuthenticationChallengeResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",60-77,false,18,1,from dict
+  ksefproject/ksefproject/models/token_author_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      TokenAuthorIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/authentication_token_status.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationTokenStatus.__str__,method,() -> str,10-11,false,2,1,str
+  ksefproject/ksefproject/models/open_online_session_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      OpenOnlineSessionResponse.to_dict,method,"() -> dict[str, Any]",37-50,false,14,1,converts dict
+      OpenOnlineSessionResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",55-69,false,15,1,from dict
+  ksefproject/ksefproject/models/invoice_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoicePermissionType.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/certificate_limits_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateLimitsResponse.to_dict,method,"() -> dict[str, Any]",40-57,false,18,1,converts dict
+      CertificateLimitsResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",62-83,false,22,1,from dict
+  ksefproject/ksefproject/models/session_invoices_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionInvoicesResponse.to_dict,method,"() -> dict[str, Any]",41-65,false,25,4,converts dict
+      SessionInvoicesResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",70-98,false,29,2,from dict
+  ksefproject/ksefproject/models/query_certificates_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryCertificatesRequest.to_dict,method,"() -> dict[str, Any]",65-118,false,54,14,converts dict
+      QueryCertificatesRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",123-213,false,91,1,from dict
+  ksefproject/ksefproject/models/entity_by_fingerprint_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityByFingerprintDetails.to_dict,method,"() -> dict[str, Any]",34-47,false,14,1,converts dict
+      EntityByFingerprintDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",52-63,false,12,1,from dict
+  ksefproject/ksefproject/models/session_invoice_status_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionInvoiceStatusResponse.to_dict,method,"() -> dict[str, Any]",74-169,false,96,21,converts dict
+      SessionInvoiceStatusResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",174-329,false,156,1,from dict
+  ksefproject/ksefproject/models/invoice_metadata_buyer_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceMetadataBuyerIdentifier.to_dict,method,"() -> dict[str, Any]",43-61,false,19,3,converts dict
+      InvoiceMetadataBuyerIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",66-88,false,23,1,from dict
+  ksefproject/ksefproject/models/effective_api_rate_limit_values.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EffectiveApiRateLimitValues.to_dict,method,"() -> dict[str, Any]",36-52,false,17,1,converts dict
+      EffectiveApiRateLimitValues.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/person_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonDetails.to_dict,method,"() -> dict[str, Any]",34-47,false,14,1,converts dict
+      PersonDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",52-63,false,12,1,from dict
+  ksefproject/ksefproject/models/open_batch_session_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      OpenBatchSessionResponse.to_dict,method,"() -> dict[str, Any]",56-75,false,20,2,converts dict
+      OpenBatchSessionResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",80-100,false,21,2,from dict
+  ksefproject/ksefproject/models/entity_authorization_grant.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationGrant.to_dict,method,"() -> dict[str, Any]",74-123,false,50,7,converts dict
+      EntityAuthorizationGrant.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",128-209,false,82,1,from dict
+  ksefproject/ksefproject/models/person_by_fingerprint_with_identifier_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonByFingerprintWithIdentifierDetails.to_dict,method,"() -> dict[str, Any]",39-56,false,18,1,converts dict
+      PersonByFingerprintWithIdentifierDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-79,false,19,1,from dict
+  ksefproject/ksefproject/models/authorization_policy.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthorizationPolicy.to_dict,method,"() -> dict[str, Any]",38-56,false,19,4,converts dict
+      AuthorizationPolicy.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-88,false,28,1,from dict
+  ksefproject/ksefproject/models/set_rate_limits_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SetRateLimitsRequest.to_dict,method,"() -> dict[str, Any]",35-46,false,12,1,converts dict
+      SetRateLimitsRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",51-63,false,13,1,from dict
+  ksefproject/ksefproject/models/invoice_export_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceExportRequest.to_dict,method,"() -> dict[str, Any]",38-53,false,16,1,converts dict
+      InvoiceExportRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-77,false,20,1,from dict
+  ksefproject/ksefproject/models/common_session_status.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      CommonSessionStatus.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/person_permissions_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      PersonPermissionsSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/invoice_metadata_third_subject.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceMetadataThirdSubject.to_dict,method,"() -> dict[str, Any]",62-84,false,23,3,converts dict
+      InvoiceMetadataThirdSubject.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",89-115,false,27,1,from dict
+  ksefproject/ksefproject/models/person_permissions_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsGrantRequest.to_dict,method,"() -> dict[str, Any]",48-74,false,27,2,converts dict
+      PersonPermissionsGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",79-112,false,34,2,from dict
+  ksefproject/ksefproject/models/indirect_permissions_target_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      IndirectPermissionsTargetIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/batch_file_info.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      BatchFileInfo.to_dict,method,"() -> dict[str, Any]",40-62,false,23,2,converts dict
+      BatchFileInfo.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",67-90,false,24,2,from dict
+  ksefproject/ksefproject/models/eu_entity_permissions_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionsSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      EuEntityPermissionsSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/subunit_permissions_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsSubjectIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/entity_authorization_permissions_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationPermissionsSubjectIdentifierType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/entity_role.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityRole.to_dict,method,"() -> dict[str, Any]",51-78,false,28,4,converts dict
+      EntityRole.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",83-125,false,43,1,from dict
+  ksefproject/ksefproject/models/invoice_metadata_third_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceMetadataThirdSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",44-62,false,19,3,converts dict
+      InvoiceMetadataThirdSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",67-89,false,23,1,from dict
+  ksefproject/ksefproject/models/subject_remove_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubjectRemoveRequest.to_dict,method,"() -> dict[str, Any]",32-42,false,11,1,converts dict
+      SubjectRemoveRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",47-55,false,9,1,from dict
+  ksefproject/ksefproject/models/eu_entity_permissions_query_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionsQueryPermissionType.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/person_permissions_query_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsQueryRequest.to_dict,method,"() -> dict[str, Any]",84-163,false,80,20,converts dict
+      PersonPermissionsQueryRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",168-314,false,147,1,from dict
+  ksefproject/ksefproject/models/query_entity_roles_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryEntityRolesResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QueryEntityRolesResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/entity_permissions_subordinate_entity_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityPermissionsSubordinateEntityIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      EntityPermissionsSubordinateEntityIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/query_entity_authorization_permissions_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryEntityAuthorizationPermissionsResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QueryEntityAuthorizationPermissionsResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/entity_role_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityRoleType.__str__,method,() -> str,11-12,false,2,1,str
+  ksefproject/ksefproject/models/invoice_status_info.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceStatusInfo.to_dict,method,"() -> dict[str, Any]",46-82,false,37,7,converts dict
+      InvoiceStatusInfo.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",87-139,false,53,1,from dict
+  ksefproject/ksefproject/models/subunit_permissions_subunit_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsSubunitIdentifierType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/entity_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityDetails.to_dict,method,"() -> dict[str, Any]",32-42,false,11,1,converts dict
+      EntityDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",47-55,false,9,1,from dict
+  ksefproject/ksefproject/models/entity_authorization_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationPermissionType.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/send_invoice_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SendInvoiceResponse.to_dict,method,"() -> dict[str, Any]",32-42,false,11,1,converts dict
+      SendInvoiceResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",47-55,false,9,1,from dict
+  ksefproject/ksefproject/models/personal_permission.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermission.to_dict,method,"() -> dict[str, Any]",81-161,false,81,16,converts dict
+      PersonalPermission.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",166-308,false,143,1,from dict
+  ksefproject/ksefproject/models/authentication_tokens_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationTokensResponse.to_dict,method,"() -> dict[str, Any]",37-51,false,15,1,converts dict
+      AuthenticationTokensResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",56-74,false,19,1,from dict
+  ksefproject/ksefproject/models/certificate_effective_subject_limits.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateEffectiveSubjectLimits.to_dict,method,"() -> dict[str, Any]",34-45,false,12,2,converts dict
+      CertificateEffectiveSubjectLimits.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",50-58,false,9,1,from dict
+  ksefproject/ksefproject/models/subject_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubjectType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/test_data_authorized_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataAuthorizedIdentifier.to_dict,method,"() -> dict[str, Any]",35-48,false,14,1,converts dict
+      TestDataAuthorizedIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",53-67,false,15,1,from dict
+  ksefproject/ksefproject/models/buyer_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      BuyerIdentifierType.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/token_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      TokenPermissionType.__str__,method,() -> str,11-12,false,2,1,str
+  ksefproject/ksefproject/models/exception_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      ExceptionResponse.to_dict,method,"() -> dict[str, Any]",45-63,false,19,4,converts dict
+      ExceptionResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",68-95,false,28,1,from dict
+  ksefproject/ksefproject/models/public_key_certificate.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PublicKeyCertificate.to_dict,method,"() -> dict[str, Any]",47-71,false,25,2,converts dict
+      PublicKeyCertificate.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",76-107,false,32,2,from dict
+  ksefproject/ksefproject/models/person_by_fingerprint_without_identifier_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonByFingerprintWithoutIdentifierDetails.to_dict,method,"() -> dict[str, Any]",43-63,false,21,1,converts dict
+      PersonByFingerprintWithoutIdentifierDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",68-92,false,25,1,from dict
+  ksefproject/ksefproject/models/person_subject_by_fingerprint_details_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonSubjectByFingerprintDetailsType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/entity_subject_by_fingerprint_details_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntitySubjectByFingerprintDetailsType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/open_batch_session_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      OpenBatchSessionRequest.to_dict,method,"() -> dict[str, Any]",46-69,false,24,2,converts dict
+      OpenBatchSessionRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",74-103,false,30,1,from dict
+  ksefproject/ksefproject/models/public_key_certificate_usage.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PublicKeyCertificateUsage.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/invoice_query_amount.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceQueryAmount.to_dict,method,"() -> dict[str, Any]",40-66,false,27,5,converts dict
+      InvoiceQueryAmount.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",71-104,false,34,1,from dict
+  ksefproject/ksefproject/models/query_subunit_permissions_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QuerySubunitPermissionsResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QuerySubunitPermissionsResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/online_session_context_limits_override.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      OnlineSessionContextLimitsOverride.to_dict,method,"() -> dict[str, Any]",36-52,false,17,1,converts dict
+      OnlineSessionContextLimitsOverride.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/entity_authorizations_authorizing_entity_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationsAuthorizingEntityIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/eu_entity_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/exception_info.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      ExceptionInfo.to_dict,method,"() -> dict[str, Any]",50-111,false,62,15,converts dict
+      ExceptionInfo.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",116-203,false,88,2,from dict
+  ksefproject/ksefproject/models/entity_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityPermissionType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/permission_state.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionState.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/authentication_token_refresh_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationTokenRefreshResponse.to_dict,method,"() -> dict[str, Any]",35-46,false,12,1,converts dict
+      AuthenticationTokenRefreshResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",51-63,false,13,1,from dict
+  ksefproject/ksefproject/models/eu_entity_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityDetails.to_dict,method,"() -> dict[str, Any]",34-47,false,14,1,converts dict
+      EuEntityDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",52-63,false,12,1,from dict
+  ksefproject/ksefproject/models/api_rate_limit_values_override.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      ApiRateLimitValuesOverride.to_dict,method,"() -> dict[str, Any]",36-52,false,17,1,converts dict
+      ApiRateLimitValuesOverride.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  ksefproject/ksefproject/models/entity_roles_parent_entity_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityRolesParentEntityIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/set_subject_limits_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SetSubjectLimitsRequest.to_dict,method,"() -> dict[str, Any]",44-80,false,37,9,converts dict
+      SetSubjectLimitsRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",85-145,false,61,2,from dict
+  ksefproject/ksefproject/models/entity_authorizations_author_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationsAuthorIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      EntityAuthorizationsAuthorIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/person_create_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonCreateRequest.to_dict,method,"() -> dict[str, Any]",49-82,false,34,5,converts dict
+      PersonCreateRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",87-128,false,42,1,from dict
+  ksefproject/ksefproject/models/currency_code.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      CurrencyCode.__str__,method,() -> str,187-188,false,2,1,str
+  ksefproject/ksefproject/models/subunit_permissions_context_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsContextIdentifier.to_dict,method,"() -> dict[str, Any]",40-53,false,14,1,converts dict
+      SubunitPermissionsContextIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-72,false,15,1,from dict
+  ksefproject/ksefproject/models/invoice_package.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoicePackage.to_dict,method,"() -> dict[str, Any]",70-135,false,66,14,converts dict
+      InvoicePackage.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",140-250,false,111,2,from dict
+  ksefproject/ksefproject/models/query_peppol_providers_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryPeppolProvidersResponse.to_dict,method,"() -> dict[str, Any]",37-56,false,20,2,converts dict
+      QueryPeppolProvidersResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",61-81,false,21,2,from dict
+  ksefproject/ksefproject/models/sort_order.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SortOrder.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/subunit_permissions_context_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsContextIdentifierType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/indirect_permissions_subject_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      IndirectPermissionsSubjectIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/personal_permissions_context_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonalPermissionsContextIdentifierType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/person_permissions_authorized_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsAuthorizedIdentifierType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/authentication_context_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationContextIdentifierType.__str__,method,() -> str,9-10,false,2,1,str
+  ksefproject/ksefproject/models/amount_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      AmountType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/person_permissions_authorized_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsAuthorizedIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      PersonPermissionsAuthorizedIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/test_data_context_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataContextIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/exception_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      ExceptionDetails.to_dict,method,"() -> dict[str, Any]",40-71,false,32,7,converts dict
+      ExceptionDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",76-114,false,39,1,from dict
+  ksefproject/ksefproject/models/permissions_operation_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionsOperationResponse.to_dict,method,"() -> dict[str, Any]",32-42,false,11,1,converts dict
+      PermissionsOperationResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",47-55,false,9,1,from dict
+  ksefproject/ksefproject/models/eu_entity_permission_subject_details_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      EuEntityPermissionSubjectDetailsType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/enrollment_effective_subject_limits.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EnrollmentEffectiveSubjectLimits.to_dict,method,"() -> dict[str, Any]",34-45,false,12,2,converts dict
+      EnrollmentEffectiveSubjectLimits.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",50-58,false,9,1,from dict
+  ksefproject/ksefproject/models/upo_page_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      UpoPageResponse.to_dict,method,"() -> dict[str, Any]",45-61,false,17,1,converts dict
+      UpoPageResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",66-83,false,18,1,from dict
+  ksefproject/ksefproject/models/person_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonIdentifier.to_dict,method,"() -> dict[str, Any]",35-48,false,14,1,converts dict
+      PersonIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",53-67,false,15,1,from dict
+  ksefproject/ksefproject/models/permissions_eu_entity_details.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PermissionsEuEntityDetails.to_dict,method,"() -> dict[str, Any]",34-47,false,14,1,converts dict
+      PermissionsEuEntityDetails.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",52-63,false,12,1,from dict
+  ksefproject/ksefproject/models/person_permission.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermission.to_dict,method,"() -> dict[str, Any]",91-168,false,78,13,converts dict
+      PersonPermission.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",173-307,false,135,1,from dict
+  ksefproject/ksefproject/models/person_permission_scope.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionScope.__str__,method,() -> str,12-13,false,2,1,str
+  ksefproject/ksefproject/models/subunit_permission.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermission.to_dict,method,"() -> dict[str, Any]",74-124,false,51,6,converts dict
+      SubunitPermission.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",129-206,false,78,1,from dict
+  ksefproject/ksefproject/models/person_permission_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionType.__str__,method,() -> str,12-13,false,2,1,str
+  ksefproject/ksefproject/models/token_info.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TokenInfo.to_dict,method,"() -> dict[str, Any]",37-50,false,14,1,converts dict
+      TokenInfo.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",55-69,false,15,1,from dict
+  ksefproject/ksefproject/models/invoice_metadata.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceMetadata.to_dict,method,"() -> dict[str, Any]",101-200,false,100,10,converts dict
+      InvoiceMetadata.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",205-354,false,150,1,from dict
+  ksefproject/ksefproject/models/entity_permissions_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityPermissionsGrantRequest.to_dict,method,"() -> dict[str, Any]",46-73,false,28,2,converts dict
+      EntityPermissionsGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",78-112,false,35,2,from dict
+  ksefproject/ksefproject/models/person_permission_subject_details_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionSubjectDetailsType.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/person_permissions_query_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PersonPermissionsQueryType.__str__,method,() -> str,7-8,false,2,1,str
+  ksefproject/ksefproject/models/generate_token_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      GenerateTokenRequest.to_dict,method,"() -> dict[str, Any]",36-54,false,19,2,converts dict
+      GenerateTokenRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-78,false,20,2,from dict
+  ksefproject/ksefproject/models/test_data_permissions_revoke_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataPermissionsRevokeRequest.to_dict,method,"() -> dict[str, Any]",38-53,false,16,1,converts dict
+      TestDataPermissionsRevokeRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-77,false,20,1,from dict
+  ksefproject/ksefproject/models/generate_token_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      GenerateTokenResponse.to_dict,method,"() -> dict[str, Any]",34-47,false,14,1,converts dict
+      GenerateTokenResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",52-63,false,12,1,from dict
+  ksefproject/ksefproject/models/subunit_permissions_subject_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsSubjectIdentifier.to_dict,method,"() -> dict[str, Any]",41-54,false,14,1,converts dict
+      SubunitPermissionsSubjectIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",59-73,false,15,1,from dict
+  ksefproject/ksefproject/models/subunit_permissions_grant_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SubunitPermissionsGrantRequest.to_dict,method,"() -> dict[str, Any]",58-88,false,31,3,converts dict
+      SubunitPermissionsGrantRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",93-133,false,41,1,from dict
+  ksefproject/ksefproject/models/invoice_package_part.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoicePackagePart.to_dict,method,"() -> dict[str, Any]",57-91,false,35,1,converts dict
+      InvoicePackagePart.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",96-131,false,36,1,from dict
+  ksefproject/ksefproject/models/retrieve_certificates_request.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      RetrieveCertificatesRequest.to_dict,method,"() -> dict[str, Any]",33-45,false,13,1,converts dict
+      RetrieveCertificatesRequest.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",50-59,false,10,1,from dict
+  ksefproject/ksefproject/models/subordinate_role_subordinate_entity_identifier_type.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SubordinateRoleSubordinateEntityIdentifierType.__str__,method,() -> str,6-7,false,2,1,str
+  ksefproject/ksefproject/models/effective_context_limits.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EffectiveContextLimits.to_dict,method,"() -> dict[str, Any]",38-53,false,16,1,converts dict
+      EffectiveContextLimits.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",58-77,false,20,1,from dict
+  ksefproject/ksefproject/models/query_tokens_response_item.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      QueryTokensResponseItem.to_dict,method,"() -> dict[str, Any]",68-125,false,58,8,converts dict
+      QueryTokensResponseItem.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",130-218,false,89,2,from dict
+  ksefproject/ksefproject/models/certificate_revocation_reason.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificateRevocationReason.__str__,method,() -> str,8-9,false,2,1,str
+  ksefproject/ksefproject/models/enroll_certificate_response.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EnrollCertificateResponse.to_dict,method,"() -> dict[str, Any]",37-50,false,14,1,converts dict
+      EnrollCertificateResponse.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",55-69,false,15,1,from dict
+  ksefproject/ksefproject/models/entity_authorizations_authorizing_entity_identifier.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityAuthorizationsAuthorizingEntityIdentifier.to_dict,method,"() -> dict[str, Any]",39-52,false,14,1,converts dict
+      EntityAuthorizationsAuthorizingEntityIdentifier.from_dict,method,"(cls:type[T], src_dict:Mapping[str,Any]) -> T",57-71,false,15,1,from dict
+  openapi_python_client/parser/responses.py:
+    functions[14]{name,kind,sig,loc,async,lines,cc,does}:
+      _source_by_content_type,function,"(content_type:str, config:Config) -> Optional[_ResponseSource]",131-148,false,18,5,source by content type
+      empty_response,function,"(status_code:HTTPStatusPattern, response_name:str, config:Config, data:Union[oai.Response, oai.Reference]) -> Response",151-171,false,21,2,"Return an untyped response, for when no response type is defined"
+      response_from_data,function,"(status_code:HTTPStatusPattern, data:Union[oai.Response, oai.Reference], schemas:Schemas, responses:dict[str, Union[oai.Response, oai.Reference]], parent_name:str, config:Config) -> tuple[Union[Response, ParseError], Schemas]",174-245,false,72,11,Generate a Response from the OpenAPI dictionary representation of it
+      Responses.__iter__,method,"() -> Iterator[\"Response\"]",23-26,false,4,2,iter
+      Responses.__len__,method,() -> int,28-29,false,2,2,len
+      HTTPStatusPattern.__init__,method,() -> None,57-60,false,4,1,Initialize with a range of status codes or None for the default case.
+      HTTPStatusPattern.parse,method,"(pattern:str) -> Union[\"HTTPStatusPattern\", ParseError]",63-80,false,18,5,Parse a status code pattern such as 2XX or 404
+      HTTPStatusPattern.is_range,method,() -> bool,82-84,false,3,2,"Check if this is a range of status codes, such as 2XX"
+      HTTPStatusPattern.__lt__,method,"(other:HTTPStatusPattern) -> bool",86-100,false,15,7,Compare two HTTPStatusPattern objects based on the order they should be applied...
+      HTTPStatusPattern.__eq__,method,"(other:object) -> bool",102-105,false,4,2,eq
+      HTTPStatusPattern.__hash__,method,() -> int,107-108,false,2,1,hash
+      HTTPStatusPattern.__repr__,method,() -> str,110-111,false,2,1,repr
+      Response.is_default,method,() -> bool,123-124,false,2,1,is default
+      Response.__lt__,method,"(other:Response) -> bool",126-128,false,3,1,Compare two responses based on the order in which they should be applied in
+  openapi_python_client/parser/openapi.py:
+    functions[13]{name,kind,sig,loc,async,lines,cc,does}:
+      import_string_from_class,function,"(class_:Class, prefix:str='') -> str",33-35,false,3,1,Create a string which is used to import a reference
+      generate_operation_id,function,"(path:str, method:str) -> str",115-122,false,8,3,Generate an operationId from a path
+      EndpointCollection.from_data,method,"(data:dict[str, oai.PathItem], schemas:Schemas, parameters:Parameters, request_bodies:dict[str, Union[oai.RequestBody, oai.Reference]], responses:dict[str, Union[oai.Response, oai.Reference]], config:Config) -> tuple[dict[utils.PythonIdentifier, \"EndpointCollection\"], Schemas, Parameters]",47-112,false,66,16,Parse the openapi paths data to get EndpointCollections by tag
+      RequestBodyParser.__call__,method,"() -> tuple[Union[Property, PropertyError, None], Schemas]",131-133,false,3,1,call
+      Endpoint._add_responses,method,"(endpoint:\"Endpoint\", data:oai.Responses, schemas:Schemas, responses:dict[str, Union[oai.Response, oai.Reference]], config:Config) -> tuple[\"Endpoint\", Schemas]",159-203,false,45,6,creates responses
+      Endpoint.add_parameters,method,"(endpoint:\"Endpoint\", data:Union[oai.Operation, oai.PathItem], schemas:Schemas, parameters:Parameters, config:Config) -> tuple[Union[\"Endpoint\", ParseError], Schemas, Parameters]",206-314,false,109,11,Process the defined `parameters` for an Endpoint.
+      Endpoint._check_parameters_for_conflicts,method,"() -> Union[\"Endpoint\", ParseError]",316-371,false,56,11,Check for conflicting parameters
+      Endpoint.sort_parameters,method,"(endpoint:\"Endpoint\") -> Union[\"Endpoint\", ParseError]",374-400,false,27,5,Sorts the path parameters of an `endpoint` so that they match the order declared...
+      Endpoint.from_data,method,"(data:oai.Operation, path:str, method:str, tags:list[PythonIdentifier], schemas:Schemas, parameters:Parameters, request_bodies:dict[str, Union[oai.RequestBody, oai.Reference]], responses:dict[str, Union[oai.Response, oai.Reference]]) -> tuple[Union[\"Endpoint\", ParseError], Schemas, Parameters]",403-473,false,71,12,Construct an endpoint from the OpenAPI data
+      Endpoint.response_type,method,() -> str,475-482,false,8,4,Get the Python type of any response from this endpoint
+      Endpoint.iter_all_parameters,method,"() -> Iterator[tuple[oai.ParameterLocation, Property]]",484-489,false,6,5,Iterate through all the parameters of this endpoint
+      Endpoint.list_all_parameters,method,"() -> list[Property]",491-499,false,9,2,Return a list of all the parameters of this endpoint
+      GeneratorData.from_dict,method,"(data:dict[str,Any]) -> Union[\"GeneratorData\", GeneratorError]",515-560,false,46,15,Create an OpenAPI from dict
+  openapi_python_client/parser/bodies.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      body_from_data,function,"(data:oai.Operation, schemas:Schemas, request_bodies:dict[str, Union[oai.RequestBody, oai.Reference]], config:Config, endpoint_name:str) -> tuple[list[Union[Body, ParseError]], Schemas]",44-133,false,90,16,Adds form or JSON body to Endpoint if included in data
+      _resolve_reference,function,"(body:Union[Any,Any,None], request_bodies:dict[str,Union[Any,Any]]) -> Union[oai.RequestBody, ParseError, None]",136-149,false,14,7,resolve reference
+  openapi_python_client/parser/properties/merge_properties.py:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      merge_properties,function,"(prop1:Property, prop2:Property) -> Property | PropertyError",30-71,false,42,10,Attempt to create a new property that incorporates the behavior of both.
+      _merge_same_type,function,"(prop1:Property, prop2:Property) -> Property | None | PropertyError",74-90,false,17,6,merges same type
+      _merge_string_with_format,function,"(prop1:Property, prop2:Property) -> Property | None | PropertyError",93-103,false,11,5,Merge a string that has no format with a string that has a format
+      _merge_numeric,function,"(prop1:Property, prop2:Property) -> IntProperty | None | PropertyError",106-114,false,9,5,Merge IntProperty with FloatProperty
+      _merge_with_enum,function,"(prop1:PropertyProtocol, prop2:PropertyProtocol) -> EnumProperty | PropertyError",117-140,false,24,11,merges with enum
+      _merge_with_literal_enum,function,"(prop1:PropertyProtocol, prop2:PropertyProtocol) -> LiteralEnumProperty | PropertyError",143-166,false,24,11,merges with literal enum
+      _merge_common_attributes,function,"(base:PropertyT) -> PropertyT | PropertyError",169-194,false,26,8,"Create a new instance based on base, overriding basic attributes with values fro..."
+      _values_are_subset,function,"(prop1:EnumProperty, prop2:EnumProperty) -> bool",197-198,false,2,1,values are subset
+  openapi_python_client/parser/properties/boolean.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      BooleanProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> BooleanProperty | PropertyError",35-54,false,20,2,creates
+      BooleanProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",57-67,false,11,7,converts value
+  openapi_python_client/parser/properties/string.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      StringProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> StringProperty | PropertyError",34-51,false,18,1,creates
+      StringProperty.convert_value,method,"(value:None) -> None",55-56,false,2,1,converts value
+      StringProperty.convert_value,method,"(value:Any) -> Value",60-60,false,1,1,converts value
+      StringProperty.convert_value,method,"(value:Any) -> Value | None",63-68,false,6,4,converts value
+  openapi_python_client/parser/properties/protocol.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      PropertyProtocol.convert_value,method,"(value:Any) -> Value | None | PropertyError",66-68,false,3,1,Convert a string value to a Value object
+      PropertyProtocol.validate_location,method,"(location:Any) -> ParseError | None",70-76,false,7,4,Returns an error if this type of property is not allowed in the given location
+      PropertyProtocol.set_python_name,method,"(new_name:str, config:Config, skip_snake_case:bool=False) -> None",78-89,false,12,1,Mutates this Property to set a new python_name.
+      PropertyProtocol.get_base_type_string,method,() -> str,91-93,false,3,3,Get the string describing the Python type of this property.
+      PropertyProtocol.get_base_json_type_string,method,() -> str,95-97,false,3,3,Get the string describing the JSON type of this property.
+      PropertyProtocol.get_type_string,method,"(no_optional:bool=False, json:bool=False) -> str",99-121,false,23,4,Get a string representation of type that should be used when declaring this prop...
+      PropertyProtocol.get_instance_type_string,method,() -> str,123-125,false,3,1,Get a string representation of runtime type that should be used for `isinstance`...
+      PropertyProtocol.get_imports,method,"() -> set[str]",128-140,false,13,2,Get a set of import strings that should be included when this property is used s...
+      PropertyProtocol.get_lazy_imports,method,"() -> set[str]",142-149,false,8,1,Get a set of lazy import strings that should be included when this property is u...
+      PropertyProtocol.to_string,method,() -> str,151-163,false,13,4,How this should be declared in a dataclass
+      PropertyProtocol.to_docstring,method,() -> str,165-172,false,8,4,Returns property docstring
+      PropertyProtocol.is_base_type,method,() -> bool,175-183,false,9,1,"Base types, represented by any other of `Property` than `ModelProperty` should n..."
+  openapi_python_client/parser/properties/date.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      DateProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> DateProperty | PropertyError",29-49,false,21,2,creates
+      DateProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",52-61,false,10,5,converts value
+      DateProperty.get_imports,method,"() -> set[str]",63-73,false,11,1,Get a set of import strings that should be included when this property is used s...
+  openapi_python_client/parser/properties/const.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      ConstProperty.build,method,() -> ConstProperty | PropertyError,27-63,false,37,2,Create a `ConstProperty` the right way.
+      ConstProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",65-73,false,9,3,converts value
+      ConstProperty._convert_value,method,"(value:None) -> None",77-78,false,2,1,converts value
+      ConstProperty._convert_value,method,"(value:Any) -> Value",82-82,false,1,1,converts value
+      ConstProperty._convert_value,method,"(value:Any) -> Value | None",85-90,false,6,4,converts value
+      ConstProperty.get_type_string,method,"(no_optional:bool=False, json:bool=False) -> str",92-102,false,11,3,retrieves type string
+      ConstProperty.get_imports,method,"() -> set[str]",104-117,false,14,2,Get a set of import strings that should be included when this property is used s...
+  openapi_python_client/parser/properties/schemas.py:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      parse_reference_path,function,"(ref_path_raw:str) -> Union[ReferencePath, ParseError]",35-46,false,12,3,Takes a raw string provided in a `$ref` and turns it into a validated `_Referenc...
+      get_reference_simple_name,function,"(ref_path:str) -> str",49-53,false,5,1,Takes a path like `/components/schemas/NameOfThing` and returns a string like `N...
+      update_schemas_with_data,function,"(ref_path:ReferencePath, data:oai.Schema, schemas:Schemas, config:Config) -> Union[Schemas, PropertyError]",103-146,false,44,4,Update a `Schemas` using some new reference.
+      parameter_from_data,function,"(name:str, data:Union[oai.Reference, oai.Parameter], parameters:Parameters, config:Config) -> tuple[Union[Parameter, ParameterError], Parameters]",158-184,false,27,3,Generates parameters from an OpenAPI Parameter spec.
+      update_parameters_with_data,function,"(ref_path:ReferencePath, data:oai.Parameter, parameters:Parameters, config:Config) -> Union[Parameters, ParameterError]",187-217,false,31,4,Update a `Parameters` using some new reference.
+      parameter_from_reference,function,"(param:Union[oai.Reference, Parameter], parameters:Parameters) -> Union[Parameter, ParameterError]",220-249,false,30,4,Returns a Parameter from a Reference or the Parameter itself if one was provided...
+      Class.from_string,method,"(string:str, config:Config) -> \"Class\"",64-79,false,16,5,Get a Class from an arbitrary string
+      Schemas.add_dependencies,method,"(ref_path:ReferencePath, roots:set[Union[ReferencePath,ClassName]]) -> None",92-100,false,9,1,Record new dependencies on the given ReferencePath
+  openapi_python_client/parser/properties/int.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      IntProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> IntProperty | PropertyError",35-55,false,21,2,creates
+      IntProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",58-73,false,16,9,converts value
+  openapi_python_client/parser/properties/any.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AnyProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> AnyProperty",16-32,false,17,1,creates
+      AnyProperty.convert_value,method,"(value:Any) -> Value | None",35-42,false,8,3,converts value
+  openapi_python_client/parser/properties/__init__.py:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      _string_based_property,function,"(name:str, required:bool, data:Any, config:Config) -> StringProperty | DateProperty | DateTimeProperty | FileProperty | UuidProperty | PropertyError",53-102,false,50,5,Construct a Property from the type 'string
+      _property_from_ref,function,"(name:str, required:bool, parent:Any, data:Any, schemas:Schemas, config:Config, roots:set[Any]) -> tuple[Property | PropertyError, Schemas]",105-138,false,34,6,property from ref
+      property_from_data,function,"(name:str, required:bool, data:Any, schemas:Schemas, parent_name:str, config:Config, process_properties:bool=True, roots:Any=None) -> tuple[Property | PropertyError, Schemas]",141-311,false,171,22,Generate a Property from the OpenAPI dictionary representation of it
+      _create_schemas,function,"(components:dict[str, oai.Reference | oai.Schema], schemas:Schemas, config:Config) -> Schemas",314-361,false,48,9,creates schemas
+      _propogate_removal,function,"(root:ReferencePath | utils.ClassName, schemas:Schemas, error:PropertyError) -> None",364-373,false,10,5,propogate removal
+      _process_model_errors,function,"(model_errors:list[tuple[ModelProperty,PropertyError]]) -> list[PropertyError]",376-384,false,9,5,processes model errors
+      _process_models,function,"(schemas:Schemas, config:Config) -> Schemas",387-419,false,33,7,processes models
+      build_schemas,function,"(components:dict[str, oai.Reference | oai.Schema], schemas:Schemas, config:Config) -> Schemas",422-431,false,10,1,Get a list of Schemas from an OpenAPI dict
+      build_parameters,function,"(components:dict[str, oai.Reference | oai.Parameter], parameters:Parameters, config:Config) -> Parameters",434-473,false,40,7,Get a list of Parameters from an OpenAPI dict
+  openapi_python_client/parser/properties/datetime.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      DateTimeProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> DateTimeProperty | PropertyError",31-51,false,21,2,creates
+      DateTimeProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",54-63,false,10,5,converts value
+      DateTimeProperty.get_imports,method,"() -> set[str]",65-75,false,11,1,Get a set of import strings that should be included when this property is used s...
+  openapi_python_client/parser/properties/enum_property.py:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      EnumProperty.build,method,"() -> tuple[EnumProperty | NoneProperty | UnionProperty | PropertyError, Schemas]",46-155,false,110,16,Create an EnumProperty from schema data.
+      EnumProperty.convert_value,method,"(value:Any) -> Value | PropertyError | None",157-166,false,10,6,converts value
+      EnumProperty.get_base_type_string,method,() -> str,168-169,false,2,1,retrieves base type string
+      EnumProperty.get_base_json_type_string,method,() -> str,171-172,false,2,1,retrieves base json type string
+      EnumProperty.get_imports,method,"() -> set[str]",174-184,false,11,1,Get a set of import strings that should be included when this property is used s...
+      EnumProperty.values_from_list,method,"(values:Any, class_info:Class, var_names:list[str]) -> dict[str, ValueType]",187-217,false,31,8,"Convert a list of values into dict of {name: value}, where value can sometimes b..."
+  openapi_python_client/parser/properties/file.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      FileProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> FileProperty | PropertyError",29-49,false,21,2,creates
+      FileProperty.convert_value,method,"(value:Any) -> None | PropertyError",52-55,false,4,2,converts value
+      FileProperty.get_imports,method,"() -> set[str]",57-67,false,11,1,Get a set of import strings that should be included when this property is used s...
+  openapi_python_client/parser/properties/model_property.py:
+    functions[15]{name,kind,sig,loc,async,lines,cc,does}:
+      _resolve_naming_conflict,function,"(first:Property, second:Property, config:Config) -> PropertyError | None",218-226,false,9,2,resolve naming conflict
+      _process_properties,function,"(data:oai.Schema, schemas:Schemas, class_name:utils.ClassName, config:Config, roots:set[ReferencePath | utils.ClassName]) -> _PropertyData | PropertyError",237-335,false,99,19,processes properties
+      _get_additional_properties,function,"(schema_additional:None | (bool | (oai.Reference | oai.Schema)), schemas:Schemas, class_name:utils.ClassName, config:Config, roots:set[ReferencePath | utils.ClassName]) -> tuple[Property | None | PropertyError, Schemas]",348-379,false,32,6,retrieves additional properties
+      _process_property_data,function,"(data:oai.Schema, schemas:Schemas, class_info:Class, config:Config, roots:set[ReferencePath | utils.ClassName]) -> tuple[tuple[_PropertyData, Property | None] | PropertyError, Schemas]",382-412,false,31,4,processes property data
+      process_model,function,"(model_prop:ModelProperty) -> Schemas | PropertyError",415-441,false,27,2,Populate a ModelProperty instance's property data
+      ModelProperty.build,method,"() -> tuple[ModelProperty | PropertyError, Schemas]",42-126,false,85,11,A single ModelProperty from its OAI data
+      ModelProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",129-132,false,4,2,converts value
+      ModelProperty.__attrs_post_init__,method,() -> None,134-136,false,3,2,attrs post init
+      ModelProperty.self_import,method,() -> str,139-141,false,3,1,Constructs a self import statement from this ModelProperty's attributes
+      ModelProperty.get_base_type_string,method,() -> str,143-144,false,2,2,retrieves base type string
+      ModelProperty.get_imports,method,"() -> set[str]",146-160,false,15,1,Get a set of import strings that should be included when this property is used s...
+      ModelProperty.get_lazy_imports,method,"() -> set[str]",162-169,false,8,1,Get a set of lazy import strings that should be included when this property is u...
+      ModelProperty.set_relative_imports,method,"(relative_imports:set[str]) -> None",171-177,false,7,3,"Set the relative imports set for this ModelProperty, filtering out self imports..."
+      ModelProperty.set_lazy_imports,method,"(lazy_imports:set[str]) -> None",179-185,false,7,3,"Set the lazy imports set for this ModelProperty, filtering out self imports..."
+      ModelProperty.get_type_string,method,"(no_optional:bool=False, json:bool=False) -> str",187-212,false,26,6,Get a string representation of type that should be used when declaring this prop...
+  openapi_python_client/parser/properties/none.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      NoneProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> NoneProperty | PropertyError",33-52,false,20,2,creates
+      NoneProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",55-61,false,7,5,converts value
+  openapi_python_client/parser/properties/union.py:
+    functions[11]{name,kind,sig,loc,async,lines,cc,does}:
+      UnionProperty.build,method,"() -> tuple[UnionProperty | PropertyError, Schemas]",30-116,false,87,9,Create a `UnionProperty` the right way.
+      UnionProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",118-128,false,11,5,converts value
+      UnionProperty._get_inner_type_strings,method,"(json:bool) -> set[str]",130-138,false,9,2,retrieves inner type strings
+      UnionProperty._get_type_string_from_inner_type_strings,method,"(inner_types:set[str]) -> str",141-144,false,4,2,retrieves type string from inner type strings
+      UnionProperty.get_base_type_string,method,() -> str,146-147,false,2,1,retrieves base type string
+      UnionProperty.get_base_json_type_string,method,() -> str,149-150,false,2,1,retrieves base json type string
+      UnionProperty.get_type_strings_in_union,method,"() -> set[str]",152-170,false,19,3,Get the set of all the types that should appear within the `Union` representing...
+      UnionProperty.get_type_string,method,"(no_optional:bool=False, json:bool=False) -> str",172-185,false,14,1,Get a string representation of type that should be used when declaring this prop...
+      UnionProperty.get_imports,method,"() -> set[str]",187-199,false,13,2,Get a set of import strings that should be included when this property is used s...
+      UnionProperty.get_lazy_imports,method,"() -> set[str]",201-205,false,5,2,retrieves lazy imports
+      UnionProperty.validate_location,method,"(location:Any) -> ParseError | None",207-214,false,8,3,Returns an error if this type of property is not allowed in the given location
+  openapi_python_client/parser/properties/uuid.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      UuidProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> UuidProperty | PropertyError",36-56,false,21,2,creates
+      UuidProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",59-68,false,10,5,converts value
+      UuidProperty.get_imports,method,"() -> set[str]",70-80,false,11,1,Get a set of import strings that should be included when this property is used s...
+  openapi_python_client/parser/properties/float.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      FloatProperty.build,method,"(name:str, required:bool, default:Any, python_name:PythonIdentifier, description:Any, example:Any) -> FloatProperty | PropertyError",35-55,false,21,2,creates
+      FloatProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",58-71,false,14,8,converts value
+  openapi_python_client/parser/properties/list_property.py:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      ListProperty.build,method,"() -> tuple[ListProperty | PropertyError, Schemas]",28-103,false,76,7,"Build a ListProperty the right way, use this instead of the normal constructor."
+      ListProperty.convert_value,method,"(value:Any) -> Value | None | PropertyError",105-106,false,2,1,converts value
+      ListProperty.get_base_type_string,method,() -> str,108-109,false,2,1,retrieves base type string
+      ListProperty.get_base_json_type_string,method,() -> str,111-112,false,2,1,retrieves base json type string
+      ListProperty.get_instance_type_string,method,() -> str,114-116,false,3,1,Get a string representation of runtime type that should be used for `isinstance`...
+      ListProperty.get_imports,method,"() -> set[str]",118-129,false,12,1,Get a set of import strings that should be included when this property is used s...
+      ListProperty.get_lazy_imports,method,"() -> set[str]",131-134,false,4,1,retrieves lazy imports
+      ListProperty.get_type_string,method,"(no_optional:bool=False, json:bool=False) -> str",136-157,false,22,4,Get a string representation of type that should be used when declaring this prop...
+  openapi_python_client/parser/properties/literal_enum_property.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      LiteralEnumProperty.build,method,"() -> tuple[LiteralEnumProperty | NoneProperty | UnionProperty | PropertyError, Schemas]",46-153,false,108,15,Create a LiteralEnumProperty from schema data.
+      LiteralEnumProperty.convert_value,method,"(value:Any) -> Value | PropertyError | None",155-163,false,9,5,converts value
+      LiteralEnumProperty.get_base_type_string,method,() -> str,165-166,false,2,1,retrieves base type string
+      LiteralEnumProperty.get_base_json_type_string,method,() -> str,168-169,false,2,1,retrieves base json type string
+      LiteralEnumProperty.get_instance_type_string,method,() -> str,171-172,false,2,1,retrieves instance type string
+      LiteralEnumProperty.get_imports,method,"() -> set[str]",174-188,false,15,1,Get a set of import strings that should be included when this property is used s...
+      LiteralEnumProperty.get_class_name_snake_case,method,() -> str,190-191,false,2,1,retrieves class name snake case
+  openapi_python_client/schema/openapi_schema_pydantic/schema.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      Schema.handle_exclusive_min_max,method,"() -> \"Schema\"",165-189,false,25,9,Convert exclusiveMinimum/exclusiveMaximum between OpenAPI v3.0 (bool) and v3.1 (...
+      Schema.handle_nullable,method,"() -> \"Schema\"",192-208,false,17,8,Convert the old 3.0 `nullable` property into the new 3.1 style
+  openapi_python_client/schema/openapi_schema_pydantic/open_api.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      OpenAPI.check_openapi_version,method,"(value:str) -> str",40-49,false,10,4,Validates that the declared OpenAPI version is a supported one
+  openapi_python_client/schema/openapi_schema_pydantic/reference.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      _reference_discriminator,function,"(obj:Any) -> Literal[\"ref\", \"other\"]",35-38,false,4,4,reference discriminator

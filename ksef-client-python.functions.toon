@@ -1,0 +1,794 @@
+project: ksef-client-python
+generated: "2026-01-22T07:16:25.147007"
+modules[70]{path,lang,items}:
+  tests/test_base64url.py,python,2
+  tests/test_services_workflows.py,python,39
+  tests/test_exceptions.py,python,3
+  tests/test_ksef_number.py,python,7
+  tests/conftest.py,python,0
+  tests/test_openapi_models.py,python,5
+  tests/helpers.py,python,6
+  tests/__init__.py,python,0
+  tests/test_config.py,python,3
+  tests/test_services_qr.py,python,19
+  tests/test_openapi_coverage.py,python,6
+  tests/test_client.py,python,2
+  tests/test_clients.py,python,15
+  tests/test_crypto.py,python,12
+  tests/test_services_person_token.py,python,8
+  tests/test_services_csr.py,python,3
+  tests/test_services_verification_link.py,python,5
+  tests/test_zip_utils.py,python,11
+  tests/test_e2e_demo_token_flow.py,python,3
+  tests/test_services_xades.py,python,30
+  tests/test_models.py,python,7
+  tests/test_services_batch.py,python,2
+  tests/test_types.py,python,1
+  tests/test_services_auth.py,python,4
+  tests/test_base_api_client.py,python,10
+  tests/test_http.py,python,17
+  tests/test_services_hwm.py,python,3
+  tools/generate_openapi_models.py,python,10
+  tools/check_coverage.py,python,13
+  tools/lint.py,python,2
+  src/ksef_client/config.py,python,4
+  src/ksef_client/exceptions.py,python,1
+  src/ksef_client/http.py,python,10
+  src/ksef_client/__init__.py,python,0
+  src/ksef_client/client.py,python,10
+  src/ksef_client/types.py,python,0
+  src/ksef_client/models.py,python,10
+  src/ksef_client/openapi_models.py,python,5
+  src/ksef_client/services/crypto.py,python,18
+  src/ksef_client/services/auth.py,python,5
+  src/ksef_client/services/__init__.py,python,0
+  src/ksef_client/services/csr.py,python,3
+  src/ksef_client/services/xades.py,python,7
+  src/ksef_client/services/verification_link.py,python,4
+  src/ksef_client/services/qr.py,python,5
+  src/ksef_client/services/workflows.py,python,61
+  src/ksef_client/services/hwm.py,python,3
+  src/ksef_client/services/person_token.py,python,8
+  src/ksef_client/services/batch.py,python,2
+  src/ksef_client/clients/invoices.py,python,16
+  src/ksef_client/clients/base.py,python,10
+  src/ksef_client/clients/rate_limits.py,python,2
+  src/ksef_client/clients/auth.py,python,18
+  src/ksef_client/clients/security.py,python,2
+  src/ksef_client/clients/__init__.py,python,0
+  src/ksef_client/clients/sessions.py,python,26
+  src/ksef_client/clients/testdata.py,python,30
+  src/ksef_client/clients/tokens.py,python,8
+  src/ksef_client/clients/permissions.py,python,37
+  src/ksef_client/clients/certificates.py,python,14
+  src/ksef_client/clients/peppol.py,python,2
+  src/ksef_client/clients/limits.py,python,4
+  src/ksef_client/utils/zip_utils.py,python,4
+  src/ksef_client/utils/__init__.py,python,0
+  src/ksef_client/utils/ksef_number.py,python,3
+  src/ksef_client/utils/base64url.py,python,4
+  docs/examples/auth_xades_cert_key.py,python,3
+  docs/examples/invoice_list.py,python,2
+  docs/examples/auth_ksef_token.py,python,2
+  docs/examples/invoice_send.py,python,2
+
+function_details:
+  tests/test_base64url.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      Base64UrlTests.test_roundtrip,method,() -> None,7-11,false,5,1,checks roundtrip
+      Base64UrlTests.test_standard_base64,method,() -> None,13-17,false,5,1,checks standard base64
+  tests/test_services_workflows.py:
+    functions[39]{name,kind,sig,loc,async,lines,cc,does}:
+      RecordingHttp.__init__,method,"(content:bytes=b'ok', headers:Any=None) -> None",19-21,false,3,2,creates
+      RecordingHttp.request,method,() -> HttpResponse,23-25,false,3,1,request
+      RecordingAsyncHttp.__init__,method,"(content:bytes=b'ok', headers:Any=None) -> None",29-31,false,3,2,creates
+      RecordingAsyncHttp.request,method,() -> HttpResponse,33-35,true,3,1,request
+      StubAuthClient.get_challenge,method,() -> None,42-43,false,2,1,retrieves challenge
+      StubAuthClient.submit_xades_auth_request,method,"(signed_xml:str, verify_certificate_chain=None) -> None",45-46,false,2,1,submit xades auth request
+      StubAuthClient.submit_ksef_token_auth,method,(payload) -> None,48-49,false,2,1,submit ksef token auth
+      StubAuthClient.get_auth_status,method,"(reference_number, authentication_token) -> None",51-53,false,3,1,retrieves auth status
+      StubAuthClient.redeem_token,method,(authentication_token) -> None,55-56,false,2,1,redeem token
+      StubAsyncAuthClient.get_challenge,method,() -> None,63-64,true,2,1,retrieves challenge
+      StubAsyncAuthClient.submit_xades_auth_request,method,"(signed_xml:str, verify_certificate_chain=None) -> None",66-67,true,2,1,submit xades auth request
+      StubAsyncAuthClient.submit_ksef_token_auth,method,(payload) -> None,69-70,true,2,1,submit ksef token auth
+      StubAsyncAuthClient.get_auth_status,method,"(reference_number, authentication_token) -> None",72-74,true,3,1,retrieves auth status
+      StubAsyncAuthClient.redeem_token,method,(authentication_token) -> None,76-77,true,2,1,redeem token
+      StubSessionsClient.__init__,method,() -> None,81-82,false,2,1,creates
+      StubSessionsClient.open_online_session,method,"(payload, access_token, upo_v43=False) -> None",84-86,false,3,1,starts online session
+      StubSessionsClient.send_online_invoice,method,"(ref, payload, access_token) -> None",88-90,false,3,1,sends online invoice
+      StubSessionsClient.close_online_session,method,"(ref, access_token) -> None",92-93,false,2,1,stops online session
+      StubSessionsClient.open_batch_session,method,"(payload, access_token, upo_v43=False) -> None",95-107,false,13,1,starts batch session
+      StubSessionsClient.close_batch_session,method,"(ref, access_token) -> None",109-110,false,2,1,stops batch session
+      StubAsyncSessionsClient.__init__,method,() -> None,114-115,false,2,1,creates
+      StubAsyncSessionsClient.open_online_session,method,"(payload, access_token, upo_v43=False) -> None",117-119,true,3,1,starts online session
+      StubAsyncSessionsClient.send_online_invoice,method,"(ref, payload, access_token) -> None",121-123,true,3,1,sends online invoice
+      StubAsyncSessionsClient.close_online_session,method,"(ref, access_token) -> None",125-126,true,2,1,stops online session
+      StubAsyncSessionsClient.open_batch_session,method,"(payload, access_token, upo_v43=False) -> None",128-140,true,13,1,starts batch session
+      StubAsyncSessionsClient.close_batch_session,method,"(ref, access_token) -> None",142-143,true,2,1,stops batch session
+      WorkflowsTests.test_pair_requests_with_parts,method,() -> None,147-157,false,11,1,checks pair requests with parts
+      WorkflowsTests.test_batch_upload_helper,method,() -> None,159-170,false,12,1,checks batch upload helper
+      WorkflowsTests.test_export_download_helper,method,() -> None,172-179,false,8,1,checks export download helper
+      WorkflowsTests.test_auth_coordinator_success_and_errors,method,() -> None,181-229,false,49,1,checks auth coordinator success and errors
+      WorkflowsTests.test_auth_coordinator_ksef_token,method,() -> None,231-281,false,51,1,checks auth coordinator ksef token
+      WorkflowsTests.test_online_session_workflow,method,() -> None,283-302,false,20,1,checks online session workflow
+      WorkflowsTests.test_batch_session_workflow,method,() -> None,304-319,false,16,1,checks batch session workflow
+      WorkflowsTests.test_export_workflow,method,() -> None,321-339,false,19,1,checks export workflow
+      AsyncWorkflowsTests.test_async_batch_upload_helper,method,() -> None,343-351,true,9,1,checks async batch upload helper
+      AsyncWorkflowsTests.test_async_export_download_helper,method,() -> None,353-360,true,8,1,checks async export download helper
+      AsyncWorkflowsTests.test_async_auth_coordinator,method,() -> None,362-462,true,101,1,checks async auth coordinator
+      AsyncWorkflowsTests.test_async_online_and_batch,method,() -> None,464-492,true,29,1,checks async online and batch
+      AsyncWorkflowsTests.test_async_export_workflow,method,() -> None,494-520,true,27,1,checks async export workflow
+  tests/test_exceptions.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      ExceptionsTests.test_http_error_str,method,() -> None,7-9,false,3,1,checks http error str
+      ExceptionsTests.test_rate_limit_error,method,() -> None,11-14,false,4,1,checks rate limit error
+      ExceptionsTests.test_api_error,method,() -> None,16-18,false,3,1,checks api error
+  tests/test_ksef_number.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefNumberValidatorTests.test_valid_ksef_number,method,() -> None,9-12,false,4,1,checks valid ksef number
+      KsefNumberValidatorTests.test_invalid_checksum,method,() -> None,14-17,false,4,1,checks invalid checksum
+      KsefNumberValidatorTests.test_empty,method,() -> None,19-20,false,2,1,checks empty
+      KsefNumberValidatorTests.test_invalid_format,method,() -> None,22-24,false,3,1,checks invalid format
+      KsefNumberValidatorTests.test_invalid_parts,method,() -> None,26-30,false,5,1,checks invalid parts
+      KsefNumberValidatorTests.test_invalid_length,method,() -> None,32-36,false,5,1,checks invalid length
+      KsefNumberValidatorTests.test_optional_hyphen_valid,method,() -> None,38-47,false,10,1,checks optional hyphen valid
+  tests/test_openapi_models.py:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      OpenApiModelsTests.test_from_dict_none,method,() -> None,7-9,false,3,1,checks from dict none
+      OpenApiModelsTests.test_enum_and_simple_model,method,() -> None,11-22,false,12,1,checks enum and simple model
+      OpenApiModelsTests.test_invoice_package_roundtrip,method,() -> None,24-46,false,23,1,checks invoice package roundtrip
+      OpenApiModelsTests.test_invoice_status_extensions,method,() -> None,48-61,false,14,1,checks invoice status extensions
+      OpenApiModelsTests.test_field_mapping,method,() -> None,63-69,false,7,1,checks field mapping
+  tests/helpers.py:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      _self_signed_cert,function,"(private_key:PrivateKeyT) -> x509.Certificate",29-48,false,20,1,self signed cert
+      _serialize_private_key,function,"(private_key:PrivateKeyT) -> str",51-58,false,8,1,formats private key
+      _serialize_cert_pem,function,"(cert:Any) -> str",61-62,false,2,1,formats cert pem
+      generate_rsa_cert,function,"() -> GeneratedCert[rsa.RSAPrivateKey]",65-75,false,11,1,creates rsa cert
+      generate_ec_cert,function,"() -> GeneratedCert[ec.EllipticCurvePrivateKey]",78-88,false,11,1,creates ec cert
+      generate_ed25519_key_pem,function,() -> str,91-97,false,7,1,creates ed25519 key pem
+  tests/test_config.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      ConfigTests.test_package_version_fallback,method,() -> None,8-10,false,3,1,checks package version fallback
+      ConfigTests.test_normalized_base_url,method,() -> None,12-20,false,9,1,checks normalized base url
+      ConfigTests.test_resolve_qr_base_url,method,() -> None,22-40,false,19,1,checks resolve qr base url
+  tests/test_services_qr.py:
+    functions[19]{name,kind,sig,loc,async,lines,cc,does}:
+      DummyImage.__init__,method,"(size=(10, 10)) -> None",12-13,false,2,1,creates
+      DummyImage.convert,method,(mode) -> None,15-16,false,2,1,converts
+      DummyImage.save,method,"(buf, format='PNG') -> None",18-19,false,2,1,caches
+      DummyImage.resize,method,(size) -> None,21-23,false,3,1,resize
+      DummyImage.paste,method,"(img, box) -> None",25-26,false,2,1,paste
+      DummyQrCode.__init__,method,"(box_size=10, border=4) -> None",30-33,false,4,1,creates
+      DummyQrCode.add_data,method,(payload) -> None,35-36,false,2,1,creates data
+      DummyQrCode.make,method,(fit=True) -> None,38-39,false,2,1,creates
+      DummyQrCode.make_image,method,"(fill_color='black', back_color='white') -> None",41-42,false,2,1,creates image
+      DummyImageModule.open,method,(buf) -> None,47-48,false,2,1,starts
+      DummyImageModule.new,method,"(mode, size, color) -> None",51-52,false,2,1,creates
+      DummyDraw.__init__,method,(img) -> None,56-57,false,2,1,creates
+      DummyDraw.textbbox,method,"(pos, text, font=None) -> None",59-60,false,2,1,textbbox
+      DummyDraw.text,method,"(pos, text, fill=None, font=None) -> None",62-63,false,2,1,text
+      DummyImageDrawModule.Draw,method,(img) -> None,68-69,false,2,1,draw
+      DummyImageFontModule.load_default,method,() -> None,74-75,false,2,1,retrieves default
+      QrServiceTests.test_require_qr_error,method,() -> None,79-88,false,10,1,checks require qr error
+      QrServiceTests.test_qr_helpers_with_stub,method,() -> None,90-105,false,16,1,checks qr helpers with stub
+      QrServiceTests.test_require_qr_success,method,() -> None,107-126,false,20,1,checks require qr success
+  tests/test_openapi_coverage.py:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      _normalize_path,function,"(path:str) -> str",8-9,false,2,1,normalize path
+      _const_str,function,"(node:Any) -> str | None",12-15,false,4,3,const str
+      _render_path,function,"(node:Any) -> str | None",18-35,false,18,11,formats path
+      _extract_python_openapi_operations,function,"() -> set[tuple[str, str]]",38-59,false,22,10,parses python openapi operations
+      _extract_openapi_spec_operations,function,"(openapi_path:Path) -> set[tuple[str, str]]",62-70,false,9,4,parses openapi spec operations
+      OpenApiCoverageTests.test_python_clients_cover_openapi_spec,method,() -> None,74-83,false,10,2,checks python clients cover openapi spec
+  tests/test_client.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      ClientTests.test_sync_client_context,method,() -> None,9-16,false,8,1,checks sync client context
+      AsyncClientTests.test_async_client_context,method,() -> None,20-27,true,8,1,checks async client context
+  tests/test_clients.py:
+    functions[15]{name,kind,sig,loc,async,lines,cc,does}:
+      DummyHttp.__init__,method,"(response:HttpResponse) -> None",22-23,false,2,1,creates
+      DummyHttp.request,method,() -> HttpResponse,25-26,false,2,1,request
+      DummyAsyncHttp.__init__,method,"(response:HttpResponse) -> None",30-31,false,2,1,creates
+      DummyAsyncHttp.request,method,() -> HttpResponse,33-34,true,2,1,request
+      ClientsTests.setUp,method,() -> None,38-40,false,3,1,updates up
+      ClientsTests.test_auth_client,method,() -> None,42-64,false,23,1,checks auth client
+      ClientsTests.test_sessions_client,method,() -> None,66-101,false,36,1,checks sessions client
+      ClientsTests.test_invoices_client,method,() -> None,103-126,false,24,1,checks invoices client
+      ClientsTests.test_permissions_client,method,() -> None,128-155,false,28,1,checks permissions client
+      ClientsTests.test_certificates_client,method,() -> None,157-172,false,16,1,checks certificates client
+      ClientsTests.test_tokens_client,method,() -> None,174-188,false,15,1,checks tokens client
+      ClientsTests.test_limits_clients,method,() -> None,190-202,false,13,1,checks limits clients
+      ClientsTests.test_testdata_client,method,() -> None,204-222,false,19,1,checks testdata client
+      ClientsTests.test_peppol_client,method,() -> None,224-227,false,4,1,checks peppol client
+      AsyncClientsTests.test_async_clients,method,() -> None,231-457,true,227,1,checks async clients
+  tests/test_crypto.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      CryptoTests.test_encrypt_decrypt_roundtrip,method,() -> None,19-25,false,7,1,checks encrypt decrypt roundtrip
+      CryptoTests.test_build_send_invoice_request,method,() -> None,27-33,false,7,1,checks build send invoice request
+      CryptoTests.test_generate_lengths,method,() -> None,35-37,false,3,1,checks generate lengths
+      CryptoTests.test_metadata_helpers,method,() -> None,39-76,false,38,1,checks metadata helpers
+      CryptoTests.test_certificate_loading,method,() -> None,78-98,false,21,1,checks certificate loading
+      CryptoTests.test_private_key_loading,method,() -> None,100-110,false,11,1,checks private key loading
+      CryptoTests.test_build_encryption_data,method,() -> None,112-117,false,6,1,checks build encryption data
+      CryptoTests.test_encrypt_rsa_oaep,method,() -> None,119-125,false,7,1,checks encrypt rsa oaep
+      CryptoTests.test_encrypt_ksef_token,method,() -> None,127-146,false,20,1,checks encrypt ksef token
+      CryptoTests.test_build_send_invoice_optional_fields,method,() -> None,148-160,false,13,1,checks build send invoice optional fields
+      CryptoTests.test_signatures,method,() -> None,162-170,false,9,1,checks signatures
+      CryptoTests.test_load_private_key_wrapper,method,() -> None,172-175,false,4,1,checks load private key wrapper
+  tests/test_services_person_token.py:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      _build_jwt,function,"(payload:dict) -> str",81-84,false,4,1,creates jwt
+      PersonTokenTests.test_parse_token,method,() -> None,18-40,false,23,1,checks parse token
+      PersonTokenTests.test_split_jwt_invalid,method,() -> None,42-44,false,3,1,checks split jwt invalid
+      PersonTokenTests.test_unix_to_datetime,method,() -> None,46-52,false,7,1,checks unix to datetime
+      PersonTokenTests.test_try_parse_json,method,() -> None,54-60,false,7,1,checks try parse json
+      PersonTokenTests.test_parse_json_string_array,method,() -> None,62-66,false,5,1,checks parse json string array
+      PersonTokenTests.test_unwrap_if_quoted_json,method,() -> None,68-72,false,5,1,checks unwrap if quoted json
+      PersonTokenTests.test_distinct_and_list,method,() -> None,74-78,false,5,1,checks distinct and list
+  tests/test_services_csr.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      CsrServiceTests.test_build_subject,method,() -> None,11-31,false,21,1,checks build subject
+      CsrServiceTests.test_generate_csr_rsa,method,() -> None,33-37,false,5,1,checks generate csr rsa
+      CsrServiceTests.test_generate_csr_ec,method,() -> None,39-43,false,5,1,checks generate csr ec
+  tests/test_services_verification_link.py:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      VerificationLinkTests.test_decode_base64_or_url,method,() -> None,16-23,false,8,1,checks decode base64 or url
+      VerificationLinkTests.test_invoice_verification_url,method,() -> None,25-31,false,7,1,checks invoice verification url
+      VerificationLinkTests.test_certificate_verification_url_rsa,method,() -> None,33-47,false,15,1,checks certificate verification url rsa
+      VerificationLinkTests.test_sign_path_errors,method,() -> None,49-59,false,11,1,checks sign path errors
+      VerificationLinkTests.test_sign_path_ec,method,() -> None,61-64,false,4,1,checks sign path ec
+  tests/test_zip_utils.py:
+    functions[11]{name,kind,sig,loc,async,lines,cc,does}:
+      ZipUtilsTests.test_zip_roundtrip,method,() -> None,10-15,false,6,1,checks zip roundtrip
+      ZipUtilsTests.test_unzip_limits_max_files,method,() -> None,17-21,false,5,1,checks unzip limits max files
+      ZipUtilsTests.test_unzip_limits_max_total_uncompressed_size,method,() -> None,23-26,false,4,1,checks unzip limits max total uncompressed size
+      ZipUtilsTests.test_unzip_limits_max_compression_ratio,method,() -> None,28-38,false,11,1,checks unzip limits max compression ratio
+      ZipUtilsTests.test_unzip_safe_rejects_invalid_limits,method,() -> None,40-49,false,10,1,checks unzip safe rejects invalid limits
+      ZipUtilsTests.test_unzip_safe_skips_directories,method,() -> None,51-57,false,7,1,checks unzip safe skips directories
+      ZipUtilsTests.test_unzip_safe_limits_max_file_uncompressed_size,method,() -> None,59-62,false,4,1,checks unzip safe limits max file uncompressed size
+      ZipUtilsTests.test_unzip_safe_suspicious_zero_compressed_size,method,() -> None,64-77,false,14,1,checks unzip safe suspicious zero compressed size
+      ZipUtilsTests.test_split_bytes,method,() -> None,79-83,false,5,1,checks split bytes
+      ZipUtilsTests.test_split_bytes_invalid_size,method,() -> None,85-87,false,3,1,checks split bytes invalid size
+      ZipUtilsTests.test_split_bytes_single_part,method,() -> None,89-92,false,4,1,checks split bytes single part
+  tests/test_e2e_demo_token_flow.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      _env,function,"(name:str) -> str",14-18,false,5,2,env
+      _select_cert,function,"(certs:list[dict], usage_name:str) -> str",21-25,false,5,4,retrieves cert
+      test_e2e_token_send_and_list_session_invoices,function,() -> None,29-155,false,127,8,checks e2e token send and list session invoices
+  tests/test_services_xades.py:
+    functions[30]{name,kind,sig,loc,async,lines,cc,does}:
+      DummyNode.__init__,method,(tag='node') -> None,19-23,false,5,1,creates
+      DummyNode.set,method,"(key, value) -> None",25-26,false,2,1,updates
+      DummyNode.append,method,(node) -> None,28-29,false,2,1,append
+      DummyEtree.XMLParser,method,(remove_blank_text=False) -> None,33-34,false,2,1,xml parser
+      DummyEtree.fromstring,method,"(data, parser=None) -> None",36-37,false,2,1,fromstring
+      DummyEtree.SubElement,method,"(parent, tag, nsmap=None) -> None",39-42,false,4,1,sub element
+      DummyEtree.tostring,method,"(doc, encoding='utf-8', xml_declaration=True) -> None",44-45,false,2,1,tostring
+      DummyKey.load_cert_from_memory,method,"(cert, fmt) -> None",49-50,false,2,1,retrieves cert from memory
+      DummySignatureContext.__init__,method,() -> None,54-55,false,2,1,creates
+      DummySignatureContext.sign,method,(node) -> None,57-58,false,2,1,sign
+      DummyTemplate.__init__,method,() -> None,62-63,false,2,1,creates
+      DummyTemplate.create,method,"(doc, c14n, transform, ns='ds') -> None",65-67,false,3,1,creates
+      DummyTemplate.add_reference,method,"(node, transform, uri='', type=None) -> None",69-70,false,2,1,creates reference
+      DummyTemplate.add_transform,method,"(ref, transform) -> None",72-73,false,2,1,creates transform
+      DummyTemplate.add_object,method,(node) -> None,75-76,false,2,1,creates object
+      DummyTemplate.ensure_key_info,method,(node) -> None,78-79,false,2,1,ensure key info
+      DummyTemplate.add_x509_data,method,(node) -> None,81-82,false,2,1,creates x509 data
+      DummyTemplateNoObject.__init__,method,() -> None,105-106,false,2,1,creates
+      DummyTemplateNoObject.create,method,"(doc, c14n, transform, ns='ds') -> None",108-110,false,3,1,creates
+      DummyTemplateNoObject.add_reference,method,"(node, transform, uri='', type=None) -> None",112-113,false,2,1,creates reference
+      DummyTemplateNoObject.add_transform,method,"(ref, transform) -> None",115-116,false,2,1,creates transform
+      DummyTemplateNoObject.ensure_key_info,method,(node) -> None,118-119,false,2,1,ensure key info
+      DummyTemplateNoObject.add_x509_data,method,(node) -> None,121-122,false,2,1,creates x509 data
+      XadesTests.test_require_xades_error,method,() -> None,139-148,false,10,1,checks require xades error
+      XadesTests.test_helpers,method,() -> None,150-157,false,8,1,checks helpers
+      XadesTests.test_sign_xades_with_stubs,method,() -> None,159-187,false,29,1,checks sign xades with stubs
+      XadesTests.test_sign_xades_without_template_add_object,method,() -> None,189-204,false,16,1,checks sign xades without template add object
+      XadesTests.test_xades_key_pair_from_pem_files_der_inputs,method,() -> None,206-228,false,23,1,checks xades key pair from pem files der inputs
+      XadesTests.test_xades_key_pair_from_pem_files_encrypted_key,method,() -> None,230-263,false,34,1,checks xades key pair from pem files encrypted key
+      XadesTests.test_xades_key_pair_from_pkcs12,method,() -> None,265-292,false,28,1,checks xades key pair from pkcs12
+  tests/test_models.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      ModelsTests.test_token_info_from_dict,method,() -> None,7-11,false,5,1,checks token info from dict
+      ModelsTests.test_auth_challenge_from_dict,method,() -> None,13-17,false,5,1,checks auth challenge from dict
+      ModelsTests.test_auth_init_from_dict,method,() -> None,19-23,false,5,1,checks auth init from dict
+      ModelsTests.test_auth_tokens_from_dict,method,() -> None,25-32,false,8,1,checks auth tokens from dict
+      ModelsTests.test_auth_token_refresh,method,() -> None,34-37,false,4,1,checks auth token refresh
+      ModelsTests.test_invoice_export_status,method,() -> None,39-67,false,29,1,checks invoice export status
+      ModelsTests.test_part_upload_request,method,() -> None,69-77,false,9,1,checks part upload request
+  tests/test_services_batch.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      BatchServiceTests.test_build_batch_file_info,method,() -> None,8-13,false,6,1,checks build batch file info
+      BatchServiceTests.test_encrypt_batch_parts,method,() -> None,15-21,false,7,1,checks encrypt batch parts
+  tests/test_types.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      TypesTests.test_all_exports,method,() -> None,7-10,false,4,1,checks all exports
+  tests/test_services_auth.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthServiceTests.test_build_auth_token_request_xml,method,() -> None,15-25,false,11,1,checks build auth token request xml
+      AuthServiceTests.test_context_tag,method,() -> None,27-33,false,7,1,checks context tag
+      AuthServiceTests.test_build_ksef_token_auth_request,method,() -> None,35-44,false,10,1,checks build ksef token auth request
+      AuthServiceTests.test_encrypt_ksef_token,method,() -> None,46-72,false,27,1,checks encrypt ksef token
+  tests/test_base_api_client.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      DummyHttp.__init__,method,"(response:HttpResponse) -> None",11-13,false,3,1,creates
+      DummyHttp.request,method,() -> HttpResponse,15-17,false,3,1,request
+      DummyAsyncHttp.__init__,method,"(response:HttpResponse) -> None",21-23,false,3,1,creates
+      DummyAsyncHttp.request,method,() -> HttpResponse,25-27,true,3,1,request
+      BaseApiClientTests.test_request_json_with_content,method,() -> None,31-37,false,7,1,checks request json with content
+      BaseApiClientTests.test_request_json_empty,method,() -> None,39-42,false,4,1,checks request json empty
+      BaseApiClientTests.test_request_bytes_and_raw,method,() -> None,44-49,false,6,1,checks request bytes and raw
+      AsyncBaseApiClientTests.test_async_request_json,method,() -> None,53-59,true,7,1,checks async request json
+      AsyncBaseApiClientTests.test_async_request_bytes_raw,method,() -> None,61-66,true,6,1,checks async request bytes raw
+      AsyncBaseApiClientTests.test_async_request_json_empty,method,() -> None,68-71,true,4,1,checks async request json empty
+  tests/test_http.py:
+    functions[17]{name,kind,sig,loc,async,lines,cc,does}:
+      HttpTests.test_merge_headers,method,() -> None,12-16,false,5,1,checks merge headers
+      HttpTests.test_base_http_request_and_headers,method,() -> None,18-34,false,17,1,checks base http request and headers
+      HttpTests.test_custom_headers_applied,method,() -> None,36-47,false,12,1,checks custom headers applied
+      HttpTests.test_httpx_client_init_proxy_and_redirects,method,() -> None,49-59,false,11,1,checks httpx client init proxy and redirects
+      HttpTests.test_refresh_token_overrides_access,method,() -> None,61-69,false,9,1,checks refresh token overrides access
+      HttpTests.test_raise_for_status_rate_limit,method,() -> None,71-77,false,7,1,checks raise for status rate limit
+      HttpTests.test_raise_for_status_api_error,method,() -> None,79-84,false,6,1,checks raise for status api error
+      HttpTests.test_raise_for_status_http_error,method,() -> None,86-91,false,6,1,checks raise for status http error
+      HttpTests.test_raise_for_status_invalid_json,method,() -> None,93-100,false,8,1,checks raise for status invalid json
+      HttpTests.test_expected_status_mismatch,method,() -> None,102-110,false,9,1,checks expected status mismatch
+      HttpTests.test_default_status_error,method,() -> None,112-120,false,9,1,checks default status error
+      AsyncHttpTests.test_async_request,method,() -> None,124-134,true,11,1,checks async request
+      AsyncHttpTests.test_async_httpx_client_init_proxy_and_redirects,method,() -> None,136-146,true,11,1,checks async httpx client init proxy and redirects
+      AsyncHttpTests.test_async_expected_status,method,() -> None,148-156,true,9,1,checks async expected status
+      AsyncHttpTests.test_async_default_status_error,method,() -> None,158-166,true,9,1,checks async default status error
+      AsyncHttpTests.test_async_refresh_token,method,() -> None,168-177,true,10,1,checks async refresh token
+      AsyncHttpTests.test_async_raise_for_status_paths,method,() -> None,179-194,true,16,1,checks async raise for status paths
+  tests/test_services_hwm.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      HwmServiceTests.test_update_continuation_point,method,() -> None,11-24,false,14,1,checks update continuation point
+      HwmServiceTests.test_get_effective_start_date,method,() -> None,26-29,false,4,1,checks get effective start date
+      HwmServiceTests.test_dedupe_by_ksef_number,method,() -> None,31-41,false,11,1,checks dedupe by ksef number
+  tools/generate_openapi_models.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      _sanitize_field_name,function,"(name:str, used:set[str]) -> str",8-17,false,10,3,sanitize field name
+      _enum_member_name,function,"(value:str, used:set[str]) -> str",20-30,false,11,4,enum member name
+      _ref_name,function,"(ref:str) -> str",33-34,false,2,1,ref name
+      _schema_type,function,"(schema:dict) -> str",37-75,false,39,19,schema type
+      _optional_type,function,"(type_name:str) -> str",78-79,false,2,1,optional type
+      _generate_alias,function,"(name:str, schema:dict) -> list[str]",82-92,false,11,4,creates alias
+      _generate_enum,function,"(name:str, schema:dict) -> list[str]",95-104,false,10,3,creates enum
+      _generate_object,function,"(name:str, schema:dict) -> list[str]",107-140,false,34,11,creates object
+      generate_models,function,"(input_path:Path, output_path:Path) -> None",143-257,false,115,7,creates models
+      main,function,() -> None,260-275,false,16,1,main
+  tools/check_coverage.py:
+    functions[13]{name,kind,sig,loc,async,lines,cc,does}:
+      normalize_path,function,"(path:str) -> str",10-12,false,3,1,normalize path
+      extract_path_params,function,"(path:str) -> set[str]",15-17,false,3,1,parses path params
+      get_openapi_specs,function,"(openapi_path:Path) -> dict[tuple[str, str], EndpointSpec]",45-81,false,37,8,"Returns a map of (method, normalized_path) -> EndpointSpec from OpenAPI."
+      get_implemented_endpoints_deep,function,"(source_dir:Path) -> list[ImplementedEndpoint]",224-234,false,11,3,retrieves implemented endpoints deep
+      to_camel_case,function,"(snake_str:str) -> str",237-240,false,4,2,converts camel case
+      main,function,() -> None,243-345,false,103,21,main
+      AdvancedClientVisitor.__init__,method,"(filename:str) -> None",85-87,false,3,1,creates
+      AdvancedClientVisitor.visit_Call,method,(node) -> None,89-98,false,10,3,visit call
+      AdvancedClientVisitor._analyze_request_call,method,"(node:Any) -> None",100-134,false,35,4,processes request call
+      AdvancedClientVisitor._extract_string_value,method,(node) -> str | None,136-139,false,4,3,parses string value
+      AdvancedClientVisitor._extract_path_info,method,"(node) -> tuple[str | None, set[str]]",141-161,false,21,9,parses path info
+      AdvancedClientVisitor._extract_query_params,method,"(node:Any) -> set[str]",163-182,false,20,8,parses query params
+      AdvancedClientVisitor._extract_expected_status,method,"(node:Any) -> set[int]",184-221,false,38,16,parses expected status
+  tools/lint.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      _run,function,"(cmd:list[str]) -> int",10-12,false,3,1,starts
+      main,function,() -> int,15-48,false,34,7,main
+  src/ksef_client/config.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      _package_version,function,() -> str,20-27,false,8,3,package version
+      _default_user_agent,function,() -> str,30-31,false,2,1,default user agent
+      KsefClientOptions.normalized_base_url,method,() -> str,45-49,false,5,3,normalized base url
+      KsefClientOptions.resolve_qr_base_url,method,() -> str,51-61,false,11,5,resolve qr base url
+  src/ksef_client/exceptions.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefHttpError.__str__,method,() -> str,13-14,false,2,1,str
+  src/ksef_client/http.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      _merge_headers,function,"(base:dict[str,str], extra:Any) -> dict[str, str]",12-17,false,6,2,merges headers
+      HttpResponse.json,method,() -> Any,26-27,false,2,1,json
+      BaseHttpClient.__init__,method,"(options:KsefClientOptions, access_token:Any=None) -> None",31-43,false,13,1,creates
+      BaseHttpClient.close,method,() -> None,45-46,false,2,1,stops
+      BaseHttpClient.request,method,"(method:str, path:str) -> HttpResponse",48-101,false,54,12,request
+      BaseHttpClient._raise_for_status,method,"(response:Any) -> None",103-133,false,31,5,raise for status
+      AsyncBaseHttpClient.__init__,method,"(options:KsefClientOptions, access_token:Any=None) -> None",137-149,false,13,1,creates
+      AsyncBaseHttpClient.aclose,method,() -> None,151-152,true,2,1,aclose
+      AsyncBaseHttpClient.request,method,"(method:str, path:str) -> HttpResponse",154-207,true,54,12,request
+      AsyncBaseHttpClient._raise_for_status,method,"(response:Any) -> None",209-239,false,31,5,raise for status
+  src/ksef_client/client.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefClient.__init__,method,"(options:KsefClientOptions, access_token:Any=None) -> None",19-31,false,13,1,creates
+      KsefClient.close,method,() -> None,33-34,false,2,1,stops
+      KsefClient.http_client,method,() -> BaseHttpClient,37-38,false,2,1,http client
+      KsefClient.__enter__,method,() -> KsefClient,40-41,false,2,1,enter
+      KsefClient.__exit__,method,"(exc_type, exc, tb) -> None",43-44,false,2,1,exit
+      AsyncKsefClient.__init__,method,"(options:KsefClientOptions, access_token:Any=None) -> None",48-60,false,13,1,creates
+      AsyncKsefClient.aclose,method,() -> None,62-63,true,2,1,aclose
+      AsyncKsefClient.http_client,method,() -> AsyncBaseHttpClient,66-67,false,2,1,http client
+      AsyncKsefClient.__aenter__,method,() -> AsyncKsefClient,69-70,true,2,1,aenter
+      AsyncKsefClient.__aexit__,method,"(exc_type, exc, tb) -> None",72-73,true,2,1,aexit
+  src/ksef_client/models.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      StatusInfo.from_dict,method,"(data:dict[str,Any]) -> StatusInfo",38-43,false,6,1,from dict
+      TokenInfo.from_dict,method,"(data:dict[str,Any]) -> TokenInfo",52-56,false,5,1,from dict
+      AuthenticationChallengeResponse.from_dict,method,"(data:dict[str,Any]) -> AuthenticationChallengeResponse",66-71,false,6,1,from dict
+      AuthenticationInitResponse.from_dict,method,"(data:dict[str,Any]) -> AuthenticationInitResponse",80-84,false,5,1,from dict
+      AuthenticationTokensResponse.from_dict,method,"(data:dict[str,Any]) -> AuthenticationTokensResponse",93-97,false,5,1,from dict
+      AuthenticationTokenRefreshResponse.from_dict,method,"(data:dict[str,Any]) -> AuthenticationTokenRefreshResponse",105-108,false,4,1,from dict
+      InvoicePackagePart.from_dict,method,"(data:dict[str,Any]) -> InvoicePackagePart",124-135,false,12,1,from dict
+      InvoicePackage.from_dict,method,"(data:dict[str,Any]) -> InvoicePackage",150-160,false,11,2,from dict
+      InvoiceExportStatusResponse.from_dict,method,"(data:dict[str,Any]) -> InvoiceExportStatusResponse",171-177,false,7,2,from dict
+      PartUploadRequest.from_dict,method,"(data:dict[str,Any]) -> PartUploadRequest",188-194,false,7,2,from dict
+  src/ksef_client/openapi_models.py:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      _get_type_map,function,"(cls:type) -> dict[str, Any]",16-23,false,8,2,retrieves type map
+      _convert_value,function,"(type_hint:Any, value:Any) -> Any",25-47,false,23,16,converts value
+      _serialize_value,function,"(value:Any) -> Any",49-58,false,10,7,formats value
+      OpenApiModel.from_dict,method,"(cls:type[T], data:dict[str,Any]) -> T",62-72,false,11,4,from dict
+      OpenApiModel.to_dict,method,"(omit_none:bool=True) -> dict[str, Any]",74-82,false,9,4,converts dict
+  src/ksef_client/services/crypto.py:
+    functions[18]{name,kind,sig,loc,async,lines,cc,does}:
+      _load_certificate,function,"(cert_data:Any) -> x509.Certificate",25-33,false,9,4,retrieves certificate
+      _load_public_key_from_cert,function,"(cert_data:Any) -> None",36-38,false,3,1,retrieves public key from cert
+      _load_private_key,function,"(key_data:Any, password:Any=None) -> None",41-47,false,7,3,retrieves private key
+      generate_symmetric_key,function,() -> bytes,50-51,false,2,1,creates symmetric key
+      generate_iv,function,() -> bytes,54-55,false,2,1,creates iv
+      encrypt_aes_cbc_pkcs7,function,"(data:bytes, key:bytes, iv:bytes) -> bytes",58-63,false,6,1,encrypt aes cbc pkcs7
+      decrypt_aes_cbc_pkcs7,function,"(data:bytes, key:bytes, iv:bytes) -> bytes",66-71,false,6,1,decrypt aes cbc pkcs7
+      sha256_base64,function,"(data:bytes) -> str",74-77,false,4,1,sha256 base64
+      get_file_metadata,function,"(data:bytes) -> FileMetadata",80-81,false,2,1,retrieves file metadata
+      get_stream_metadata,function,"(stream:BinaryIO) -> FileMetadata",84-107,false,24,6,retrieves stream metadata
+      build_encryption_data,function,"(public_certificate:Any) -> EncryptionData",110-118,false,9,1,creates encryption data
+      encrypt_rsa_oaep,function,"(public_certificate:Any, data:bytes) -> bytes",121-130,false,10,2,encrypt rsa oaep
+      encrypt_ksef_token_rsa,function,"(public_certificate:Any, token:str, timestamp_ms:int) -> bytes",133-135,false,3,1,encrypt ksef token rsa
+      encrypt_ksef_token_ec,function,"(public_certificate:Any, token:str, timestamp_ms:int) -> bytes",138-172,false,35,4,encrypt ksef token ec
+      build_send_invoice_request,function,"(invoice_xml:bytes, key:bytes, iv:bytes) -> dict[str, object]",175-197,false,23,3,creates send invoice request
+      sign_path_rsa_pss,function,"(private_key:Any, data:bytes) -> bytes",200-205,false,6,1,sign path rsa pss
+      sign_path_ecdsa,function,"(private_key:Any, data:bytes) -> bytes",208-220,false,13,2,sign path ecdsa
+      load_private_key,function,"(private_key_data:Any, password:Any=None) -> None",223-224,false,2,1,retrieves private key
+  src/ksef_client/services/auth.py:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      build_auth_token_request_xml,function,"(challenge:str, context_identifier_type:str, context_identifier_value:str) -> str",11-32,false,22,2,creates auth token request xml
+      build_ksef_token_auth_request,function,"(challenge:str, context_identifier_type:str, context_identifier_value:str, encrypted_token_base64:str) -> dict[str, Any]",35-54,false,20,2,creates ksef token auth request
+      encrypt_ksef_token,function,"(public_certificate:str, token:str, timestamp_ms:int) -> str",57-75,false,19,3,encrypt ksef token
+      _context_tag,function,"(context_identifier_type:str) -> str",78-79,false,2,1,context tag
+      _normalize_context_identifier_type,function,"(context_identifier_type:str) -> str",82-92,false,11,5,normalize context identifier type
+  src/ksef_client/services/csr.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      _build_subject,function,"(info:dict[str,Any]) -> x509.Name",19-37,false,19,7,creates subject
+      generate_csr_rsa,function,"(info:dict[str,Any], key_size:int=2048) -> CsrResult",40-57,false,18,1,creates csr rsa
+      generate_csr_ec,function,"(info:dict[str,Any]) -> CsrResult",60-77,false,18,1,creates csr ec
+  src/ksef_client/services/xades.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      sign_xades_enveloped,function,"(xml_string:str, certificate_pem:str, private_key_pem:str) -> str",77-182,false,106,5,sign xades enveloped
+      _read_certificate_as_pem,function,"(path:str) -> str",185-195,false,11,3,retrieves certificate as pem
+      _read_private_key_as_unencrypted_pkcs8_pem,function,"(path:str) -> str",198-225,false,28,5,retrieves private key as unencrypted pkcs8 pem
+      _ensure_pem_certificate,function,"(cert_data:str) -> str",228-234,false,7,3,ensure pem certificate
+      XadesKeyPair.from_pem_files,method,() -> XadesKeyPair,25-36,false,12,1,from pem files
+      XadesKeyPair.from_pkcs12_file,method,() -> XadesKeyPair,39-48,false,10,1,from pkcs12 file
+      XadesKeyPair.from_pkcs12_bytes,method,() -> XadesKeyPair,51-74,false,24,4,from pkcs12 bytes
+  src/ksef_client/services/verification_link.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      _decode_base64_or_url,function,"(value:str) -> bytes",66-70,false,5,2,parses base64 or url
+      _sign_path,function,"(path_to_sign:str, certificate_pem:Any, private_key_pem:Any, signature_format:str) -> bytes",73-100,false,28,5,sign path
+      VerificationLinkService.build_invoice_verification_url,method,"(nip:str, issue_date:Any, invoice_hash:str) -> str",19-29,false,11,2,creates invoice verification url
+      VerificationLinkService.build_certificate_verification_url,method,() -> str,31-63,false,33,1,creates certificate verification url
+  src/ksef_client/services/qr.py:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      _require_qr,function,() -> None,4-11,false,8,2,require qr
+      generate_qr_png,function,"(payload_url:str) -> bytes",14-22,false,9,1,creates qr png
+      resize_png,function,"(png_bytes:bytes, width:int, height:int) -> bytes",25-32,false,8,1,resize png
+      add_label_to_qr,function,"(png_bytes:bytes, label:str) -> bytes",35-55,false,21,1,creates label to qr
+      _bytes_io,function,"(initial:Any=None) -> None",58-61,false,4,2,bytes io
+  src/ksef_client/services/workflows.py:
+    functions[61]{name,kind,sig,loc,async,lines,cc,does}:
+      _pair_requests_with_parts,function,"(part_upload_requests:list[dict[str,Any]], parts:Sequence[bytes]) -> list[tuple[dict[str, Any], bytes]]",255-258,false,4,1,pair requests with parts
+      _pair_requests_with_parts,function,"(part_upload_requests:list[dict[str,Any]], parts:Sequence[tuple[int,bytes]]) -> list[tuple[dict[str, Any], bytes]]",262-265,false,4,1,pair requests with parts
+      _pair_requests_with_parts,function,"(part_upload_requests:list[dict[str,Any]], parts:Any) -> list[tuple[dict[str, Any], bytes]]",268-281,false,14,5,pair requests with parts
+      _RequestHttpClient.request,method,() -> HttpResponse,26-26,false,1,1,request
+      _AsyncRequestHttpClient.request,method,() -> HttpResponse,30-30,true,1,1,request
+      _SessionsClient.open_online_session,method,"(request_payload:dict[str,Any]) -> Any",34-40,false,7,1,starts online session
+      _SessionsClient.send_online_invoice,method,"(reference_number:str, request_payload:dict[str,Any]) -> dict[str, Any] | None",42-48,false,7,1,sends online invoice
+      _SessionsClient.close_online_session,method,"(reference_number:str, access_token:str) -> None",50-50,false,1,1,stops online session
+      _SessionsClient.open_batch_session,method,"(request_payload:dict[str,Any]) -> Any",52-58,false,7,1,starts batch session
+      _SessionsClient.close_batch_session,method,"(reference_number:str, access_token:str) -> None",60-60,false,1,1,stops batch session
+      _AsyncSessionsClient.open_online_session,method,"(request_payload:dict[str,Any]) -> Any",64-70,true,7,1,starts online session
+      _AsyncSessionsClient.send_online_invoice,method,"(reference_number:str, request_payload:dict[str,Any]) -> dict[str, Any] | None",72-78,true,7,1,sends online invoice
+      _AsyncSessionsClient.close_online_session,method,"(reference_number:str, access_token:str) -> None",80-80,true,1,1,stops online session
+      _AsyncSessionsClient.open_batch_session,method,"(request_payload:dict[str,Any]) -> Any",82-88,true,7,1,starts batch session
+      _AsyncSessionsClient.close_batch_session,method,"(reference_number:str, access_token:str) -> None",90-90,true,1,1,stops batch session
+      _AuthClient.get_challenge,method,"() -> dict[str, Any]",94-94,false,1,1,retrieves challenge
+      _AuthClient.submit_xades_auth_request,method,"(signed_xml:str) -> dict[str, Any] | None",96-101,false,6,1,submit xades auth request
+      _AuthClient.submit_ksef_token_auth,method,"(request_payload:dict[str,Any]) -> dict[str, Any] | None",103-103,false,1,1,submit ksef token auth
+      _AuthClient.get_auth_status,method,"(reference_number:str, authentication_token:str) -> dict[str, Any]",105-107,false,3,1,retrieves auth status
+      _AuthClient.redeem_token,method,"(authentication_token:str) -> dict[str, Any]",109-109,false,1,1,redeem token
+      _AsyncAuthClient.get_challenge,method,"() -> dict[str, Any]",113-113,true,1,1,retrieves challenge
+      _AsyncAuthClient.submit_xades_auth_request,method,"(signed_xml:str) -> dict[str, Any] | None",115-120,true,6,1,submit xades auth request
+      _AsyncAuthClient.submit_ksef_token_auth,method,"(request_payload:dict[str,Any]) -> dict[str, Any] | None",122-124,true,3,1,submit ksef token auth
+      _AsyncAuthClient.get_auth_status,method,"(reference_number:str, authentication_token:str) -> dict[str, Any]",126-128,true,3,1,retrieves auth status
+      _AsyncAuthClient.redeem_token,method,"(authentication_token:str) -> dict[str, Any]",130-130,true,1,1,redeem token
+      BatchUploadHelper.__init__,method,"(http_client:_RequestHttpClient) -> None",134-135,false,2,1,creates
+      BatchUploadHelper.upload_parts,method,"(part_upload_requests:list[dict[str,Any]], parts:Any) -> None",137-170,false,34,6,upload parts
+      AsyncBatchUploadHelper.__init__,method,"(http_client:_AsyncRequestHttpClient) -> None",174-175,false,2,1,creates
+      AsyncBatchUploadHelper.upload_parts,method,"(part_upload_requests:list[dict[str,Any]], parts:Any) -> None",177-201,true,25,3,upload parts
+      ExportDownloadHelper.__init__,method,"(http_client:_RequestHttpClient) -> None",205-206,false,2,1,creates
+      ExportDownloadHelper.download_parts,method,"(parts:list[dict[str,Any]]) -> list[bytes]",208-215,false,8,2,download parts
+      ExportDownloadHelper.download_parts_with_hash,method,"(parts:list[dict[str,Any]]) -> list[tuple[bytes, str | None]]",217-226,false,10,2,download parts with hash
+      AsyncExportDownloadHelper.__init__,method,"(http_client:_AsyncRequestHttpClient) -> None",230-231,false,2,1,creates
+      AsyncExportDownloadHelper.download_parts,method,"(parts:list[dict[str,Any]]) -> list[bytes]",233-240,true,8,2,download parts
+      AsyncExportDownloadHelper.download_parts_with_hash,method,"(parts:list[dict[str,Any]]) -> list[tuple[bytes, str | None]]",242-251,true,10,2,download parts with hash
+      AuthCoordinator.__init__,method,"(auth_client:_AuthClient) -> None",292-293,false,2,1,creates
+      AuthCoordinator.authenticate_with_xades_key_pair,method,() -> AuthResult,295-317,false,23,1,validates with xades key pair
+      AuthCoordinator.authenticate_with_xades,method,() -> AuthResult,319-358,false,40,2,validates with xades
+      AuthCoordinator.authenticate_with_ksef_token,method,() -> AuthResult,360-401,false,42,2,validates with ksef token
+      AuthCoordinator._poll_auth_status,method,"(reference_number:str, authentication_token:str, poll_interval_seconds:float, max_attempts:int) -> None",403-423,false,21,5,poll auth status
+      AsyncAuthCoordinator.__init__,method,"(auth_client:_AsyncAuthClient) -> None",427-428,false,2,1,creates
+      AsyncAuthCoordinator.authenticate_with_xades_key_pair,method,() -> AuthResult,430-452,true,23,1,validates with xades key pair
+      AsyncAuthCoordinator.authenticate_with_xades,method,() -> AuthResult,454-493,true,40,2,validates with xades
+      AsyncAuthCoordinator.authenticate_with_ksef_token,method,() -> AuthResult,495-536,true,42,2,validates with ksef token
+      AsyncAuthCoordinator._poll_auth_status,method,"(reference_number:str, authentication_token:str, poll_interval_seconds:float, max_attempts:int) -> None",538-558,true,21,5,poll auth status
+      OnlineSessionWorkflow.__init__,method,"(sessions_client:_SessionsClient) -> None",568-569,false,2,1,creates
+      OnlineSessionWorkflow.open_session,method,() -> OnlineSessionResult,571-593,false,23,1,starts session
+      OnlineSessionWorkflow.send_invoice,method,() -> Any,595-616,false,22,1,sends invoice
+      OnlineSessionWorkflow.close_session,method,"(reference_number:str, access_token:str) -> None",618-619,false,2,1,stops session
+      AsyncOnlineSessionWorkflow.__init__,method,"(sessions_client:_AsyncSessionsClient) -> None",623-624,false,2,1,creates
+      AsyncOnlineSessionWorkflow.open_session,method,() -> OnlineSessionResult,626-648,true,23,1,starts session
+      AsyncOnlineSessionWorkflow.send_invoice,method,() -> Any,650-671,true,22,1,sends invoice
+      AsyncOnlineSessionWorkflow.close_session,method,"(reference_number:str, access_token:str) -> None",673-674,true,2,1,stops session
+      BatchSessionWorkflow.__init__,method,"(sessions_client:_SessionsClient, http_client:_RequestHttpClient) -> None",678-680,false,3,1,creates
+      BatchSessionWorkflow.open_upload_and_close,method,() -> str,682-716,false,35,2,starts upload and close
+      AsyncBatchSessionWorkflow.__init__,method,"(sessions_client:_AsyncSessionsClient, http_client:_AsyncRequestHttpClient) -> None",720-724,false,5,1,creates
+      AsyncBatchSessionWorkflow.open_upload_and_close,method,() -> str,726-758,true,33,2,starts upload and close
+      ExportWorkflow.__init__,method,"(invoices_client:InvoicesClient, http_client:_RequestHttpClient) -> None",768-770,false,3,1,creates
+      ExportWorkflow.download_and_process_package,method,"(package:dict[str,Any], encryption_data:EncryptionData) -> PackageProcessingResult",772-799,false,28,8,download and process package
+      AsyncExportWorkflow.__init__,method,"(invoices_client:AsyncInvoicesClient, http_client:_AsyncRequestHttpClient) -> None",803-809,false,7,1,creates
+      AsyncExportWorkflow.download_and_process_package,method,"(package:dict[str,Any], encryption_data:EncryptionData) -> PackageProcessingResult",811-838,true,28,8,download and process package
+  src/ksef_client/services/hwm.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      update_continuation_point,function,"(continuation_points:dict[str,Any], subject_type:str, package:dict[str,Any]) -> None",6-20,false,15,4,updates continuation point
+      get_effective_start_date,function,"(continuation_points:dict[str,Any], subject_type:str, window_from:str) -> str",23-31,false,9,2,retrieves effective start date
+      dedupe_by_ksef_number,function,"(metadata_summaries:list[dict[str,Any]]) -> dict[str, dict[str, Any]]",34-46,false,13,5,dedupe by ksef number
+  src/ksef_client/services/person_token.py:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      _split_jwt,function,"(token:str) -> tuple[str, str, str]",100-106,false,7,2,splits jwt
+      _unix_to_datetime,function,"(value:Any) -> datetime | None",109-119,false,11,6,unix to datetime
+      _try_parse_json,function,"(value:Any) -> dict[str, Any] | None",122-129,false,8,3,try parse json
+      _parse_json_string_array,function,"(value:Any) -> list[str]",132-144,false,13,9,parses json string array
+      _unwrap_if_quoted_json,function,"(value:str) -> str",147-153,false,7,5,unwrap if quoted json
+      _distinct,function,"(values:list[str]) -> list[str]",156-165,false,10,3,distinct
+      _ensure_list,function,"(value:Any) -> list[str]",168-173,false,6,4,ensure list
+      PersonTokenService.parse,method,"(jwt_token:str) -> PersonToken",40-97,false,58,1,Parse JWT claims without verifying the signature.
+  src/ksef_client/services/batch.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      build_batch_file_info,function,"(zip_bytes:bytes, encrypted_parts:list[bytes]) -> dict",7-23,false,17,2,creates batch file info
+      encrypt_batch_parts,function,"(zip_bytes:bytes, key:bytes, iv:bytes) -> tuple[list[bytes], dict]",26-36,false,11,2,encrypt batch parts
+  src/ksef_client/clients/invoices.py:
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoicesClient.get_invoice,method,"(ksef_number:str) -> InvoiceContent",10-20,false,11,1,retrieves invoice
+      InvoicesClient.get_invoice_bytes,method,"(ksef_number:str) -> BinaryContent",22-31,false,10,1,retrieves invoice bytes
+      InvoicesClient.query_invoice_metadata,method,"(request_payload:dict[str,Any]) -> Any",33-55,false,23,5,retrieves invoice metadata
+      InvoicesClient.export_invoices,method,"(request_payload:dict[str,Any]) -> Any",57-64,false,8,1,export invoices
+      InvoicesClient.get_export_status,method,"(reference_number:str) -> Any",66-71,false,6,1,retrieves export status
+      InvoicesClient.download_export_part,method,"(url:str) -> bytes",73-78,false,6,1,download export part
+      InvoicesClient.download_package_part,method,"(url:str) -> bytes",80-81,false,2,1,download package part
+      InvoicesClient.download_export_part_with_hash,method,"(url:str) -> BinaryContent",83-87,false,5,1,download export part with hash
+      AsyncInvoicesClient.get_invoice,method,"(ksef_number:str) -> InvoiceContent",91-100,true,10,1,retrieves invoice
+      AsyncInvoicesClient.get_invoice_bytes,method,"(ksef_number:str) -> BinaryContent",102-111,true,10,1,retrieves invoice bytes
+      AsyncInvoicesClient.query_invoice_metadata,method,"(request_payload:dict[str,Any]) -> Any",113-135,true,23,5,retrieves invoice metadata
+      AsyncInvoicesClient.export_invoices,method,"(request_payload:dict[str,Any]) -> Any",137-144,true,8,1,export invoices
+      AsyncInvoicesClient.get_export_status,method,"(reference_number:str) -> Any",146-151,true,6,1,retrieves export status
+      AsyncInvoicesClient.download_export_part,method,"(url:str) -> bytes",153-158,true,6,1,download export part
+      AsyncInvoicesClient.download_package_part,method,"(url:str) -> bytes",160-161,true,2,1,download package part
+      AsyncInvoicesClient.download_export_part_with_hash,method,"(url:str) -> BinaryContent",163-167,true,5,1,download export part with hash
+  src/ksef_client/clients/base.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      _RequestClient.request,method,() -> HttpResponse,9-9,false,1,1,request
+      _AsyncRequestClient.request,method,() -> HttpResponse,13-13,true,1,1,request
+      BaseApiClient.__init__,method,"(http_client:_RequestClient) -> None",17-18,false,2,1,creates
+      BaseApiClient._request_json,method,"(method:str, path:str) -> Any",20-46,false,27,2,request json
+      BaseApiClient._request_bytes,method,"(method:str, path:str) -> bytes",48-72,false,25,1,request bytes
+      BaseApiClient._request_raw,method,"(method:str, path:str) -> None",74-97,false,24,1,request raw
+      AsyncBaseApiClient.__init__,method,"(http_client:_AsyncRequestClient) -> None",101-102,false,2,1,creates
+      AsyncBaseApiClient._request_json,method,"(method:str, path:str) -> Any",104-130,true,27,2,request json
+      AsyncBaseApiClient._request_bytes,method,"(method:str, path:str) -> bytes",132-156,true,25,1,request bytes
+      AsyncBaseApiClient._request_raw,method,"(method:str, path:str) -> None",158-181,true,24,1,request raw
+  src/ksef_client/clients/rate_limits.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      RateLimitsClient.get_rate_limits,method,"(access_token:str) -> Any",9-10,false,2,1,retrieves rate limits
+      AsyncRateLimitsClient.get_rate_limits,method,"(access_token:str) -> Any",14-15,true,2,1,retrieves rate limits
+  src/ksef_client/clients/auth.py:
+    functions[18]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthClient.get_active_sessions,method,() -> Any,9-28,false,20,5,retrieves active sessions
+      AuthClient.revoke_current_session,method,"(access_token:str) -> None",30-36,false,7,1,revoke current session
+      AuthClient.revoke_session,method,"(reference_number:str, access_token:str) -> None",38-44,false,7,1,revoke session
+      AuthClient.get_challenge,method,() -> Any,46-47,false,2,1,retrieves challenge
+      AuthClient.submit_xades_auth_request,method,"(signed_xml:str) -> Any",49-76,false,28,4,submit xades auth request
+      AuthClient.submit_ksef_token_auth,method,"(request_payload:dict[str,Any]) -> Any",78-85,false,8,1,submit ksef token auth
+      AuthClient.get_auth_status,method,"(reference_number:str, authentication_token:str) -> Any",87-92,false,6,1,retrieves auth status
+      AuthClient.redeem_token,method,"(authentication_token:str) -> Any",94-99,false,6,1,redeem token
+      AuthClient.refresh_access_token,method,"(refresh_token:str) -> Any",101-106,false,6,1,refresh access token
+      AsyncAuthClient.get_active_sessions,method,() -> Any,110-129,true,20,5,retrieves active sessions
+      AsyncAuthClient.revoke_current_session,method,"(access_token:str) -> None",131-137,true,7,1,revoke current session
+      AsyncAuthClient.revoke_session,method,"(reference_number:str, access_token:str) -> None",139-145,true,7,1,revoke session
+      AsyncAuthClient.get_challenge,method,() -> Any,147-148,true,2,1,retrieves challenge
+      AsyncAuthClient.submit_xades_auth_request,method,"(signed_xml:str) -> Any",150-176,true,27,4,submit xades auth request
+      AsyncAuthClient.submit_ksef_token_auth,method,"(request_payload:dict[str,Any]) -> Any",178-185,true,8,1,submit ksef token auth
+      AsyncAuthClient.get_auth_status,method,"(reference_number:str, authentication_token:str) -> Any",187-192,true,6,1,retrieves auth status
+      AsyncAuthClient.redeem_token,method,"(authentication_token:str) -> Any",194-199,true,6,1,redeem token
+      AsyncAuthClient.refresh_access_token,method,"(refresh_token:str) -> Any",201-206,true,6,1,refresh access token
+  src/ksef_client/clients/security.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SecurityClient.get_public_key_certificates,method,() -> Any,9-10,false,2,1,retrieves public key certificates
+      AsyncSecurityClient.get_public_key_certificates,method,() -> Any,14-15,true,2,1,retrieves public key certificates
+  src/ksef_client/clients/sessions.py:
+    functions[26]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionsClient.get_sessions,method,() -> Any,9-55,false,47,12,retrieves sessions
+      SessionsClient.open_online_session,method,"(request_payload:dict[str,Any]) -> Any",57-74,false,18,3,starts online session
+      SessionsClient.close_online_session,method,"(reference_number:str, access_token:str) -> None",76-82,false,7,1,stops online session
+      SessionsClient.send_online_invoice,method,"(reference_number:str, request_payload:dict[str,Any]) -> Any",84-97,false,14,1,sends online invoice
+      SessionsClient.open_batch_session,method,"(request_payload:dict[str,Any]) -> Any",99-116,false,18,3,starts batch session
+      SessionsClient.close_batch_session,method,"(reference_number:str, access_token:str) -> None",118-124,false,7,1,stops batch session
+      SessionsClient.get_session_status,method,"(reference_number:str, access_token:str) -> Any",126-131,false,6,1,retrieves session status
+      SessionsClient.get_session_invoices,method,"(reference_number:str) -> Any",133-153,false,21,5,retrieves session invoices
+      SessionsClient.get_session_failed_invoices,method,"(reference_number:str) -> Any",155-175,false,21,5,retrieves session failed invoices
+      SessionsClient.get_session_invoice_status,method,"(reference_number:str, invoice_reference_number:str) -> Any",177-188,false,12,1,retrieves session invoice status
+      SessionsClient.get_session_invoice_upo_by_ref,method,"(reference_number:str, invoice_reference_number:str) -> bytes",190-201,false,12,1,retrieves session invoice upo by ref
+      SessionsClient.get_session_invoice_upo_by_ksef,method,"(reference_number:str, ksef_number:str) -> bytes",203-214,false,12,1,retrieves session invoice upo by ksef
+      SessionsClient.get_session_upo,method,"(reference_number:str, upo_reference_number:str) -> bytes",216-227,false,12,1,retrieves session upo
+      AsyncSessionsClient.get_sessions,method,() -> Any,231-277,true,47,12,retrieves sessions
+      AsyncSessionsClient.open_online_session,method,"(request_payload:dict[str,Any]) -> Any",279-296,true,18,3,starts online session
+      AsyncSessionsClient.close_online_session,method,"(reference_number:str, access_token:str) -> None",298-304,true,7,1,stops online session
+      AsyncSessionsClient.send_online_invoice,method,"(reference_number:str, request_payload:dict[str,Any]) -> Any",306-319,true,14,1,sends online invoice
+      AsyncSessionsClient.open_batch_session,method,"(request_payload:dict[str,Any]) -> Any",321-338,true,18,3,starts batch session
+      AsyncSessionsClient.close_batch_session,method,"(reference_number:str, access_token:str) -> None",340-346,true,7,1,stops batch session
+      AsyncSessionsClient.get_session_status,method,"(reference_number:str, access_token:str) -> Any",348-353,true,6,1,retrieves session status
+      AsyncSessionsClient.get_session_invoices,method,"(reference_number:str) -> Any",355-375,true,21,5,retrieves session invoices
+      AsyncSessionsClient.get_session_failed_invoices,method,"(reference_number:str) -> Any",377-397,true,21,5,retrieves session failed invoices
+      AsyncSessionsClient.get_session_invoice_status,method,"(reference_number:str, invoice_reference_number:str) -> Any",399-410,true,12,1,retrieves session invoice status
+      AsyncSessionsClient.get_session_invoice_upo_by_ref,method,"(reference_number:str, invoice_reference_number:str) -> bytes",412-423,true,12,1,retrieves session invoice upo by ref
+      AsyncSessionsClient.get_session_invoice_upo_by_ksef,method,"(reference_number:str, ksef_number:str) -> bytes",425-436,true,12,1,retrieves session invoice upo by ksef
+      AsyncSessionsClient.get_session_upo,method,"(reference_number:str, upo_reference_number:str) -> bytes",438-449,true,12,1,retrieves session upo
+  src/ksef_client/clients/testdata.py:
+    functions[30]{name,kind,sig,loc,async,lines,cc,does}:
+      TestDataClient.create_subject,method,"(request_payload:dict[str,Any]) -> None",11-20,false,10,1,creates subject
+      TestDataClient.remove_subject,method,"(request_payload:dict[str,Any]) -> None",22-31,false,10,1,deletes subject
+      TestDataClient.create_person,method,"(request_payload:dict[str,Any]) -> None",33-42,false,10,1,creates person
+      TestDataClient.remove_person,method,"(request_payload:dict[str,Any]) -> None",44-53,false,10,1,deletes person
+      TestDataClient.grant_permissions,method,"(request_payload:dict[str,Any]) -> None",55-64,false,10,1,grant permissions
+      TestDataClient.revoke_permissions,method,"(request_payload:dict[str,Any]) -> None",66-75,false,10,1,revoke permissions
+      TestDataClient.enable_attachment,method,"(request_payload:dict[str,Any]) -> None",77-86,false,10,1,enable attachment
+      TestDataClient.disable_attachment,method,"(request_payload:dict[str,Any]) -> None",88-97,false,10,1,disable attachment
+      TestDataClient.change_session_limits,method,"(request_payload:dict[str,Any]) -> Any",99-105,false,7,1,updates session limits
+      TestDataClient.reset_session_limits,method,() -> Any,107-112,false,6,1,reset session limits
+      TestDataClient.change_certificate_limits,method,"(request_payload:dict[str,Any]) -> Any",114-122,false,9,1,updates certificate limits
+      TestDataClient.reset_certificate_limits,method,() -> Any,124-129,false,6,1,reset certificate limits
+      TestDataClient.set_rate_limits,method,"(request_payload:dict[str,Any]) -> Any",131-137,false,7,1,updates rate limits
+      TestDataClient.reset_rate_limits,method,() -> Any,139-144,false,6,1,reset rate limits
+      TestDataClient.restore_production_rate_limits,method,() -> Any,146-151,false,6,1,restore production rate limits
+      AsyncTestDataClient.create_subject,method,"(request_payload:dict[str,Any]) -> None",155-164,true,10,1,creates subject
+      AsyncTestDataClient.remove_subject,method,"(request_payload:dict[str,Any]) -> None",166-175,true,10,1,deletes subject
+      AsyncTestDataClient.create_person,method,"(request_payload:dict[str,Any]) -> None",177-186,true,10,1,creates person
+      AsyncTestDataClient.remove_person,method,"(request_payload:dict[str,Any]) -> None",188-197,true,10,1,deletes person
+      AsyncTestDataClient.grant_permissions,method,"(request_payload:dict[str,Any]) -> None",199-208,true,10,1,grant permissions
+      AsyncTestDataClient.revoke_permissions,method,"(request_payload:dict[str,Any]) -> None",210-219,true,10,1,revoke permissions
+      AsyncTestDataClient.enable_attachment,method,"(request_payload:dict[str,Any]) -> None",221-230,true,10,1,enable attachment
+      AsyncTestDataClient.disable_attachment,method,"(request_payload:dict[str,Any]) -> None",232-241,true,10,1,disable attachment
+      AsyncTestDataClient.change_session_limits,method,"(request_payload:dict[str,Any]) -> Any",243-251,true,9,1,updates session limits
+      AsyncTestDataClient.reset_session_limits,method,() -> Any,253-258,true,6,1,reset session limits
+      AsyncTestDataClient.change_certificate_limits,method,"(request_payload:dict[str,Any]) -> Any",260-268,true,9,1,updates certificate limits
+      AsyncTestDataClient.reset_certificate_limits,method,() -> Any,270-275,true,6,1,reset certificate limits
+      AsyncTestDataClient.set_rate_limits,method,"(request_payload:dict[str,Any]) -> Any",277-283,true,7,1,updates rate limits
+      AsyncTestDataClient.reset_rate_limits,method,() -> Any,285-290,true,6,1,reset rate limits
+      AsyncTestDataClient.restore_production_rate_limits,method,() -> Any,292-297,true,6,1,restore production rate limits
+  src/ksef_client/clients/tokens.py:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      TokensClient.generate_token,method,"(request_payload:dict[str,Any]) -> Any",9-16,false,8,1,creates token
+      TokensClient.list_tokens,method,() -> Any,18-51,false,34,9,list tokens
+      TokensClient.get_token_status,method,"(reference_number:str) -> Any",53-58,false,6,1,retrieves token status
+      TokensClient.revoke_token,method,"(reference_number:str) -> None",60-66,false,7,1,revoke token
+      AsyncTokensClient.generate_token,method,"(request_payload:dict[str,Any]) -> Any",70-77,true,8,1,creates token
+      AsyncTokensClient.list_tokens,method,() -> Any,79-112,true,34,9,list tokens
+      AsyncTokensClient.get_token_status,method,"(reference_number:str) -> Any",114-119,true,6,1,retrieves token status
+      AsyncTokensClient.revoke_token,method,"(reference_number:str) -> None",121-127,true,7,1,revoke token
+  src/ksef_client/clients/permissions.py:
+    functions[37]{name,kind,sig,loc,async,lines,cc,does}:
+      _page_params,function,"(page_offset:Any, page_size:Any) -> dict[str, Any]",8-14,false,7,3,page params
+      PermissionsClient.check_attachment_permission_status,method,"(access_token:str) -> Any",18-23,false,6,1,checks attachment permission status
+      PermissionsClient.grant_authorization,method,"(request_payload:dict[str,Any]) -> Any",25-32,false,8,1,grant authorization
+      PermissionsClient.revoke_authorization,method,"(permission_id:str) -> Any",34-40,false,7,1,revoke authorization
+      PermissionsClient.revoke_common_permission,method,"(permission_id:str) -> Any",42-48,false,7,1,revoke common permission
+      PermissionsClient.grant_entity,method,"(request_payload:dict[str,Any]) -> Any",50-57,false,8,1,grant entity
+      PermissionsClient.grant_eu_entity,method,"(request_payload:dict[str,Any]) -> Any",59-66,false,8,1,grant eu entity
+      PermissionsClient.grant_eu_entity_admin,method,"(request_payload:dict[str,Any]) -> Any",68-75,false,8,1,grant eu entity admin
+      PermissionsClient.grant_indirect,method,"(request_payload:dict[str,Any]) -> Any",77-84,false,8,1,grant indirect
+      PermissionsClient.grant_person,method,"(request_payload:dict[str,Any]) -> Any",86-93,false,8,1,grant person
+      PermissionsClient.grant_subunit,method,"(request_payload:dict[str,Any]) -> Any",95-102,false,8,1,grant subunit
+      PermissionsClient.get_operation_status,method,"(reference_number:str) -> Any",104-109,false,6,1,retrieves operation status
+      PermissionsClient.query_authorizations_grants,method,"(request_payload:dict[str,Any]) -> Any",111-126,false,16,2,retrieves authorizations grants
+      PermissionsClient.query_entities_roles,method,() -> Any,128-141,false,14,2,retrieves entities roles
+      PermissionsClient.query_eu_entities_grants,method,"(request_payload:dict[str,Any]) -> Any",143-158,false,16,2,retrieves eu entities grants
+      PermissionsClient.query_personal_grants,method,"(request_payload:dict[str,Any]) -> Any",160-175,false,16,2,retrieves personal grants
+      PermissionsClient.query_persons_grants,method,"(request_payload:dict[str,Any]) -> Any",177-192,false,16,2,retrieves persons grants
+      PermissionsClient.query_subordinate_entities_roles,method,"(request_payload:dict[str,Any]) -> Any",194-209,false,16,2,retrieves subordinate entities roles
+      PermissionsClient.query_subunits_grants,method,"(request_payload:dict[str,Any]) -> Any",211-226,false,16,2,retrieves subunits grants
+      AsyncPermissionsClient.check_attachment_permission_status,method,"(access_token:str) -> Any",230-235,true,6,1,checks attachment permission status
+      AsyncPermissionsClient.grant_authorization,method,"(request_payload:dict[str,Any]) -> Any",237-246,true,10,1,grant authorization
+      AsyncPermissionsClient.revoke_authorization,method,"(permission_id:str) -> Any",248-254,true,7,1,revoke authorization
+      AsyncPermissionsClient.revoke_common_permission,method,"(permission_id:str) -> Any",256-262,true,7,1,revoke common permission
+      AsyncPermissionsClient.grant_entity,method,"(request_payload:dict[str,Any]) -> Any",264-271,true,8,1,grant entity
+      AsyncPermissionsClient.grant_eu_entity,method,"(request_payload:dict[str,Any]) -> Any",273-280,true,8,1,grant eu entity
+      AsyncPermissionsClient.grant_eu_entity_admin,method,"(request_payload:dict[str,Any]) -> Any",282-291,true,10,1,grant eu entity admin
+      AsyncPermissionsClient.grant_indirect,method,"(request_payload:dict[str,Any]) -> Any",293-300,true,8,1,grant indirect
+      AsyncPermissionsClient.grant_person,method,"(request_payload:dict[str,Any]) -> Any",302-309,true,8,1,grant person
+      AsyncPermissionsClient.grant_subunit,method,"(request_payload:dict[str,Any]) -> Any",311-318,true,8,1,grant subunit
+      AsyncPermissionsClient.get_operation_status,method,"(reference_number:str) -> Any",320-325,true,6,1,retrieves operation status
+      AsyncPermissionsClient.query_authorizations_grants,method,"(request_payload:dict[str,Any]) -> Any",327-342,true,16,2,retrieves authorizations grants
+      AsyncPermissionsClient.query_entities_roles,method,() -> Any,344-357,true,14,2,retrieves entities roles
+      AsyncPermissionsClient.query_eu_entities_grants,method,"(request_payload:dict[str,Any]) -> Any",359-374,true,16,2,retrieves eu entities grants
+      AsyncPermissionsClient.query_personal_grants,method,"(request_payload:dict[str,Any]) -> Any",376-391,true,16,2,retrieves personal grants
+      AsyncPermissionsClient.query_persons_grants,method,"(request_payload:dict[str,Any]) -> Any",393-408,true,16,2,retrieves persons grants
+      AsyncPermissionsClient.query_subordinate_entities_roles,method,"(request_payload:dict[str,Any]) -> Any",410-425,true,16,2,retrieves subordinate entities roles
+      AsyncPermissionsClient.query_subunits_grants,method,"(request_payload:dict[str,Any]) -> Any",427-442,true,16,2,retrieves subunits grants
+  src/ksef_client/clients/certificates.py:
+    functions[14]{name,kind,sig,loc,async,lines,cc,does}:
+      CertificatesClient.get_limits,method,"(access_token:str) -> Any",9-10,false,2,1,retrieves limits
+      CertificatesClient.get_enrollment_data,method,"(access_token:str) -> Any",12-15,false,4,1,retrieves enrollment data
+      CertificatesClient.send_enrollment,method,"(request_payload:dict[str,Any]) -> Any",17-24,false,8,1,sends enrollment
+      CertificatesClient.get_enrollment_status,method,"(reference_number:str) -> Any",26-31,false,6,1,retrieves enrollment status
+      CertificatesClient.query_certificates,method,"(request_payload:dict[str,Any]) -> Any",33-52,false,20,4,retrieves certificates
+      CertificatesClient.retrieve_certificate,method,"(request_payload:dict[str,Any]) -> Any",54-60,false,7,1,retrieves certificate
+      CertificatesClient.revoke_certificate,method,"(certificate_serial_number:str, request_payload:dict[str,Any]) -> Any",62-71,false,10,1,revoke certificate
+      AsyncCertificatesClient.get_limits,method,"(access_token:str) -> Any",75-76,true,2,1,retrieves limits
+      AsyncCertificatesClient.get_enrollment_data,method,"(access_token:str) -> Any",78-81,true,4,1,retrieves enrollment data
+      AsyncCertificatesClient.send_enrollment,method,"(request_payload:dict[str,Any]) -> Any",83-90,true,8,1,sends enrollment
+      AsyncCertificatesClient.get_enrollment_status,method,"(reference_number:str) -> Any",92-97,true,6,1,retrieves enrollment status
+      AsyncCertificatesClient.query_certificates,method,"(request_payload:dict[str,Any]) -> Any",99-118,true,20,4,retrieves certificates
+      AsyncCertificatesClient.retrieve_certificate,method,"(request_payload:dict[str,Any]) -> Any",120-128,true,9,1,retrieves certificate
+      AsyncCertificatesClient.revoke_certificate,method,"(certificate_serial_number:str, request_payload:dict[str,Any]) -> Any",130-139,true,10,1,revoke certificate
+  src/ksef_client/clients/peppol.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      PeppolClient.list_providers,method,() -> Any,9-22,false,14,4,list providers
+      AsyncPeppolClient.list_providers,method,() -> Any,26-39,true,14,4,list providers
+  src/ksef_client/clients/limits.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      LimitsClient.get_context_limits,method,"(access_token:str) -> Any",9-10,false,2,1,retrieves context limits
+      LimitsClient.get_subject_limits,method,"(access_token:str) -> Any",12-13,false,2,1,retrieves subject limits
+      AsyncLimitsClient.get_context_limits,method,"(access_token:str) -> Any",17-18,true,2,1,retrieves context limits
+      AsyncLimitsClient.get_subject_limits,method,"(access_token:str) -> Any",20-21,true,2,1,retrieves subject limits
+  src/ksef_client/utils/zip_utils.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      build_zip,function,"(files:dict[str,bytes]) -> bytes",9-14,false,6,2,creates zip
+      split_bytes,function,"(data:bytes, max_part_size:int=MAX_BATCH_PART_SIZE_BYTES) -> list[bytes]",17-25,false,9,4,splits bytes
+      unzip_bytes,function,"(data:bytes) -> dict[str, bytes]",28-42,false,15,1,unzip bytes
+      unzip_bytes_safe,function,"(data:bytes) -> dict[str, bytes]",45-90,false,46,19,unzip bytes safe
+  src/ksef_client/utils/ksef_number.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      _crc8,function,"(data:bytes) -> int",21-28,false,8,4,crc8
+      validate_ksef_number,function,"(ksef_number:str) -> ValidationResult",31-58,false,28,7,validates ksef number
+      is_valid_ksef_number,function,"(ksef_number:str) -> bool",61-62,false,2,1,is valid ksef number
+  src/ksef_client/utils/base64url.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      b64encode,function,"(data:bytes) -> str",6-7,false,2,1,b64encode
+      b64decode,function,"(data:Any) -> bytes",10-13,false,4,2,b64decode
+      b64url_encode,function,"(data:bytes) -> str",16-17,false,2,1,b64url encode
+      b64url_decode,function,"(data:str) -> bytes",20-22,false,3,1,b64url decode
+  docs/examples/auth_xades_cert_key.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      _env,function,"(name:str, default:Any=None) -> str",11-15,false,5,3,env
+      _env_optional,function,"(name:str, default:Any=None) -> str | None",18-22,false,5,3,env optional
+      main,function,() -> None,25-77,false,53,7,main
+  docs/examples/invoice_list.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      _env,function,"(name:str, default:Any=None) -> str",11-15,false,5,3,env
+      main,function,() -> None,18-67,false,50,7,main
+  docs/examples/auth_ksef_token.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      _env,function,"(name:str, default:Any=None) -> str",10-14,false,5,3,env
+      main,function,() -> None,17-41,false,25,4,main
+  docs/examples/invoice_send.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      _env,function,"(name:str, default:Any=None) -> str",12-16,false,5,3,env
+      main,function,() -> None,19-80,false,62,11,main

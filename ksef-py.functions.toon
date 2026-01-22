@@ -1,0 +1,143 @@
+project: ksef-py
+generated: "2026-01-22T07:16:35.237979"
+modules[15]{path,lang,items}:
+  ksef/exceptions.py,python,2
+  ksef/cli.py,python,7
+  ksef/stub_server.py,python,2
+  ksef/__init__.py,python,0
+  ksef/client.py,python,18
+  ksef/models.py,python,2
+  examples/basic_usage.py,python,5
+  tests/conftest.py,python,7
+  tests/__init__.py,python,0
+  tests/test_client.py,python,10
+  tests/test_models.py,python,14
+  tests/test_stub_server.py,python,15
+  tests/test_cli.py,python,9
+  scripts/update_schemas.py,python,8
+  ksef/xsd/__init__.py,python,0
+
+function_details:
+  ksef/exceptions.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefError.__init__,method,"(message:str, details:Optional[dict[str,Any]]=None, error_code:Optional[str]=None) -> None",9-18,false,10,2,creates
+      KsefError.__str__,method,() -> str,20-23,false,4,2,str
+  ksef/cli.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      setup_logging,function,"(verbose:bool=False) -> None",20-29,false,10,2,Setup logging configuration.
+      main,function,"(ctx:Any, verbose:bool) -> None",36-40,false,5,1,"ksef-py: Modern Python SDK + CLI for Poland's National e-Invoice System (KSeF)"
+      send,function,"(ctx:Any, xml_file:Path, nip:str, env:str, token_path:Optional[Path], output:Optional[str]) -> None",57-113,false,57,1,Send an invoice XML file to KSeF.
+      status,function,"(ctx:Any, ksef_number:str, nip:str, env:str, token_path:Optional[Path], output_json:bool) -> None",130-184,false,55,1,Check the status of an invoice by KSeF number.
+      download,function,"(ctx:Any, ksef_number:str, nip:str, env:str, token_path:Optional[Path], download_format:str, output:Optional[Path]) -> None",210-258,false,49,1,Download an invoice by KSeF number.
+      stub_server,function,"(ctx:Any, host:str, port:int) -> None",265-289,false,25,3,Start a local stub server for testing.
+      validate,function,"(ctx:Any, xml_file:Path) -> None",295-321,false,27,4,Validate an invoice XML file against KSeF schema.
+  ksef/stub_server.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      clear_storage,function,() -> None,15-18,false,4,1,Clear the invoice storage.
+      create_app,function,() -> FastAPI,36-188,false,153,1,Create and configure FastAPI app.
+  ksef/client.py:
+    functions[18]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefClient.__init__,method,"(nip:str, env:Union[str,KsefEnvironment]=KsefEnvironment.TEST, token_path:Optional[Union[str,Path]]=None, private_key_path:Optional[Union[str,Path]]=None, certificate_path:Optional[Union[str,Path]]=None, config:Optional[KsefConfiguration]=None) -> None",50-95,false,46,6,Initialize KSeF client.
+      KsefClient.async_client,method,() -> httpx.AsyncClient,98-111,false,14,2,Get or create async HTTP client.
+      KsefClient.sync_client,method,() -> httpx.Client,114-127,false,14,2,Get or create sync HTTP client.
+      KsefClient._load_token_from_file,method,"() -> Optional[str]",129-155,false,27,5,Load token from file if token_path is configured.
+      KsefClient._save_token_to_file,method,"(token:str, expires_at:datetime) -> None",157-173,false,17,2,Save token to file if token_path is configured.
+      KsefClient._ensure_token,method,() -> str,175-199,true,25,5,Ensure we have a valid authentication token.
+      KsefClient.generate_token,method,() -> TokenResponse,206-247,true,42,7,Generate authentication token from KSeF API.
+      KsefClient.send_invoice,method,"(xml_content:str, filename:Optional[str]=None) -> str",249-304,true,56,8,Send invoice to KSeF system.
+      KsefClient.get_status,method,"(ksef_number:str) -> InvoiceStatus",306-346,true,41,7,Get status of an invoice by KSeF number.
+      KsefClient.download,method,"(ksef_number:str, format:Union[str,InvoiceFormat]=InvoiceFormat.PDF, output_path:Optional[Union[str,Path]]=None) -> Path",348-407,true,60,10,Download invoice from KSeF system.
+      KsefClient.send_invoice_sync,method,"(xml_content:str, filename:Optional[str]=None) -> str",410-427,false,18,2,Synchronous version of send_invoice.
+      KsefClient.get_status_sync,method,"(ksef_number:str) -> InvoiceStatus",429-442,false,14,2,Synchronous version of get_status.
+      KsefClient.download_sync,method,"(ksef_number:str, format:Union[str,InvoiceFormat]=InvoiceFormat.PDF, output_path:Optional[Union[str,Path]]=None) -> Path",444-464,false,21,2,Synchronous version of download.
+      KsefClient.close,method,() -> None,466-476,true,11,3,Close HTTP clients and clean up resources.
+      KsefClient.__enter__,method,"() -> \"KsefClient\"",478-480,false,3,1,Context manager entry.
+      KsefClient.__exit__,method,"(exc_type:Any, exc_val:Any, exc_tb:Any) -> None",482-485,false,4,2,Context manager exit.
+      KsefClient.__aenter__,method,"() -> \"KsefClient\"",487-489,true,3,1,Async context manager entry.
+      KsefClient.__aexit__,method,"(exc_type:Any, exc_val:Any, exc_tb:Any) -> None",491-493,true,3,1,Async context manager exit.
+  ksef/models.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefCredentials.validate_nip,method,"(v:str) -> str",53-59,false,7,2,Validate NIP format.
+      KsefConfiguration.validate_urls,method,"(v:str) -> str",163-167,false,5,2,Ensure URLs are properly formatted.
+  examples/basic_usage.py:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      basic_example,function,() -> None,63-116,true,54,5,"Basic example of sending, checking status, and downloading an invoice."
+      synchronous_example,function,() -> None,119-141,true,23,2,Example using synchronous methods.
+      file_based_example,function,() -> None,144-178,true,35,3,Example reading invoice from a file.
+      error_handling_example,function,() -> None,181-207,true,27,5,Example demonstrating error handling.
+      main,function,() -> None,210-231,true,22,1,Main example runner.
+  tests/conftest.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      test_nip,function,() -> None,13-15,false,3,1,Sample test NIP number.
+      test_ksef_number,function,() -> None,19-21,false,3,1,Sample KSeF number for testing.
+      sample_xml_invoice,function,() -> None,25-45,false,21,1,Sample invoice XML content.
+      mock_token_response,function,() -> None,49-55,false,7,1,Mock token response.
+      ksef_client,function,(test_nip) -> None,59-64,false,6,1,KSeF client instance for testing.
+      mock_httpx_client,function,() -> None,68-83,false,16,1,Mock httpx AsyncClient.
+      mock_httpx_clients,function,"(monkeypatch, mock_httpx_client) -> None",87-99,false,13,1,Automatically mock httpx clients for all tests.
+  tests/test_client.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      TestKsefClient.test_client_initialization,method,(test_nip) -> None,16-22,false,7,1,Test client initialization with default parameters.
+      TestKsefClient.test_client_initialization_with_env,method,(test_nip) -> None,24-28,false,5,1,Test client initialization with specific environment.
+      TestKsefClient.test_nip_validation,method,() -> None,30-42,false,13,1,Test NIP validation in credentials.
+      TestKsefClient.test_generate_token_success,method,"(ksef_client, mock_httpx_client) -> None",45-59,true,15,1,Test successful token generation.
+      TestKsefClient.test_generate_token_auth_error,method,"(ksef_client, mock_httpx_client) -> None",62-71,true,10,1,Test token generation with authentication error.
+      TestKsefClient.test_send_invoice_success,method,"(ksef_client, mock_httpx_client, sample_xml_invoice) -> None",74-104,true,31,1,Test successful invoice sending.
+      TestKsefClient.test_send_invoice_validation_error,method,"(ksef_client, mock_httpx_client) -> None",107-133,true,27,1,Test invoice sending with validation error.
+      TestKsefClient.test_get_status_success,method,"(ksef_client, mock_httpx_client, test_ksef_number) -> None",136-161,true,26,1,Test successful status check.
+      TestKsefClient.test_download_success,method,"(ksef_client, mock_httpx_client, test_ksef_number, tmp_path) -> None",164-192,true,29,1,Test successful invoice download.
+      TestKsefClient.test_context_manager,method,(ksef_client) -> None,195-201,true,7,1,Test async context manager functionality.
+  tests/test_models.py:
+    functions[14]{name,kind,sig,loc,async,lines,cc,does}:
+      TestKsefCredentials.test_valid_nip,method,() -> None,22-25,false,4,1,Test validation of valid NIP numbers.
+      TestKsefCredentials.test_nip_with_formatting,method,() -> None,27-33,false,7,1,Test NIP validation with formatting characters.
+      TestKsefCredentials.test_invalid_nip_length,method,() -> None,35-41,false,7,1,Test validation error for invalid NIP length.
+      TestKsefCredentials.test_default_environment,method,() -> None,43-46,false,4,1,Test default environment is TEST.
+      TestEnums.test_ksef_environment_values,method,() -> None,52-55,false,4,1,Test KsefEnvironment enum values.
+      TestEnums.test_invoice_status_values,method,() -> None,57-62,false,6,1,Test InvoiceStatus enum values.
+      TestEnums.test_invoice_format_values,method,() -> None,64-67,false,4,1,Test InvoiceFormat enum values.
+      TestTokenResponse.test_valid_token_response,method,() -> None,73-83,false,11,1,Test valid token response creation.
+      TestTokenResponse.test_token_response_with_session,method,() -> None,85-94,false,10,1,Test token response with session token.
+      TestInvoiceSendRequest.test_valid_request,method,() -> None,100-107,false,8,1,Test valid invoice send request.
+      TestInvoiceSendRequest.test_request_with_filename,method,() -> None,109-116,false,8,1,Test request with filename.
+      TestKsefConfiguration.test_valid_configuration,method,() -> None,122-132,false,11,1,Test valid configuration creation.
+      TestKsefConfiguration.test_url_validation,method,() -> None,134-142,false,9,1,Test URL validation.
+      TestKsefConfiguration.test_url_trailing_slash_removal,method,() -> None,144-152,false,9,1,Test that trailing slashes are removed from URLs.
+  tests/test_stub_server.py:
+    functions[15]{name,kind,sig,loc,async,lines,cc,does}:
+      TestStubServer.setup_method,method,() -> None,11-16,false,6,1,Set up test fixtures.
+      TestStubServer.test_root_endpoint,method,() -> None,18-24,false,7,1,Test root endpoint returns API info.
+      TestStubServer.test_health_endpoint,method,() -> None,26-32,false,7,1,Test health check endpoint.
+      TestStubServer.test_generate_token_success,method,() -> None,34-45,false,12,1,Test successful token generation.
+      TestStubServer.test_generate_token_invalid_nip,method,() -> None,47-55,false,9,1,Test token generation with invalid NIP.
+      TestStubServer.test_generate_token_invalid_environment,method,() -> None,57-62,false,6,1,Test token generation with invalid environment.
+      TestStubServer.test_send_invoice_success,method,() -> None,64-87,false,24,1,Test successful invoice sending.
+      TestStubServer.test_send_invoice_no_auth,method,() -> None,89-97,false,9,1,Test invoice sending without authorization.
+      TestStubServer.test_send_invoice_invalid_token,method,() -> None,99-112,false,14,1,Test invoice sending with invalid token.
+      TestStubServer.test_send_invoice_invalid_xml,method,() -> None,114-130,false,17,1,Test invoice sending with invalid XML.
+      TestStubServer.test_get_invoice_status_success,method,() -> None,132-157,false,26,1,Test getting invoice status.
+      TestStubServer.test_get_invoice_status_not_found,method,() -> None,159-171,false,13,1,Test getting status for non-existent invoice.
+      TestStubServer.test_download_invoice_pdf,method,() -> None,173-195,false,23,1,Test downloading invoice as PDF.
+      TestStubServer.test_download_invoice_xml,method,() -> None,197-221,false,25,1,Test downloading invoice as XML.
+      TestStubServer.test_download_invoice_invalid_format,method,() -> None,223-243,false,21,1,Test downloading invoice with invalid format.
+  tests/test_cli.py:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      TestCLI.setup_method,method,() -> None,15-17,false,3,1,Set up test fixtures.
+      TestCLI.test_cli_help,method,() -> None,19-26,false,8,1,Test CLI help command.
+      TestCLI.test_cli_version,method,() -> None,28-31,false,4,1,Test CLI version command.
+      TestCLI.test_send_command_success,method,(mock_client_class) -> None,34-59,false,26,1,Test successful send command.
+      TestCLI.test_status_command_success,method,(mock_client_class) -> None,62-75,false,14,1,Test successful status command.
+      TestCLI.test_download_command_success,method,(mock_client_class) -> None,78-99,false,22,1,Test successful download command.
+      TestCLI.test_validate_command_success,method,() -> None,101-124,false,24,1,Test successful validate command.
+      TestCLI.test_validate_command_invalid_xml,method,() -> None,126-151,false,26,1,Test validate command with invalid XML.
+      TestCLI.test_stub_server_command_help,method,() -> None,153-157,false,5,1,Test stub server command shows in help.
+  scripts/update_schemas.py:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      download_schema,function,"(session:Any, base_url:str, schema_path:str, progress:Progress, task_id:TaskID) -> tuple[str, bytes] | None",49-80,true,32,4,Download a single schema file.
+      download_all_schemas,function,"(env:str='test') -> dict[str, bytes]",83-116,true,34,6,Download all schemas for a given environment.
+      validate_schema,function,"(content:bytes) -> bool",119-126,false,8,2,Validate that the downloaded content is valid XML/XSD.
+      calculate_checksum,function,"(content:bytes) -> str",129-131,false,3,1,Calculate SHA256 checksum of content.
+      save_schemas,function,"(schemas:dict[str,bytes], env:str) -> None",134-167,false,34,3,Save schemas to the appropriate directories.
+      generate_pydantic_models,function,"(schemas:dict[str,bytes]) -> None",170-224,false,55,1,Generate Pydantic models from XSD schemas.
+      main,function,() -> None,227-277,true,51,6,Main script entry point.
+      create_placeholder_schemas,function,"(env:str) -> None",280-345,false,66,3,Create placeholder schemas for development when real ones aren't available.

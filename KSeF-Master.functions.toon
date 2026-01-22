@@ -1,0 +1,179 @@
+project: KSeF-Master
+generated: "2026-01-22T07:16:12.340293"
+modules[30]{path,lang,items}:
+  eslint.config.js,javascript,0
+  vite.config.ts,typescript,0
+  vite-env.d.ts,typescript,0
+  src/main.tsx,typescript,0
+  src/App.tsx,typescript,0
+  src/services/reportsData.ts,typescript,5
+  src/services/clientService.ts,typescript,9
+  src/services/ksefApi.ts,typescript,13
+  src/services/settings.ts,typescript,4
+  src/helpers/nip.ts,typescript,2
+  src/helpers/money.ts,typescript,3
+  src/helpers/reports.ts,typescript,5
+  src/helpers/vat.ts,typescript,2
+  src/context/AuthContext.tsx,typescript,2
+  src/views/dashboard/Dashboard.tsx,typescript,1
+  src/views/start/StartView.tsx,typescript,1
+  src/views/settings/Settings.tsx,typescript,5
+  src/views/new/NewInvoice.tsx,typescript,18
+  src/views/issued/IssuedInvoices.tsx,typescript,4
+  src/views/reports/Reports.tsx,typescript,4
+  src/views/clients/ClientsView.tsx,typescript,8
+  src/views/received/ReceivedInvoices.tsx,typescript,1
+  src/components/modal/ClientModal.tsx,typescript,1
+  src/components/form/ContractorSelect.tsx,typescript,1
+  src/components/form/VatSelect.tsx,typescript,0
+  src/components/form/NumberInput.tsx,typescript,0
+  src/components/form/BankAccountInput.tsx,typescript,6
+  src/components/form/CurrencyInput.tsx,typescript,1
+  src/components/buttons/PrimaryButton.tsx,typescript,1
+  src/components/layout/SideNav.tsx,typescript,1
+
+function_details:
+  src/services/reportsData.ts:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      getAllReports,function,"() -> ReportInvoice[]",19-28,false,10,1,retrieves all reports
+      replaceAllReports,function,"(list: ReportInvoice[]) -> None",30-32,false,3,1,replace all reports
+      clearAllReports,function,() -> None,34-36,false,3,1,deletes all reports
+      addReport,function,"(report: ReportInvoice) -> None",38-45,false,8,1,creates report
+      syncFromKsefData,function,"(issuedInvoices: any[], receivedInvoices: any[]) -> None",47-95,false,49,1,sync from ksef data
+  src/services/clientService.ts:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      getClients,function,"() -> Client[]",18-26,false,9,1,retrieves clients
+      saveClients,function,"(clients: Client[]) -> void",29-31,false,3,1,caches clients
+      saveClient,function,"(client: Omit<Client, 'id'> & { id?: number }) -> Client",34-62,false,29,1,caches client
+      addClient,function,"(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) -> Client",65-67,false,3,1,creates client
+      updateClient,function,"(id: number, updates: Partial<Omit<Client, 'id' | 'createdAt'>>) -> Client | null",70-84,false,15,1,updates client
+      deleteClient,function,"(id: number) -> boolean",87-95,false,9,1,deletes client
+      findClientByNip,function,"(nip: string) -> Client | undefined",98-102,false,5,1,retrieves client by nip
+      findClientById,function,"(id: number) -> Client | undefined",105-108,false,4,1,retrieves client by id
+      searchClients,function,"(query: string) -> Client[]",111-123,false,13,1,filters clients
+  src/services/ksefApi.ts:
+    functions[13]{name,kind,sig,loc,async,lines,cc,does}:
+      getStatus,function,() -> Promise<SessionStatus>,170-174,true,5,1,retrieves status
+      login,function,"(request: LoginRequest) -> Promise<LoginResponse>",176-186,true,11,1,login
+      logout,function,"() -> Promise<{ success: boolean; message?: string }>",188-191,true,4,1,logout
+      getInvoices,function,"(request: InvoiceQueryRequest) -> Promise<InvoiceQueryResponse>",193-203,true,11,1,retrieves invoices
+      openSession,function,() -> Promise<OpenSessionResponse>,205-215,true,11,1,starts session
+      closeSession,function,"() -> Promise<{ success: boolean; message?: string }>",217-220,true,4,1,stops session
+      sendInvoice,function,"(invoice: CreateInvoiceRequest) -> Promise<SendInvoiceResponse>",222-232,true,11,1,sends invoice
+      mapToLegacyInvoice,function,"(invoice: InvoiceMetadata, type: 'issued' | 'received') -> Invoice",262-282,false,21,1,converts to legacy invoice
+      listIssued,function,"(_params?) -> Promise<Invoice[]>",285-305,true,21,1,list issued
+      listReceived,function,"(_params?) -> Promise<Invoice[]>",308-328,true,21,1,list received
+      listContractors,function,"(_params?) -> Promise<Contractor[]>",346-348,true,3,1,list contractors
+      upsertContractor,function,() -> Promise<never>,350-352,true,3,1,upsert contractor
+      downloadInvoicePdf,function,"(request: GeneratePdfRequest) -> Promise<void>",398-433,true,36,1,download invoice pdf
+  src/services/settings.ts:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      getSettings,function,() -> AppSettings,42-56,false,15,1,retrieves settings
+      saveSettings,function,"(s: AppSettings) -> None",58-60,false,3,1,caches settings
+      getSeller,function,() -> SellerProfile,62-75,false,14,1,retrieves seller
+      saveSeller,function,"(p: SellerProfile) -> None",77-79,false,3,1,caches seller
+  src/helpers/nip.ts:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      sanitizeNip,function,"(nip: string) -> string",2-4,false,3,1,sanitize nip
+      isValidNip,function,"(nip: string) -> boolean",5-12,false,8,1,is valid nip
+  src/helpers/money.ts:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      round2,function,"(n: number) -> number",3-5,false,3,1,round2
+      formatPLN,function,"(n: number) -> string",6-8,false,3,1,formats pln
+      parseNumberLike,function,"(input: string) -> number | undefined",9-15,false,7,1,parses number like
+  src/helpers/reports.ts:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      applyFilters,function,"(list: ReportInvoice[], f: ReportFilters) -> ReportInvoice[]",12-27,false,16,1,apply filters
+      sumKpis,function,"(list: ReportInvoice[]) -> None",29-34,false,6,1,sum kpis
+      perVatRate,function,"(list: ReportInvoice[]) -> None",36-46,false,11,1,per vat rate
+      agingIssued,function,"(list: ReportInvoice[]) -> None",48-71,false,24,1,aging issued
+      topClients,function,"(list: ReportInvoice[], topN) -> None",73-83,false,11,1,top clients
+  src/helpers/vat.ts:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      calcLine,function,"(i: CalcInput) -> LineCalc",20-33,false,14,1,calc line
+      sumTotals,function,"(lines: CalcInput[]) -> Totals",42-65,false,24,1,sum totals
+  src/context/AuthContext.tsx:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthProvider,function,() -> None,21-110,false,90,1,auth provider
+      useAuth,function,() -> None,112-118,false,7,1,use auth
+  src/views/dashboard/Dashboard.tsx:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      Dashboard,function,() -> None,10-136,false,127,1,dashboard
+  src/views/start/StartView.tsx:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      handleLogin,function,() -> None,27-48,true,22,1,handles login
+  src/views/settings/Settings.tsx:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      validateForm,function,"() -> string[]",29-44,false,16,1,validates form
+      saveAll,function,() -> None,46-55,false,10,1,caches all
+      exportBackup,function,() -> None,57-71,false,15,1,export backup
+      importBackup,function,"(e: ChangeEvent<HTMLInputElement>) -> None",73-106,false,34,1,import backup
+      clearAll,function,() -> None,108-113,false,6,1,deletes all
+  src/views/new/NewInvoice.tsx:
+    functions[18]{name,kind,sig,loc,async,lines,cc,does}:
+      saveSentInvoice,function,"(record: SentInvoiceRecord) -> None",57-65,false,9,1,caches sent invoice
+      today,function,() -> string,96-99,false,4,1,today
+      addDays,function,"(dateIso: string, days: number) -> string",101-105,false,5,1,creates days
+      suggestNumber,function,() -> string,107-112,false,6,1,suggest number
+      loadSellerFromStorage,function,(sessionNip?) -> Party,117-141,false,25,1,retrieves seller from storage
+      loadDraft,function,(sessionNip?) -> InvoiceDraft | null,143-153,false,11,1,retrieves draft
+      mapVatRateToKsef,function,"(vatRate: VatRate) -> string",155-160,false,6,1,converts vat rate to ksef
+      isValidBankAccount,function,"(account: string | undefined) -> boolean",162-166,false,5,1,is valid bank account
+      validate,function,"() -> string[]",268-307,false,40,1,validates
+      updateBuyer,function,"(v: PartyValue) -> None",309-311,false,3,1,updates buyer
+      updateLine,function,"(index: number, patch: Partial<InvoiceLineDraft>) -> None",313-315,false,3,1,updates line
+      addLine,function,() -> None,317-319,false,3,1,creates line
+      removeLine,function,"(index: number) -> None",321-323,false,3,1,deletes line
+      saveDraft,function,() -> None,325-332,false,8,1,caches draft
+      clearForm,function,() -> None,334-354,false,21,1,deletes form
+      copyBankFromSeller,function,() -> None,356-363,false,8,1,copy bank from seller
+      handlePrint,function,() -> None,365-370,false,6,1,handles print
+      handleSendToKsef,function,() -> None,372-498,true,127,1,handles send to ksef
+  src/views/issued/IssuedInvoices.tsx:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      loadSentInvoices,function,"() -> SentInvoiceRecord[]",48-55,false,8,1,retrieves sent invoices
+      findLocalData,function,"(invoice: Invoice) -> SentInvoiceRecord | undefined",101-103,false,3,1,retrieves local data
+      handleDownloadPdf,function,"(invoice: Invoice) -> None",105-175,true,71,1,handles download pdf
+      canDownloadPdf,function,"(invoice: Invoice) -> boolean",177-180,false,4,1,checks download pdf
+  src/views/reports/Reports.tsx:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      syncFromKsef,function,() -> None,29-51,true,23,1,sync from ksef
+      exportCsv,function,() -> None,53-68,false,16,1,export csv
+      handlePrint,function,() -> None,70-72,false,3,1,handles print
+      clearData,function,() -> None,74-79,false,6,1,deletes data
+  src/views/clients/ClientsView.tsx:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      loadClients,function,() -> None,42-45,false,4,1,retrieves clients
+      openAddModal,function,() -> None,58-63,false,6,1,starts add modal
+      openEditModal,function,"(client: Client) -> None",65-77,false,13,1,starts edit modal
+      closeModal,function,() -> None,79-84,false,6,1,stops modal
+      validateForm,function,"() -> string[]",86-117,false,32,1,validates form
+      handleSave,function,() -> None,119-147,false,29,1,handles save
+      handleDelete,function,"(client: Client) -> None",149-156,false,8,1,handles delete
+      updateField,function,"(field: keyof ClientFormData, value: string) -> None",158-164,false,7,1,updates field
+  src/views/received/ReceivedInvoices.tsx:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      handleDownloadPdf,function,"(invoice: Invoice) -> None",53-92,true,40,1,handles download pdf
+  src/components/modal/ClientModal.tsx:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      ClientModal,function,() -> None,17-76,false,60,1,client modal
+  src/components/form/ContractorSelect.tsx:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      ContractorSelect,function,() -> None,24-108,false,85,1,contractor select
+  src/components/form/BankAccountInput.tsx:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      formatIBAN,function,"(raw: string) -> string",17-54,false,38,1,formats iban
+      extractDigits,function,"(formatted: string) -> string",56-58,false,3,1,parses digits
+      validatePolishIBAN,function,"(value: string) -> { valid: boolean; error?: string }",60-80,false,21,1,validates polish iban
+      handleChange,function,"(e: React.ChangeEvent<HTMLInputElement>) -> None",100-111,false,12,1,handles change
+      handleBlur,function,() -> None,113-116,false,4,1,handles blur
+      handleFocus,function,() -> None,118-120,false,3,1,handles focus
+  src/components/form/CurrencyInput.tsx:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      CurrencyInput,function,"(props: Props) -> None",17-24,false,8,1,currency input
+  src/components/buttons/PrimaryButton.tsx:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      PrimaryButton,function,() -> None,7-14,false,8,1,primary button
+  src/components/layout/SideNav.tsx:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SideNav,function,() -> None,6-41,false,36,1,side nav

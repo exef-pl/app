@@ -1,0 +1,154 @@
+project: ksef-integration
+generated: "2026-01-22T07:16:31.641696"
+modules[25]{path,lang,items}:
+  KsefPythonClient/ksef_cli.py,python,11
+  KsefPythonClient/init_db.py,python,1
+  KsefPythonClient/services/bridge_client.py,python,16
+  KsefPythonClient/services/__init__.py,python,0
+  KsefPythonClient/services/invoice_service.py,python,12
+  KsefPythonClient/db/__init__.py,python,0
+  KsefPythonClient/db/database.py,python,1
+  KsefPythonClient/db/models.py,python,2
+  KsefPythonClient/tests/test_invoice_service_manual.py,python,6
+  KsefPythonClient/tests/test_session_manager_manual.py,python,5
+  KsefPythonClient/models/__init__.py,python,0
+  KsefPythonClient/models/ksef_models.py,python,9
+  KsefPythonClient/config/__init__.py,python,0
+  KsefPythonClient/config/settings.py,python,6
+  KsefPythonClient/utils/__init__.py,python,0
+  KsefPythonClient/utils/session_manager.py,python,10
+  KsefPythonClient/api/schemas.py,python,0
+  KsefPythonClient/api/__init__.py,python,0
+  KsefPythonClient/api/dependencies.py,python,1
+  KsefPythonClient/api/main.py,python,2
+  KsefPythonClient/api/routers/invoices.py,python,5
+  KsefPythonClient/api/routers/__init__.py,python,0
+  KsefPythonClient/db/migrations/env.py,python,3
+  KsefPythonClient/db/migrations/versions/__init__.py,python,0
+  KsefPythonClient/db/migrations/versions/7f4d6b2f077b_initial_schema_with_invoices_and_api_.py,python,2
+
+function_details:
+  KsefPythonClient/ksef_cli.py:
+    functions[11]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> None,314-382,true,69,14,Main CLI entry point.
+      KsefCLI.__init__,method,"(bridge_url:Optional[str]=None) -> None",31-33,false,3,2,creates
+      KsefCLI.__aenter__,method,() -> None,35-38,true,4,1,Context manager entry - initialize bridge client.
+      KsefCLI.__aexit__,method,"(exc_type, exc_val, exc_tb) -> None",40-42,true,3,1,Context manager exit - cleanup.
+      KsefCLI.ensure_session,method,() -> SessionData,44-70,true,27,4,Ensure we have a valid session (load existing or create new).
+      KsefCLI.cmd_login,method,() -> SessionData,72-97,true,26,2,"Command: Login to KSeF and save session."
+      KsefCLI.cmd_send,method,"(xml_path:str) -> None",99-134,true,36,3,"Command: Send invoice XML to KSeF."
+      KsefCLI.cmd_status,method,"(invoice_ref:Optional[str]=None) -> None",136-187,true,52,11,"Command: Check status of invoice."
+      KsefCLI.cmd_list,method,"(session_ref:Optional[str]=None) -> None",189-228,true,40,8,"Command: List invoices in session."
+      KsefCLI.cmd_upo,method,"(target:str, output_dir:str='upo_downloads') -> None",230-273,true,44,5,"Command: Download UPO (invoice confirmation)."
+      KsefCLI.cmd_info,method,() -> None,275-311,true,37,5,"Command: Show current session info."
+  KsefPythonClient/init_db.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      init_db,function,() -> None,7-31,false,25,2,Create all tables and initial API key.
+  KsefPythonClient/services/bridge_client.py:
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefBridgeError.__init__,method,"(message:str, status_code:Optional[int]=None, response_data:Optional[Dict]=None) -> None",46-50,false,5,1,creates
+      KsefBridgeError.__str__,method,() -> str,52-55,false,4,2,str
+      BridgeClient.__init__,method,"(base_url:Optional[str]=None, timeout:Optional[int]=None) -> None",98-110,false,13,3,Initialize Bridge Client.
+      BridgeClient.__aenter__,method,() -> None,112-118,true,7,1,Async context manager entry.
+      BridgeClient.__aexit__,method,"(exc_type, exc_val, exc_tb) -> None",120-123,true,4,2,Async context manager exit.
+      BridgeClient._get_client,method,() -> httpx.AsyncClient,125-129,false,5,2,Get HTTP client instance.
+      BridgeClient._log_request,method,"(method:str, url:str, headers:Optional[Dict]=None, data:Any=None) -> None",131-139,false,9,7,Log outgoing request (excluding sensitive data).
+      BridgeClient._log_response,method,"(response:Any, duration:float) -> None",141-148,false,8,3,Log response details.
+      BridgeClient._handle_response,method,"(response:Any) -> Dict[str, Any]",150-182,true,33,8,Handle HTTP response and raise appropriate exceptions.
+      BridgeClient._request,method,"(method:str, endpoint:str, headers:Optional[Dict[str,str]]=None, data:Any=None, json_data:Optional[Dict]=None) -> Dict[str, Any]",191-245,true,55,5,Make HTTP request with retry logic.
+      BridgeClient.login,method,() -> SessionData,251-276,true,26,2,Authenticate and open new KSeF session.
+      BridgeClient.send_invoice,method,"(xml_path:str, session_data:SessionData) -> InvoiceResponse",278-324,true,47,3,Send invoice XML to KSeF.
+      BridgeClient.get_invoice_status,method,"(reference_number:str, session_data:SessionData) -> InvoiceStatus",326-373,true,48,4,Get status of a specific invoice.
+      BridgeClient.list_invoices,method,"(session_data:SessionData, session_ref:Optional[str]=None) -> InvoiceListResponse",375-414,true,40,3,Get list of invoices in a session.
+      BridgeClient.get_upo,method,"(target:str, session_data:SessionData, output_dir:Optional[str]=None) -> str",416-487,true,72,7,Download UPO (Urzędowe Poświadczenie Odbioru).
+      BridgeClient.query_history,method,"(date_from:str, date_to:str, session_data:SessionData) -> SessionHistoryResponse",489-536,true,48,3,Query session history for date range.
+  KsefPythonClient/services/invoice_service.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceResult.is_success,method,() -> bool,42-44,false,3,1,Check if invoice was accepted.
+      InvoiceResult.is_failure,method,() -> bool,47-49,false,3,2,Check if invoice was rejected.
+      InvoiceResult.is_pending,method,() -> bool,52-54,false,3,4,Check if invoice is still processing.
+      InvoiceResult.__str__,method,() -> str,56-65,false,10,5,str
+      InvoiceService.__init__,method,"(session_manager:Optional[SessionManager]=None, bridge_client:Optional[BridgeClient]=None, max_retries:int=3, poll_interval:float=5.0, poll_timeout:float=300.0) -> None",94-117,false,24,3,Initialize InvoiceService.
+      InvoiceService.__aenter__,method,() -> None,119-122,true,4,1,Async context manager entry.
+      InvoiceService.__aexit__,method,"(exc_type, exc_val, exc_tb) -> None",124-127,true,4,2,Async context manager exit.
+      InvoiceService._ensure_session,method,() -> SessionData,129-166,true,38,3,Ensure we have a valid session (load or create new).
+      InvoiceService._poll_status,method,"(reference_number:str, session:SessionData) -> InvoiceStatus",168-248,true,81,5,Poll invoice status until accepted/rejected or timeout.
+      InvoiceService.send_with_confirmation,method,"(xml_path:str, download_upo:bool=True, upo_output_dir:Optional[str]=None) -> InvoiceResult",250-360,true,111,11,Send invoice and wait for confirmation (polling status).
+      InvoiceService.send_bulk,method,"(xml_paths:List[str], max_concurrent:int=5, download_upo:bool=True) -> List[InvoiceResult]",362-425,true,64,8,Send multiple invoices in parallel (with concurrency limit).
+      InvoiceService.retry_failed,method,"(result:InvoiceResult) -> InvoiceResult",427-461,true,35,2,Retry sending a failed invoice.
+  KsefPythonClient/db/database.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      get_db,function,() -> None,27-33,false,7,1,Dependency for getting DB session.
+  KsefPythonClient/db/models.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      Invoice.__repr__,method,() -> None,23-24,false,2,1,repr
+      APIKey.__repr__,method,() -> None,38-39,false,2,1,repr
+  KsefPythonClient/tests/test_invoice_service_manual.py:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      test_single_invoice,function,() -> None,22-53,true,32,4,Test sending single invoice with confirmation.
+      test_bulk_invoices,function,() -> None,56-98,true,43,13,Test sending multiple invoices in parallel.
+      test_retry_logic,function,() -> None,101-131,true,31,6,Test retry logic for failed invoice.
+      test_session_management,function,() -> None,134-162,true,29,3,Test automatic session management.
+      test_nonexistent_file,function,() -> None,165-187,true,23,4,Test handling of non-existent file.
+      main,function,() -> None,194-214,true,21,1,Run all tests.
+  KsefPythonClient/tests/test_session_manager_manual.py:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      create_dummy_session,function,() -> SessionData,30-39,false,10,1,Create dummy SessionData for testing.
+      test_basic_operations,function,() -> None,46-117,true,72,3,"Test 1: Basic save, load, validate, age, delete operations."
+      test_error_handling,function,() -> None,120-169,true,50,4,"Test 2: Error handling for missing files and invalid data."
+      test_with_real_session,function,() -> None,172-226,true,55,7,"Test 3: Work with real session.json if it exists."
+      run_all_tests,function,() -> None,233-268,true,36,6,Run all manual tests.
+  KsefPythonClient/models/ksef_models.py:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionData.validate_session_ref,method,"(v:str) -> str",57-64,false,8,4,Validate session reference number format.
+      SessionData.validate_base64,method,"(v:str) -> str",68-75,false,8,2,Validate that encryption keys are base64 encoded.
+      InvoiceResponse.get_reference,method,"() -> Optional[str]",120-122,false,3,2,Get reference number (handles both field names).
+      InvoiceStatus.validate_ksef_number,method,"(v:Optional[str]) -> Optional[str]",177-189,false,13,6,Validate KSeF number format (NIP-YYYYMMDD-XXXXXXXXXXXX-XX).
+      InvoiceStatus.is_accepted,method,() -> bool,191-193,false,3,1,Check if invoice was accepted (has KSeF number).
+      InvoiceStatus.is_rejected,method,() -> bool,195-201,false,7,4,Check if invoice was rejected (status code 4xx).
+      InvoiceStatus.has_upo,method,() -> bool,203-205,false,3,1,Check if UPO is available for download.
+      InvoiceListItem.is_accepted,method,() -> bool,272-274,false,3,1,Check if invoice was accepted.
+      InvoiceListItem.has_upo,method,() -> bool,276-278,false,3,1,Check if UPO is available.
+  KsefPythonClient/config/settings.py:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      get_settings,function,() -> Settings,153-160,false,8,1,Get application settings instance.
+      reload_settings,function,() -> Settings,163-174,false,12,1,Reload settings from environment variables.
+      Settings.bridge_api_url,method,() -> str,110-112,false,3,1,Get full C# Bridge API URL.
+      Settings.session_file_absolute_path,method,() -> Path,115-122,false,8,2,Get absolute path to session file.
+      Settings.log_file_absolute_path,method,() -> Path,125-132,false,8,2,Get absolute path to log file.
+      Settings.get_retry_delay,method,"(attempt:int) -> float",134-146,false,13,2,Calculate retry delay for given attempt number.
+  KsefPythonClient/utils/session_manager.py:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionManager.__init__,method,"(session_file_path:Optional[Path]=None) -> None",76-92,false,17,2,Initialize SessionManager.
+      SessionManager._get_tmp_path,method,() -> Path,94-96,false,3,1,Get temporary file path for atomic writes.
+      SessionManager._truncate_session_ref,method,"(session_ref:str) -> str",98-100,false,3,2,Truncate session reference for logging (first 20 chars).
+      SessionManager.save_session,method,"(session_data:SessionData) -> None",102-150,true,49,3,Save session data to file with atomic write.
+      SessionManager.load_session,method,"(validate:bool=True) -> SessionData",152-219,true,68,8,Load session data from file.
+      SessionManager.is_session_valid,method,"(session:Optional[SessionData]=None) -> bool",221-271,true,51,6,Check if session is valid (not expired).
+      SessionManager.get_session_age,method,"() -> Optional[timedelta]",273-305,true,33,4,Get age of current session.
+      SessionManager.delete_session,method,() -> None,307-333,true,27,3,Delete session file.
+      SessionManager.session_exists,method,() -> bool,335-342,true,8,1,Check if session file exists.
+      SessionManager.get_session_info,method,() -> dict,344-416,true,73,8,Get session information without full validation.
+  KsefPythonClient/api/dependencies.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      verify_api_key,function,"(x_api_key:Annotated[str,Any], db:Session=Depends(get_db)) -> APIKey",10-29,true,20,2,Verify API key from X-API-Key header.
+  KsefPythonClient/api/main.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      root,function,() -> None,26-32,true,7,1,Health check endpoint.
+      health,function,() -> None,36-41,true,6,1,Detailed health check.
+  KsefPythonClient/api/routers/invoices.py:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      ensure_valid_session,function,"(session_manager:SessionManager, bridge_client:BridgeClient) -> SessionData",29-78,true,50,4,Ensure we have a valid KSeF session.
+      send_invoice,function,"(file:UploadFile=File(...), db:DBSession=None, api_key:ValidAPIKey=None) -> None",84-168,true,85,8,Send invoice XML to KSeF system.
+      list_invoices,function,"(skip:int=0, limit:int=100, db:DBSession=None, api_key:ValidAPIKey=None) -> None",172-190,true,19,2,Get list of all invoices.
+      get_invoice,function,"(invoice_id:UUID, db:DBSession=None, api_key:ValidAPIKey=None) -> None",194-212,true,19,2,Get detailed invoice information including XML content.
+      get_invoice_status,function,"(invoice_id:UUID, refresh:bool=False, db:DBSession=None, api_key:ValidAPIKey=None) -> None",216-273,true,58,11,Get invoice status.
+  KsefPythonClient/db/migrations/env.py:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      get_url,function,() -> None,21-22,false,2,1,retrieves url
+      run_migrations_offline,function,() -> None,25-36,false,12,1,Run migrations in 'offline' mode.
+      run_migrations_online,function,() -> None,39-55,false,17,1,Run migrations in 'online' mode.
+  KsefPythonClient/db/migrations/versions/7f4d6b2f077b_initial_schema_with_invoices_and_api_.py:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      upgrade,function,() -> None,19-45,false,27,1,upgrade
+      downgrade,function,() -> None,48-55,false,8,1,downgrade

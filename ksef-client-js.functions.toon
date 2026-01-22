@@ -1,0 +1,569 @@
+project: ksef-client-js
+generated: "2026-01-22T07:16:21.475748"
+modules[52]{path,lang,items}:
+  eslint.config.js,javascript,0
+  vitest.config.ts,typescript,0
+  tsup.config.ts,typescript,0
+  examples/fa3-workflow.ts,typescript,2
+  src/index.ts,typescript,3
+  src/cli.ts,typescript,2
+  tests/mocks/http-client.mock.ts,typescript,1
+  tests/integration/SessionIntegration.test.ts,typescript,9
+  tests/integration/index.ts,typescript,0
+  tests/integration/SessionIntegration.realservice.test.ts,typescript,5
+  tests/integration/BatchIntegration.test.ts,typescript,20
+  tests/integration/AuthorizationIntegration.test.ts,typescript,9
+  tests/integration/OnlineSessionIntegration.test.ts,typescript,11
+  tests/integration/config.ts,typescript,3
+  tests/integration/QueryInvoiceIntegration.test.ts,typescript,16
+  tests/integration/CertificateIntegration.test.ts,typescript,16
+  tests/integration/base/index.ts,typescript,0
+  tests/integration/base/MockServer.ts,typescript,17
+  tests/integration/base/TestUtils.ts,typescript,18
+  tests/integration/base/BaseIntegrationTest.ts,typescript,0
+  tests/unit/builders/auth-builder.test.ts,typescript,0
+  tests/unit/builders/session-builder.test.ts,typescript,0
+  tests/unit/auth/certificate-generator.test.ts,typescript,0
+  tests/unit/auth/certificate-manager.test.ts,typescript,0
+  src/builders/xsd-invoice-builder.ts,typescript,14
+  src/builders/auth-builder.ts,typescript,14
+  src/builders/invoice-builder.ts,typescript,44
+  src/builders/session-builder.ts,typescript,21
+  src/session/session-manager.ts,typescript,18
+  src/cli/auth-utils.ts,typescript,3
+  src/cli/types.ts,typescript,0
+  src/cli/logger.ts,typescript,12
+  src/types/security.ts,typescript,0
+  src/types/invoice.ts,typescript,2
+  src/types/auth.ts,typescript,2
+  src/types/http.ts,typescript,1
+  src/types/session.ts,typescript,2
+  src/config/environment.ts,typescript,1
+  src/config/config-manager.ts,typescript,8
+  src/http/http-client.ts,typescript,19
+  src/http/rate-limiter.ts,typescript,6
+  src/auth/certificate-manager.ts,typescript,26
+  src/auth/auth-token-request.ts,typescript,4
+  src/auth/certificate-generator.ts,typescript,10
+  src/auth/xades-signature-service.ts,typescript,5
+  src/auth/authenticator.ts,typescript,21
+  src/crypto/ksef-crypto.ts,typescript,3
+  src/invoice/xml-builder.ts,typescript,9
+  src/invoice/invoice-service.ts,typescript,7
+  src/cli/commands/invoice.ts,typescript,22
+  src/cli/commands/auth.ts,typescript,12
+  src/cli/commands/session.ts,typescript,14
+
+function_details:
+  examples/fa3-workflow.ts:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> Promise<void>,13-240,true,228,1,main
+      waitForInvoiceStatus,function,"(client: KsefClient, sessionId: string, invoiceRef: string, timeoutSeconds: number) -> Promise<InvoiceStatusResponse | null>",252-275,true,24,1,wait for invoice status
+  src/index.ts:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      KsefClient.constructor,method,"(config: KsefClientConfig) -> None",93-106,false,14,1,constructor
+      KsefClient.create,method,"(config: KsefClientConfig) -> KsefClient",108-110,false,3,1,creates
+      KsefClient.forEnvironment,method,"(environment: KsefEnvironment) -> KsefClient",112-115,false,4,1,for environment
+  src/cli.ts:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      main,function,() -> Promise<void>,11-188,true,178,1,main
+      readStdin,function,() -> Promise<any>,190-217,true,28,1,retrieves stdin
+  tests/mocks/http-client.mock.ts:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      createMockHttpClient,function,"(config: MockHttpClientConfig) -> HttpClient",12-59,false,48,1,creates mock http client
+  tests/integration/SessionIntegration.test.ts:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      setupSessionIntegrationTests,function,() -> void,366-369,false,4,1,initializes session integration tests
+      SessionIntegrationTest.constructor,method,() -> None,13-18,false,6,1,constructor
+      SessionIntegrationTest.setupTests,method,() -> void,20-53,false,34,1,initializes tests
+      SessionIntegrationTest.searchSessionAndRevokeCurrentSession,method,() -> Promise<void>,59-119,true,61,1,filters session and revoke current session
+      SessionIntegrationTest.searchSessions,method,() -> Promise<void>,125-170,true,46,1,filters sessions
+      SessionIntegrationTest.sessionLifecycleTest,method,() -> Promise<void>,175-233,true,59,1,session lifecycle test
+      SessionIntegrationTest.sessionTimeoutTest,method,() -> Promise<void>,238-264,true,27,1,session timeout test
+      SessionIntegrationTest.sessionStatusMonitoringTest,method,() -> Promise<void>,269-308,true,40,1,session status monitoring test
+      SessionIntegrationTest.multipleConcurrentSessionsTest,method,() -> Promise<void>,313-361,true,49,1,multiple concurrent sessions test
+  tests/integration/SessionIntegration.realservice.test.ts:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      setupRealServiceSessionIntegrationTests,function,() -> void,169-198,false,30,1,initializes real service session integration tests
+      SessionRealServiceIntegrationTest.setupTests,method,() -> void,29-53,false,25,1,initializes tests
+      SessionRealServiceIntegrationTest.realOnlineSessionTest,method,() -> Promise<void>,58-93,true,36,1,real online session test
+      SessionRealServiceIntegrationTest.realActiveSessionsTest,method,() -> Promise<void>,98-118,true,21,1,real active sessions test
+      SessionRealServiceIntegrationTest.realSessionLifecycleTest,method,() -> Promise<void>,123-165,true,43,1,real session lifecycle test
+  tests/integration/BatchIntegration.test.ts:
+    functions[20]{name,kind,sig,loc,async,lines,cc,does}:
+      setupBatchIntegrationTests,function,() -> void,661-664,false,4,1,initializes batch integration tests
+      BatchIntegrationTest.constructor,method,() -> None,13-18,false,6,1,constructor
+      BatchIntegrationTest.setupTests,method,() -> void,20-57,false,38,1,initializes tests
+      BatchIntegrationTest.batchSessionE2EIntegrationTest,method,() -> Promise<void>,63-131,true,69,1,batch session e2 e integration test
+      BatchIntegrationTest.batchSessionStreamE2EIntegrationTest,method,() -> Promise<void>,137-185,true,49,1,batch session stream e2 e integration test
+      BatchIntegrationTest.batchFileCreationTest,method,() -> Promise<void>,190-213,true,24,1,batch file creation test
+      BatchIntegrationTest.batchProgressMonitoringTest,method,() -> Promise<void>,218-264,true,47,1,batch progress monitoring test
+      BatchIntegrationTest.batchErrorHandlingTest,method,() -> Promise<void>,269-316,true,48,1,batch error handling test
+      BatchIntegrationTest.multipleFilePartsTest,method,() -> Promise<void>,321-368,true,48,1,multiple file parts test
+      BatchIntegrationTest.batchResultsRetrievalTest,method,() -> Promise<void>,373-424,true,52,1,batch results retrieval test
+      BatchIntegrationTest.createBatchInvoices,method,"(count: number) -> any[]",428-442,false,15,1,creates batch invoices
+      BatchIntegrationTest.createInvalidBatchInvoices,method,"(count: number) -> any[]",444-461,false,18,1,creates invalid batch invoices
+      BatchIntegrationTest.createBatchFiles,method,"(invoices: any[], strategy: string) -> Promise<any[]>",463-530,true,68,1,creates batch files
+      BatchIntegrationTest.uploadBatchFiles,method,"(_sessionId: string, files: any[]) -> Promise<any[]>",532-549,true,18,1,upload batch files
+      BatchIntegrationTest.checkBatchProcessingStatus,method,"(sessionId: string) -> Promise<any>",551-566,true,16,1,checks batch processing status
+      BatchIntegrationTest.checkBatchPartsStatus,method,"(sessionId: string) -> Promise<any>",568-581,true,14,1,checks batch parts status
+      BatchIntegrationTest.retrieveBatchResults,method,"(sessionId: string) -> Promise<any>",583-601,true,19,1,retrieves batch results
+      BatchIntegrationTest.retrieveDetailedBatchResults,method,"(sessionId: string) -> Promise<any>",603-618,true,16,1,retrieves detailed batch results
+      BatchIntegrationTest.processInvoicesAsStream,method,"(_sessionId: string, invoices: any[]) -> Promise<any[]>",620-647,true,28,1,processes invoices as stream
+      BatchIntegrationTest.retrieveUpoDocument,method,"(sessionId: string, format: 'xml' | 'pdf') -> Promise<any>",649-657,true,9,1,retrieves upo document
+  tests/integration/AuthorizationIntegration.test.ts:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      setupAuthorizationIntegrationTests,function,() -> void,318-321,false,4,1,initializes authorization integration tests
+      AuthorizationIntegrationTest.constructor,method,() -> None,12-17,false,6,1,constructor
+      AuthorizationIntegrationTest.setupTests,method,() -> void,19-51,false,33,1,initializes tests
+      AuthorizationIntegrationTest.refreshTokenE2EIntegrationTest,method,() -> Promise<void>,57-82,true,26,1,refresh token e2 e integration test
+      AuthorizationIntegrationTest.initAuthByTokenE2EIntegrationTestRSA,method,() -> Promise<void>,88-129,true,42,1,creates auth by token e2 e integration test rsa
+      AuthorizationIntegrationTest.initAuthByTokenE2EIntegrationTestECDsa,method,() -> Promise<void>,135-175,true,41,1,creates auth by token e2 e integration test ec dsa
+      AuthorizationIntegrationTest.authenticationChallengeFlowTest,method,() -> Promise<void>,180-220,true,41,1,authentication challenge flow test
+      AuthorizationIntegrationTest.authenticationErrorHandlingTest,method,() -> Promise<void>,225-262,true,38,1,authentication error handling test
+      AuthorizationIntegrationTest.certificateValidationTest,method,() -> Promise<void>,267-313,true,47,1,certificate validation test
+  tests/integration/OnlineSessionIntegration.test.ts:
+    functions[11]{name,kind,sig,loc,async,lines,cc,does}:
+      setupOnlineSessionIntegrationTests,function,() -> void,491-494,false,4,1,initializes online session integration tests
+      OnlineSessionIntegrationTest.constructor,method,() -> None,13-18,false,6,1,constructor
+      OnlineSessionIntegrationTest.setupTests,method,() -> void,20-61,false,42,1,initializes tests
+      OnlineSessionIntegrationTest.onlineSessionE2EIntegrationTest,method,() -> Promise<void>,67-137,true,71,1,online session e2 e integration test
+      OnlineSessionIntegrationTest.onlineInvoiceSubmissionTest,method,() -> Promise<void>,142-182,true,41,1,online invoice submission test
+      OnlineSessionIntegrationTest.invoiceStatusMonitoringTest,method,() -> Promise<void>,187-237,true,51,1,invoice status monitoring test
+      OnlineSessionIntegrationTest.invoiceCorrectionTest,method,() -> Promise<void>,242-280,true,39,1,invoice correction test
+      OnlineSessionIntegrationTest.invoiceCancellationTest,method,() -> Promise<void>,285-326,true,42,1,invoice cancellation test
+      OnlineSessionIntegrationTest.invoiceFormatValidationTest,method,() -> Promise<void>,331-374,true,44,1,invoice format validation test
+      OnlineSessionIntegrationTest.multipleInvoiceBatchTest,method,() -> Promise<void>,379-437,true,59,1,multiple invoice batch test
+      OnlineSessionIntegrationTest.invoiceWithAttachmentsTest,method,() -> Promise<void>,442-487,true,46,1,invoice with attachments test
+  tests/integration/config.ts:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      getIntegrationTestConfig,function,() -> IntegrationTestEnvironmentConfig,31-81,false,51,1,retrieves integration test config
+      validateRealServiceConfig,function,"(config: IntegrationTestEnvironmentConfig) -> void",86-113,false,28,1,validates real service config
+      logTestConfig,function,"(config: IntegrationTestEnvironmentConfig) -> void",118-137,false,20,1,logs test config
+  tests/integration/QueryInvoiceIntegration.test.ts:
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      setupQueryInvoiceIntegrationTests,function,() -> void,735-738,false,4,1,initializes query invoice integration tests
+      QueryInvoiceIntegrationTest.constructor,method,() -> None,14-19,false,6,1,constructor
+      QueryInvoiceIntegrationTest.setupTests,method,() -> void,21-80,false,60,1,initializes tests
+      QueryInvoiceIntegrationTest.prepareTestInvoices,method,() -> Promise<void>,85-122,true,38,1,prepare test invoices
+      QueryInvoiceIntegrationTest.queryInvoiceE2EIntegrationTest,method,() -> Promise<void>,128-192,true,65,1,retrieves invoice e2 e integration test
+      QueryInvoiceIntegrationTest.queryInvoicesByCriteriaTest,method,() -> Promise<void>,197-258,true,62,1,retrieves invoices by criteria test
+      QueryInvoiceIntegrationTest.queryInvoicesByDateRangeTest,method,() -> Promise<void>,263-334,true,72,1,retrieves invoices by date range test
+      QueryInvoiceIntegrationTest.queryInvoicesByNipTest,method,() -> Promise<void>,339-390,true,52,1,retrieves invoices by nip test
+      QueryInvoiceIntegrationTest.queryInvoicesByAmountRangeTest,method,() -> Promise<void>,395-453,true,59,1,retrieves invoices by amount range test
+      QueryInvoiceIntegrationTest.retrieveInvoiceDetailsTest,method,() -> Promise<void>,458-489,true,32,1,retrieves invoice details test
+      QueryInvoiceIntegrationTest.getInvoiceStatusTest,method,() -> Promise<void>,494-525,true,32,1,retrieves invoice status test
+      QueryInvoiceIntegrationTest.downloadInvoiceTest,method,() -> Promise<void>,530-562,true,33,1,download invoice test
+      QueryInvoiceIntegrationTest.paginatedInvoiceResultsTest,method,() -> Promise<void>,567-624,true,58,1,paginated invoice results test
+      QueryInvoiceIntegrationTest.validateInvoiceSignaturesTest,method,() -> Promise<void>,629-671,true,43,1,validates invoice signatures test
+      QueryInvoiceIntegrationTest.queryInvoicesByBuyerSellerTest,method,() -> Promise<void>,676-721,true,46,1,retrieves invoices by buyer seller test
+      QueryInvoiceIntegrationTest.cleanupTestData,method,() -> Promise<void>,726-731,true,6,1,cleanup test data
+  tests/integration/CertificateIntegration.test.ts:
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      setupCertificateIntegrationTests,function,() -> void,411-414,false,4,1,initializes certificate integration tests
+      CertificateIntegrationTest.constructor,method,() -> None,13-18,false,6,1,constructor
+      CertificateIntegrationTest.setupTests,method,() -> void,20-61,false,42,1,initializes tests
+      CertificateIntegrationTest.certificateE2EIntegrationTest,method,() -> Promise<void>,67-135,true,69,1,certificate e2 e integration test
+      CertificateIntegrationTest.certificateLimitsTest,method,() -> Promise<void>,140-151,true,12,1,certificate limits test
+      CertificateIntegrationTest.certificateEnrollmentProcessTest,method,() -> Promise<void>,156-181,true,26,1,certificate enrollment process test
+      CertificateIntegrationTest.certificateStatusMonitoringTest,method,() -> Promise<void>,186-208,true,23,1,certificate status monitoring test
+      CertificateIntegrationTest.certificateRetrievalTest,method,() -> Promise<void>,213-232,true,20,1,certificate retrieval test
+      CertificateIntegrationTest.certificateRevocationTest,method,() -> Promise<void>,237-268,true,32,1,certificate revocation test
+      CertificateIntegrationTest.certificateChainValidationTest,method,() -> Promise<void>,273-309,true,37,1,certificate chain validation test
+      CertificateIntegrationTest.certificateRenewalTest,method,() -> Promise<void>,314-345,true,32,1,certificate renewal test
+      CertificateIntegrationTest.checkCertificateLimits,method,() -> Promise<any>,349-357,true,9,1,checks certificate limits
+      CertificateIntegrationTest.submitCertificateEnrollment,method,"(certificate: any) -> Promise<any>",359-371,true,13,1,submit certificate enrollment
+      CertificateIntegrationTest.checkEnrollmentStatus,method,"(referenceNumber: string) -> Promise<any>",373-385,true,13,1,checks enrollment status
+      CertificateIntegrationTest.retrieveIssuedCertificate,method,"(referenceNumber: string) -> Promise<any>",387-396,true,10,1,retrieves issued certificate
+      CertificateIntegrationTest.revokeCertificate,method,"(certificateId: string, reason: string) -> Promise<any>",398-407,true,10,1,revoke certificate
+  tests/integration/base/MockServer.ts:
+    functions[17]{name,kind,sig,loc,async,lines,cc,does}:
+      MockServer.constructor,method,() -> None,27-29,false,3,1,constructor
+      MockServer.start,method,(port?) -> Promise<void>,31-43,true,13,1,starts
+      MockServer.stop,method,() -> Promise<void>,45-56,true,12,1,stops
+      MockServer.addHandler,method,"(path: string, handler: MockHandler) -> void",58-60,false,3,1,creates handler
+      MockServer.removeHandler,method,"(path: string) -> void",62-64,false,3,1,deletes handler
+      MockServer.reset,method,() -> void,66-71,false,6,1,reset
+      MockServer.createFetchHandler,method,"() -> (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>",73-79,false,7,1,creates fetch handler
+      MockServer.handleRequest,method,"(req: IncomingMessage, res: ServerResponse) -> Promise<void>",81-120,true,40,1,handles request
+      MockServer.findAndExecuteHandler,method,"(request: MockRequest) -> Promise<MockResponse>",122-154,true,33,1,retrieves and execute handler
+      MockServer.normalizeFetchRequest,method,"(input: RequestInfo | URL, init?) -> MockRequest",156-166,false,11,1,normalize fetch request
+      MockServer.extractFetchParts,method,"(input: RequestInfo | URL, init?) -> {\n    url: URL\n    method: string\n    headers: Record<string, string>\n    body?: string\n  }",168-194,false,27,1,parses fetch parts
+      MockServer.normalizeHeaders,method,"(headers?) -> Record<string, string>",196-217,false,22,1,normalize headers
+      MockServer.buildFetchResponse,method,"(response: MockResponse) -> Response",219-239,false,21,1,creates fetch response
+      MockServer.matchesPattern,method,"(pattern: string, path: string) -> boolean",241-249,false,9,1,filters pattern
+      MockServer.sendResponse,method,"(res: ServerResponse, response: MockResponse) -> void",251-276,false,26,1,sends response
+      MockServer.tryParseJson,method,"(str: string) -> any",278-284,false,7,1,try parse json
+      MockServer.setupDefaultHandlers,method,() -> void,286-814,false,529,1,initializes default handlers
+  tests/integration/base/TestUtils.ts:
+    functions[18]{name,kind,sig,loc,async,lines,cc,does}:
+      TestUtils.generateRandomNIP,method,() -> string,6-29,false,24,1,creates random nip
+      TestUtils.generateRandomVatEu,method,() -> string,35-65,false,31,1,creates random vat eu
+      TestUtils.createInvoiceFromTemplate,method,"(template: 'fa2' | 'fa3', nip: string, invoiceNumber: string) -> any",70-85,false,16,1,creates invoice from template
+      TestUtils.getFA2Template,method,() -> any,90-203,false,114,1,retrieves fa2 template
+      TestUtils.getFA3Template,method,() -> any,208-254,false,47,1,retrieves fa3 template
+      TestUtils.generateRandomDigits,method,"(length: number) -> string",259-265,false,7,1,creates random digits
+      TestUtils.generateRandomAlphaNumeric,method,"(length: number) -> string",270-277,false,8,1,creates random alpha numeric
+      TestUtils.deepClone,method,"(obj: T) -> T",282-284,false,3,1,deep clone
+      TestUtils.replacePlaceholders,method,"(obj: any, replacements: Record<string, string>) -> void",289-310,false,22,1,replace placeholders
+      TestUtils.generateReferenceNumber,method,"(prefix: string) -> string",315-317,false,3,1,creates reference number
+      TestUtils.createTestFileContent,method,"(invoices: any[]) -> Buffer",322-331,false,10,1,creates test file content
+      TestUtils.generateTestEncryptionKey,method,() -> Uint8Array,336-340,false,5,1,creates test encryption key
+      TestUtils.encryptTestData,method,"(data: Uint8Array, key: Uint8Array) -> Promise<Uint8Array>",345-353,true,9,1,encrypt test data
+      TestUtils.createBatchZipStructure,method,"(files: Array<{ name: string; content: Buffer }>) -> Buffer",358-371,false,14,1,creates batch zip structure
+      TestUtils.generateInvoiceXml,method,"(invoiceData: any) -> string",376-455,false,80,1,creates invoice xml
+      TestUtils.generateCorrectionInvoiceXml,method,"(invoiceData: any) -> string",460-465,false,6,1,creates correction invoice xml
+      TestUtils.calculateXmlHash,method,"(xmlContent: string) -> string",470-480,false,11,1,processes xml hash
+      TestUtils.generateMockFileData,method,"(type: string, sizeBytes: number) -> Uint8Array",485-509,false,25,1,creates mock file data
+  src/builders/xsd-invoice-builder.ts:
+    functions[14]{name,kind,sig,loc,async,lines,cc,does}:
+      Fa3XsdInvoiceBuilder.withNaglowek,method,"(value: XsdNode) -> this",6-9,false,4,1,with naglowek
+      Fa3XsdInvoiceBuilder.withPodmiot1,method,"(value: XsdNode) -> this",11-14,false,4,1,with podmiot1
+      Fa3XsdInvoiceBuilder.withPodmiot2,method,"(value: XsdNode) -> this",16-19,false,4,1,with podmiot2
+      Fa3XsdInvoiceBuilder.addPodmiot3,method,"(value: XsdNode) -> this",21-25,false,5,1,creates podmiot3
+      Fa3XsdInvoiceBuilder.withFa,method,"(value: XsdNode) -> this",27-30,false,4,1,with fa
+      Fa3XsdInvoiceBuilder.addFaWiersz,method,"(value: XsdNode) -> this",32-41,false,10,1,creates fa wiersz
+      Fa3XsdInvoiceBuilder.withStopka,method,"(value: XsdNode) -> this",43-46,false,4,1,with stopka
+      Fa3XsdInvoiceBuilder.set,method,"(path: string, value: XsdValue) -> this",48-52,false,5,1,updates
+      Fa3XsdInvoiceBuilder.build,method,() -> Fa3XsdInvoiceInput,54-56,false,3,1,creates
+      Fa3XsdInvoiceBuilder.buildXml,method,() -> string,58-60,false,3,1,creates xml
+      Fa3XsdInvoiceBuilder.create,method,() -> Fa3XsdInvoiceBuilder,62-64,false,3,1,creates
+      Fa3XsdInvoiceBuilder.ensureArray,method,"(path: string) -> XsdNode[]",66-90,false,25,1,ensure array
+      Fa3XsdInvoiceBuilder.getPath,method,"(root: XsdNode, segments: string[]) -> XsdValue | null | undefined",92-101,false,10,1,retrieves path
+      Fa3XsdInvoiceBuilder.setPath,method,"(root: XsdNode, segments: string[], value: XsdValue) -> void",103-120,false,18,1,updates path
+  src/builders/auth-builder.ts:
+    functions[14]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthConfigBuilder.withCertificatePath,method,"(path: string) -> this",14-17,false,4,1,with certificate path
+      AuthConfigBuilder.withCertificateData,method,"(data: Uint8Array) -> this",19-23,false,5,1,with certificate data
+      AuthConfigBuilder.withCertificatePassword,method,"(password: string) -> this",25-28,false,4,1,with certificate password
+      AuthConfigBuilder.withFormat,method,"(format: CertificateFormat) -> this",30-33,false,4,1,with format
+      AuthConfigBuilder.withAlgorithm,method,"(algorithm: 'SHA256withRSA' | 'SHA256withECDSA') -> this",35-38,false,4,1,with algorithm
+      AuthConfigBuilder.withCertificateValidation,method,"(validate: boolean) -> this",40-43,false,4,1,with certificate validation
+      AuthConfigBuilder.withAuthMode,method,"(mode: AuthMode) -> this",45-48,false,4,1,with auth mode
+      AuthConfigBuilder.withContextIdentifier,method,"(identifier: ContextIdentifier) -> this",50-53,false,4,1,with context identifier
+      AuthConfigBuilder.withSubjectIdentifierType,method,"(type: SubjectIdentifierType) -> this",55-58,false,4,1,with subject identifier type
+      AuthConfigBuilder.withIpAddressPolicy,method,"(policy: IpAddressPolicy) -> this",60-63,false,4,1,with ip address policy
+      AuthConfigBuilder.withVerifyCertificateChain,method,"(verify: boolean) -> this",65-68,false,4,1,with verify certificate chain
+      AuthConfigBuilder.withMockSignature,method,"(useMockSignature: boolean) -> this",70-73,false,4,1,with mock signature
+      AuthConfigBuilder.build,method,() -> AuthConfig,75-88,false,14,1,creates
+      AuthConfigBuilder.create,method,() -> AuthConfigBuilder,90-92,false,3,1,creates
+  src/builders/invoice-builder.ts:
+    functions[44]{name,kind,sig,loc,async,lines,cc,does}:
+      EntityBuilder.withName,method,"(name: string) -> this",16-19,false,4,1,with name
+      EntityBuilder.withAddress,method,"(street: string, houseNumber: string, city: string, postalCode: string, apartmentNumber?, country) -> this",21-38,false,18,1,with address
+      EntityBuilder.withTaxIdentifier,method,"(nip?, pesel?, regon?, vatId?) -> this",40-43,false,4,1,with tax identifier
+      EntityBuilder.withNip,method,"(nip: string) -> this",45-48,false,4,1,with nip
+      EntityBuilder.withEmail,method,"(email: string) -> this",50-53,false,4,1,with email
+      EntityBuilder.withPhone,method,"(phone: string) -> this",55-58,false,4,1,with phone
+      EntityBuilder.build,method,() -> Entity,60-71,false,12,1,creates
+      EntityBuilder.create,method,() -> EntityBuilder,73-75,false,3,1,creates
+      InvoiceLineBuilder.withLineNumber,method,"(lineNumber: number) -> this",81-84,false,4,1,with line number
+      InvoiceLineBuilder.withProduct,method,"(name: string, code?) -> this",86-90,false,5,1,with product
+      InvoiceLineBuilder.withQuantity,method,"(quantity: number, unit) -> this",92-96,false,5,1,with quantity
+      InvoiceLineBuilder.withUnitPrice,method,"(amount: number, currency) -> this",98-101,false,4,1,with unit price
+      InvoiceLineBuilder.withNetAmount,method,"(amount: number, currency) -> this",103-106,false,4,1,with net amount
+      InvoiceLineBuilder.withTaxRate,method,"(rate: number, type: 'vat' | 'exempt' | 'zero' | 'np') -> this",108-111,false,4,1,with tax rate
+      InvoiceLineBuilder.withTaxAmount,method,"(amount: number, currency) -> this",113-116,false,4,1,with tax amount
+      InvoiceLineBuilder.withGrossAmount,method,"(amount: number, currency) -> this",118-121,false,4,1,with gross amount
+      InvoiceLineBuilder.withDiscount,method,"(discount: number) -> this",123-126,false,4,1,with discount
+      InvoiceLineBuilder.calculateAmounts,method,() -> this,128-142,false,15,1,processes amounts
+      InvoiceLineBuilder.build,method,() -> InvoiceLine,144-150,false,7,1,creates
+      InvoiceLineBuilder.create,method,() -> InvoiceLineBuilder,152-154,false,3,1,creates
+      InvoiceHeaderBuilder.withInvoiceNumber,method,"(invoiceNumber: string) -> this",160-163,false,4,1,with invoice number
+      InvoiceHeaderBuilder.withInvoiceType,method,"(invoiceType: InvoiceType) -> this",165-168,false,4,1,with invoice type
+      InvoiceHeaderBuilder.withIssueDate,method,"(issueDate: string) -> this",170-173,false,4,1,with issue date
+      InvoiceHeaderBuilder.withSaleDate,method,"(saleDate: string) -> this",175-178,false,4,1,with sale date
+      InvoiceHeaderBuilder.withDueDate,method,(dueDate?) -> this,180-183,false,4,1,with due date
+      InvoiceHeaderBuilder.withCurrency,method,"(currency: string, exchangeRate?) -> this",185-189,false,5,1,with currency
+      InvoiceHeaderBuilder.withPaymentMethod,method,"(paymentMethod: string) -> this",191-194,false,4,1,with payment method
+      InvoiceHeaderBuilder.withSeller,method,"(seller: Entity) -> this",196-199,false,4,1,with seller
+      InvoiceHeaderBuilder.withBuyer,method,"(buyer: Entity) -> this",201-204,false,4,1,with buyer
+      InvoiceHeaderBuilder.build,method,() -> InvoiceHeader,206-212,false,7,1,creates
+      InvoiceHeaderBuilder.create,method,() -> InvoiceHeaderBuilder,214-216,false,3,1,creates
+      InvoiceBuilder.withHeader,method,"(header: InvoiceHeader) -> this",224-227,false,4,1,with header
+      InvoiceBuilder.addLine,method,"(line: InvoiceLine) -> this",229-235,false,7,1,creates line
+      InvoiceBuilder.addLines,method,"(lines: InvoiceLine[]) -> this",237-243,false,7,1,creates lines
+      InvoiceBuilder.withTotals,method,"(totals: InvoiceTotals) -> this",245-248,false,4,1,with totals
+      InvoiceBuilder.calculateTotals,method,() -> this,250-268,false,19,1,processes totals
+      InvoiceBuilder.withNotes,method,"(notes: string) -> this",270-273,false,4,1,with notes
+      InvoiceBuilder.withAttachments,method,"(attachments: string[]) -> this",275-278,false,4,1,with attachments
+      InvoiceBuilder.addAttachment,method,"(attachment: string) -> this",280-286,false,7,1,creates attachment
+      InvoiceBuilder.build,method,() -> Invoice,288-305,false,18,1,creates
+      InvoiceBuilder.create,method,() -> InvoiceBuilder,307-309,false,3,1,creates
+      InvoiceBuilder.withNumber,method,"(invoiceNumber: string) -> InvoiceBuilder",311-315,false,5,1,with number
+      SimpleInvoiceBuilder.vatInvoice,method,"(invoiceNumber: string, issueDate: string, seller: Entity, buyer: Entity) -> InvoiceBuilder",320-336,false,17,1,vat invoice
+      SimpleInvoiceBuilder.simpleVatLine,method,"(arg1: number | string, arg2: string | number, arg3: number, arg4: number, arg5?, arg6?) -> InvoiceLine",352-393,false,42,1,simple vat line
+  src/builders/session-builder.ts:
+    functions[21]{name,kind,sig,loc,async,lines,cc,does}:
+      OnlineSessionBuilder.withNip,method,"(nip: string) -> this",13-16,false,4,1,with nip
+      OnlineSessionBuilder.withDescription,method,"(description: string) -> this",18-21,false,4,1,with description
+      OnlineSessionBuilder.withTimeout,method,"(timeoutSeconds: number) -> this",23-26,false,4,1,with timeout
+      OnlineSessionBuilder.withFormCode,method,"(formCode: FormCode) -> this",28-31,false,4,1,with form code
+      OnlineSessionBuilder.withEncryption,method,"(encryption: EncryptionInfo) -> this",33-36,false,4,1,with encryption
+      OnlineSessionBuilder.build,method,() -> OnlineSessionConfig,38-44,false,7,1,creates
+      OnlineSessionBuilder.create,method,() -> OnlineSessionBuilder,46-48,false,3,1,creates
+      OnlineSessionBuilder.forNip,method,"(nip: string) -> OnlineSessionBuilder",50-52,false,3,1,for nip
+      BatchSessionBuilder.withNip,method,"(nip: string) -> this",58-61,false,4,1,with nip
+      BatchSessionBuilder.withDescription,method,"(description: string) -> this",63-66,false,4,1,with description
+      BatchSessionBuilder.withTimeout,method,"(timeoutSeconds: number) -> this",68-71,false,4,1,with timeout
+      BatchSessionBuilder.withMaxParts,method,"(maxParts: number) -> this",73-76,false,4,1,with max parts
+      BatchSessionBuilder.withFormCode,method,"(formCode: FormCode) -> this",78-81,false,4,1,with form code
+      BatchSessionBuilder.withEncryption,method,"(encryption: EncryptionInfo) -> this",83-86,false,4,1,with encryption
+      BatchSessionBuilder.build,method,() -> BatchSessionConfig,88-94,false,7,1,creates
+      BatchSessionBuilder.create,method,() -> BatchSessionBuilder,96-98,false,3,1,creates
+      BatchSessionBuilder.forNip,method,"(nip: string) -> BatchSessionBuilder",100-102,false,3,1,for nip
+      SessionBuilder.online,method,() -> OnlineSessionBuilder,107-109,false,3,1,online
+      SessionBuilder.batch,method,() -> BatchSessionBuilder,111-113,false,3,1,batch
+      SessionBuilder.onlineForNip,method,"(nip: string) -> OnlineSessionBuilder",115-117,false,3,1,online for nip
+      SessionBuilder.batchForNip,method,"(nip: string) -> BatchSessionBuilder",119-121,false,3,1,batch for nip
+  src/session/session-manager.ts:
+    functions[18]{name,kind,sig,loc,async,lines,cc,does}:
+      DefaultSessionManager.constructor,method,"(httpClient: HttpClient) -> None",38-44,false,7,1,constructor
+      DefaultSessionManager.createOnlineSession,method,"(config: OnlineSessionConfig) -> Promise<SessionState>",46-87,true,42,1,creates online session
+      DefaultSessionManager.createBatchSession,method,"(config: BatchSessionConfig) -> Promise<SessionState>",89-130,true,42,1,creates batch session
+      DefaultSessionManager.getSessionInfo,method,"(sessionId: string) -> Promise<SessionInfo>",132-179,true,48,1,retrieves session info
+      DefaultSessionManager.closeSession,method,"(sessionId: string, generateUpo) -> Promise<SessionCloseResponse>",181-238,true,58,1,stops session
+      DefaultSessionManager.getSessionUpo,method,"(sessionId: string) -> Promise<SessionUpo>",240-258,true,19,1,retrieves session upo
+      DefaultSessionManager.isSessionActive,method,"(sessionId: string) -> Promise<boolean>",260-276,true,17,1,is session active
+      DefaultSessionManager.refreshSession,method,"(sessionId: string) -> Promise<SessionState>",278-311,true,34,1,refresh session
+      DefaultSessionManager.listActiveSessions,method,"() -> Promise<SessionInfo[]>",313-362,true,50,1,list active sessions
+      DefaultSessionManager.dispose,method,() -> void,364-369,false,6,1,dispose
+      DefaultSessionManager.getDefaultFormCode,method,() -> FormCode,371-377,false,7,1,retrieves default form code
+      DefaultSessionManager.resolveEncryptionInfo,method,"(config: OnlineSessionConfig | BatchSessionConfig) -> Promise<EncryptionInfo>",379-408,true,30,1,resolve encryption info
+      DefaultSessionManager.createEncryptionInfoFromCertificate,method,"(certificateBase64: string) -> EncryptionInfo",410-429,false,20,1,creates encryption info from certificate
+      DefaultSessionManager.createFallbackEncryptionInfo,method,() -> EncryptionInfo,431-436,false,6,1,creates fallback encryption info
+      DefaultSessionManager.wrapPem,method,"(certificateBase64: string) -> string",438-441,false,4,1,wrap pem
+      DefaultSessionManager.updateLastActivity,method,"(sessionId: string) -> void",443-448,false,6,1,updates last activity
+      DefaultSessionManager.cleanupExpiredSessions,method,() -> void,450-457,false,8,1,cleanup expired sessions
+      DefaultSessionManager.logSessionDebug,method,"(context: string, error: unknown) -> void",459-484,false,26,1,logs session debug
+  src/cli/auth-utils.ts:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      attachAccessToken,function,"(context: CliContext, client: KsefClient) -> void",8-70,false,63,1,registers access token
+      refreshAccessTokenIfNeeded,function,"(context: CliContext, client: KsefClient) -> Promise<void>",72-100,true,29,1,refresh access token if needed
+      deriveRequestPath,function,"(context: CliContext, responseUrl?) -> string | null",102-116,false,15,1,derive request path
+  src/cli/logger.ts:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      CliLogger.constructor,method,"(verbose: boolean, silent: boolean) -> None",4-7,false,4,1,constructor
+      CliLogger.info,method,"(message: string) -> void",9-13,false,5,1,info
+      CliLogger.warn,method,"(message: string) -> void",15-19,false,5,1,warn
+      CliLogger.error,method,"(message: string) -> void",21-23,false,3,1,error
+      CliLogger.debug,method,"(message: string) -> void",25-29,false,5,1,debug
+      CliLogger.success,method,"(message: string) -> void",31-35,false,5,1,success
+      CliLogger.formatMessage,method,"(level: string, message: string, emoji?) -> string",37-41,false,5,1,formats message
+      SilentLogger.info,method,() -> void,45-47,false,3,1,info
+      SilentLogger.warn,method,() -> void,49-51,false,3,1,warn
+      SilentLogger.error,method,"(message: string) -> void",53-56,false,4,1,error
+      SilentLogger.debug,method,() -> void,58-60,false,3,1,debug
+      SilentLogger.success,method,() -> void,62-64,false,3,1,success
+  src/types/invoice.ts:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      InvoiceError.constructor,method,"(message: string, code: string, invoiceNumber?, details?) -> None",209-215,false,7,1,constructor
+      InvoiceValidationError.constructor,method,"(message: string, invoiceNumber: string, errors: string[]) -> None",221-225,false,5,1,constructor
+  src/types/auth.ts:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      AuthenticationError.constructor,method,"(message: string, code: string, details?) -> None",151-156,false,6,1,constructor
+      CertificateError.constructor,method,"(message: string, code: string, details?) -> None",163-168,false,6,1,constructor
+  src/types/http.ts:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      HttpError.constructor,method,"(message: string, status: number, statusText: string, config: HttpRequestConfig, response?) -> None",41-54,false,14,1,constructor
+  src/types/session.ts:
+    functions[2]{name,kind,sig,loc,async,lines,cc,does}:
+      SessionError.constructor,method,"(message: string, code: string, sessionId?, details?) -> None",153-159,false,7,1,constructor
+      SessionTimeoutError.constructor,method,"(sessionId: string) -> None",164-167,false,4,1,constructor
+  src/config/environment.ts:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      getKsefBaseUrl,function,"(environment: KsefEnvironment) -> string",9-11,false,3,1,retrieves ksef base url
+  src/config/config-manager.ts:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      DefaultConfigManager.loadConfig,method,(configPath?) -> Promise<ConfigFile>,51-65,true,15,1,retrieves config
+      DefaultConfigManager.saveConfig,method,"(config: ConfigFile, configPath?) -> Promise<void>",67-76,true,10,1,caches config
+      DefaultConfigManager.mergeConfig,method,"(baseConfig: ConfigFile, overrides: Partial<CliConfig>) -> ConfigFile",78-85,false,8,1,merges config
+      DefaultConfigManager.getDefaultConfigPath,method,() -> string,87-89,false,3,1,retrieves default config path
+      DefaultConfigManager.validateConfig,method,"(config: unknown) -> ConfigFile",91-97,false,7,1,validates config
+      DefaultConfigManager.findConfigFile,method,() -> string | null,99-102,false,4,1,retrieves config file
+      DefaultConfigManager.getDefaultConfig,method,() -> ConfigFile,104-113,false,10,1,retrieves default config
+      ConfigError.constructor,method,"(message: string, path?) -> None",117-120,false,4,1,constructor
+  src/http/http-client.ts:
+    functions[19]{name,kind,sig,loc,async,lines,cc,does}:
+      DefaultHttpClient.constructor,method,"(config: HttpClientConfig) -> None",32-37,false,6,1,constructor
+      DefaultHttpClient.get,method,"(url: string, config?) -> Promise<HttpResponse<T>>",39-44,true,6,1,retrieves
+      DefaultHttpClient.post,method,"(url: string, config?) -> Promise<HttpResponse<T>>",46-51,true,6,1,creates
+      DefaultHttpClient.put,method,"(url: string, config?) -> Promise<HttpResponse<T>>",53-58,true,6,1,updates
+      DefaultHttpClient.delete,method,"(url: string, config?) -> Promise<HttpResponse<T>>",60-65,true,6,1,deletes
+      DefaultHttpClient.patch,method,"(url: string, config?) -> Promise<HttpResponse<T>>",67-72,true,6,1,updates
+      DefaultHttpClient.request,method,"(url: string, config: Partial<HttpRequestConfig>) -> Promise<HttpResponse<T>>",74-109,true,36,1,request
+      DefaultHttpClient.addRequestInterceptor,method,"(interceptor: RequestInterceptor) -> void",111-113,false,3,1,creates request interceptor
+      DefaultHttpClient.addResponseInterceptor,method,"(interceptor: ResponseInterceptor) -> void",115-117,false,3,1,creates response interceptor
+      DefaultHttpClient.executeWithRetries,method,"(url: string, config: HttpRequestConfig, attempt) -> Promise<HttpResponse<T>>",119-137,true,19,1,starts with retries
+      DefaultHttpClient.executeRequest,method,"(url: string, config: HttpRequestConfig) -> Promise<HttpResponse<T>>",139-237,true,99,1,starts request
+      DefaultHttpClient.buildUrl,method,"(path: string) -> string",239-248,false,10,1,creates url
+      DefaultHttpClient.buildHeaders,method,"(headers: Record<string, string>) -> HeadersInit",250-252,false,3,1,creates headers
+      DefaultHttpClient.serializeBody,method,"(body: unknown, headers: Record<string, string>) -> string",254-273,false,20,1,formats body
+      DefaultHttpClient.deserializeResponse,method,"(response: Response) -> Promise<T | null>",275-292,true,18,1,parses response
+      DefaultHttpClient.extractHeaders,method,"(response: Response) -> Record<string, string>",294-300,false,7,1,parses headers
+      DefaultHttpClient.isHttpResponse,method,"(value: unknown) -> None",302-311,false,10,1,is http response
+      DefaultHttpClient.shouldRetry,method,"(status: number) -> boolean",313-316,false,4,1,checks retry
+      DefaultHttpClient.delay,method,"(ms: number) -> Promise<void>",318-320,true,3,1,delay
+  src/http/rate-limiter.ts:
+    functions[6]{name,kind,sig,loc,async,lines,cc,does}:
+      TokenBucketRateLimiter.constructor,method,"(requestsPerSecond: number, burstSize?) -> None",9-14,false,6,1,constructor
+      TokenBucketRateLimiter.canMakeRequest,method,() -> Promise<boolean>,16-19,true,4,1,checks make request
+      TokenBucketRateLimiter.waitForSlot,method,() -> Promise<void>,21-27,true,7,1,wait for slot
+      TokenBucketRateLimiter.refillTokens,method,() -> void,29-36,false,8,1,refill tokens
+      NoOpRateLimiter.canMakeRequest,method,() -> Promise<boolean>,40-42,true,3,1,checks make request
+      NoOpRateLimiter.waitForSlot,method,() -> Promise<void>,44-46,true,3,1,wait for slot
+  src/auth/certificate-manager.ts:
+    functions[26]{name,kind,sig,loc,async,lines,cc,does}:
+      DefaultCertificateManager.loadCertificate,method,"(data: Uint8Array, _password?, format: CertificateFormat) -> Promise<CertificateInfo>",24-52,true,29,1,retrieves certificate
+      DefaultCertificateManager.loadCertificateFromPath,method,"(path: string, _password?) -> Promise<CertificateInfo>",54-66,true,13,1,retrieves certificate from path
+      DefaultCertificateManager.validateCertificate,method,"(certificateInfo: CertificateInfo) -> Promise<boolean>",68-103,true,36,1,validates certificate
+      DefaultCertificateManager.signData,method,"(data: Uint8Array, algorithm: string) -> Promise<Uint8Array>",105-129,true,25,1,sign data
+      DefaultCertificateManager.getCertificateThumbprint,method,() -> string,131-136,false,6,1,retrieves certificate thumbprint
+      DefaultCertificateManager.getCertificatePem,method,() -> string,138-143,false,6,1,retrieves certificate pem
+      DefaultCertificateManager.getPrivateKeyPem,method,() -> string,145-150,false,6,1,retrieves private key pem
+      DefaultCertificateManager.isExpired,method,"(certificateInfo: CertificateInfo) -> boolean",152-155,false,4,1,is expired
+      DefaultCertificateManager.isExpiringSoon,method,"(certificateInfo: CertificateInfo, daysThreshold) -> boolean",157-161,false,5,1,is expiring soon
+      DefaultCertificateManager.loadPKCS12Certificate,method,"(data: Uint8Array, password?) -> Promise<CertificateInfo>",163-191,true,29,1,retrieves pkcs12 certificate
+      DefaultCertificateManager.loadPEMCertificate,method,"(data: Uint8Array, password?) -> Promise<CertificateInfo>",193-246,true,54,1,retrieves pem certificate
+      DefaultCertificateManager.loadDERCertificate,method,"(_data: Uint8Array) -> Promise<CertificateInfo>",248-251,true,4,1,retrieves der certificate
+      DefaultCertificateManager.getSigningAlgorithm,method,"(algorithm: string) -> RsaPssParams | EcdsaParams",253-262,false,10,1,retrieves signing algorithm
+      DefaultCertificateManager.extractPemBlock,method,"(pemText: string, label: string) -> string | null",264-268,false,5,1,parses pem block
+      DefaultCertificateManager.extractPrivateKeyPem,method,"(pemText: string) -> string | null",270-286,false,17,1,parses private key pem
+      DefaultCertificateManager.getNodeSignAlgorithm,method,"(algorithm: string) -> string",288-297,false,10,1,retrieves node sign algorithm
+      DefaultCertificateManager.decryptEncryptedPrivateKey,method,"(pemText: string, password?) -> { privateKey: KeyObject; privateKeyPem: string }",299-343,false,45,1,decrypt encrypted private key
+      DefaultCertificateManager.tryParseMockPkcs12,method,"(data: Uint8Array) -> { certificateInfo: CertificateInfo; privateKeyPem: string; certificatePem: string } | null",345-383,false,39,1,try parse mock pkcs12
+      DefaultCertificateManager.decodeMockCertificate,method,"(pemCertificate: string) -> {\n    serialNumber: string\n    signature: string\n    issuer: string\n    validity: { notBefore: string; notAfter: string }\n    subject: string\n    extensions: { keyUsage: string[]; subjectKeyIdentifier: string }\n  } | null",385-408,false,24,1,parses mock certificate
+      DefaultCertificateManager.parseRealPkcs12,method,"(data: Uint8Array, password: string) -> { certificateInfo: CertificateInfo; privateKeyPem: string; certificatePem: string }",410-458,false,49,1,parses real pkcs12
+      DefaultCertificateManager.formatDistinguishedName,method,"(attributes: forge.pki.CertificateField[]) -> string",460-466,false,7,1,formats distinguished name
+      DefaultCertificateManager.calculateThumbprint,method,"(cert: forge.pki.Certificate) -> string",468-471,false,4,1,processes thumbprint
+      DefaultCertificateManager.calculateThumbprintFromRaw,method,"(raw: ArrayBuffer) -> string",473-475,false,3,1,processes thumbprint from raw
+      DefaultCertificateManager.mapSignatureAlgorithm,method,(oid?) -> string,477-486,false,10,1,converts signature algorithm
+      DefaultCertificateManager.mapSignatureAlgorithmFromX509,method,(name?) -> string,488-496,false,9,1,converts signature algorithm from x509
+      DefaultCertificateManager.extractKeyUsage,method,"(cert: forge.pki.Certificate) -> string[]",498-515,false,18,1,parses key usage
+  src/auth/auth-token-request.ts:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      buildAuthTokenRequestXml,function,"(params: AuthTokenRequestParams) -> string",12-27,false,16,1,creates auth token request xml
+      buildContextIdentifier,function,"(context: ContextIdentifier) -> string",29-40,false,12,1,creates context identifier
+      buildIpAddressPolicy,function,"(policy: IpAddressPolicy) -> string",42-64,false,23,1,creates ip address policy
+      escapeXml,function,"(value: string) -> string",66-73,false,8,1,escape xml
+  src/auth/certificate-generator.ts:
+    functions[10]{name,kind,sig,loc,async,lines,cc,does}:
+      DefaultCertificateGenerator.generateSelfSignedCertificate,method,"(options: CertificateGenerationOptions) -> Promise<GeneratedCertificate>",33-97,true,65,1,creates self signed certificate
+      DefaultCertificateGenerator.exportToPKCS12,method,"(certificate: GeneratedCertificate, password: string) -> Promise<ArrayBuffer>",99-107,true,9,1,export to pkcs12
+      DefaultCertificateGenerator.exportToPEM,method,"(certificate: GeneratedCertificate) -> Promise<{ certificate: string; privateKey: string }>",109-116,true,8,1,export to pem
+      DefaultCertificateGenerator.generateKeyPair,method,"(algorithm: 'RSA' | 'ECDSA', keySize: number) -> Promise<CryptoKeyPair>",118-149,true,32,1,creates key pair
+      DefaultCertificateGenerator.buildSubject,method,"(options: CertificateGenerationOptions) -> string",151-163,false,13,1,creates subject
+      DefaultCertificateGenerator.generateSerialNumber,method,() -> string,165-170,false,6,1,creates serial number
+      DefaultCertificateGenerator.generateThumbprint,method,"(publicKey: CryptoKey) -> Promise<string>",172-186,true,15,1,creates thumbprint
+      DefaultCertificateGenerator.generatePEMCertificate,method,"(certificateInfo: CertificateInfo, keyPair: CryptoKeyPair) -> Promise<string>",188-224,true,37,1,creates pem certificate
+      DefaultCertificateGenerator.exportPrivateKeyToPEM,method,"(privateKey: CryptoKey) -> Promise<string>",226-245,true,20,1,export private key to pem
+      DefaultCertificateGenerator.generatePKCS12,method,"(certificateInfo: CertificateInfo, keyPair: CryptoKeyPair, password: string) -> Promise<ArrayBuffer>",247-280,true,34,1,creates pkcs12
+  src/auth/xades-signature-service.ts:
+    functions[5]{name,kind,sig,loc,async,lines,cc,does}:
+      signXmlWithXades,function,"(xml: string, certificatePem: string, privateKeyPem: string, privateKeyPassword?) -> Promise<string>",22-59,true,38,1,sign xml with xades
+      importPrivateKey,function,"(privateKeyPem: string, passphrase?) -> Promise<{ signingKey: CryptoKey; signAlgorithm: any }>",61-88,true,28,1,import private key
+      mapNamedCurve,function,"(namedCurve: string) -> EcKeyImportParams['namedCurve']",90-103,false,14,1,converts named curve
+      pemToArrayBuffer,function,"(pem: string) -> ArrayBuffer",105-112,false,8,1,pem to array buffer
+      pemToDerBytes,function,"(pem: string) -> Uint8Array",114-116,false,3,1,pem to der bytes
+  src/auth/authenticator.ts:
+    functions[21]{name,kind,sig,loc,async,lines,cc,does}:
+      DefaultAuthenticator.constructor,method,"(httpClient: HttpClient, certificateManager: CertificateManager) -> None",27-30,false,4,1,constructor
+      DefaultAuthenticator.authenticate,method,"(config: AuthConfig) -> Promise<AuthResult>",32-72,true,41,1,validates
+      DefaultAuthenticator.refreshToken,method,"(refreshToken: string) -> Promise<AccessTokenResponse>",74-98,true,25,1,refresh token
+      DefaultAuthenticator.revokeToken,method,"(token: string) -> Promise<void>",100-115,true,16,1,revoke token
+      DefaultAuthenticator.authenticateLegacy,method,"(config: AuthConfig, certificateInfo: CertificateInfo) -> Promise<AuthResult>",117-138,true,22,1,validates legacy
+      DefaultAuthenticator.loadCertificate,method,"(config: AuthConfig) -> Promise<CertificateInfo>",140-157,true,18,1,retrieves certificate
+      DefaultAuthenticator.getAuthChallengeV2,method,() -> Promise<AuthChallenge>,159-176,true,18,1,retrieves auth challenge v2
+      DefaultAuthenticator.buildAndSignXadesRequest,method,"(config: AuthConfig, challenge: AuthChallenge) -> Promise<string>",178-212,true,35,1,creates and sign xades request
+      DefaultAuthenticator.maybeDumpSignedXml,method,"(xml: string) -> void",214-227,false,14,1,maybe dump signed xml
+      DefaultAuthenticator.submitXadesTokenRequest,method,"(signedXml: string, verifyCertificateChain) -> Promise<AuthenticationInitResponse>",229-257,true,29,1,submit xades token request
+      DefaultAuthenticator.checkAuthStatusV2,method,"(referenceNumber: string, authenticationToken: string) -> Promise<AuthenticationOperationStatusResponse>",259-297,true,39,1,checks auth status v2
+      DefaultAuthenticator.redeemTokensV2,method,"(authenticationToken: string) -> Promise<AccessTokenResponse>",299-331,true,33,1,redeem tokens v2
+      DefaultAuthenticator.mapAccessTokenResponse,method,"(tokenInfo: TokenInfo) -> AccessTokenResponse",333-342,false,10,1,converts access token response
+      DefaultAuthenticator.getAuthChallengeLegacy,method,() -> Promise<AuthChallenge>,344-361,true,18,1,retrieves auth challenge legacy
+      DefaultAuthenticator.getAuthChallenge,method,() -> Promise<AuthChallenge>,363-365,true,3,1,retrieves auth challenge
+      DefaultAuthenticator.signChallengeLegacy,method,"(challenge: AuthChallenge, algorithm: string) -> Promise<string>",367-380,true,14,1,sign challenge legacy
+      DefaultAuthenticator.submitTokenRequestLegacy,method,"(request: {\n    certificateThumbprint: string\n    signedChallenge: string\n    algorithm: string\n  }) -> Promise<{ sessionToken: string; referenceNumber: string; timestamp: string }>",382-408,true,27,1,submit token request legacy
+      DefaultAuthenticator.checkAuthStatusLegacy,method,"(referenceNumber: string) -> Promise<{ processingCode: number; processingDescription: string }>",410-440,true,31,1,checks auth status legacy
+      DefaultAuthenticator.redeemTokensLegacy,method,"(sessionToken: string) -> Promise<AccessTokenResponse>",442-461,true,20,1,redeem tokens legacy
+      DefaultAuthenticator.logAuthDebug,method,"(context: string, error: unknown) -> void",463-490,false,28,1,logs auth debug
+      DefaultAuthenticator.isDebugEnabled,method,() -> boolean,492-494,false,3,1,is debug enabled
+  src/crypto/ksef-crypto.ts:
+    functions[3]{name,kind,sig,loc,async,lines,cc,does}:
+      createEncryptionData,function,"(client: KsefClient) -> Promise<EncryptionData>",13-50,true,38,1,creates encryption data
+      encryptInvoiceXml,function,"(xml: string, symmetricKey: Buffer, iv: Buffer) -> {\n  invoiceHash: string\n  invoiceSize: number\n  encryptedInvoiceHash: string\n  encryptedInvoiceSize: number\n  encryptedInvoiceContent: string\n}",52-73,false,22,1,encrypt invoice xml
+      wrapPem,function,"(certificateBase64: string) -> string",75-78,false,4,1,wrap pem
+  src/invoice/xml-builder.ts:
+    functions[9]{name,kind,sig,loc,async,lines,cc,does}:
+      buildFa2XmlFromJson,function,"(input: Fa2InvoiceInput) -> string",112-248,false,137,1,creates fa2 xml from json
+      buildFa3XmlFromJson,function,"(input: Fa3InvoiceInput) -> string",250-433,false,184,1,creates fa3 xml from json
+      buildFa3XmlFromXsdJson,function,"(input: Fa3XsdInvoiceInput) -> string",435-450,false,16,1,creates fa3 xml from xsd json
+      normalizeBinaryFlag,function,"(value: string | number | undefined, label: string) -> string",452-461,false,10,1,normalize binary flag
+      escapeXml,function,"(value: string) -> string",463-470,false,8,1,escape xml
+      formatNumber,function,"(value: number) -> string",472-476,false,5,1,formats number
+      normalizeFaktura,function,"(faktura: XsdNode) -> XsdNode",478-525,false,48,1,normalize faktura
+      serializeNode,function,"(name: string, value: XsdValue, path: string) -> string",527-547,false,21,1,formats node
+      serializeChildren,function,"(node: XsdNode, parentPath: string) -> string",549-553,false,5,1,formats children
+  src/invoice/invoice-service.ts:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      DefaultInvoiceService.constructor,method,"(httpClient: HttpClient) -> None",23-23,false,1,1,constructor
+      DefaultInvoiceService.submitInvoice,method,"(sessionId: string, invoice: Invoice, validateOnly) -> Promise<InvoiceSubmissionResponse>",25-75,true,51,1,submit invoice
+      DefaultInvoiceService.validateInvoice,method,"(sessionId: string, invoice: Invoice) -> Promise<string[]>",77-87,true,11,1,validates invoice
+      DefaultInvoiceService.queryInvoices,method,"(filters: InvoiceQueryFilters) -> Promise<InvoiceQueryResponse>",89-108,true,20,1,retrieves invoices
+      DefaultInvoiceService.downloadInvoice,method,"(ksefReferenceNumber: string, format: 'xml' | 'pdf') -> Promise<InvoiceDownloadResponse>",110-137,true,28,1,download invoice
+      DefaultInvoiceService.getInvoiceStatus,method,"(ksefReferenceNumber: string) -> Promise<{ status: string; timestamp: string }>",139-160,true,22,1,retrieves invoice status
+      DefaultInvoiceService.validateInvoiceStructure,method,"(invoice: Invoice) -> Promise<void>",162-247,true,86,1,validates invoice structure
+  src/cli/commands/invoice.ts:
+    functions[22]{name,kind,sig,loc,async,lines,cc,does}:
+      createInvoiceCommand,function,"(context: CliContext) -> Command",10-86,false,77,1,creates invoice command
+      handleInvoiceSubmit,function,"(context: CliContext, sessionId: string | undefined, options: {\n    input?: string\n    stdin?: boolean\n    validateOnly?: boolean\n    waitStatus?: boolean\n    waitTimeout?: number\n    requireSuccess?: boolean\n    skipUpo?: boolean\n  }) -> Promise<CommandResult>",88-232,true,145,1,handles invoice submit
+      handleInvoiceValidate,function,"(context: CliContext, sessionId: string | undefined, options: {\n    input?: string\n    stdin?: boolean\n  }) -> Promise<CommandResult>",234-249,true,16,1,handles invoice validate
+      handleInvoiceQuery,function,"(context: CliContext, options: {\n    from?: string\n    to?: string\n    nip?: string\n    number?: string\n    ksefRef?: string\n    subjectType?: string\n    dateType?: string\n    pageSize?: number\n    pageOffset?: number\n  }) -> Promise<CommandResult>",251-323,true,73,1,handles invoice query
+      handleInvoiceDownload,function,"(context: CliContext, ksefReferenceNumber: string, options: {\n    format: string\n    output?: string\n  }) -> Promise<CommandResult>",325-346,true,22,1,handles invoice download
+      handleInvoiceStatus,function,"(context: CliContext, invoiceReferenceNumber: string | undefined, options: {\n    sessionId?: string\n    ksefNumber?: string\n    subjectType?: string\n    dateType?: string\n    from?: string\n    to?: string\n  }) -> Promise<CommandResult>",348-435,true,88,1,handles invoice status
+      downloadInvoiceUpo,function,"(referenceNumber: string, status: any) -> Promise<string | undefined>",437-455,true,19,1,download invoice upo
+      readFromStdin,function,() -> Promise<string>,457-478,true,22,1,retrieves from stdin
+      readFromFile,function,"(filePath: string) -> Promise<string>",480-482,true,3,1,retrieves from file
+      loadInvoiceXmlPayloads,function,"(options: { input?: string; stdin?: boolean }) -> Promise<Array<{ xml: string; schema: string | null }>>",484-527,true,44,1,retrieves invoice xml payloads
+      resolveInvoicePayload,function,"(input: {\n  invoiceXml?: string\n  xmlPath?: string\n  placeholders?: Record<string, string>\n  schema?: string\n  type?: string\n  formCode?: { systemCode?: string }\n  Faktura?: unknown\n  seller?: {\n    nip: string\n    name: string\n    addressL1: string\n    addressL2: string\n    email?: string\n    phone?: string\n  }\n  buyer?: {\n    nip: string\n    name: string\n    addressL1: string\n    addressL2: string\n    email?: string\n    phone?: string\n    clientNumber?: string\n  }\n  header?: {\n    invoiceNumber: string\n    issueDate: string\n    saleDate: string\n    place?: string\n    currency?: string\n    systemInfo?: string\n    annotations?: {\n      P_16?: string\n      P_17?: string\n      P_18?: string\n      P_18A?: string\n      Zwolnienie?: { P_19N?: string }\n      NoweSrodkiTransportu?: { P_22N?: string }\n      P_23?: string\n      PMarzy?: { P_PMarzyN?: string }\n    }\n  }\n  lines?: Array<{\n    name: string\n    unit?: string\n    quantity: number\n    unitPrice: number\n    vatRatePercent: number\n  }>\n}) -> Promise<{ xml: string; schema: string | null }>",529-617,true,89,1,resolve invoice payload
+      hasInvoiceJsonShape,function,"(input: {\n  header?: unknown\n  seller?: unknown\n  buyer?: unknown\n  lines?: unknown\n}) -> boolean",619-626,false,8,1,has invoice json shape
+      isFa2JsonInvoice,function,"(input: {\n  schema?: string\n  type?: string\n  formCode?: { systemCode?: string }\n  header?: unknown\n  seller?: unknown\n  buyer?: unknown\n  lines?: unknown\n}) -> boolean",628-645,false,18,1,is fa2 json invoice
+      isFa3JsonInvoice,function,"(input: {\n  schema?: string\n  type?: string\n  formCode?: { systemCode?: string }\n  header?: unknown\n  seller?: unknown\n  buyer?: unknown\n  lines?: unknown\n}) -> boolean",647-664,false,18,1,is fa3 json invoice
+      isFa3XsdJsonInvoice,function,"(input: { Faktura?: unknown }) -> boolean",666-669,false,4,1,is fa3 xsd json invoice
+      toIsoDateTime,function,"(input?, boundary: 'start' | 'end') -> string",671-689,false,19,1,converts iso date time
+      tryGetInvoiceStatus,function,"(client: KsefClient, sessionId: string, invoiceReferenceNumber: string) -> Promise<any | null>",691-704,true,14,1,try get invoice status
+      waitForInvoiceStatus,function,"(client: KsefClient, sessionId: string, invoiceReferenceNumber: string, timeoutSeconds: number) -> Promise<any | null>",706-726,true,21,1,wait for invoice status
+      formatInvoiceStatusError,function,"(referenceNumber: string, status: any) -> string",728-734,false,7,1,formats invoice status error
+      formatHttpError,function,"(error: unknown) -> string",736-744,false,9,1,formats http error
+      createKsefClient,function,"(context: CliContext) -> Promise<KsefClient>",746-759,true,14,1,creates ksef client
+      outputResult,function,"(context: CliContext, result: CommandResult) -> Promise<void>",761-799,true,39,1,logs result
+  src/cli/commands/auth.ts:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      createAuthCommand,function,"(context: CliContext) -> Command",9-106,false,98,1,creates auth command
+      handleAuthChallenge,function,"(context: CliContext, options: { save?: boolean }) -> Promise<CommandResult>",108-122,true,15,1,handles auth challenge
+      handleAuthTest,function,"(context: CliContext, options: {\n    certificate: string\n    password?: string\n    certFormat?: string\n    format?: string\n    privateKey?: string\n    nip?: string\n    verifyChain?: boolean\n  }) -> Promise<CommandResult>",124-161,true,38,1,handles auth test
+      handleAuthLogin,function,"(context: CliContext, options: {\n    certificate: string\n    password?: string\n    certFormat?: string\n    format?: string\n    privateKey?: string\n    nip?: string\n    verifyChain?: boolean\n  }) -> Promise<CommandResult>",163-213,true,51,1,handles auth login
+      buildAuthConfigFromOptions,function,"(options: {\n  certificate: string\n  password?: string\n  certFormat?: string\n  format?: string\n  privateKey?: string\n  nip?: string\n  verifyChain?: boolean\n}) -> AuthConfig",215-257,false,43,1,creates auth config from options
+      handleAuthStatus,function,"(context: CliContext, referenceNumber?) -> Promise<CommandResult>",259-300,true,42,1,handles auth status
+      handleGenerateCertificate,function,"(context: CliContext, options: {\n    commonName: string\n    organization?: string | undefined\n    organizationalUnit?: string | undefined\n    locality?: string | undefined\n    state?: string | undefined\n    country: string\n    email?: string | undefined\n    validDays: number\n    keySize: number\n    algorithm: string\n    password?: string | undefined\n    format: string\n    outputCert?: string | undefined\n    outputKey?: string | undefined\n    outputP12?: string | undefined\n  }) -> Promise<CommandResult>",302-423,true,122,1,handles generate certificate
+      handleAuthWhoami,function,"(context: CliContext, options: { validate?: boolean }) -> Promise<CommandResult>",425-473,true,49,1,handles auth whoami
+      handleAuthLogout,function,"(context: CliContext) -> Promise<CommandResult>",475-492,true,18,1,handles auth logout
+      createKsefClient,function,"(context: CliContext) -> Promise<KsefClient>",494-507,true,14,1,creates ksef client
+      outputResult,function,"(context: CliContext, result: CommandResult) -> Promise<void>",509-534,true,26,1,logs result
+      decodeJwtPayload,function,"(token: string) -> Record<string, unknown> | null",536-555,false,20,1,parses jwt payload
+  src/cli/commands/session.ts:
+    functions[14]{name,kind,sig,loc,async,lines,cc,does}:
+      createSessionCommand,function,"(context: CliContext) -> Command",10-79,false,70,1,creates session command
+      handleSessionOpen,function,"(context: CliContext, type: string, options: {\n    nip: string\n    description?: string\n    timeout?: number\n    maxParts?: number\n    schema?: string\n  }) -> Promise<CommandResult>",81-194,true,114,1,handles session open
+      handleSessionClose,function,"(context: CliContext, sessionId: string | undefined, options: { upo?: boolean; all?: boolean; upoOutput?: string }) -> Promise<CommandResult>",196-245,true,50,1,handles session close
+      closeAllSessions,function,"(context: CliContext) -> Promise<CommandResult>",247-274,true,28,1,stops all sessions
+      listActiveSessionIds,function,"(client: KsefClient, sessionType: 'Online' | 'Batch') -> Promise<string[]>",276-292,true,17,1,list active session ids
+      closeSessionById,function,"(client: KsefClient, sessionId: string, generateUpo: boolean) -> Promise<void>",294-309,true,16,1,stops session by id
+      handleSessionStatus,function,"(context: CliContext, sessionId: string) -> Promise<CommandResult>",311-371,true,61,1,handles session status
+      handleSessionList,function,"(context: CliContext, options: { all?: boolean }) -> Promise<CommandResult>",373-419,true,47,1,handles session list
+      handleSessionUpo,function,"(context: CliContext, sessionId: string | undefined, options: { output?: string }) -> Promise<CommandResult>",421-446,true,26,1,handles session upo
+      downloadSessionUpo,function,"(context: CliContext, sessionId: string, outputOverride?) -> Promise<{ output: string; upoReferenceNumber: string }>",448-495,true,48,1,download session upo
+      delay,function,"(ms: number) -> Promise<void>",497-499,false,3,1,delay
+      handleSessionInvoiceStatus,function,"(context: CliContext, sessionId: string, invoiceReferenceNumber: string) -> Promise<CommandResult>",501-531,true,31,1,handles session invoice status
+      createKsefClient,function,"(context: CliContext) -> Promise<KsefClient>",533-546,true,14,1,creates ksef client
+      outputResult,function,"(context: CliContext, result: CommandResult) -> Promise<void>",548-573,true,26,1,logs result

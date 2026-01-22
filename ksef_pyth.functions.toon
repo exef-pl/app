@@ -1,0 +1,185 @@
+project: ksef_pyth
+generated: "2026-01-22T07:16:46.520040"
+modules[15]{path,lang,items}:
+  ksef/__init__.py,python,0
+  sample/test.py,python,17
+  tests/test_mix.py,python,12
+  tests/__init__.py,python,0
+  tests/konwdokument.py,python,4
+  tests/testsuite/test1.py,python,41
+  tests/testsuite/__init__.py,python,0
+  tests/testabstract/testabstract.py,python,22
+  ksef/pattern/__init__.py,python,0
+  ksef/sdk/authksef.py,python,8
+  ksef/sdk/__init__.py,python,0
+  ksef/sdk/encrypt.py,python,12
+  ksef/sdk/ksefsdk.py,python,21
+  ksef/sdk/httphook.py,python,7
+  ksef/sdk/xades_sign.py,python,1
+
+function_details:
+  sample/test.py:
+    functions[17]{name,kind,sig,loc,async,lines,cc,does}:
+      KS,function,() -> KSEFSDK,10-11,false,2,1,ks
+      KS_NABYWCA,function,() -> KSEFSDK,14-15,false,2,1,ks nabywca
+      _today,function,() -> None,18-19,false,2,1,today
+      gen_numer_faktry,function,() -> None,22-25,false,4,1,gen numer faktry
+      test1,function,() -> None,28-33,false,6,1,test1
+      _send_invoice_K,function,"(K:KSEFSDK, path:str, action:Any=None) -> None",36-47,false,12,2,sends invoice k
+      _send_invoice,function,"(path, action:Any=None) -> None",50-52,false,3,1,sends invoice
+      test2,function,() -> None,55-58,false,4,1,test2
+      _prepare_invoice,function,"(patt:str='FA_3_Przykład_9_sprzedaz_pattern.xml') -> None",61-71,false,11,1,prepare invoice
+      test3,function,() -> None,74-75,false,2,1,test3
+      test4,function,() -> None,78-82,false,5,1,test4
+      test5,function,() -> None,85-97,false,13,1,test5
+      test6,function,() -> None,100-107,false,8,1,test6
+      test7,function,() -> None,110-115,false,6,1,test7
+      test8,function,() -> None,118-123,false,6,1,test8
+      test9,function,() -> None,126-130,false,5,1,test9
+      test10,function,() -> None,133-138,false,6,1,test10
+  tests/test_mix.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      _load_pfx,function,"(file_path, password) -> None",21-27,false,7,1,retrieves pfx
+      def_logger,function,() -> None,30-31,false,2,1,def logger
+      testdatadir,function,"(filexml:str) -> str",34-36,false,3,1,testdatadir
+      workdatadir,function,"(filexml:str) -> str",39-43,false,5,2,workdatadir
+      KS,function,() -> None,46-48,false,3,1,ks
+      KSNABYWCA,function,() -> None,51-53,false,3,1,ksnabywca
+      _toiso,function,"(date:Any) -> str",55-56,false,2,1,toiso
+      today,function,() -> None,58-59,false,2,1,today
+      gen_numer_faktry,function,() -> None,62-65,false,4,1,gen numer faktry
+      read_cert,function,"() -> tuple[bytes, bytes]",68-72,false,5,1,retrieves cert
+      KS_CERT,function,() -> None,75-78,false,4,1,ks cert
+      daj_przedzial_dat,function,"() -> tuple[str,str]",80-83,false,4,1,daj przedzial dat
+  tests/konwdokument.py:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      _worktempdir,function,() -> str,9-13,false,5,1,Zwraca ścieżkę do katalogu tymczasowego SDK KSeF.
+      _patterndir,function,"(patt:str) -> str",16-19,false,4,1,Zwraca ścieżkę do katalogu ze wzorcami dokumentów KSeF.
+      KONWDOKUMENT.zrob_dokument_xml,method,"(zmienne:dict) -> str",31-36,false,6,1,Generuje XML dokumentu KSeF na podstawie słownika zmienn.
+      KONWDOKUMENT.konwertuj,method,"(sou:str, dest:str, zmienne:dict) -> None",39-40,false,2,1,konwertuj
+  tests/testsuite/test1.py:
+    functions[41]{name,kind,sig,loc,async,lines,cc,does}:
+      TestAuthToken.setUpClass,method,() -> None,26-28,false,3,1,updates up class
+      TestAuthToken.tearDownClass,method,() -> None,32-33,false,2,1,tear down class
+      TestAuthCert.setUpClass,method,() -> None,43-45,false,3,1,updates up class
+      TestAuthCert.tearDownClass,method,() -> None,49-50,false,2,1,tear down class
+      TestTokenOnLine.test_init_and_terminate,method,() -> None,55-56,false,2,1,checks init and terminate
+      TestTokenOnLine.test_start_and_close_online,method,() -> None,58-59,false,2,1,checks start and close online
+      TestTokenOnLine.test_send_incorrect_invoice,method,() -> None,61-62,false,2,1,checks send incorrect invoice
+      TestTokenOnLine.test_konwertuj_plik,method,() -> None,64-65,false,2,1,checks konwertuj plik
+      TestTokenOnLine.test_wyslij_do_ksef,method,() -> None,67-68,false,2,1,checks wyslij do ksef
+      TestTokenOnLine.test_wyslij_do_ksef_i_wez_upo,method,() -> None,70-71,false,2,1,checks wyslij do ksef i wez upo
+      TestTokenOnLine.test_pobierz_fakture_o_zlym_formacie_numeru,method,() -> None,73-74,false,2,1,checks pobierz fakture o zlym formacie numeru
+      TestTokenOnLine.test_pobierz_fakture_o_nieistniejacym_numerze,method,() -> None,76-77,false,2,1,checks pobierz fakture o nieistniejacym numerze
+      TestTokenOnLine.test_pobierz_istniejaca_fakture,method,() -> None,79-80,false,2,1,checks pobierz istniejaca fakture
+      TestTokenOnLine.test_wyslij_fakture_blad_zalacznik,method,() -> None,82-83,false,2,1,checks wyslij fakture blad zalacznik
+      TestTokenOnLine.test_wyslij_fakture_zakupowa_i_pobierz_metadane,method,() -> None,85-86,false,2,1,checks wyslij fakture zakupowa i pobierz metadane
+      TestTokenOnLine.test_pobierz_metadane_i_fakture_zakupowa,method,() -> None,88-89,false,2,1,checks pobierz metadane i fakture zakupowa
+      TestTokenOnLine.test_niepoprawny_token_dla_nip,method,() -> None,91-92,false,2,1,checks niepoprawny token dla nip
+      TestTokenOnLine.test_niepoprawny_nip,method,() -> None,94-95,false,2,1,checks niepoprawny nip
+      TestCertfOnLine.test_init_and_terminate,method,() -> None,100-101,false,2,1,checks init and terminate
+      TestCertfOnLine.test_start_and_close_online,method,() -> None,103-104,false,2,1,checks start and close online
+      TestCertfOnLine.test_send_incorrect_invoice,method,() -> None,106-107,false,2,1,checks send incorrect invoice
+      TestCertfOnLine.test_konwertuj_plik,method,() -> None,109-110,false,2,1,checks konwertuj plik
+      TestCertfOnLine.test_wyslij_do_ksef,method,() -> None,112-113,false,2,1,checks wyslij do ksef
+      TestCertfOnLine.test_wyslij_do_ksef_i_wez_upo,method,() -> None,115-116,false,2,1,checks wyslij do ksef i wez upo
+      TestCertfOnLine.test_pobierz_fakture_o_zlym_formacie_numeru,method,() -> None,118-119,false,2,1,checks pobierz fakture o zlym formacie numeru
+      TestCertfOnLine.test_pobierz_fakture_o_nieistniejacym_numerze,method,() -> None,121-122,false,2,1,checks pobierz fakture o nieistniejacym numerze
+      TestCertfOnLine.test_pobierz_istniejaca_fakture,method,() -> None,124-125,false,2,1,checks pobierz istniejaca fakture
+      TestCertfOnLine.test_wyslij_fakture_blad_zalacznik,method,() -> None,127-128,false,2,1,checks wyslij fakture blad zalacznik
+      TestCertfOnLine.test_wyslij_fakture_zakupowa_i_pobierz_metadane,method,() -> None,130-131,false,2,1,checks wyslij fakture zakupowa i pobierz metadane
+      TestCertfOnLine.test_pobierz_metadane_i_fakture_zakupowa,method,() -> None,133-134,false,2,1,checks pobierz metadane i fakture zakupowa
+      TestCertfOnLine.test_niepoprawny_token_dla_nip,method,() -> None,136-137,false,2,1,checks niepoprawny token dla nip
+      TestCertfOnLine.test_niepoprawny_nip,method,() -> None,139-140,false,2,1,checks niepoprawny nip
+      TestKsefBatch._zip_b,method,"(b:str, b1:Optional[str]=None) -> None",150-160,false,11,2,zip b
+      TestKsefBatch._wyslij_batch,method,"(payload:list[bytes]) -> None",162-170,false,9,2,wyslij batch
+      TestKsefBatch.test_zla_kompresja,method,() -> None,176-181,false,6,1,checks zla kompresja
+      TestKsefBatch.test_błędna_faktura,method,() -> None,183-195,false,13,1,checks błędna faktura
+      TestKsefBatch.test_proba_wyslania,method,() -> None,197-207,false,11,1,checks proba wyslania
+      TestKsefBatch.test_wyslij_fakture_sprzedazy,method,() -> None,209-220,false,12,1,checks wyslij fakture sprzedazy
+      TestKsefBatch.test_wyslij_fakture_sprzedazy_wez_upo,method,() -> None,222-231,false,10,1,checks wyslij fakture sprzedazy wez upo
+      TestKsefBatch.test_wyslij_dwie_faktury,method,() -> None,233-248,false,16,1,checks wyslij dwie faktury
+      TestKsefBatch.test_wyslij_fakture_poprawna_i_niepoprawna,method,() -> None,250-265,false,16,1,checks wyslij fakture poprawna i niepoprawna
+  tests/testabstract/testabstract.py:
+    functions[22]{name,kind,sig,loc,async,lines,cc,does}:
+      AbstractTestCase.tearDownClass,method,() -> None,23-24,false,2,1,tear down class
+      TestAuthToken.setUpClass,method,() -> None,34-36,false,3,1,updates up class
+      TestAuthToken.tearDownClass,method,() -> None,40-41,false,2,1,tear down class
+      TestKsefMixim._konw_invoice,method,"(patt:str) -> tuple[str, str]",49-60,false,12,1,konw invoice
+      TestKsefMixim._prepare_invoice,method,"(patt:str='FA_3_Przykład_9_sprzedaz_pattern.xml') -> tuple[str, str]",62-69,false,8,1,prepare invoice
+      TestKsefMixim._wez_fakture,method,"(ksef_number, invoice_n) -> None",71-83,false,13,3,wez fakture
+      AbstractTestKsefOnLine._wyslij_ksef_K,method,"(K:KSEFSDK, invoice:str, action:Any=None) -> tuple[bool, str, str]",92-99,false,8,2,wyslij ksef k
+      AbstractTestKsefOnLine._wyslij_ksef,method,"(invoice:str, action:Any=None) -> tuple[bool, str, str]",101-102,false,2,1,wyslij ksef
+      AbstractTestKsefOnLine._test_init_and_terminate,method,() -> None,108-109,false,2,1,checks init and terminate
+      AbstractTestKsefOnLine._test_start_and_close_online,method,() -> None,111-113,false,3,1,checks start and close online
+      AbstractTestKsefOnLine._test_send_incorrect_invoice,method,() -> None,115-125,false,11,1,checks send incorrect invoice
+      AbstractTestKsefOnLine._test_konwertuj_plik,method,() -> None,127-128,false,2,1,checks konwertuj plik
+      AbstractTestKsefOnLine._test_wyslij_do_ksef,method,() -> None,130-137,false,8,1,checks wyslij do ksef
+      AbstractTestKsefOnLine._test_wyslij_do_ksef_i_wez_upo,method,() -> None,139-153,false,15,1,checks wyslij do ksef i wez upo
+      AbstractTestKsefOnLine._test_pobierz_fakture_o_zlym_formacie_numeru,method,() -> None,155-159,false,5,1,checks pobierz fakture o zlym formacie numeru
+      AbstractTestKsefOnLine._test_pobierz_fakture_o_nieistniejacym_numerze,method,() -> None,161-166,false,6,1,checks pobierz fakture o nieistniejacym numerze
+      AbstractTestKsefOnLine._test_pobierz_istniejaca_fakture,method,() -> None,168-173,false,6,1,checks pobierz istniejaca fakture
+      AbstractTestKsefOnLine._test_wyslij_fakture_blad_zalacznik,method,() -> None,175-183,false,9,1,checks wyslij fakture blad zalacznik
+      AbstractTestKsefOnLine._test_wyslij_fakture_zakupowa_i_pobierz_metadane,method,() -> None,185-194,false,10,1,checks wyslij fakture zakupowa i pobierz metadane
+      AbstractTestKsefOnLine._test_pobierz_metadane_i_fakture_zakupowa,method,() -> None,196-209,false,14,1,checks pobierz metadane i fakture zakupowa
+      AbstractTestKsefOnLine._test_niepoprawny_token_dla_nip,method,() -> None,211-213,false,3,1,checks niepoprawny token dla nip
+      AbstractTestKsefOnLine._test_niepoprawny_nip,method,() -> None,215-217,false,3,1,checks niepoprawny nip
+  ksef/sdk/authksef.py:
+    functions[8]{name,kind,sig,loc,async,lines,cc,does}:
+      _daj_request_auth,function,"(nip:str, challenge:str) -> bytes",52-66,false,15,1,daj request auth
+      ABSTRACTTOKEN.set_params,method,"(timestamp, kseftoken_certificate) -> None",13-14,false,2,1,updates params
+      ABSTRACTTOKEN.auth_ksef,method,"(H:HOOKHTTP, nip:str, challenge:str) -> tuple[str, str]",16-17,false,2,1,auth ksef
+      AUTHTOKEN.__init__,method,"(token:str) -> None",22-24,false,3,1,creates
+      AUTHTOKEN.set_params,method,"(timestamp:str, kseftoken_certificate:str) -> None",26-28,false,3,1,updates params
+      AUTHTOKEN.auth_ksef,method,"(H:HOOKHTTP, nip:str, challenge:str) -> tuple[str, str]",30-49,false,20,1,auth ksef
+      AUTHCERT.__init__,method,"(p12pk:bytes, p12pc:bytes) -> None",70-73,false,4,1,creates
+      AUTHCERT.auth_ksef,method,"(H:HOOKHTTP, nip:str, challenge:str) -> tuple[str, str]",75-85,false,11,1,auth ksef
+  ksef/sdk/encrypt.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      _encode,function,"(s:str) -> bytes",16-17,false,2,1,formats
+      to_base64,function,"(b:bytes) -> str",20-21,false,2,1,converts base64
+      _public_key,function,"(public_certificate:str) -> None",24-29,false,6,1,public key
+      _encrypt_public_key,function,"(public_certificate:str, to_encrypt:bytes) -> bytes",32-42,false,11,1,encrypt public key
+      encrypt_token,function,"(kseftoken:str, timestamp:str, public_certificate:str) -> str",45-51,false,7,1,encrypt token
+      get_key_and_iv,function,"() -> tuple[bytes, bytes]",54-57,false,4,1,retrieves key and iv
+      encrypt_symmetric_key,function,"(symmetricy_key:bytes, public_certificate:str) -> bytes",60-63,false,4,1,encrypt symmetric key
+      _pad,function,"(data:bytes) -> bytes",66-69,false,4,1,pad
+      _daj_cipher_encryptor,function,"(symmetric_key:bytes, iv:bytes) -> base.CipherContext",72-79,false,8,1,daj cipher encryptor
+      encrypt_invoice,function,"(symmetric_key:bytes, iv:bytes, invoice:str) -> tuple[int, bytes]",82-87,false,6,1,encrypt invoice
+      calculate_hash,function,"(data:Any) -> str",90-93,false,4,2,processes hash
+      encrypt_padding,function,"(symmetric_key:bytes, iv:bytes, b:bytes) -> bytes",96-103,false,8,1,encrypt padding
+  ksef/sdk/ksefsdk.py:
+    functions[21]{name,kind,sig,loc,async,lines,cc,does}:
+      _getlogger,function,() -> None,20-22,false,3,1,getlogger
+      _l,function,"(info:str) -> None",28-29,false,2,1,l
+      KSEFSDK._verify_environment,method,"(env:int) -> None",48-51,false,4,2,validates environment
+      KSEFSDK.initsdk,method,"(env:int, nip:str, token:str) -> None",54-57,false,4,1,initsdk
+      KSEFSDK.initsdkcert,method,"(env:int, nip:str, p12pk:bytes, p12pc:bytes) -> None",60-63,false,4,1,initsdkcert
+      KSEFSDK.__init__,method,"(url:str, nip:str, A:ABSTRACTTOKEN) -> None",69-83,false,15,1,creates
+      KSEFSDK._get_challengeandtimestamp,method,"() -> tuple[str, str]",85-87,false,3,1,retrieves challengeandtimestamp
+      KSEFSDK._get_public_certificate,method,"() -> tuple[str, str]",89-96,false,8,5,retrieves public certificate
+      KSEFSDK._session_status,method,() -> None,98-116,false,19,4,session status
+      KSEFSDK._redeem_token,method,"() -> tuple[str, str]",118-123,false,6,1,redeem token
+      KSEFSDK.session_terminate,method,() -> None,125-127,false,3,1,session terminate
+      KSEFSDK.close_session,method,() -> None,129-131,false,3,1,stops session
+      KSEFSDK._prepare_session_data,method,() -> dict,133-149,false,17,1,prepare session data
+      KSEFSDK.start_session,method,() -> None,151-154,false,4,1,starts session
+      KSEFSDK._daj_description,method,"(status:dict) -> str",157-162,false,6,2,daj description
+      KSEFSDK._invoice_status,method,"(end_point:Optional[str]=None) -> tuple[bool, str, str]",164-189,false,26,8,invoice status
+      KSEFSDK.send_invoice,method,"(invoice:str) -> tuple[bool, str, str]",191-207,false,17,1,sends invoice
+      KSEFSDK.pobierz_upo,method,"(invoicereferencenumber:Optional[str]=None) -> str",209-214,false,6,2,pobierz upo
+      KSEFSDK.get_invoice,method,"(ksef_number:str) -> str",216-220,false,5,1,retrieves invoice
+      KSEFSDK.get_invoices_zakupowe_metadata,method,"(date_from:str, date_to:str) -> list[dict]",222-237,false,16,2,retrieves invoices zakupowe metadata
+      KSEFSDK.send_batch_session_bytes,method,"(payload:Iterator[bytes], wez_upo:Optional[Callable]=None) -> tuple[bool, str, list[INVOICES]]",239-326,false,88,6,sends batch session bytes
+  ksef/sdk/httphook.py:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      _getlogger,function,() -> None,8-10,false,3,1,getlogger
+      _l,function,"(info:str) -> None",16-17,false,2,1,l
+      HOOKHTTP.__init__,method,"(base_url:str) -> None",32-35,false,4,1,creates
+      HOOKHTTP.set_tokes,method,"(access_token:str, authentication_token:str) -> None",37-39,false,3,1,updates tokes
+      HOOKHTTP._construct_url,method,"(endpoint:str) -> str",41-42,false,2,1,construct url
+      HOOKHTTP.hook_response,method,"(endpoint:str, method:int=_METHODPOST, body:Optional[dict]=None, bearer:int=_BEARERACCESS, xml_data:Optional[bytes]=None, requestmethod:Optional[str]=None, data:Optional[bytes]=None) -> requests.Response",44-102,false,59,13,registers response
+      HOOKHTTP.hook,method,"(endpoint:str, method:int=_METHODPOST, body:Any=None, bearer:int=_BEARERACCESS) -> dict",104-108,false,5,2,registers
+  ksef/sdk/xades_sign.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      sign_xades,function,"(auth_xml:bytes, p12pk:bytes, p12pc:bytes) -> bytes",15-93,false,79,8,sign xades

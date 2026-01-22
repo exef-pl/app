@@ -1,0 +1,12 @@
+project: ksef-import
+generated: "2026-01-22T07:16:28.360325"
+modules[1]{path,lang,items}:
+  app.js,javascript,4
+
+function_details:
+  app.js:
+    functions[4]{name,kind,sig,loc,async,lines,cc,does}:
+      checkExportStatus,function,() -> None,106-144,true,39,1,checks export status
+      updateStatus,function,"(title, message) -> None",150-153,false,4,1,updates status
+      showSuccess,function,(filesCount) -> None,159-191,false,33,1,show success
+      showError,function,(data) -> None,197-269,false,73,1,show error
