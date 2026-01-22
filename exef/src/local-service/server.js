@@ -13,12 +13,71 @@ const { createStore } = require('../core/draftStore')
 const { EXPORT_FORMATS } = require('../core/exportService')
 
 const app = express()
-app.use(helmet({ contentSecurityPolicy: false }))
+app.use(helmet({ 
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      connectSrc: ["'self'", "http://127.0.0.1:*", "http://localhost:*", "ws://127.0.0.1:*", "ws://localhost:*"],
+      imgSrc: ["'self'", "data:", "http:", "https:"],
+      fontSrc: ["'self'", "data:", "http:", "https:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false
+}))
+
+// Override CSP for static files to allow inline scripts
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path === '/') {
+    res.setHeader('Content-Security-Policy', 
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline'; " +
+      "style-src 'self' 'unsafe-inline'; " +
+      "connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; " +
+      "img-src 'self' data: http: https:; " +
+      "font-src 'self' data: http: https:; " +
+      "object-src 'none'; " +
+      "media-src 'self'; " +
+      "frame-src 'none'"
+    );
+  }
+  next();
+});
+
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
 app.use('/test', express.static(path.join(__dirname, '../../test/gui')))
-app.use('/', express.static(path.join(__dirname, '../desktop/renderer')))
+
+// Serve desktop renderer with CSP override
+app.use('/', (req, res, next) => {
+  if (req.path === '/' || req.path.endsWith('.html')) {
+    const filePath = path.join(__dirname, '../desktop/renderer', req.path === '/' ? 'index.html' : req.path);
+    if (fs.existsSync(filePath)) {
+      let content = fs.readFileSync(filePath, 'utf8');
+      // Remove CSP meta tag and let server handle it
+      content = content.replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi, '');
+      res.setHeader('Content-Security-Policy', 
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; " +
+        "img-src 'self' data: http: https:; " +
+        "font-src 'self' data: http: https:; " +
+        "object-src 'none'; " +
+        "media-src 'self'; " +
+        "frame-src 'none'"
+      );
+      res.send(content);
+      return;
+    }
+  }
+  next();
+}, express.static(path.join(__dirname, '../desktop/renderer')))
 
 const ksef = createKsefFacade({})
 
