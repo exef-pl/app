@@ -3,6 +3,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const os = require('node:os')
+const net = require('node:net')
 
 function resolveBaseUrl() {
   if (process.env.EXEF_TEST_URL) {
@@ -23,6 +24,241 @@ function resolveBaseUrl() {
 }
 
 const BASE_URL = resolveBaseUrl()
+
+async function testExportDocumentsZip() {
+  console.log('\n[TEST] POST /inbox/export/documents.zip (ZIP)')
+
+  const projectId = `PRJ-ZIP-${Date.now()}`
+  const expenseTypeId = `ET-ZIP-${Date.now()}`
+
+  const pRes = await fetch(`${BASE_URL}/projects`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: projectId, nazwa: 'Projekt ZIP', status: 'aktywny' }),
+  })
+  await pRes.json().catch(() => ({}))
+
+  const etRes = await fetch(`${BASE_URL}/expense-types`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: expenseTypeId, nazwa: 'Koszt ZIP', opis: '' }),
+  })
+  await etRes.json().catch(() => ({}))
+
+  const addRes = await fetch(`${BASE_URL}/inbox/invoices`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source: 'scanner',
+      file: 'data:image/png;base64,AA==',
+      metadata: {
+        fileName: 'zipdoc.png',
+        fileType: 'image/png',
+      },
+    }),
+  })
+  const addJson = await addRes.json().catch(() => ({}))
+  if (!addRes.ok || !addJson?.id) {
+    return false
+  }
+  const invoiceId = addJson.id
+
+  const assignProjRes = await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(invoiceId)}/assign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectId }),
+  })
+  if (!assignProjRes.ok) {
+    return false
+  }
+
+  const assignEtRes = await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(invoiceId)}/assign-expense-type`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expenseTypeId }),
+  })
+  if (!assignEtRes.ok) {
+    return false
+  }
+
+  const approveRes = await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(invoiceId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  })
+  if (!approveRes.ok) {
+    return false
+  }
+
+  const zipRes = await fetch(`${BASE_URL}/inbox/export/documents.zip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'approved', ids: [invoiceId] }),
+  })
+
+  console.log('  Zip status:', zipRes.status)
+  if (!zipRes.ok) {
+    const err = await zipRes.json().catch(() => ({}))
+    console.log('  Zip response:', JSON.stringify(err))
+    return false
+  }
+
+  const buf = Buffer.from(await zipRes.arrayBuffer())
+  if (buf.length < 4) {
+    console.log('  Zip too small')
+    return false
+  }
+  const sig = buf.slice(0, 2).toString('utf8')
+  if (sig !== 'PK') {
+    console.log('  Not a zip (signature):', sig)
+    return false
+  }
+
+  return true
+}
+
+function startSmtpMockServer() {
+  return new Promise((resolve, reject) => {
+    let lastMessage = null
+    let resolveMessage
+    const messagePromise = new Promise((r) => {
+      resolveMessage = r
+    })
+
+    const server = net.createServer((socket) => {
+      socket.setTimeout(15000)
+      socket.write('220 exef-smtp-mock\r\n')
+
+      let mode = 'cmd'
+      let buf = ''
+      let dataBuf = ''
+
+      const send = (line) => {
+        socket.write(`${line}\r\n`)
+      }
+
+      socket.on('data', (chunk) => {
+        buf += chunk.toString('utf8')
+
+        while (true) {
+          if (mode === 'data') {
+            const endIdx = buf.indexOf('\r\n.\r\n')
+            if (endIdx === -1) {
+              dataBuf += buf
+              buf = ''
+              break
+            }
+            dataBuf += buf.slice(0, endIdx)
+            buf = buf.slice(endIdx + 5)
+            lastMessage = dataBuf
+            dataBuf = ''
+            mode = 'cmd'
+            send('250 OK')
+            resolveMessage(lastMessage)
+            continue
+          }
+
+          const idx = buf.indexOf('\r\n')
+          if (idx === -1) {
+            break
+          }
+          const line = buf.slice(0, idx)
+          buf = buf.slice(idx + 2)
+
+          const upper = String(line || '').toUpperCase()
+          if (upper.startsWith('EHLO')) {
+            send('250-mock')
+            send('250 OK')
+          } else if (upper.startsWith('HELO')) {
+            send('250 OK')
+          } else if (upper.startsWith('MAIL FROM')) {
+            send('250 OK')
+          } else if (upper.startsWith('RCPT TO')) {
+            send('250 OK')
+          } else if (upper === 'DATA') {
+            mode = 'data'
+            send('354 End data with <CRLF>.<CRLF>')
+          } else if (upper === 'QUIT') {
+            send('221 Bye')
+            try {
+              socket.end()
+            } catch (_e) {
+            }
+          } else {
+            send('250 OK')
+          }
+        }
+      })
+    })
+
+    server.on('error', reject)
+    server.listen(0, '127.0.0.1', () => {
+      const addr = server.address()
+      const port = addr && typeof addr === 'object' ? addr.port : null
+      resolve({
+        port,
+        close: () => new Promise((r) => server.close(() => r())),
+        message: () => messagePromise,
+      })
+    })
+  })
+}
+
+async function testExportSendEmail() {
+  console.log('\n[TEST] POST /inbox/export/send-email (SMTP mock)')
+
+  const smtp = await startSmtpMockServer()
+  try {
+    const res = await fetch(`${BASE_URL}/inbox/export/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: 'dest@example.com',
+        from: 'sender@example.com',
+        subject: 'ExEF export test',
+        type: 'format',
+        format: 'kpir_csv',
+        smtp: {
+          host: '127.0.0.1',
+          port: smtp.port,
+          secure: false,
+          starttls: false,
+        },
+      }),
+    })
+
+    const json = await res.json().catch(() => ({}))
+    console.log('  Status:', res.status)
+    if (!res.ok) {
+      console.log('  Error:', JSON.stringify(json))
+      return false
+    }
+
+    const msg = await Promise.race([
+      smtp.message(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('smtp_message_timeout')), 5000)),
+    ])
+
+    if (!msg || typeof msg !== 'string') {
+      console.log('  No message captured')
+      return false
+    }
+
+    if (!msg.includes('Subject: ExEF export test')) {
+      console.log('  Subject missing')
+      return false
+    }
+
+    if (!msg.toLowerCase().includes('content-disposition: attachment')) {
+      console.log('  Attachment missing')
+      return false
+    }
+
+    return true
+  } finally {
+    await smtp.close().catch(() => {})
+  }
+}
 
 async function testExportFilesFiltering() {
   console.log('\n[TEST] POST /inbox/export/files (filtering)')
@@ -555,6 +791,35 @@ async function testExportCsv() {
   return res.ok
 }
 
+async function testExportKpirCsv() {
+  console.log('\n[TEST] POST /inbox/export (KPiR CSV)')
+  const res = await fetch(`${BASE_URL}/inbox/export`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format: 'kpir_csv' }),
+  })
+  const json = await res.json().catch(() => ({}))
+  console.log('  Status:', res.status)
+  if (!res.ok) {
+    console.log('  Error:', JSON.stringify(json))
+    return false
+  }
+
+  const content = String(json.content || '')
+  if (!content) {
+    console.log('  Empty content')
+    return false
+  }
+
+  const firstLine = content.split('\n')[0] || ''
+  if (!firstLine.includes('nr_ksef') || !firstLine.includes('nr_dowodu')) {
+    console.log('  Unexpected header:', firstLine)
+    return false
+  }
+
+  return true
+}
+
 async function testKsefEndpoints() {
   console.log('\n[TEST] POST /ksef/auth/token')
   const res = await fetch(`${BASE_URL}/ksef/auth/token`, {
@@ -709,9 +974,12 @@ async function runAllTests() {
     results.push({ name: 'process invoice', ok: await testProcessInvoice(jsonInvoiceId) })
     results.push({ name: 'approve invoice', ok: await testApproveInvoice(jsonInvoiceId) })
     results.push({ name: 'export CSV', ok: await testExportCsv() })
+    results.push({ name: 'export KPiR CSV', ok: await testExportKpirCsv() })
+    results.push({ name: 'export send email', ok: await testExportSendEmail() })
     results.push({ name: 'ksef auth', ok: await testKsefEndpoints() })
     results.push({ name: 'export files hierarchy', ok: await testExportFilesHierarchy() })
     results.push({ name: 'export files filtering', ok: await testExportFilesFiltering() })
+    results.push({ name: 'export documents zip', ok: await testExportDocumentsZip() })
   } catch (e) {
     console.error('\n[ERROR]', e.message)
   }

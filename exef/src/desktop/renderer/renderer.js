@@ -14,6 +14,19 @@ function setApiUrl(nextUrl) {
 
 setApiUrl(url);
 
+window.openInvoiceDetails = function(invoiceId, options = {}) {
+  try {
+    const out = openInvoicePreview(invoiceId);
+    Promise.resolve(out).catch((e) => {
+      showNotification('Błąd podglądu: ' + (e?.message || e), 'error');
+    });
+    return out;
+  } catch (e) {
+    showNotification('Błąd podglądu: ' + (e?.message || e), 'error');
+    return null;
+  }
+};
+
 async function fetchJsonWithTimeout(fullUrl, timeoutMs) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
@@ -404,7 +417,7 @@ async function syncUiFromUrl() {
 
 function setActivePage(nextPage, options = {}) {
   const syncUrl = options.syncUrl !== false;
-  const normalized = nextPage === 'accounts' || nextPage === 'projects' || nextPage === 'labels' || nextPage === 'settings' ? nextPage : 'inbox';
+  const normalized = nextPage === 'accounts' || nextPage === 'projects' || nextPage === 'labels' || nextPage === 'export' || nextPage === 'settings' ? nextPage : 'inbox';
   activePage = normalized;
 
   const pages = {
@@ -412,6 +425,7 @@ function setActivePage(nextPage, options = {}) {
     inbox: document.getElementById('pageInbox'),
     projects: document.getElementById('pageProjects'),
     labels: document.getElementById('pageLabels'),
+    export: document.getElementById('pageExport'),
     settings: document.getElementById('pageSettings'),
   };
 
@@ -443,6 +457,8 @@ function setActivePage(nextPage, options = {}) {
     renderAccountsPage();
   } else if (normalized === 'labels') {
     renderLabelsPage();
+  } else if (normalized === 'export') {
+    renderExportPage();
   } else if (normalized === 'settings') {
     renderSettingsPage();
   }
@@ -480,6 +496,170 @@ async function runAccountsFetchStorageState() {
   return data;
 }
 
+async function runAccountsSourcesStatus() {
+  const res = await fetch(`${url}/sources/status`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `sources_status_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function runAccountsEmailSync() {
+  const res = await fetch(`${url}/debug/email/sync`, { method: 'POST' });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `email_sync_failed_${res.status}`);
+  }
+  return data;
+}
+
+async function runAccountsScannerImport(scannerId) {
+  const res = await fetch(`${url}/debug/devices/scanners/${encodeURIComponent(scannerId)}/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `scanner_import_failed_${res.status}`);
+  }
+  return data;
+}
+
+function renderSourcesStatusHtml(status) {
+  const ksefAccounts = Array.isArray(status?.ksef?.accounts) ? status.ksef.accounts : [];
+  const storageConns = Array.isArray(status?.storage?.connections) ? status.storage.connections : [];
+  const localFolders = Array.isArray(status?.storage?.localFoldersStatus) ? status.storage.localFoldersStatus : [];
+  const emailAccounts = Array.isArray(status?.email?.accounts) ? status.email.accounts : [];
+  const scanners = Array.isArray(status?.devices?.scanners) ? status.devices.scanners : [];
+  const printers = Array.isArray(status?.devices?.printers) ? status.devices.printers : [];
+
+  const row = (title, value) => {
+    if (value === null || value === undefined || value === '') {
+      return '';
+    }
+    return `<div style="display:flex; gap:8px;"><div style="min-width:110px; color: var(--muted);">${escapeHtml(title)}</div><div><code>${escapeHtml(String(value))}</code></div></div>`;
+  };
+
+  const renderOk = (ok, error) => {
+    if (ok === true) {
+      return '<span class="status status-approved">OK</span>';
+    }
+    if (error) {
+      return `<span class="status status-rejected">Błąd</span> <span class="subtle">${escapeHtml(String(error))}</span>`;
+    }
+    return '<span class="status status-pending">?</span>';
+  };
+
+  const renderPending = (pending, total) => {
+    if (pending === null || pending === undefined) {
+      return total != null ? `${Number(total) || 0}` : '—';
+    }
+    const p = Number(pending) || 0;
+    const t = total != null ? (Number(total) || 0) : null;
+    return t == null ? `${p}` : `${p} / ${t}`;
+  };
+
+  return `
+    <div style="display:flex; gap:16px; flex-wrap:wrap;">
+      <div style="flex:1; min-width: 300px;">
+        <div style="font-weight:600; margin-bottom:8px;">Storage</div>
+        <div class="subtle" style="margin-bottom:8px;">Lokalne foldery</div>
+        ${localFolders.length ? localFolders.map((f) => {
+          return `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                <div style="font-weight:600;">${escapeHtml(String(f.path || ''))}</div>
+                <div>${renderOk(f.ok, f.error)}</div>
+              </div>
+              <div class="subtle" style="margin-top:6px;">Do pobrania: <b>${escapeHtml(renderPending(f.pending, f.total))}</b></div>
+            </div>
+          `;
+        }).join('') : '<div class="empty" style="padding: 12px;">Brak folderów</div>'}
+
+        <div class="subtle" style="margin:10px 0 8px;">Połączenia zdalne</div>
+        ${storageConns.length ? storageConns.map((c) => {
+          return `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                <div style="font-weight:600;">${escapeHtml(String(c.name || c.id || c.type || ''))}</div>
+                <div>${renderOk(c.ok, c.error)}</div>
+              </div>
+              <div class="subtle" style="margin-top:6px;">Typ: <code>${escapeHtml(String(c.type || ''))}</code></div>
+              <div class="subtle" style="margin-top:6px;">Do pobrania: <b>${escapeHtml(renderPending(c.pending, c.total))}</b></div>
+            </div>
+          `;
+        }).join('') : '<div class="empty" style="padding: 12px;">Brak połączeń</div>'}
+      </div>
+
+      <div style="flex:1; min-width: 300px;">
+        <div style="font-weight:600; margin-bottom:8px;">Email</div>
+        ${emailAccounts.length ? emailAccounts.map((a) => {
+          return `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                <div style="font-weight:600;">${escapeHtml(String(a.name || a.id || ''))}</div>
+                <div>${renderOk(a.ok, a.error)}</div>
+              </div>
+              <div class="subtle" style="margin-top:6px;">Provider: <code>${escapeHtml(String(a.provider || ''))}</code></div>
+              <div class="subtle" style="margin-top:6px;">Do pobrania: <b>${escapeHtml(renderPending(a.pending, a.total))}</b></div>
+              ${a.apiUrl ? `<div class="subtle" style="margin-top:6px;">API: <code>${escapeHtml(String(a.apiUrl))}</code></div>` : ''}
+              ${a.imapHost ? `<div class="subtle" style="margin-top:6px;">IMAP: <code>${escapeHtml(String(a.imapHost))}</code></div>` : ''}
+            </div>
+          `;
+        }).join('') : '<div class="empty" style="padding: 12px;">Brak kont</div>'}
+
+        <div style="font-weight:600; margin:14px 0 8px;">KSeF</div>
+        ${ksefAccounts.length ? ksefAccounts.map((a) => {
+          return `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                <div style="font-weight:600;">${escapeHtml(String(a.name || a.id || ''))}</div>
+                <div>${a.hasToken ? '<span class="status status-approved">token</span>' : '<span class="status status-pending">brak token</span>'}</div>
+              </div>
+              ${row('NIP', a.nip)}
+            </div>
+          `;
+        }).join('') : '<div class="empty" style="padding: 12px;">Brak kont</div>'}
+      </div>
+
+      <div style="flex:1; min-width: 300px;">
+        <div style="font-weight:600; margin-bottom:8px;">Urządzenia</div>
+        <div class="subtle" style="margin-bottom:8px;">Skanery</div>
+        ${scanners.length ? scanners.map((s) => {
+          return `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                <div style="font-weight:600;">${escapeHtml(String(s.name || s.id || ''))}</div>
+                <div>${renderOk(s.ok, s.error)}</div>
+              </div>
+              <div class="subtle" style="margin-top:6px;">Status: <code>${escapeHtml(String(s.status || ''))}</code></div>
+              <div class="subtle" style="margin-top:6px;">Do pobrania: <b>${escapeHtml(String(s.pending ?? 0))}</b></div>
+              <div class="form-actions" style="margin-top: 10px; flex-wrap: wrap;">
+                <button type="button" data-scanner-import="${escapeHtml(String(s.id || ''))}">Pobierz ze skanera</button>
+              </div>
+            </div>
+          `;
+        }).join('') : '<div class="empty" style="padding: 12px;">Brak skanerów</div>'}
+
+        <div class="subtle" style="margin:10px 0 8px;">Drukarki</div>
+        ${printers.length ? printers.map((p) => {
+          return `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+                <div style="font-weight:600;">${escapeHtml(String(p.name || p.id || ''))}</div>
+                <div>${renderOk(p.ok, p.error)}</div>
+              </div>
+              <div class="subtle" style="margin-top:6px;">Status: <code>${escapeHtml(String(p.status || ''))}</code></div>
+            </div>
+          `;
+        }).join('') : '<div class="empty" style="padding: 12px;">Brak drukarek</div>'}
+      </div>
+    </div>
+  `;
+}
+
 async function authenticateKsefWithToken(token, nip) {
   const res = await fetch(`${url}/ksef/auth/token`, {
     method: 'POST',
@@ -493,10 +673,13 @@ async function authenticateKsefWithToken(token, nip) {
   return data;
 }
 
-async function pollKsefInvoices(accessToken, since) {
+async function pollKsefInvoices(accessToken, since, until) {
   const body = { accessToken };
   if (since) {
     body.since = since;
+  }
+  if (until) {
+    body.until = until;
   }
   const res = await fetch(`${url}/inbox/ksef/poll`, {
     method: 'POST',
@@ -635,8 +818,13 @@ async function renderAccountsPage() {
       </div>
 
       <div class="form-group">
-        <label>Od (YYYY-MM-DD / ISO):</label>
-        <input id="accountsKsefSince" type="text" value="${defaultSince}" />
+        <label>Zakres dat:</label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <input id="accountsKsefSince" type="text" value="${defaultSince}" placeholder="Od (YYYY-MM-DD)" style="flex: 1;" />
+          <span>–</span>
+          <input id="accountsKsefUntil" type="text" value="" placeholder="Do (YYYY-MM-DD)" style="flex: 1;" />
+        </div>
+        <div class="subtle" style="margin-top:4px;">Pozostaw "Do" puste, aby pobrać wszystkie od daty początkowej.</div>
       </div>
 
       <div class="form-actions" style="flex-wrap: wrap;">
@@ -650,26 +838,19 @@ async function renderAccountsPage() {
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="page-title" style="margin-bottom:0;">Dodaj fakturę z pliku</div>
-          <div class="subtle">Wysyła plik do inbox (endpoint: <code>POST /inbox/invoices</code>).</div>
+          <div class="page-title" style="margin-bottom:0;">Źródła faktur</div>
+          <div class="subtle">Lista źródeł (storage/email/urządzenia) z podglądem czy są jeszcze pliki do pobrania.</div>
         </div>
       </div>
 
-      <div class="form-group">
-        <label>Źródło:</label>
-        <select id="accountsAddInvoiceSource">
-          <option value="scanner">scanner</option>
-          <option value="storage">storage</option>
-          <option value="email">email</option>
-          <option value="ksef">ksef</option>
-        </select>
-      </div>
-
       <div class="form-actions" style="flex-wrap: wrap;">
-        <button id="accountsAddInvoiceBtn" class="primary" type="button">Wybierz plik i dodaj</button>
+        <button id="accountsSourcesRefreshBtn" type="button">Odśwież status</button>
+        <button id="accountsSourcesStorageSyncBtn" class="primary" type="button">Pobierz z storage</button>
+        <button id="accountsSourcesEmailSyncBtn" type="button">Pobierz z email</button>
       </div>
 
-      <div id="accountsAddInvoiceResult" class="subtle" style="margin-top: 10px;"></div>
+      <div id="accountsSourcesResult" class="subtle" style="margin-top: 10px;"></div>
+      <div id="accountsSourcesStatus" style="margin-top: 10px;"></div>
     </div>
   `;
 
@@ -732,6 +913,7 @@ async function renderAccountsPage() {
   const ksefTokenInput = document.getElementById('accountsKsefToken');
   const ksefNipInput = document.getElementById('accountsKsefNip');
   const ksefSinceInput = document.getElementById('accountsKsefSince');
+  const ksefUntilInput = document.getElementById('accountsKsefUntil');
 
   if (ksefAccountSelect) {
     ksefAccountSelect.addEventListener('change', () => {
@@ -798,6 +980,7 @@ async function renderAccountsPage() {
     ksefPollBtn.addEventListener('click', async () => {
       try {
         const since = String(ksefSinceInput?.value || '').trim();
+        const until = String(ksefUntilInput?.value || '').trim();
         let accessToken = ksefAccessTokenCache;
         if (!accessToken) {
           const token = String(ksefTokenInput?.value || '').trim();
@@ -816,7 +999,7 @@ async function renderAccountsPage() {
         if (ksefResult) {
           ksefResult.textContent = 'Pobieram…';
         }
-        const out = await pollKsefInvoices(accessToken, since || null);
+        const out = await pollKsefInvoices(accessToken, since || null, until || null);
         await refresh();
         if (ksefResult) {
           ksefResult.textContent = `Dodano: ${out?.added || 0}`;
@@ -831,33 +1014,108 @@ async function renderAccountsPage() {
     });
   }
 
-  const addInvoiceResult = document.getElementById('accountsAddInvoiceResult');
-  const addInvoiceBtn = document.getElementById('accountsAddInvoiceBtn');
-  if (addInvoiceBtn) {
-    addInvoiceBtn.addEventListener('click', async () => {
+  const sourcesResult = document.getElementById('accountsSourcesResult');
+  const sourcesStatus = document.getElementById('accountsSourcesStatus');
+  const sourcesRefreshBtn = document.getElementById('accountsSourcesRefreshBtn');
+  const sourcesStorageSyncBtn = document.getElementById('accountsSourcesStorageSyncBtn');
+  const sourcesEmailSyncBtn = document.getElementById('accountsSourcesEmailSyncBtn');
+
+  const refreshSources = async () => {
+    try {
+      if (sourcesResult) {
+        sourcesResult.textContent = 'Odświeżam…';
+      }
+      const st = await runAccountsSourcesStatus();
+      if (sourcesStatus) {
+        sourcesStatus.innerHTML = renderSourcesStatusHtml(st);
+      }
+      if (sourcesResult) {
+        sourcesResult.textContent = '';
+      }
+
+      if (sourcesStatus) {
+        sourcesStatus.querySelectorAll('[data-scanner-import]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            try {
+              const scannerId = btn.getAttribute('data-scanner-import');
+              if (!scannerId) {
+                return;
+              }
+              if (sourcesResult) {
+                sourcesResult.textContent = `Pobieram ze skanera ${scannerId}…`;
+              }
+              const out = await runAccountsScannerImport(scannerId);
+              await refresh();
+              await refreshSources();
+              if (sourcesResult) {
+                sourcesResult.textContent = `Skaner ${scannerId}: dodano ${out?.added || 0}`;
+              }
+              showNotification(`Skaner: dodano ${out?.added || 0}`, 'success');
+            } catch (e) {
+              if (sourcesResult) {
+                sourcesResult.textContent = `Błąd: ${e.message}`;
+              }
+              showNotification('Skaner: błąd: ' + e.message, 'error');
+            }
+          });
+        });
+      }
+    } catch (e) {
+      if (sourcesResult) {
+        sourcesResult.textContent = `Błąd: ${e.message}`;
+      }
+    }
+  };
+
+  if (sourcesRefreshBtn) {
+    sourcesRefreshBtn.addEventListener('click', refreshSources);
+  }
+
+  if (sourcesStorageSyncBtn) {
+    sourcesStorageSyncBtn.addEventListener('click', async () => {
       try {
-        const source = document.getElementById('accountsAddInvoiceSource')?.value || 'scanner';
-        const file = await selectFile('.pdf,.png,.jpg,.jpeg,.xml,application/pdf,image/*,application/xml');
-        if (!file) {
-          return;
+        if (sourcesResult) {
+          sourcesResult.textContent = 'Pobieram z storage…';
         }
-        if (addInvoiceResult) {
-          addInvoiceResult.textContent = 'Dodaję…';
-        }
-        const inv = await addInvoiceFromLocalFile(file, source);
+        await runAccountsStorageSync();
         await refresh();
-        if (addInvoiceResult) {
-          addInvoiceResult.textContent = `Dodano: ${inv?.id || '-'}`;
+        await refreshSources();
+        if (sourcesResult) {
+          sourcesResult.textContent = 'OK';
         }
-        showNotification('Faktura dodana', 'success');
+        showNotification('Storage: synchronizacja zakończona', 'success');
       } catch (e) {
-        if (addInvoiceResult) {
-          addInvoiceResult.textContent = `Błąd: ${e.message}`;
+        if (sourcesResult) {
+          sourcesResult.textContent = `Błąd: ${e.message}`;
         }
-        showNotification('Błąd dodawania faktury: ' + e.message, 'error');
+        showNotification('Storage: błąd: ' + e.message, 'error');
       }
     });
   }
+
+  if (sourcesEmailSyncBtn) {
+    sourcesEmailSyncBtn.addEventListener('click', async () => {
+      try {
+        if (sourcesResult) {
+          sourcesResult.textContent = 'Pobieram z email…';
+        }
+        const out = await runAccountsEmailSync();
+        await refresh();
+        await refreshSources();
+        if (sourcesResult) {
+          sourcesResult.textContent = `Email: dodano ${out?.added || 0}`;
+        }
+        showNotification(`Email: dodano ${out?.added || 0}`, 'success');
+      } catch (e) {
+        if (sourcesResult) {
+          sourcesResult.textContent = `Błąd: ${e.message}`;
+        }
+        showNotification('Email: błąd: ' + e.message, 'error');
+      }
+    });
+  }
+
+  await refreshSources();
 }
 
 async function runActionFromUrl(action, invoiceId) {
@@ -923,6 +1181,11 @@ async function loadStats() {
     }
 
     document.getElementById('statApproved').textContent = stats.byStatus?.approved || 0;
+
+    const rejectedEl = document.getElementById('statRejected');
+    if (rejectedEl) {
+      rejectedEl.textContent = stats.byStatus?.rejected || 0;
+    }
 
     const badge = document.getElementById('newBadge');
     if (badge) {
@@ -1020,18 +1283,28 @@ function renderInvoices() {
     if (inv.status === 'pending' || inv.status === 'ocr') {
       actionButtons = `
         <button onclick="processInvoice('${inv.id}')">Przetwórz</button>
-        <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
+        <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
       `;
     } else if (inv.status === 'described') {
       actionButtons = `
         <button class="success" onclick="approveInvoice('${inv.id}')">Zatwierdź</button>
         <button onclick="editInvoice('${inv.id}')">Edytuj</button>
-        <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
+        <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
         <button class="danger" onclick="rejectInvoice('${inv.id}')">Odrzuć</button>
+      `;
+    } else if (inv.status === 'approved') {
+      actionButtons = `
+        <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
+        <span style="color: #16a34a;">✓ Zatwierdzona</span>
+      `;
+    } else if (inv.status === 'rejected') {
+      actionButtons = `
+        <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
+        <span style="color: #dc2626;">✗ Odrzucona</span>
       `;
     } else {
       actionButtons = `
-        <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
+        <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
       `;
     }
 
@@ -1266,7 +1539,7 @@ function renderInvoicesTable(container) {
     }
 
     let actions = '';
-    const previewBtn = `<button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>`;
+    const previewBtn = `<button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>`;
     const detailsBtn = `<button onclick="window.openInvoicePage('${inv.id}')">Szczegóły</button>`;
     let workflowActions = '';
     if (inv.status === 'pending' || inv.status === 'ocr') {
@@ -1278,6 +1551,8 @@ function renderInvoicesTable(container) {
       `;
     } else if (inv.status === 'approved') {
       workflowActions = `<span style="color: #16a34a;">✓ Zatwierdzona</span>`;
+    } else if (inv.status === 'rejected') {
+      workflowActions = `<span style="color: #dc2626;">✗ Odrzucona</span>`;
     }
 
     actions = `
@@ -1411,7 +1686,7 @@ async function loadExpenseTypes() {
       throw new Error('Failed to load expense types');
     }
     const data = await res.json();
-    expenseTypes = data.expenseTypes || [];
+    expenseTypes = data.expenseTypes || data.items || [];
     renderInvoices();
   } catch (e) {
     console.error('Failed to load expense types:', e);
@@ -1445,7 +1720,7 @@ async function loadLabels() {
       throw new Error('Failed to load labels');
     }
     const data = await res.json();
-    labels = data.labels || [];
+    labels = data.labels || data.items || [];
     renderInvoices();
   } catch (e) {
     console.error('Failed to load labels:', e);
@@ -2017,6 +2292,16 @@ async function renderSettingsPage() {
   const scanners = settings?.channels?.devices?.scanners || [];
   const otherSources = settings?.channels?.other?.sources || [];
 
+  const exportEmailTo = settings?.exports?.email?.to || '';
+  const exportEmailFrom = settings?.exports?.email?.from || '';
+  const exportSmtp = settings?.exports?.email?.smtp || {};
+  const exportSmtpHost = exportSmtp?.host || '';
+  const exportSmtpPort = exportSmtp?.port != null ? String(exportSmtp.port) : '';
+  const exportSmtpSecure = exportSmtp?.secure === true;
+  const exportSmtpStarttls = exportSmtp?.starttls === true;
+  const exportSmtpUser = exportSmtp?.user || '';
+  const exportSmtpPassword = exportSmtp?.password || '';
+
   if (!projects.length) {
     await loadProjects();
   }
@@ -2144,6 +2429,51 @@ async function renderSettingsPage() {
     <div class="form-group">
       <label>Lokalne foldery (1 linia = 1 ścieżka):</label>
       <textarea id="settingsLocalFolders" rows="4">${localPaths.join('\n')}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Export: email docelowy (odbiorca):</label>
+      <input id="settingsExportEmailTo" type="email" value="${escapeHtml(exportEmailTo)}" placeholder="np. ksiegowosc@firma.pl" />
+      <div class="subtle" style="margin-top:6px;">Jeśli zostawisz puste, UI będzie pytać o adres przy wysyłce.</div>
+    </div>
+
+    <div class="form-group">
+      <label>Export: email nadawcy (opcjonalnie):</label>
+      <input id="settingsExportEmailFrom" type="text" value="${escapeHtml(exportEmailFrom)}" placeholder="np. exef@firma.pl" />
+    </div>
+
+    <div class="form-group">
+      <label>Export: SMTP host:</label>
+      <input id="settingsExportSmtpHost" type="text" value="${escapeHtml(exportSmtpHost)}" placeholder="localhost" />
+    </div>
+
+    <div class="form-group">
+      <label>Export: SMTP port:</label>
+      <input id="settingsExportSmtpPort" type="number" value="${escapeHtml(exportSmtpPort)}" placeholder="3025" />
+    </div>
+
+    <div class="form-group">
+      <label>Export: SMTP user (opcjonalnie):</label>
+      <input id="settingsExportSmtpUser" type="text" value="${escapeHtml(exportSmtpUser)}" placeholder="user" />
+    </div>
+
+    <div class="form-group">
+      <label>Export: SMTP password (opcjonalnie):</label>
+      <input id="settingsExportSmtpPassword" type="password" value="${escapeHtml(exportSmtpPassword)}" placeholder="password" />
+    </div>
+
+    <div class="form-group">
+      <label>Export: SMTP zabezpieczenia:</label>
+      <div style="display:flex; gap:14px; align-items:center; flex-wrap: wrap;">
+        <label style="display:flex; gap:8px; align-items:center;">
+          <input id="settingsExportSmtpStarttls" type="checkbox" ${exportSmtpStarttls ? 'checked' : ''} />
+          <span>STARTTLS</span>
+        </label>
+        <label style="display:flex; gap:8px; align-items:center;">
+          <input id="settingsExportSmtpSecure" type="checkbox" ${exportSmtpSecure ? 'checked' : ''} />
+          <span>SMTPS (secure)</span>
+        </label>
+      </div>
     </div>
 
     <div class="form-group">
@@ -2453,6 +2783,249 @@ async function renderLabelsPage() {
       if (confirm('Czy na pewno usunąć tę etykietę?')) {
         await deleteLabel(id);
         await renderLabelsPage();
+      }
+    });
+  });
+}
+
+function parseContentDispositionFilename(header) {
+  const raw = String(header || '');
+  if (!raw) {
+    return null;
+  }
+
+  const mUtf8 = raw.match(/filename\*=UTF-8''([^;\r\n]+)/i);
+  if (mUtf8 && mUtf8[1]) {
+    try {
+      return decodeURIComponent(String(mUtf8[1]).trim());
+    } catch (_e) {
+      return String(mUtf8[1]).trim();
+    }
+  }
+
+  const m = raw.match(/filename="?([^";\r\n]+)"?/i);
+  if (m && m[1]) {
+    return String(m[1]).trim();
+  }
+
+  return null;
+}
+
+async function fetchExportFormats() {
+  const res = await fetch(`${url}/inbox/export/formats`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `export_formats_failed_${res.status}`);
+  }
+  return Array.isArray(data?.formats) ? data.formats : [];
+}
+
+async function downloadExportFormat(format) {
+  const res = await fetch(`${url}/inbox/export/download`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.error || `export_download_failed_${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const name = parseContentDispositionFilename(res.headers.get('content-disposition')) || `export_${format}`;
+  downloadBlob(name, blob);
+}
+
+async function downloadDocumentsZip() {
+  const res = await fetch(`${url}/inbox/export/documents.zip`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'approved' }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.error || `export_documents_zip_failed_${res.status}`);
+  }
+
+  const blob = await res.blob();
+  const name = parseContentDispositionFilename(res.headers.get('content-disposition')) || 'documents.zip';
+  downloadBlob(name, blob);
+}
+
+async function sendExportEmail(payload) {
+  const res = await fetch(`${url}/inbox/export/send-email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(data?.error || `export_send_email_failed_${res.status}`);
+  }
+  return data;
+}
+
+function promptSmtpConfig() {
+  const host = prompt('SMTP host:', 'localhost');
+  if (!host) {
+    return null;
+  }
+  const portRaw = prompt('SMTP port:', '3025');
+  if (!portRaw) {
+    return null;
+  }
+  const port = Number(portRaw);
+  if (!Number.isFinite(port)) {
+    return null;
+  }
+
+  const user = prompt('SMTP user (opcjonalnie):', '') || null;
+  const password = user ? (prompt('SMTP password (opcjonalnie):', '') || null) : null;
+  const starttls = confirm('Użyć STARTTLS?');
+  const secure = false;
+
+  return { host, port, user, password, starttls, secure };
+}
+
+async function sendExportEmailWithFallback(payload) {
+  try {
+    return await sendExportEmail(payload);
+  } catch (e) {
+    const msg = String(e?.message || e);
+    if (msg.includes('smtp_not_configured')) {
+      const smtp = promptSmtpConfig();
+      if (!smtp) {
+        throw e;
+      }
+      return await sendExportEmail({ ...payload, smtp });
+    }
+    throw e;
+  }
+}
+
+async function renderExportPage() {
+  const container = document.getElementById('exportPageContent');
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = '<div class="subtle">Wczytuję…</div>';
+
+  try {
+    await loadSettings();
+  } catch (_e) {
+  }
+
+  let formats = [];
+  try {
+    formats = await fetchExportFormats();
+  } catch (e) {
+    container.innerHTML = `<div class="empty">Błąd wczytania formatów exportu: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+
+  const docsZipCard = `
+    <div style="border:1px solid var(--border); border-radius:10px; padding:12px; background: var(--surface); margin-bottom: 12px;">
+      <div style="font-weight:600;">Dokumenty (ZIP)</div>
+      <div class="subtle" style="margin-top:6px;">Eksportuje zatwierdzone dokumenty jako pliki w strukturze folderów: typ wydatku / projekt / dokument.</div>
+      <div class="form-actions" style="margin-top: 10px; flex-wrap: wrap;">
+        <button type="button" class="primary" data-export-action="download-documents-zip">Pobierz</button>
+        <button type="button" data-export-action="email-documents-zip">Wyślij na email</button>
+      </div>
+    </div>
+  `;
+
+  const formatsHtml = formats.map((f) => {
+    const id = escapeHtml(String(f.id || ''));
+    const name = escapeHtml(String(f.name || f.id || ''));
+    const desc = escapeHtml(String(f.description || ''));
+    const ext = escapeHtml(String(f.extension || ''));
+    const apps = Array.isArray(f.applications) ? f.applications.map((a) => escapeHtml(String(a))).join(', ') : '';
+    const meta = [
+      ext ? `.${ext}` : '',
+      apps ? `Aplikacje: ${apps}` : '',
+    ].filter(Boolean).join(' · ');
+
+    return `
+      <div style="border:1px solid var(--border); border-radius:10px; padding:12px; background: var(--surface); margin-bottom: 12px;">
+        <div style="display:flex; justify-content: space-between; gap: 12px; align-items: flex-start;">
+          <div>
+            <div style="font-weight:600;">${name}</div>
+            ${desc ? `<div class="subtle" style="margin-top:6px;">${desc}</div>` : ''}
+            ${meta ? `<div class="subtle" style="margin-top:6px;">${meta}</div>` : ''}
+            <div class="subtle" style="margin-top:6px;">Format: <code>${id}</code></div>
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top: 10px; flex-wrap: wrap;">
+          <button type="button" class="primary" data-export-action="download-format" data-export-format="${id}">Pobierz</button>
+          <button type="button" data-export-action="email-format" data-export-format="${id}">Wyślij na email</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = docsZipCard + (formatsHtml || '<div class="empty">Brak dostępnych formatów exportu</div>');
+
+  const defaultTo = settings?.exports?.email?.to ? String(settings.exports.email.to) : '';
+
+  container.querySelectorAll('[data-export-action="download-documents-zip"]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await downloadDocumentsZip();
+        showNotification('Pobrano ZIP', 'success');
+      } catch (e) {
+        showNotification('Błąd pobierania ZIP: ' + e.message, 'error');
+      }
+    });
+  });
+
+  container.querySelectorAll('[data-export-action="email-documents-zip"]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const to = prompt('Email odbiorcy:', defaultTo);
+      if (!to) {
+        return;
+      }
+      try {
+        await sendExportEmailWithFallback({ to, type: 'documents_zip', status: 'approved' });
+        showNotification('Wysłano email', 'success');
+      } catch (e) {
+        showNotification('Błąd wysyłki email: ' + e.message, 'error');
+      }
+    });
+  });
+
+  container.querySelectorAll('[data-export-action="download-format"]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const format = btn.dataset.exportFormat;
+      if (!format) {
+        return;
+      }
+      try {
+        await downloadExportFormat(format);
+        showNotification('Pobrano export', 'success');
+      } catch (e) {
+        showNotification('Błąd pobierania exportu: ' + e.message, 'error');
+      }
+    });
+  });
+
+  container.querySelectorAll('[data-export-action="email-format"]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const format = btn.dataset.exportFormat;
+      if (!format) {
+        return;
+      }
+      const to = prompt('Email odbiorcy:', defaultTo);
+      if (!to) {
+        return;
+      }
+      try {
+        await sendExportEmailWithFallback({ to, format, type: 'format' });
+        showNotification('Wysłano email', 'success');
+      } catch (e) {
+        showNotification('Błąd wysyłki email: ' + e.message, 'error');
       }
     });
   });
@@ -3292,6 +3865,11 @@ if (settingsReloadBtn) {
   settingsReloadBtn.addEventListener('click', () => renderSettingsPage());
 }
 
+const exportReloadBtn = document.getElementById('exportReloadBtn');
+if (exportReloadBtn) {
+  exportReloadBtn.addEventListener('click', () => renderExportPage());
+}
+
 const accountsReloadBtn = document.getElementById('accountsReloadBtn');
 if (accountsReloadBtn) {
   accountsReloadBtn.addEventListener('click', () => renderAccountsPage());
@@ -3324,6 +3902,18 @@ if (settingsSaveBtn) {
       const localFoldersRaw = document.getElementById('settingsLocalFolders')?.value || '';
       const paths = localFoldersRaw.split('\n').map((v) => v.trim()).filter(Boolean);
 
+      const exportEmailTo = document.getElementById('settingsExportEmailTo')?.value || '';
+      const exportEmailFrom = document.getElementById('settingsExportEmailFrom')?.value || '';
+      const exportSmtpHost = document.getElementById('settingsExportSmtpHost')?.value || '';
+      const exportSmtpPortRaw = document.getElementById('settingsExportSmtpPort')?.value || '';
+      const exportSmtpUser = document.getElementById('settingsExportSmtpUser')?.value || '';
+      const exportSmtpPassword = document.getElementById('settingsExportSmtpPassword')?.value || '';
+      const exportSmtpStarttls = Boolean(document.getElementById('settingsExportSmtpStarttls')?.checked);
+      const exportSmtpSecure = Boolean(document.getElementById('settingsExportSmtpSecure')?.checked);
+
+      const exportSmtpPort = exportSmtpPortRaw !== '' ? Number(exportSmtpPortRaw) : null;
+      const normalizedExportSmtpPort = Number.isFinite(exportSmtpPort) ? exportSmtpPort : null;
+
       const parseJson = (id) => {
         const raw = document.getElementById(id)?.value || '[]';
         const parsed = JSON.parse(raw);
@@ -3344,6 +3934,20 @@ if (settingsSaveBtn) {
           invoicesTable: {
             projectSelection,
             expenseTypeSelection,
+          },
+        },
+        exports: {
+          email: {
+            to: exportEmailTo ? exportEmailTo.trim() : null,
+            from: exportEmailFrom ? exportEmailFrom.trim() : null,
+            smtp: {
+              host: exportSmtpHost ? exportSmtpHost.trim() : null,
+              port: normalizedExportSmtpPort,
+              secure: exportSmtpSecure === true,
+              starttls: exportSmtpStarttls === true,
+              user: exportSmtpUser ? exportSmtpUser.trim() : null,
+              password: exportSmtpPassword ? exportSmtpPassword : null,
+            },
           },
         },
         channels: {
@@ -3487,10 +4091,6 @@ window.showAssignModal = async function(invoiceId, options = {}) {
 
 window.showProjectAssignModal = function(invoiceId) {
   return window.showAssignModal(invoiceId);
-};
-
-window.openInvoiceDetails = function(invoiceId, options = {}) {
-  return openInvoicePreview(invoiceId);
 };
 
 window.openInvoicePage = function(invoiceId, options = {}) {

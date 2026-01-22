@@ -290,7 +290,7 @@ class KsefFacade {
     return res;
   }
 
-  async pollNewInvoices({ accessToken, since, subjectType } = {}) {
+  async pollNewInvoices({ accessToken, since, until, subjectType } = {}) {
     if (!accessToken) {
       throw new Error('Missing accessToken');
     }
@@ -300,11 +300,22 @@ class KsefFacade {
     }
 
     const dateFrom = since ? new Date(since).toISOString() : new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const dateTo = until ? new Date(until).toISOString() : null;
+
+    const query = {
+      queryCriteria: {
+        subjectType: subjectType ?? 'subject2',
+        type: 'incremental',
+        acquisitionTimestampThresholdFrom: dateFrom,
+      },
+    };
+    if (dateTo) {
+      query.queryCriteria.acquisitionTimestampThresholdTo = dateTo;
+    }
 
     const metadata = await this.queryInvoiceMetadata({
       accessToken,
-      dateFrom,
-      subjectType: subjectType ?? 'subject2',
+      query,
     });
 
     if (!metadata || !metadata.invoices) {

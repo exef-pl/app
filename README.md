@@ -7,6 +7,12 @@
 3 szkic
 ![img_2.png](img_2.png)
 
+4 szkic
+![img_3.png](img_3.png)
+
+5 szkic
+![img_4.png](img_4.png)
+
 # exef-pl/app
 
 To repozytorium jest agregatorem projektów związanych z KSeF (Krajowy System e-Faktur):

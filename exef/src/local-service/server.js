@@ -3,6 +3,8 @@ const helmet = require('helmet')
 const cors = require('cors')
 const fs = require('node:fs')
 const path = require('node:path')
+const net = require('node:net')
+const tls = require('node:tls')
 const dotenv = require('dotenv')
 
 if (!process.env.EXEF_ENV_FILE && process.env.NODE_ENV === 'test') {
@@ -24,6 +26,7 @@ const { listenWithFallback } = require('../core/listen')
 const { createInvoiceWorkflow, INVOICE_STATUS } = require('../core/invoiceWorkflow')
 const { createStore } = require('../core/draftStore')
 const { EXPORT_FORMATS } = require('../core/exportService')
+const { EXPORT_FORMATS: KPIR_EXPORT_FORMATS } = require('../core/kpirExport')
 const { createSqliteDataLayer } = require('../core/sqliteDataLayer')
 
 const app = express()
@@ -93,6 +96,20 @@ function getDefaultSettings() {
       invoicesTable: {
         projectSelection: 'select',
         expenseTypeSelection: 'select',
+      },
+    },
+    exports: {
+      email: {
+        to: null,
+        from: null,
+        smtp: {
+          host: null,
+          port: null,
+          secure: false,
+          starttls: false,
+          user: null,
+          password: null,
+        },
       },
     },
     ocr: {
@@ -871,6 +888,14 @@ app.use('/', (req, res, next) => {
       let content = fs.readFileSync(filePath, 'utf8');
       // Remove CSP meta tag and let server handle it
       content = content.replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi, '');
+
+      const rendererJsPath = path.join(__dirname, '../desktop/renderer', 'renderer.js');
+      const rendererJsVersion = fs.existsSync(rendererJsPath) ? String(Math.floor(fs.statSync(rendererJsPath).mtimeMs)) : String(Date.now());
+      content = content.replace(
+        /(<script[^>]+src=["']\.\/renderer\.js)(["'])/i,
+        `$1?v=${rendererJsVersion}$2`
+      );
+
       res.setHeader('Content-Security-Policy', 
         "default-src 'self'; " +
         "script-src 'self' 'unsafe-inline'; " +
@@ -882,12 +907,20 @@ app.use('/', (req, res, next) => {
         "media-src 'self'; " +
         "frame-src 'self' blob: data:"
       );
+
+      res.setHeader('Cache-Control', 'no-store');
       res.send(content);
       return;
     }
   }
   next();
-}, express.static(path.join(__dirname, '../desktop/renderer')))
+}, express.static(path.join(__dirname, '../desktop/renderer'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res, _filePath) => {
+    res.setHeader('Cache-Control', 'no-store')
+  },
+}))
 
 function rewriteXslImportsToProxy(xslText) {
   if (!xslText) return xslText
@@ -1144,6 +1177,609 @@ app.get('/debug/storage/state', (_req, res) => {
       ? workflow.storageSync.getState()
       : null
     res.json({ state })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+function isInvoiceFileName(name) {
+  const n = String(name || '').toLowerCase()
+  return n.endsWith('.pdf') || n.endsWith('.jpg') || n.endsWith('.jpeg') || n.endsWith('.png') || n.endsWith('.xml')
+}
+
+async function fetchJsonWithTimeout(targetUrl, options = {}, timeoutMs = 1200) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(targetUrl, { ...options, signal: controller.signal })
+    const json = await res.json().catch(() => null)
+    return { ok: res.ok, status: res.status, json }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function fetchBufferWithTimeout(targetUrl, options = {}, timeoutMs = 1500) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const res = await fetch(targetUrl, { ...options, signal: controller.signal })
+    const buf = Buffer.from(await res.arrayBuffer())
+    return { ok: res.ok, status: res.status, buf }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function listStorageCandidates(conn) {
+  const type = String(conn?.type || '').trim().toLowerCase()
+  const apiUrl = conn?.apiUrl || conn?.webdavUrl || null
+  const accessToken = conn?.accessToken || conn?.oauth?.accessToken || conn?.oauthConfig?.accessToken || null
+  const username = conn?.username || conn?.user || null
+  const password = conn?.password || conn?.appPassword || null
+
+  if (type === 'dropbox') {
+    const base = String(apiUrl || 'https://api.dropboxapi.com').replace(/\/$/, '')
+    const out = await fetchJsonWithTimeout(
+      `${base}/2/files/list_folder`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken || 'test'}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: String(conn?.folderPath || conn?.path || ''), recursive: true, include_deleted: false }),
+      },
+      1200
+    )
+    if (!out.ok) {
+      return { ok: false, error: `dropbox_list_${out.status}` }
+    }
+    const entries = Array.isArray(out.json?.entries) ? out.json.entries : []
+    const files = entries
+      .filter((e) => e && e['.tag'] === 'file' && isInvoiceFileName(e.name))
+      .map((e) => ({
+        name: e.name,
+        sourceKey: `dropbox:${conn?.id || 'dropbox'}:${e.id || e.path_display || e.name}:${e.server_modified || ''}`,
+      }))
+    return { ok: true, files }
+  }
+
+  if (type === 'gdrive') {
+    const base = String(apiUrl || 'https://www.googleapis.com').replace(/\/$/, '')
+    const folderId = String(conn?.folderId || (Array.isArray(conn?.folderIds) ? conn.folderIds[0] : '') || 'root')
+    const q = `'${folderId.replace(/'/g, "\\'")}' in parents and trashed=false`
+    const out = await fetchJsonWithTimeout(
+      `${base}/drive/v3/files?q=${encodeURIComponent(q)}&pageSize=1000&fields=${encodeURIComponent('files(id,name,mimeType,size,modifiedTime)')}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken || 'test'}`,
+        },
+      },
+      1200
+    )
+    if (!out.ok) {
+      return { ok: false, error: `gdrive_list_${out.status}` }
+    }
+    const files = (Array.isArray(out.json?.files) ? out.json.files : [])
+      .filter((f) => f && isInvoiceFileName(f.name))
+      .map((f) => ({
+        name: f.name,
+        sourceKey: `gdrive:${conn?.id || 'gdrive'}:${f.id || f.name}:${f.modifiedTime || ''}`,
+      }))
+    return { ok: true, files }
+  }
+
+  if (type === 'onedrive') {
+    const base = String(apiUrl || 'https://graph.microsoft.com').replace(/\/$/, '')
+    const out = await fetchJsonWithTimeout(
+      `${base}/v1.0/me/drive/root/delta`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken || 'test'}`,
+        },
+      },
+      1200
+    )
+    if (!out.ok) {
+      return { ok: false, error: `onedrive_list_${out.status}` }
+    }
+    const items = Array.isArray(out.json?.value) ? out.json.value : []
+    const files = items
+      .filter((i) => i && !i.folder && isInvoiceFileName(i.name))
+      .map((i) => ({
+        name: i.name,
+        sourceKey: `onedrive:${conn?.id || 'onedrive'}:${i.id || i.name}:${i.eTag || i.lastModifiedDateTime || ''}`,
+      }))
+    return { ok: true, files }
+  }
+
+  if (type === 'nextcloud') {
+    let adminBase = null
+    try {
+      adminBase = apiUrl ? new URL(String(apiUrl)).origin : null
+    } catch (_e) {
+      adminBase = null
+    }
+
+    const outAdmin = await fetchJsonWithTimeout(
+      `${String(adminBase || '').replace(/\/$/, '')}/admin/files`,
+      {},
+      1200
+    )
+    if (outAdmin.ok && Array.isArray(outAdmin.json?.files)) {
+      const files = outAdmin.json.files
+        .filter((f) => f && isInvoiceFileName(f.name))
+        .map((f) => ({
+          name: f.name,
+          sourceKey: `nextcloud:${conn?.id || 'nextcloud'}:${f.href || f.name}:${f.etag || f.lastModified || ''}`,
+        }))
+      return { ok: true, files }
+    }
+
+    if (!apiUrl || !username || !password) {
+      return { ok: false, error: 'nextcloud_not_configured' }
+    }
+    const auth = Buffer.from(`${String(username)}:${String(password)}`).toString('base64')
+    const propfindBody =
+      '<?xml version="1.0" encoding="utf-8" ?>' +
+      '<d:propfind xmlns:d="DAV:">' +
+      '<d:prop><d:getcontenttype/><d:getcontentlength/><d:getlastmodified/><d:getetag/></d:prop>' +
+      '</d:propfind>'
+    const base = String(apiUrl).replace(/\/$/, '')
+    const res = await fetch(base, {
+      method: 'PROPFIND',
+      headers: {
+        Authorization: `Basic ${auth}`,
+        Depth: '1',
+        'Content-Type': 'application/xml; charset=utf-8',
+      },
+      body: propfindBody,
+    })
+    if (!res.ok) {
+      return { ok: false, error: `nextcloud_propfind_${res.status}` }
+    }
+    const xml = await res.text().catch(() => '')
+    const responses = xml.split(/<[^>]*response[^>]*>/i).slice(1)
+    const files = []
+    for (const chunk of responses) {
+      const hrefMatch = chunk.match(/<[^>]*href[^>]*>([^<]+)<\/[^>]*href>/i)
+      if (!hrefMatch) continue
+      const hrefRaw = hrefMatch[1]
+      const href = hrefRaw.replace(/&amp;/g, '&').trim()
+      const name = decodeURIComponent(href.split('/').filter(Boolean).slice(-1)[0] || '')
+      if (!name || !isInvoiceFileName(name)) continue
+      const etagMatch = chunk.match(/<[^>]*getetag[^>]*>([^<]+)<\/[^>]*getetag>/i)
+      const lastModMatch = chunk.match(/<[^>]*getlastmodified[^>]*>([^<]+)<\/[^>]*getlastmodified>/i)
+      const etag = etagMatch ? etagMatch[1].trim() : ''
+      const lastModified = lastModMatch ? lastModMatch[1].trim() : ''
+      files.push({
+        name,
+        sourceKey: `nextcloud:${conn?.id || 'nextcloud'}:${href}:${etag || lastModified}`,
+      })
+    }
+    return { ok: true, files }
+  }
+
+  return { ok: true, files: [] }
+}
+
+async function listEmailCandidates(account) {
+  const provider = String(account?.provider || account?.type || '').trim().toLowerCase()
+  const oauth = account?.oauth || account?.oauthConfig || null
+  const apiUrl = oauth?.apiUrl || null
+
+  if (!apiUrl) {
+    return { ok: false, error: 'email_api_url_missing', attachments: [] }
+  }
+
+  if (provider.includes('gmail')) {
+    const listOut = await fetchJsonWithTimeout(
+      `${String(apiUrl).replace(/\/$/, '')}/gmail/v1/users/me/messages?q=${encodeURIComponent('has:attachment')}&maxResults=50`,
+      {},
+      1200
+    )
+    if (!listOut.ok) {
+      return { ok: false, error: `gmail_list_${listOut.status}`, attachments: [] }
+    }
+    const messages = Array.isArray(listOut.json?.messages) ? listOut.json.messages : []
+    const attachments = []
+    for (const msg of messages) {
+      const messageId = msg?.id
+      if (!messageId) continue
+      const msgOut = await fetchJsonWithTimeout(
+        `${String(apiUrl).replace(/\/$/, '')}/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}`,
+        {},
+        1200
+      )
+      if (!msgOut.ok) {
+        continue
+      }
+      const payload = msgOut.json?.payload || {}
+      const headers = Array.isArray(payload.headers) ? payload.headers : []
+      const header = (name) => headers.find((h) => String(h?.name || '').toLowerCase() === String(name).toLowerCase())?.value
+      const parts = Array.isArray(payload.parts) ? payload.parts : []
+      for (const part of parts) {
+        if (!part?.filename || !part?.body?.attachmentId) continue
+        if (!isInvoiceFileName(part.filename)) continue
+        const filename = String(part.filename)
+        attachments.push({
+          provider: 'gmail-oauth',
+          apiUrl,
+          messageId,
+          attachmentId: String(part.body.attachmentId),
+          fileName: filename,
+          fileType: part.mimeType || null,
+          fileSize: part.body.size != null ? Number(part.body.size) : null,
+          sourceKey: `email:${String(messageId)}:${filename}`,
+          emailSubject: header('Subject') || null,
+          emailFrom: header('From') || null,
+          emailDate: header('Date') || null,
+        })
+      }
+    }
+    return { ok: true, attachments }
+  }
+
+  if (provider.includes('outlook')) {
+    const listUrl =
+      `${String(apiUrl).replace(/\/$/, '')}/v1.0/me/messages` +
+      `?$filter=${encodeURIComponent('hasAttachments eq true')}` +
+      `&$expand=${encodeURIComponent('attachments')}` +
+      `&$top=50`
+    const listOut = await fetchJsonWithTimeout(listUrl, {}, 1200)
+    if (!listOut.ok) {
+      return { ok: false, error: `outlook_list_${listOut.status}`, attachments: [] }
+    }
+    const messages = Array.isArray(listOut.json?.value) ? listOut.json.value : []
+    const attachments = []
+    for (const msg of messages) {
+      const messageId = msg?.id
+      if (!messageId) continue
+      const atts = Array.isArray(msg?.attachments) ? msg.attachments : []
+      for (const att of atts) {
+        const filename = att?.name
+        if (!filename || !isInvoiceFileName(filename)) continue
+        attachments.push({
+          provider: 'outlook-oauth',
+          apiUrl,
+          messageId,
+          attachmentId: String(att.id || ''),
+          fileName: String(filename),
+          fileType: att.contentType || null,
+          fileSize: att.size != null ? Number(att.size) : null,
+          sourceKey: `email:${String(messageId)}:${String(filename)}`,
+          emailSubject: msg.subject || null,
+          emailFrom: msg.from?.emailAddress?.address || null,
+          emailDate: msg.receivedDateTime || null,
+        })
+      }
+    }
+    return { ok: true, attachments }
+  }
+
+  return { ok: true, attachments: [] }
+}
+
+app.get('/sources/status', async (_req, res) => {
+  try {
+    settings = await getSettingsFromBackend()
+
+    const result = {
+      ksef: {
+        accounts: Array.isArray(settings?.channels?.ksef?.accounts) ? settings.channels.ksef.accounts.map((a) => ({
+          id: a?.id || null,
+          name: a?.name || null,
+          enabled: a?.enabled !== false,
+          nip: a?.nip || null,
+          hasToken: Boolean(a?.accessToken),
+        })) : [],
+        activeAccountId: settings?.channels?.ksef?.activeAccountId || null,
+      },
+      storage: {
+        localFolders: Array.isArray(settings?.channels?.localFolders?.paths) ? settings.channels.localFolders.paths : [],
+        localFoldersStatus: [],
+        connections: [],
+      },
+      email: {
+        accounts: Array.isArray(settings?.channels?.email?.accounts) ? settings.channels.email.accounts.map((a) => ({
+          id: a?.id || null,
+          name: a?.name || null,
+          provider: a?.provider || a?.type || null,
+          enabled: a?.enabled !== false,
+          apiUrl: (a?.oauth || a?.oauthConfig)?.apiUrl || null,
+          imapHost: (a?.imap || a?.imapConfig)?.host || null,
+        })) : [],
+        activeAccountId: settings?.channels?.email?.activeAccountId || null,
+      },
+      devices: {
+        scanners: [],
+        printers: [],
+      },
+    }
+
+    const inbox = workflow?.inbox || null
+
+    for (const p of (Array.isArray(result.storage.localFolders) ? result.storage.localFolders : [])) {
+      const watchPath = String(p || '').trim()
+      if (!watchPath) {
+        continue
+      }
+      try {
+        if (!fs.existsSync(watchPath)) {
+          result.storage.localFoldersStatus.push({ path: watchPath, ok: false, error: 'path_not_found', total: 0, pending: inbox ? 0 : null })
+          continue
+        }
+        const files = fs.readdirSync(watchPath)
+        const candidates = []
+        for (const file of files) {
+          const ext = path.extname(file).toLowerCase()
+          if (!isInvoiceFileName(file) || !ext) {
+            continue
+          }
+          const fullPath = path.join(watchPath, file)
+          let stat = null
+          try {
+            stat = fs.statSync(fullPath)
+          } catch (_e) {
+          }
+          if (!stat || !stat.isFile()) {
+            continue
+          }
+          const fileKey = `${fullPath}:${stat.mtimeMs}`
+          candidates.push({ name: file, sourceKey: `local:${fileKey}` })
+        }
+
+        let pending = 0
+        if (inbox && typeof inbox.getInvoiceBySourceKey === 'function') {
+          for (const f of candidates) {
+            const existing = await inbox.getInvoiceBySourceKey(f.sourceKey)
+            if (!existing) {
+              pending++
+            }
+          }
+        }
+
+        result.storage.localFoldersStatus.push({
+          path: watchPath,
+          ok: true,
+          error: null,
+          total: candidates.length,
+          pending: inbox ? pending : null,
+        })
+      } catch (e) {
+        result.storage.localFoldersStatus.push({ path: watchPath, ok: false, error: e?.message || 'unknown_error', total: 0, pending: inbox ? 0 : null })
+      }
+    }
+
+    const connections = Array.isArray(settings?.channels?.remoteStorage?.connections)
+      ? settings.channels.remoteStorage.connections
+      : []
+    for (const conn of connections) {
+      if (!conn || conn.enabled === false) {
+        continue
+      }
+      const list = await listStorageCandidates(conn)
+      const files = Array.isArray(list.files) ? list.files : []
+      let newCount = 0
+      if (inbox && typeof inbox.getInvoiceBySourceKey === 'function') {
+        for (const f of files) {
+          if (!f?.sourceKey) continue
+          const existing = await inbox.getInvoiceBySourceKey(f.sourceKey)
+          if (!existing) {
+            newCount++
+          }
+        }
+      }
+      result.storage.connections.push({
+        id: conn.id || null,
+        name: conn.name || null,
+        type: conn.type || null,
+        enabled: conn.enabled !== false,
+        apiUrl: conn.apiUrl || conn.webdavUrl || null,
+        total: files.length,
+        pending: inbox ? newCount : null,
+        ok: list.ok !== false,
+        error: list.ok === false ? list.error : null,
+      })
+    }
+
+    const scanners = Array.isArray(settings?.channels?.devices?.scanners)
+      ? settings.channels.devices.scanners
+      : []
+    for (const s of scanners) {
+      if (!s || s.enabled === false) continue
+      const status = await workflow.deviceSync.getScannerStatus(s.id).catch((e) => ({ status: 'offline', error: e?.message }))
+      let docs = []
+      if (status?.status === 'online') {
+        docs = await workflow.deviceSync.listScannerDocuments(s.id).catch(() => [])
+      }
+      let pendingDocs = Array.isArray(docs) ? docs.length : 0
+      if (inbox && typeof inbox.getInvoiceBySourceKey === 'function' && Array.isArray(docs)) {
+        pendingDocs = 0
+        for (const d of docs) {
+          const docId = d?.id ? String(d.id) : null
+          if (!docId) continue
+          const sk = `scanner:${String(s.id)}:${docId}`
+          const existing = await inbox.getInvoiceBySourceKey(sk)
+          if (!existing) {
+            pendingDocs++
+          }
+        }
+      }
+      result.devices.scanners.push({
+        id: s.id || null,
+        name: s.name || null,
+        apiUrl: s.apiUrl || null,
+        enabled: s.enabled !== false,
+        status: status?.status || null,
+        pending: pendingDocs,
+        ok: status?.status === 'online',
+        error: status?.status === 'online' ? null : (status?.error || null),
+      })
+    }
+
+    const printers = Array.isArray(settings?.channels?.devices?.printers)
+      ? settings.channels.devices.printers
+      : []
+    for (const p of printers) {
+      if (!p || p.enabled === false) continue
+      const status = await workflow.deviceSync.getPrinterStatus(p.id).catch((e) => ({ status: 'offline', error: e?.message }))
+      result.devices.printers.push({
+        id: p.id || null,
+        name: p.name || null,
+        apiUrl: p.apiUrl || null,
+        enabled: p.enabled !== false,
+        status: status?.status || null,
+        ok: status?.status === 'online',
+        error: status?.status === 'online' ? null : (status?.error || null),
+      })
+    }
+
+    for (const acc of (Array.isArray(settings?.channels?.email?.accounts) ? settings.channels.email.accounts : [])) {
+      if (!acc || acc.enabled === false) continue
+      const listed = await listEmailCandidates(acc)
+      const attachments = Array.isArray(listed.attachments) ? listed.attachments : []
+      let newCount = 0
+      if (inbox && typeof inbox.getInvoiceBySourceKey === 'function') {
+        for (const att of attachments) {
+          if (!att?.sourceKey) continue
+          const existing = await inbox.getInvoiceBySourceKey(att.sourceKey)
+          if (!existing) {
+            newCount++
+          }
+        }
+      }
+      result.email.accounts = result.email.accounts.map((a) => {
+        if (!a || a.id !== acc.id) return a
+        return {
+          ...a,
+          total: attachments.length,
+          pending: inbox ? newCount : null,
+          ok: listed.ok !== false,
+          error: listed.ok === false ? listed.error : null,
+        }
+      })
+    }
+
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/debug/email/sync', async (_req, res) => {
+  try {
+    settings = await getSettingsFromBackend()
+    const account = getActiveEmailAccount(settings)
+    if (!account) {
+      return res.status(400).json({ error: 'no_active_email_account' })
+    }
+
+    const listed = await listEmailCandidates(account)
+    if (listed.ok === false) {
+      return res.status(400).json({ error: listed.error || 'email_list_failed' })
+    }
+    const attachments = Array.isArray(listed.attachments) ? listed.attachments : []
+
+    let added = 0
+    for (const att of attachments) {
+      if (!att?.sourceKey) continue
+      const existing = await workflow.inbox.getInvoiceBySourceKey(att.sourceKey)
+      if (existing) continue
+
+      const base = String(att.apiUrl || '').replace(/\/$/, '')
+      let buf = null
+      if (att.provider === 'gmail-oauth') {
+        const out = await fetchJsonWithTimeout(
+          `${base}/gmail/v1/users/me/messages/${encodeURIComponent(att.messageId)}/attachments/${encodeURIComponent(att.attachmentId)}`,
+          {},
+          1500
+        )
+        if (!out.ok || !out.json?.data) {
+          continue
+        }
+        buf = Buffer.from(String(out.json.data), 'base64')
+      } else if (att.provider === 'outlook-oauth') {
+        const out = await fetchJsonWithTimeout(
+          `${base}/v1.0/me/messages/${encodeURIComponent(att.messageId)}/attachments/${encodeURIComponent(att.attachmentId)}`,
+          {},
+          1500
+        )
+        if (!out.ok || !out.json?.contentBytes) {
+          continue
+        }
+        buf = Buffer.from(String(out.json.contentBytes), 'base64')
+      }
+      if (!buf) {
+        continue
+      }
+
+      await workflow.addManualInvoice('email', buf, {
+        fileName: att.fileName || null,
+        fileType: att.fileType || null,
+        fileSize: att.fileSize != null ? Number(att.fileSize) : buf.length,
+        sourceKey: att.sourceKey,
+        emailSubject: att.emailSubject || null,
+        emailFrom: att.emailFrom || null,
+        emailDate: att.emailDate || null,
+      })
+      added++
+    }
+
+    res.json({ added, total: attachments.length })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/debug/devices/scanners/:id/import', async (req, res) => {
+  try {
+    const scannerId = String(req.params.id || '').trim()
+    if (!scannerId) {
+      return res.status(400).json({ error: 'scanner_id_required' })
+    }
+
+    const scanner = (workflow.deviceSync.scanners || []).find((s) => s && s.id === scannerId)
+    if (!scanner || !scanner.apiUrl) {
+      return res.status(404).json({ error: 'scanner_not_found' })
+    }
+
+    const docs = await workflow.deviceSync.listScannerDocuments(scannerId).catch(() => [])
+    const list = Array.isArray(docs) ? docs : []
+    const limit = req.body?.limit != null ? Number(req.body.limit) : null
+    const sliced = limit && limit > 0 ? list.slice(0, limit) : list
+
+    let added = 0
+    for (const d of sliced) {
+      const docId = d?.id ? String(d.id) : null
+      const fileName = d?.name ? String(d.name) : null
+      const fileType = d?.type ? String(d.type) : null
+      if (!docId || !fileName) {
+        continue
+      }
+      const sourceKey = `scanner:${scannerId}:${docId}`
+      const existing = await workflow.inbox.getInvoiceBySourceKey(sourceKey)
+      if (existing) {
+        continue
+      }
+
+      const base = String(scanner.apiUrl).replace(/\/$/, '')
+      const out = await fetchBufferWithTimeout(`${base}/api/documents/${encodeURIComponent(docId)}`, {}, 1500)
+      if (!out.ok || !out.buf) {
+        continue
+      }
+      await workflow.addManualInvoice('scanner', out.buf, {
+        fileName,
+        fileType,
+        fileSize: out.buf.length,
+        sourceKey,
+        scannerName: scanner.name || null,
+      })
+      added++
+    }
+
+    res.json({ added, total: sliced.length })
   } catch (err) {
     res.status(500).json({ error: err?.message ?? 'unknown_error' })
   }
@@ -1468,7 +2104,7 @@ function sanitizePathSegment(value, fallback) {
   const raw = value === null || value === undefined ? '' : String(value)
   const trimmed = raw.trim() || String(fallback || '').trim()
   if (!trimmed) {
-    return 'unassigned'
+    return ''
   }
   const cleaned = trimmed
     .replace(/\.+/g, '.')
@@ -1476,7 +2112,26 @@ function sanitizePathSegment(value, fallback) {
     .replace(/[<>:"|?*\x00-\x1F]/g, '_')
     .replace(/\s+/g, ' ')
     .trim()
-  return cleaned || 'unassigned'
+  return cleaned
+}
+
+function getExportEmailSettings(currentSettings) {
+  const cfg = currentSettings?.exports?.email && typeof currentSettings.exports.email === 'object'
+    ? currentSettings.exports.email
+    : {}
+  const smtp = cfg?.smtp && typeof cfg.smtp === 'object' ? cfg.smtp : {}
+  return {
+    to: cfg?.to || null,
+    from: cfg?.from || null,
+    smtp: {
+      host: smtp?.host || null,
+      port: smtp?.port != null && smtp.port !== '' ? Number(smtp.port) : null,
+      secure: smtp?.secure === true,
+      starttls: smtp?.starttls === true,
+      user: smtp?.user || null,
+      password: smtp?.password || null,
+    },
+  }
 }
 
 function inferFileExtension(fileType) {
@@ -1486,6 +2141,301 @@ function inferFileExtension(fileType) {
   if (ft.includes('jpeg') || ft.includes('jpg')) return '.jpg'
   if (ft.includes('xml')) return '.xml'
   return ''
+}
+
+function toBase64Lines(buf) {
+  const b64 = Buffer.from(buf).toString('base64')
+  const out = []
+  for (let i = 0; i < b64.length; i += 76) {
+    out.push(b64.slice(i, i + 76))
+  }
+  return out.join('\r\n')
+}
+
+function buildMimeWithAttachment({ from, to, subject, text, attachmentName, attachmentMimeType, attachmentBuffer }) {
+  const boundary = `exef_${Date.now()}_${Math.random().toString(16).slice(2)}`
+  const safeSubject = String(subject || 'ExEF export')
+  const safeText = String(text || '')
+  const safeName = sanitizePathSegment(attachmentName, 'export.bin')
+  const mimeType = String(attachmentMimeType || 'application/octet-stream')
+
+  const headers = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${safeSubject}`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/mixed; boundary="${boundary}"`,
+    '',
+  ]
+
+  const parts = [
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=utf-8',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    safeText,
+    '',
+    `--${boundary}`,
+    `Content-Type: ${mimeType}; name="${safeName}"`,
+    'Content-Transfer-Encoding: base64',
+    `Content-Disposition: attachment; filename="${safeName}"`,
+    '',
+    toBase64Lines(attachmentBuffer),
+    '',
+    `--${boundary}--`,
+    '',
+  ]
+
+  return headers.join('\r\n') + parts.join('\r\n')
+}
+
+async function smtpSendMail({ host, port, secure, starttls, user, password, from, to, message }) {
+  if (!host || !port) {
+    throw new Error('smtp_not_configured')
+  }
+
+  let sock = secure
+    ? tls.connect({ host, port, servername: host, rejectUnauthorized: false })
+    : net.connect({ host, port })
+
+  sock.setTimeout(15000)
+
+  const waitConnect = () => new Promise((resolve, reject) => {
+    if (secure) {
+      sock.once('secureConnect', resolve)
+    } else {
+      sock.once('connect', resolve)
+    }
+    sock.once('error', reject)
+    sock.once('timeout', () => reject(new Error('smtp_timeout')))
+  })
+
+  await waitConnect()
+
+  let buffer = ''
+  const readResponse = () => new Promise((resolve, reject) => {
+    const lines = []
+    const onData = (chunk) => {
+      buffer += chunk.toString('utf8')
+      const parts = buffer.split(/\r\n/)
+      buffer = parts.pop() || ''
+
+      for (const l of parts) {
+        lines.push(l)
+        const m = l.match(/^(\d{3})([ -])/) // '-' multiline, ' ' end
+        if (m && m[2] === ' ') {
+          cleanup()
+          resolve({ code: Number(m[1]), text: lines.join('\n') })
+          return
+        }
+      }
+    }
+    const onErr = (e) => {
+      cleanup()
+      reject(e)
+    }
+    const onTimeout = () => {
+      cleanup()
+      reject(new Error('smtp_timeout'))
+    }
+    const cleanup = () => {
+      sock.off('data', onData)
+      sock.off('error', onErr)
+      sock.off('timeout', onTimeout)
+    }
+    sock.on('data', onData)
+    sock.on('error', onErr)
+    sock.on('timeout', onTimeout)
+  })
+
+  const sendLine = (line) => new Promise((resolve, reject) => {
+    sock.write(`${line}\r\n`, (err) => {
+      if (err) return reject(err)
+      resolve()
+    })
+  })
+
+  const expect = async (codes) => {
+    const resp = await readResponse()
+    if (!codes.includes(resp.code)) {
+      throw new Error(`smtp_unexpected_${resp.code}`)
+    }
+    return resp
+  }
+
+  await expect([220])
+  await sendLine('EHLO exef')
+  await expect([250])
+
+  if (!secure && starttls) {
+    await sendLine('STARTTLS')
+    await expect([220])
+
+    sock = tls.connect({ socket: sock, servername: host, rejectUnauthorized: false })
+    sock.setTimeout(15000)
+    buffer = ''
+    await new Promise((resolve, reject) => {
+      sock.once('secureConnect', resolve)
+      sock.once('error', reject)
+      sock.once('timeout', () => reject(new Error('smtp_timeout')))
+    })
+
+    await sendLine('EHLO exef')
+    await expect([250])
+  }
+
+  if (user) {
+    await sendLine('AUTH LOGIN')
+    await expect([334])
+    await sendLine(Buffer.from(String(user)).toString('base64'))
+    await expect([334])
+    await sendLine(Buffer.from(String(password || '')).toString('base64'))
+    await expect([235, 503])
+  }
+
+  await sendLine(`MAIL FROM:<${from}>`)
+  await expect([250])
+  await sendLine(`RCPT TO:<${to}>`)
+  await expect([250, 251])
+  await sendLine('DATA')
+  await expect([354])
+
+  const dotStuffed = String(message)
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((l) => (l.startsWith('.') ? `.${l}` : l))
+    .join('\r\n')
+
+  await new Promise((resolve, reject) => {
+    sock.write(`${dotStuffed}\r\n.\r\n`, (err) => {
+      if (err) return reject(err)
+      resolve()
+    })
+  })
+  await expect([250])
+  await sendLine('QUIT')
+  await expect([221, 250])
+
+  try {
+    sock.end()
+  } catch (_e) {
+  }
+}
+
+async function buildDocumentsZipBuffer({ status, source, since, ids, projectIds, expenseTypeIds, fileName }) {
+  const filter = {
+    ...(status === 'all' ? {} : { status: status || INVOICE_STATUS.APPROVED }),
+    ...(source ? { source } : {}),
+    ...(since ? { since } : {}),
+  }
+
+  const invoices = await workflow.listInvoices(filter)
+
+  const idSet = Array.isArray(ids) && ids.length ? new Set(ids.map(String)) : null
+  const projectSet = Array.isArray(projectIds) && projectIds.length ? new Set(projectIds.map(String)) : null
+  const expenseTypeSet = Array.isArray(expenseTypeIds) && expenseTypeIds.length ? new Set(expenseTypeIds.map(String)) : null
+
+  const filteredInvoices = invoices.filter((inv) => {
+    if (!inv || !inv.id) return false
+    if (idSet && !idSet.has(String(inv.id))) return false
+    if (projectSet && !projectSet.has(String(inv.projectId || ''))) return false
+    if (expenseTypeSet && !expenseTypeSet.has(String(inv.expenseTypeId || ''))) return false
+    return true
+  })
+
+  const expenseTypeMap = new Map()
+  const projectMap = new Map()
+  if (dataLayer) {
+    const expenseTypes = await dataLayer.expenseTypes.list()
+    for (const t of expenseTypes) {
+      const id = t?.id ? String(t.id) : null
+      if (!id) continue
+      const name = t?.nazwa ? String(t.nazwa) : ''
+      expenseTypeMap.set(id, name)
+    }
+    const projects = await dataLayer.projects.list()
+    for (const p of projects) {
+      const id = p?.id ? String(p.id) : null
+      if (!id) continue
+      const name = p?.nazwa ? String(p.nazwa) : ''
+      projectMap.set(id, name)
+    }
+  }
+
+  let archiver
+  try {
+    archiver = require('archiver')
+  } catch (_e) {
+    throw new Error('zip_export_unavailable')
+  }
+
+  const { PassThrough } = require('node:stream')
+  const out = new PassThrough()
+  const chunks = []
+  out.on('data', (d) => chunks.push(d))
+
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const zipNameRaw = fileName ? String(fileName) : `exef_documents_${today}.zip`
+  const zipName = sanitizePathSegment(zipNameRaw, `exef_documents_${today}.zip`).replace(/\s+/g, '_')
+
+  await new Promise((resolve, reject) => {
+    const archive = archiver('zip', { zlib: { level: 9 } })
+    archive.on('warning', (_err) => {
+    })
+    archive.on('error', (e) => reject(e))
+    out.on('error', (e) => reject(e))
+    out.on('end', resolve)
+    archive.pipe(out)
+
+    ;(async () => {
+      for (const inv of filteredInvoices) {
+        const invoiceId = String(inv.id)
+        const expenseTypeId = inv.expenseTypeId ? String(inv.expenseTypeId) : null
+        const projectId = inv.projectId ? String(inv.projectId) : null
+
+        const expenseTypeName = expenseTypeId ? (expenseTypeMap.get(expenseTypeId) || '') : ''
+        const projectName = projectId ? (projectMap.get(projectId) || '') : ''
+
+        const expenseFolder = sanitizePathSegment(expenseTypeId ? `${expenseTypeId}${expenseTypeName ? `_${expenseTypeName}` : ''}` : '', 'unassigned-expense-type')
+        const projectFolder = sanitizePathSegment(projectId ? `${projectId}${projectName ? `_${projectName}` : ''}` : '', 'unassigned-project')
+
+        let fileBuf = null
+        let invFileName = inv.fileName ? String(inv.fileName) : null
+        let invFileType = inv.fileType ? String(inv.fileType) : null
+
+        if (dataLayer && typeof dataLayer.invoices.getFile === 'function') {
+          const info = await dataLayer.invoices.getFile(invoiceId)
+          fileBuf = info?.file || null
+          invFileName = info?.fileName || invFileName
+          invFileType = info?.fileType || invFileType
+        } else {
+          const fullInvoice = await workflow.inbox.getInvoice(invoiceId)
+          fileBuf = normalizeFileToBufferForExport(fullInvoice?.originalFile)
+          invFileName = invFileName || fullInvoice?.fileName || null
+          invFileType = invFileType || fullInvoice?.fileType || null
+        }
+
+        if (!fileBuf) {
+          continue
+        }
+
+        let docName = invFileName ? String(invFileName) : null
+        if (!docName) {
+          const ext = inferFileExtension(invFileType) || ''
+          const base = inv.invoiceNumber ? String(inv.invoiceNumber) : invoiceId
+          docName = `${base}${ext}`
+        }
+        docName = sanitizePathSegment(docName, invoiceId)
+
+        const zipPath = `${expenseFolder}/${projectFolder}/${docName}`
+        archive.append(fileBuf, { name: zipPath })
+      }
+      Promise.resolve(archive.finalize()).catch(reject)
+    })().catch(reject)
+  })
+
+  return { filename: zipName, buffer: Buffer.concat(chunks) }
 }
 
 function normalizeFileToBufferForExport(value) {
@@ -1645,6 +2595,235 @@ app.post('/inbox/export/files', async (req, res) => {
     }
 
     res.json({ ok: true, outputDir, status, source, since, exported, skippedNoFile, total: invoices.length, matched: filteredInvoices.length })
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/export/documents.zip', async (req, res) => {
+  try {
+    const status = req.body?.status ? String(req.body.status) : INVOICE_STATUS.APPROVED
+    const source = req.body?.source ? String(req.body.source) : null
+    const since = req.body?.since ? String(req.body.since) : null
+
+    const ids = normalizeStringArray(req.body?.ids)
+    const projectIds = normalizeStringArray(req.body?.projectId ?? req.body?.projectIds)
+    const expenseTypeIds = normalizeStringArray(req.body?.expenseTypeId ?? req.body?.expenseTypeIds)
+
+    const filter = {
+      ...(status === 'all' ? {} : { status }),
+      ...(source ? { source } : {}),
+      ...(since ? { since } : {}),
+    }
+
+    const invoices = await workflow.listInvoices(filter)
+
+    const idSet = ids.length ? new Set(ids) : null
+    const projectSet = projectIds.length ? new Set(projectIds) : null
+    const expenseTypeSet = expenseTypeIds.length ? new Set(expenseTypeIds) : null
+
+    const filteredInvoices = invoices.filter((inv) => {
+      if (!inv || !inv.id) {
+        return false
+      }
+      if (idSet && !idSet.has(String(inv.id))) {
+        return false
+      }
+      if (projectSet && !projectSet.has(String(inv.projectId || ''))) {
+        return false
+      }
+      if (expenseTypeSet && !expenseTypeSet.has(String(inv.expenseTypeId || ''))) {
+        return false
+      }
+      return true
+    })
+
+    const expenseTypeMap = new Map()
+    const projectMap = new Map()
+    if (dataLayer) {
+      const expenseTypes = await dataLayer.expenseTypes.list()
+      for (const t of expenseTypes) {
+        const id = t?.id ? String(t.id) : null
+        if (!id) continue
+        const name = t?.nazwa ? String(t.nazwa) : ''
+        expenseTypeMap.set(id, name)
+      }
+      const projects = await dataLayer.projects.list()
+      for (const p of projects) {
+        const id = p?.id ? String(p.id) : null
+        if (!id) continue
+        const name = p?.nazwa ? String(p.nazwa) : ''
+        projectMap.set(id, name)
+      }
+    }
+
+    let archiver
+    try {
+      archiver = require('archiver')
+    } catch (_e) {
+      return res.status(400).json({ error: 'zip_export_unavailable' })
+    }
+
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    const zipNameRaw = req.body?.fileName ? String(req.body.fileName) : `exef_documents_${today}.zip`
+    const zipName = sanitizePathSegment(zipNameRaw, `exef_documents_${today}.zip`).replace(/\s+/g, '_')
+
+    res.setHeader('Content-Type', 'application/zip')
+    res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`)
+
+    const archive = archiver('zip', { zlib: { level: 9 } })
+    archive.on('warning', (_err) => {
+    })
+    archive.on('error', (_err) => {
+      try {
+        res.end()
+      } catch (_e) {
+      }
+    })
+
+    archive.pipe(res)
+
+    for (const inv of filteredInvoices) {
+      const invoiceId = String(inv.id)
+      const expenseTypeId = inv.expenseTypeId ? String(inv.expenseTypeId) : null
+      const projectId = inv.projectId ? String(inv.projectId) : null
+
+      const expenseTypeName = expenseTypeId ? (expenseTypeMap.get(expenseTypeId) || '') : ''
+      const projectName = projectId ? (projectMap.get(projectId) || '') : ''
+
+      const expenseFolder = sanitizePathSegment(expenseTypeId ? `${expenseTypeId}${expenseTypeName ? `_${expenseTypeName}` : ''}` : '', 'unassigned-expense-type')
+      const projectFolder = sanitizePathSegment(projectId ? `${projectId}${projectName ? `_${projectName}` : ''}` : '', 'unassigned-project')
+
+      let fileBuf = null
+      let fileName = inv.fileName ? String(inv.fileName) : null
+      let fileType = inv.fileType ? String(inv.fileType) : null
+
+      if (dataLayer && typeof dataLayer.invoices.getFile === 'function') {
+        const info = await dataLayer.invoices.getFile(invoiceId)
+        fileBuf = info?.file || null
+        fileName = info?.fileName || fileName
+        fileType = info?.fileType || fileType
+      } else {
+        const fullInvoice = await workflow.inbox.getInvoice(invoiceId)
+        fileBuf = normalizeFileToBufferForExport(fullInvoice?.originalFile)
+        fileName = fileName || fullInvoice?.fileName || null
+        fileType = fileType || fullInvoice?.fileType || null
+      }
+
+      if (!fileBuf) {
+        continue
+      }
+
+      let docName = fileName ? String(fileName) : null
+      if (!docName) {
+        const ext = inferFileExtension(fileType) || ''
+        const base = inv.invoiceNumber ? String(inv.invoiceNumber) : invoiceId
+        docName = `${base}${ext}`
+      }
+      docName = sanitizePathSegment(docName, invoiceId)
+
+      const zipPath = `${expenseFolder}/${projectFolder}/${docName}`
+      archive.append(fileBuf, { name: zipPath })
+    }
+
+    await archive.finalize()
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/export/send-email', async (req, res) => {
+  try {
+    settings = await getSettingsFromBackend()
+    const cfg = getExportEmailSettings(settings)
+
+    const to = req.body?.to ? String(req.body.to) : (cfg.to ? String(cfg.to) : null)
+    if (!to) {
+      return res.status(400).json({ error: 'export_email_to_required' })
+    }
+
+    const smtpCfg = {
+      host: req.body?.smtp?.host || cfg.smtp.host,
+      port: req.body?.smtp?.port != null ? Number(req.body.smtp.port) : cfg.smtp.port,
+      secure: req.body?.smtp?.secure === true || cfg.smtp.secure === true,
+      starttls: req.body?.smtp?.starttls === true || cfg.smtp.starttls === true,
+      user: req.body?.smtp?.user || cfg.smtp.user,
+      password: req.body?.smtp?.password || cfg.smtp.password,
+    }
+
+    const fromRaw = req.body?.from ? String(req.body.from) : (cfg.from || smtpCfg.user || 'exef@localhost')
+    const from = String(fromRaw)
+    const subject = req.body?.subject ? String(req.body.subject) : 'ExEF export'
+    const text = req.body?.text ? String(req.body.text) : 'W załączniku znajduje się eksport z ExEF.'
+
+    const type = req.body?.type ? String(req.body.type) : 'documents_zip'
+
+    let attachment
+    if (type === 'documents_zip' || type === 'documents.zip') {
+      const status = req.body?.status ? String(req.body.status) : INVOICE_STATUS.APPROVED
+      const source = req.body?.source ? String(req.body.source) : null
+      const since = req.body?.since ? String(req.body.since) : null
+      const ids = normalizeStringArray(req.body?.ids)
+      const projectIds = normalizeStringArray(req.body?.projectId ?? req.body?.projectIds)
+      const expenseTypeIds = normalizeStringArray(req.body?.expenseTypeId ?? req.body?.expenseTypeIds)
+      attachment = await buildDocumentsZipBuffer({ status, source, since, ids, projectIds, expenseTypeIds, fileName: req.body?.fileName })
+      const message = buildMimeWithAttachment({
+        from,
+        to,
+        subject,
+        text,
+        attachmentName: attachment.filename,
+        attachmentMimeType: 'application/zip',
+        attachmentBuffer: attachment.buffer,
+      })
+
+      await smtpSendMail({
+        host: smtpCfg.host,
+        port: smtpCfg.port,
+        secure: smtpCfg.secure,
+        starttls: smtpCfg.starttls,
+        user: smtpCfg.user,
+        password: smtpCfg.password,
+        from,
+        to,
+        message,
+      })
+
+      return res.json({ ok: true, to, from, subject, filename: attachment.filename, bytes: attachment.buffer.length })
+    }
+
+    const format = req.body?.format ? String(req.body.format) : EXPORT_FORMATS.CSV
+    const result = await workflow.exportApproved(format, req.body?.options || {})
+    if (!result?.content) {
+      return res.status(400).json({ error: 'export_empty' })
+    }
+
+    const buf = Buffer.isBuffer(result.content) ? result.content : Buffer.from(String(result.content), 'utf8')
+    const fileName = result.filename || `export_${format}.${KPIR_EXPORT_FORMATS[format]?.extension || format}`
+
+    const message = buildMimeWithAttachment({
+      from,
+      to,
+      subject,
+      text,
+      attachmentName: fileName,
+      attachmentMimeType: result.mimeType || 'application/octet-stream',
+      attachmentBuffer: buf,
+    })
+
+    await smtpSendMail({
+      host: smtpCfg.host,
+      port: smtpCfg.port,
+      secure: smtpCfg.secure,
+      starttls: smtpCfg.starttls,
+      user: smtpCfg.user,
+      password: smtpCfg.password,
+      from,
+      to,
+      message,
+    })
+
+    res.json({ ok: true, to, from, subject, filename: fileName, bytes: buf.length })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }
@@ -1852,11 +3031,57 @@ app.post('/inbox/invoices/:id/reject', async (req, res) => {
   }
 })
 
+app.get('/inbox/export/formats', async (_req, res) => {
+  try {
+    const coreFormats = [
+      { id: EXPORT_FORMATS.CSV, name: 'CSV', extension: 'csv', mimeType: 'text/csv;charset=utf-8' },
+      { id: EXPORT_FORMATS.JSON, name: 'JSON', extension: 'json', mimeType: 'application/json' },
+      { id: EXPORT_FORMATS.XLSX, name: 'XLSX', extension: 'xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', binary: true },
+      { id: EXPORT_FORMATS.WFIRMA, name: 'wFirma (API)', extension: '', mimeType: 'application/json' },
+    ]
+
+    const kpirFormats = Object.entries(KPIR_EXPORT_FORMATS).map(([id, cfg]) => ({ id, ...cfg }))
+
+    res.json({ formats: [...coreFormats, ...kpirFormats] })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
 app.post('/inbox/export', async (req, res) => {
   try {
     const format = req.body.format || EXPORT_FORMATS.CSV
     const result = await workflow.exportApproved(format, req.body.options || {})
     res.json(result)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/export/download', async (req, res) => {
+  try {
+    const format = req.body?.format ? String(req.body.format) : EXPORT_FORMATS.CSV
+    const result = await workflow.exportApproved(format, req.body?.options || {})
+
+    const content = result?.content
+    if (!content) {
+      return res.status(400).json({ error: 'export_empty' })
+    }
+
+    const defaultExt = (KPIR_EXPORT_FORMATS[format]?.extension) || (format === EXPORT_FORMATS.CSV ? 'csv' : format === EXPORT_FORMATS.JSON ? 'json' : format)
+    const fallbackName = `export_${format}${defaultExt ? `.${defaultExt}` : ''}`
+    const name = sanitizePathSegment(result?.filename || fallbackName, fallbackName)
+
+    res.setHeader('Content-Type', result?.mimeType || 'application/octet-stream')
+    res.setHeader('Content-Disposition', `attachment; filename="${name}"`)
+
+    if (Buffer.isBuffer(content)) {
+      return res.send(content)
+    }
+    if (content && typeof content === 'object' && Array.isArray(content.data)) {
+      return res.send(Buffer.from(content.data))
+    }
+    return res.send(String(content))
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }
@@ -1876,8 +3101,8 @@ app.get('/inbox/export.csv', async (_req, res) => {
 
 app.post('/inbox/ksef/poll', async (req, res) => {
   try {
-    const { accessToken, since } = req.body
-    const invoices = await ksef.pollNewInvoices({ accessToken, since })
+    const { accessToken, since, until } = req.body
+    const invoices = await ksef.pollNewInvoices({ accessToken, since, until })
     for (const invData of invoices) {
       const ksefKey = invData?.ksefReferenceNumber || invData?.ksefId || null
       await workflow.addManualInvoice('ksef', null, {

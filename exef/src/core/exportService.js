@@ -1,6 +1,8 @@
 const EventEmitter = require('node:events')
 const fs = require('node:fs')
 
+const { createKpirExportService, EXPORT_FORMATS: KPIR_EXPORT_FORMATS } = require('./kpirExport')
+
 const EXPORT_FORMATS = {
   CSV: 'csv',
   XLSX: 'xlsx',
@@ -13,12 +15,19 @@ class ExportService extends EventEmitter {
     super()
     this.wfirmaConfig = options.wfirmaConfig || null
     this.webhookUrl = options.webhookUrl || null
+    this.kpirExportService = createKpirExportService(options.kpir || {})
   }
 
   async exportInvoices(invoices, format, options = {}) {
     this.emit('exporting', { count: invoices.length, format })
 
     let result
+
+    if (Object.prototype.hasOwnProperty.call(KPIR_EXPORT_FORMATS, format)) {
+      result = await this.kpirExportService.exportInvoices(invoices, format, options)
+      this.emit('exported', { count: invoices.length, format, result })
+      return result
+    }
 
     switch (format) {
       case EXPORT_FORMATS.CSV:

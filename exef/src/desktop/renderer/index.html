@@ -228,6 +228,7 @@
         <button id="navInbox" class="nav-btn active" data-page="inbox">📥 Inbox</button>
         <button id="navProjects" class="nav-btn" data-page="projects">📁 Projekty</button>
         <button id="navLabels" class="nav-btn" data-page="labels">🏷️ Etykiety</button>
+        <button id="navExport" class="nav-btn" data-page="export">📦 Export</button>
         <button id="navSettings" class="nav-btn" data-page="settings">⚙️ Konfiguracja</button>
       </div>
       <div class="header-actions">
@@ -248,6 +249,7 @@
           <button class="tab" data-filter="pending">Oczekujące (<span id="statPending">0</span>)</button>
           <button class="tab" data-filter="described">Opisane (<span id="statDescribed">0</span>)</button>
           <button class="tab" data-filter="approved">Zatwierdzone (<span id="statApproved">0</span>)</button>
+          <button class="tab" data-filter="rejected">Odrzucone (<span id="statRejected">0</span>)</button>
         </div>
 
         <div id="invoiceList"></div>
@@ -312,6 +314,21 @@
             </div>
           </div>
           <div id="labelsPageList"></div>
+        </div>
+      </div>
+
+      <div id="pageExport" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="page-title">Export</div>
+              <div class="subtle">Eksport zatwierdzonych dokumentów (pobierz lub wyślij na email).</div>
+            </div>
+            <div>
+              <button id="exportReloadBtn">Odśwież</button>
+            </div>
+          </div>
+          <div id="exportPageContent"></div>
         </div>
       </div>
 
