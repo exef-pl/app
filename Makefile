@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-cli exef-test-e2e exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-cli exef-test-e2e exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test exef-test-storage-up exef-test-storage-down exef-test-storage exef-test-storage-full exef-test-email-up exef-test-email-down exef-test-email exef-test-email-full exef-test-mocks-up exef-test-mocks-down exef-test-devices-up exef-test-devices-down exef-test-devices exef-test-devices-full
 
 INCLUDE_SUBMODULES ?= 0
 
@@ -35,6 +35,18 @@ help:
 	@echo "  exef-test-gui       - Open GUI test interface in browser (http://localhost:3030/test)"
 	@echo "  exef-lint           - Run linter on exef code"
 	@echo "  exef-clean          - Clean exef build artifacts"
+	@echo ""
+	@echo "  ExEF Docker Mock Tests:"
+	@echo "  exef-test-storage-up    - Start storage mock services (Dropbox, GDrive, OneDrive, Nextcloud)"
+	@echo "  exef-test-storage-down  - Stop storage mock services"
+	@echo "  exef-test-storage       - Run storage sync tests"
+	@echo "  exef-test-storage-full  - Full cycle: up + test + down"
+	@echo "  exef-test-email-up      - Start email mock services (Gmail, Outlook, GreenMail)"
+	@echo "  exef-test-email-down    - Stop email mock services"
+	@echo "  exef-test-email         - Run email sync tests"
+	@echo "  exef-test-email-full    - Full cycle: up + test + down"
+	@echo "  exef-test-mocks-up      - Start all mock services"
+	@echo "  exef-test-mocks-down    - Stop all mock services"
 	@echo ""
 	@echo "  ExEF Build:"
 	@echo "  exef-web-docker     - Build docker image for exef web service (VPS)"
@@ -298,6 +310,62 @@ polish-invoicingback-build:
 
 polish-invoicingback-test:
 	@echo "No tests configured for polishInvoicingback."
+
+# Docker Mock Services for Testing
+exef-test-storage-up:
+	@echo "Starting storage mock services..."
+	@cd exef && docker compose -f docker/storage-tests/docker-compose.yml up -d --build
+	@echo "Storage mocks running on ports 8091-8094"
+
+exef-test-storage-down:
+	@echo "Stopping storage mock services..."
+	@cd exef && docker compose -f docker/storage-tests/docker-compose.yml down
+
+exef-test-storage:
+	@echo "Running storage sync tests..."
+	@cd exef && docker compose -f docker/storage-tests/docker-compose.yml run --rm test-runner
+
+exef-test-storage-full: exef-test-storage-up exef-test-storage exef-test-storage-down
+	@echo "Storage tests completed."
+
+exef-test-email-up:
+	@echo "Starting email mock services..."
+	@cd exef && docker compose -f docker/email-tests/docker-compose.yml up -d --build
+	@echo "Email mocks running on ports 8081-8082, GreenMail on 3143/3025"
+
+exef-test-email-down:
+	@echo "Stopping email mock services..."
+	@cd exef && docker compose -f docker/email-tests/docker-compose.yml down
+
+exef-test-email:
+	@echo "Running email sync tests..."
+	@cd exef && docker compose -f docker/email-tests/docker-compose.yml run --rm test-runner
+
+exef-test-email-full: exef-test-email-up exef-test-email exef-test-email-down
+	@echo "Email tests completed."
+
+exef-test-mocks-up: exef-test-storage-up exef-test-email-up exef-test-devices-up
+	@echo "All mock services started."
+
+exef-test-mocks-down: exef-test-storage-down exef-test-email-down exef-test-devices-down
+	@echo "All mock services stopped."
+
+# Device Mock Services (Scanners & Printers)
+exef-test-devices-up:
+	@echo "Starting device mock services (scanners & printers)..."
+	@cd exef && docker compose -f docker/device-tests/docker-compose.yml up -d --build
+	@echo "Device mocks running: Scanners on 8101-8102, Printers on 8111-8112"
+
+exef-test-devices-down:
+	@echo "Stopping device mock services..."
+	@cd exef && docker compose -f docker/device-tests/docker-compose.yml down
+
+exef-test-devices:
+	@echo "Running device sync tests..."
+	@cd exef && docker compose -f docker/device-tests/docker-compose.yml run --rm test-runner
+
+exef-test-devices-full: exef-test-devices-up exef-test-devices exef-test-devices-down
+	@echo "Device tests completed."
 
 # Release automation: bump version, generate docs/v/<tag>/, commit, tag and push
 push:

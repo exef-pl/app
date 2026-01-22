@@ -249,10 +249,12 @@ class StorageSync extends EventEmitter {
       let hasMore = true
       let first = cursor ? false : true
 
+      const apiBase = conn?.apiUrl || 'https://api.dropboxapi.com'
+
       while (hasMore) {
         const url = first
-          ? 'https://api.dropboxapi.com/2/files/list_folder'
-          : 'https://api.dropboxapi.com/2/files/list_folder/continue'
+          ? `${apiBase}/2/files/list_folder`
+          : `${apiBase}/2/files/list_folder/continue`
         const body = first
           ? {
             path: String(p || ''),
@@ -299,7 +301,7 @@ class StorageSync extends EventEmitter {
             }
           }
 
-          const content = await this._downloadDropboxFile(accessToken, entry.path_display)
+          const content = await this._downloadDropboxFile(accessToken, entry.path_display, conn)
           const ext = path.extname(name).toLowerCase()
 
           if (this.inbox) {
@@ -335,8 +337,9 @@ class StorageSync extends EventEmitter {
     return invoices
   }
 
-  async _downloadDropboxFile(accessToken, dropboxPath) {
-    const res = await fetch('https://content.dropboxapi.com/2/files/download', {
+  async _downloadDropboxFile(accessToken, dropboxPath, conn) {
+    const apiBase = conn?.apiUrl || 'https://content.dropboxapi.com'
+    const res = await fetch(`${apiBase}/2/files/download`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -396,13 +399,15 @@ class StorageSync extends EventEmitter {
       let pageToken = null
       let maxModifiedTime = null
 
+      const apiBase = conn?.apiUrl || 'https://www.googleapis.com'
+
       do {
         const qBase = `'${folderId.replace(/'/g, "\\'")}' in parents and trashed=false`
         const q = since
           ? `${qBase} and modifiedTime > '${String(since).replace(/'/g, "\\'")}'`
           : qBase
         const base =
-          'https://www.googleapis.com/drive/v3/files' +
+          `${apiBase}/drive/v3/files` +
           `?q=${encodeURIComponent(q)}` +
           `&pageSize=${encodeURIComponent('1000')}` +
           `&fields=${encodeURIComponent('nextPageToken,files(id,name,mimeType,size,modifiedTime)')}`
@@ -556,7 +561,8 @@ class StorageSync extends EventEmitter {
       return null
     }
 
-    const tokenUrl = String(conn?.tokenUrl || conn?.oauth?.tokenUrl || 'https://oauth2.googleapis.com/token')
+    const apiBase = conn?.apiUrl || null
+    const tokenUrl = String(conn?.tokenUrl || conn?.oauth?.tokenUrl || (apiBase ? `${apiBase}/oauth2/token` : 'https://oauth2.googleapis.com/token'))
     const params = new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
@@ -590,7 +596,8 @@ class StorageSync extends EventEmitter {
 
   async _downloadGdriveFile({ accessToken, conn, fileId }) {
     const id = String(fileId)
-    const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media`
+    const apiBase = conn?.apiUrl || 'https://www.googleapis.com'
+    const url = `${apiBase}/drive/v3/files/${encodeURIComponent(id)}?alt=media`
 
     let token = accessToken ? String(accessToken) : this._getGdriveAccessToken(conn)
     if (!token) {
@@ -650,9 +657,10 @@ class StorageSync extends EventEmitter {
       const deltaKey = `onedrive:${conn?.id || 'onedrive'}:${driveId || 'me'}:${folderId}`
       let deltaLink = this._onedriveDeltaLinks.get(deltaKey) || null
 
+      const apiBase = conn?.apiUrl || 'https://graph.microsoft.com'
       const baseUrl = driveId
-        ? `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}`
-        : 'https://graph.microsoft.com/v1.0/me/drive'
+        ? `${apiBase}/v1.0/drives/${encodeURIComponent(driveId)}`
+        : `${apiBase}/v1.0/me/drive`
 
       let url = deltaLink
         ? deltaLink
@@ -754,7 +762,8 @@ class StorageSync extends EventEmitter {
       return null
     }
 
-    const tokenUrl = String(conn?.tokenUrl || conn?.oauth?.tokenUrl || 'https://login.microsoftonline.com/common/oauth2/v2.0/token')
+    const apiBase = conn?.apiUrl || null
+    const tokenUrl = String(conn?.tokenUrl || conn?.oauth?.tokenUrl || (apiBase ? `${apiBase}/oauth2/v2.0/token` : 'https://login.microsoftonline.com/common/oauth2/v2.0/token'))
     const params = new URLSearchParams({
       client_id: clientId,
       refresh_token: refreshToken,
@@ -825,9 +834,10 @@ class StorageSync extends EventEmitter {
   async _downloadOnedriveFile({ accessToken, conn, itemId }) {
     const id = String(itemId)
     const driveId = conn?.driveId || null
+    const apiBase = conn?.apiUrl || 'https://graph.microsoft.com'
     const baseUrl = driveId
-      ? `https://graph.microsoft.com/v1.0/drives/${encodeURIComponent(driveId)}`
-      : 'https://graph.microsoft.com/v1.0/me/drive'
+      ? `${apiBase}/v1.0/drives/${encodeURIComponent(driveId)}`
+      : `${apiBase}/v1.0/me/drive`
     const url = `${baseUrl}/items/${encodeURIComponent(id)}/content`
 
     let token = accessToken ? String(accessToken) : conn?.accessToken || conn?.oauth?.accessToken

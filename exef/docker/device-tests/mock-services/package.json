@@ -1,0 +1,16 @@
+{
+  "name": "exef-device-mocks",
+  "version": "1.0.0",
+  "description": "Mock scanner and printer services for ExEF testing",
+  "main": "scanner-mock-server.js",
+  "scripts": {
+    "scanner": "node scanner-mock-server.js",
+    "printer": "node printer-mock-server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^9.0.0",
+    "sharp": "^0.33.0"
+  }
+}

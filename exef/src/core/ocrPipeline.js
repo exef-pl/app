@@ -8,6 +8,51 @@ const OCR_PROVIDERS = {
   TESSERACT: 'tesseract',
   GOOGLE_VISION: 'google-vision',
   AZURE_OCR: 'azure-ocr',
+  EXTERNAL_API: 'external-api',
+}
+
+const EXTERNAL_OCR_API_PRESETS = {
+  exef_pro: {
+    name: 'EXEF Pro (self-hosted)',
+    url: 'http://127.0.0.1:8095/ocr',
+    method: 'POST',
+  },
+  google_vision_v1_images_annotate: {
+    name: 'Google Cloud Vision API',
+    url: 'https://vision.googleapis.com/v1/images:annotate',
+    method: 'POST',
+    auth: 'google-api-key',
+  },
+  azure_computer_vision_read: {
+    name: 'Azure AI Vision (Read)',
+    url: 'https://{endpoint}/vision/v3.2/read/analyze',
+    method: 'POST',
+    auth: 'azure-key',
+  },
+  ocr_space_parse_image: {
+    name: 'OCR.Space',
+    url: 'https://api.ocr.space/parse/image',
+    method: 'POST',
+    auth: 'api-key',
+  },
+  mindee_ocr: {
+    name: 'Mindee OCR',
+    url: 'https://api.mindee.net/v1/products/mindee/ocr/v1/predict',
+    method: 'POST',
+    auth: 'bearer',
+  },
+  nanonets_ocr: {
+    name: 'Nanonets OCR',
+    url: 'https://app.nanonets.com/api/v2/OCR/Model/{modelId}/LabelUrls/',
+    method: 'POST',
+    auth: 'basic',
+  },
+  abbyy_cloud_ocr: {
+    name: 'ABBYY Cloud OCR SDK',
+    url: 'https://cloud.ocrsdk.com/processImage',
+    method: 'POST',
+    auth: 'basic',
+  },
 }
 
 class OcrPipeline extends EventEmitter {
@@ -22,6 +67,13 @@ class OcrPipeline extends EventEmitter {
       psm: options.tesseract?.psm ?? 3,
       oem: options.tesseract?.oem ?? 1,
       timeoutMs: options.tesseract?.timeoutMs ?? 60000,
+    }
+
+    this.pdf = {
+      pdftoppmBinary: options.pdf?.pdftoppmBinary || 'pdftoppm',
+      dpi: options.pdf?.dpi ?? 200,
+      timeoutMs: options.pdf?.timeoutMs ?? 120000,
+      maxPages: options.pdf?.maxPages ?? 30,
     }
   }
 
@@ -151,11 +203,21 @@ class OcrPipeline extends EventEmitter {
     let ocrResult
 
     if (this.provider === OCR_PROVIDERS.TESSERACT) {
-      ocrResult = await this._runTesseract(fileBuffer, fileType)
+      if (this._isPdf({ fileType, fileName })) {
+        try {
+          ocrResult = await this._runTesseract(fileBuffer, fileType)
+        } catch (err) {
+          ocrResult = await this._runTesseractPdfFallback({ fileBuffer, fileType, fileName, originalError: err })
+        }
+      } else {
+        ocrResult = await this._runTesseract(fileBuffer, fileType)
+      }
     } else if (this.provider === OCR_PROVIDERS.GOOGLE_VISION) {
       ocrResult = await this._runGoogleVision(fileBuffer)
     } else if (this.provider === OCR_PROVIDERS.AZURE_OCR) {
       ocrResult = await this._runAzureOcr(fileBuffer)
+    } else if (this.provider === OCR_PROVIDERS.EXTERNAL_API) {
+      ocrResult = await this._runExternalApiOcr({ fileBuffer, fileType, fileName })
     } else {
       throw new Error(`Unknown OCR provider: ${this.provider}`)
     }
@@ -214,6 +276,73 @@ class OcrPipeline extends EventEmitter {
     } catch (e) {
       if (e && e.code === 'ENOENT') {
         throw new Error('Tesseract binary not found. Install `tesseract-ocr` and ensure `tesseract` is on PATH.')
+      }
+      throw e
+    } finally {
+      await fs.rm(dir, { recursive: true, force: true })
+    }
+  }
+
+  _isPdf({ fileType, fileName } = {}) {
+    const ft = String(fileType || '').toLowerCase()
+    const fn = String(fileName || '').toLowerCase()
+    return ft.includes('pdf') || fn.endsWith('.pdf')
+  }
+
+  async _runTesseractPdfFallback({ fileBuffer, fileType, fileName, originalError }) {
+    this.emit('tesseract:pdf_fallback', {
+      size: fileBuffer?.length || 0,
+      fileType,
+      fileName,
+      error: originalError?.message || String(originalError || ''),
+    })
+
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'exef-ocr-pdf-'))
+    const inputPdf = path.join(dir, 'input.pdf')
+    const outPrefix = path.join(dir, 'page')
+
+    try {
+      await fs.writeFile(inputPdf, fileBuffer)
+
+      const args = ['-png', '-r', String(this.pdf.dpi), inputPdf, outPrefix]
+      const { stderr, exitCode } = await this._spawnCapture(this.pdf.pdftoppmBinary, args, this.pdf.timeoutMs)
+
+      if (exitCode !== 0) {
+        const msg = (stderr || '').trim()
+        throw new Error(`PDF conversion failed${msg ? `: ${msg}` : ''}`)
+      }
+
+      const entries = await fs.readdir(dir)
+      const pages = entries
+        .filter((n) => n.startsWith('page-') && n.toLowerCase().endsWith('.png'))
+        .sort((a, b) => {
+          const na = Number((a.match(/page-(\d+)/) || [])[1] || 0)
+          const nb = Number((b.match(/page-(\d+)/) || [])[1] || 0)
+          return na - nb
+        })
+
+      if (!pages.length) {
+        throw new Error('PDF conversion produced no pages')
+      }
+
+      const limited = pages.slice(0, Math.max(1, Number(this.pdf.maxPages) || 30))
+      const texts = []
+
+      for (const p of limited) {
+        const buf = await fs.readFile(path.join(dir, p))
+        const pageResult = await this._runTesseract(buf, 'image/png')
+        if (pageResult?.text) {
+          texts.push(pageResult.text)
+        }
+      }
+
+      return {
+        text: texts.join('\n').trim(),
+        confidence: null,
+      }
+    } catch (e) {
+      if (e && e.code === 'ENOENT') {
+        throw new Error('PDF conversion tool not found. Install `poppler-utils` (pdftoppm) or configure a supported PDF renderer.')
       }
       throw e
     } finally {
@@ -337,20 +466,125 @@ class OcrPipeline extends EventEmitter {
   }
 
   async _runGoogleVision(fileBuffer) {
-    if (!this.apiConfig?.googleVisionKey) {
+    const apiUrl = this.apiConfig?.googleVisionApiUrl || 'https://vision.googleapis.com/v1/images:annotate'
+    const apiKey = this.apiConfig?.googleVisionKey
+    const timeoutMs = Math.max(1000, Number(this.apiConfig?.googleVisionTimeoutMs) || 60000)
+
+    if (!apiKey) {
       throw new Error('Google Vision API key not configured')
     }
 
-    // Placeholder - requires @google-cloud/vision
-    // const vision = require('@google-cloud/vision')
-    // const client = new vision.ImageAnnotatorClient()
-    // const [result] = await client.textDetection(fileBuffer)
+    const url = apiUrl.includes('?')
+      ? `${apiUrl}&key=${encodeURIComponent(String(apiKey))}`
+      : `${apiUrl}?key=${encodeURIComponent(String(apiKey))}`
 
-    this.emit('google-vision:run', { size: fileBuffer.length })
+    this.emit('google-vision:run', { size: fileBuffer.length, url: apiUrl })
 
-    return {
-      text: '',
-      confidence: 0,
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      try {
+        controller.abort()
+      } catch (_e) {
+      }
+    }, timeoutMs)
+
+    try {
+      const body = {
+        requests: [
+          {
+            image: { content: Buffer.from(fileBuffer).toString('base64') },
+            features: [{ type: 'TEXT_DETECTION' }],
+          },
+        ],
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      })
+
+      const json = await res.json().catch(() => null)
+      if (!res.ok) {
+        const msg = json && typeof json === 'object'
+          ? (json.error?.message || json.error?.status || JSON.stringify(json))
+          : String(json || '')
+        throw new Error(`Google Vision API request failed: ${res.status}${msg ? `: ${msg}` : ''}`)
+      }
+
+      const text =
+        json?.responses?.[0]?.fullTextAnnotation?.text ||
+        json?.responses?.[0]?.textAnnotations?.[0]?.description ||
+        ''
+
+      return {
+        text: String(text || '').trim(),
+        confidence: null,
+      }
+    } catch (e) {
+      if (e && String(e.name || '') === 'AbortError') {
+        throw new Error('Google Vision API request timed out')
+      }
+      throw e
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
+  async _runExternalApiOcr({ fileBuffer, fileType, fileName }) {
+    const presetKey = this.apiConfig?.externalPreset || this.apiConfig?.preset || null
+    const presetUrl = presetKey && EXTERNAL_OCR_API_PRESETS[presetKey]
+      ? EXTERNAL_OCR_API_PRESETS[presetKey].url
+      : null
+
+    const url = String(this.apiConfig?.externalUrl || this.apiConfig?.url || presetUrl || '').trim()
+    if (!url) {
+      throw new Error('External OCR URL not configured')
+    }
+
+    if (url.toLowerCase().startsWith('mock://')) {
+      return {
+        text: String(this.apiConfig?.mockText || ''),
+        confidence: 0,
+      }
+    }
+
+    const timeoutMs = Number(this.apiConfig?.timeoutMs) || 60000
+    const headers = this.apiConfig?.headers && typeof this.apiConfig.headers === 'object'
+      ? { ...this.apiConfig.headers }
+      : {}
+
+    headers['Content-Type'] = headers['Content-Type'] || 'application/json'
+
+    const controller = new AbortController()
+    const t = setTimeout(() => controller.abort(), Math.max(1000, timeoutMs))
+
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          base64: fileBuffer.toString('base64'),
+          fileType: fileType || null,
+          fileName: fileName || null,
+        }),
+        signal: controller.signal,
+      })
+
+      const json = await res.json().catch(() => null)
+      if (!res.ok) {
+        const msg = json && (json.error || json.message) ? String(json.error || json.message) : null
+        throw new Error(`External OCR request failed: ${res.status}${msg ? `: ${msg}` : ''}`)
+      }
+
+      const text = json?.text ?? json?.rawText ?? null
+      return {
+        text: text ? String(text) : '',
+        confidence: json?.confidence ?? null,
+      }
+    } finally {
+      clearTimeout(t)
     }
   }
 
@@ -426,4 +660,5 @@ module.exports = {
   OcrPipeline,
   createOcrPipeline,
   OCR_PROVIDERS,
+  EXTERNAL_OCR_API_PRESETS,
 }

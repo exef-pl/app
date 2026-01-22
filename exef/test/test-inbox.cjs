@@ -8,7 +8,6 @@ function resolveBaseUrl() {
   if (process.env.EXEF_TEST_URL) {
     return process.env.EXEF_TEST_URL
   }
-
   try {
     const portFile = path.join(__dirname, '..', '.exef-local-service.port')
     if (fs.existsSync(portFile)) {
@@ -24,6 +23,84 @@ function resolveBaseUrl() {
 }
 
 const BASE_URL = resolveBaseUrl()
+
+async function testSettingsOcrExternalApiMock() {
+  console.log('\n[TEST] PUT /settings (ocr external-api mock)')
+
+  const settingsRes = await fetch(`${BASE_URL}/settings`)
+  const originalSettings = await settingsRes.json().catch(() => null)
+  if (!settingsRes.ok || !originalSettings) {
+    console.log('  Cannot read settings, skip')
+    return false
+  }
+
+  const originalOcr = originalSettings?.ocr || null
+
+  let invoiceId = null
+
+  try {
+    const putRes = await fetch(`${BASE_URL}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ocr: {
+          provider: 'external-api',
+          api: {
+            externalUrl: 'mock://ocr',
+            mockText: 'Faktura FV/2026/01/XYZ',
+          },
+        },
+      }),
+    })
+    const putJson = await putRes.json().catch(() => ({}))
+    console.log('  Settings status:', putRes.status)
+    if (!putRes.ok) {
+      console.log('  Settings response:', JSON.stringify(putJson))
+      return false
+    }
+
+    const addRes = await fetch(`${BASE_URL}/inbox/invoices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        source: 'scanner',
+        file: 'data:image/png;base64,AA==',
+        metadata: {
+          fileName: 'mock.png',
+          fileType: 'image/png',
+        },
+      }),
+    })
+    const addJson = await addRes.json().catch(() => ({}))
+    console.log('  Add invoice status:', addRes.status)
+    if (!addRes.ok || !addJson?.id) {
+      console.log('  Add invoice response:', JSON.stringify(addJson))
+      return false
+    }
+    invoiceId = addJson.id
+
+    const procRes = await fetch(`${BASE_URL}/inbox/invoices/${encodeURIComponent(invoiceId)}/process`, { method: 'POST' })
+    const procJson = await procRes.json().catch(() => ({}))
+    console.log('  Process status:', procRes.status)
+    if (!procRes.ok) {
+      console.log('  Process response:', JSON.stringify(procJson))
+      return false
+    }
+
+    return String(procJson?.invoiceNumber || '') === 'FV/2026/01/XYZ'
+  } finally {
+    try {
+      await fetch(`${BASE_URL}/settings`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ocr: originalOcr,
+        }),
+      })
+    } catch (_e) {
+    }
+  }
+}
 
 async function testHealth() {
   console.log('\n[TEST] GET /health')
@@ -394,6 +471,7 @@ async function runAllTests() {
     results.push({ name: 'debug/storage/state', ok: await testDebugStorageState() })
     results.push({ name: 'debug/storage/sync', ok: await testDebugStorageSync() })
     results.push({ name: 'settings email round-trip', ok: await testSettingsEmailRoundTrip() })
+    results.push({ name: 'settings ocr external-api mock', ok: await testSettingsOcrExternalApiMock() })
     results.push({ name: 'storage local folder -> process (xml)', ok: await testLocalFolderStorageSyncImportAndProcess() })
 
     const jsonInvoiceId = await testAddInvoiceFromJson()

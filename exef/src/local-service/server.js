@@ -82,6 +82,20 @@ function getDefaultSettings() {
         expenseTypeSelection: 'select',
       },
     },
+    ocr: {
+      provider: 'tesseract',
+      api: {
+        googleVisionApiUrl: null,
+        googleVisionKey: null,
+        googleVisionTimeoutMs: null,
+        azureEndpoint: null,
+        azureKey: null,
+        externalPreset: null,
+        externalUrl: null,
+        timeoutMs: null,
+        mockText: null,
+      },
+    },
     channels: {
       localFolders: { paths: [] },
       email: { accounts: [], activeAccountId: null },
@@ -224,6 +238,36 @@ function buildSettingsFromEnv() {
     })
   }
 
+  // Scanners from .env
+  const scanners = []
+  for (let i = 1; i <= 10; i++) {
+    const prefix = `EXEF_SCANNER_${i}_`
+    if (process.env[`${prefix}ENABLED`] === 'true' || process.env[`${prefix}API_URL`]) {
+      scanners.push({
+        id: `scanner-${i}-env`,
+        name: process.env[`${prefix}NAME`] || `Scanner ${i} (env)`,
+        enabled: process.env[`${prefix}ENABLED`] !== 'false',
+        apiUrl: process.env[`${prefix}API_URL`] || null,
+        protocol: process.env[`${prefix}PROTOCOL`] || 'escl',
+      })
+    }
+  }
+
+  // Printers from .env
+  const printers = []
+  for (let i = 1; i <= 10; i++) {
+    const prefix = `EXEF_PRINTER_${i}_`
+    if (process.env[`${prefix}ENABLED`] === 'true' || process.env[`${prefix}API_URL`]) {
+      printers.push({
+        id: `printer-${i}-env`,
+        name: process.env[`${prefix}NAME`] || `Printer ${i} (env)`,
+        enabled: process.env[`${prefix}ENABLED`] !== 'false',
+        apiUrl: process.env[`${prefix}API_URL`] || null,
+        protocol: process.env[`${prefix}PROTOCOL`] || 'ipp',
+      })
+    }
+  }
+
   // Local folders from .env
   const envWatchPaths = process.env.EXEF_WATCH_PATHS 
     ? process.env.EXEF_WATCH_PATHS.split(',').map((p) => p.trim()).filter(Boolean) 
@@ -244,6 +288,41 @@ function buildSettingsFromEnv() {
     settings.channels.localFolders.paths = envWatchPaths
   }
 
+  if (
+    process.env.EXEF_OCR_PROVIDER ||
+    process.env.EXEF_OCR_EXTERNAL_URL ||
+    process.env.EXEF_OCR_EXTERNAL_PRESET ||
+    process.env.EXEF_OCR_GOOGLE_VISION_API_URL ||
+    process.env.EXEF_OCR_GOOGLE_VISION_KEY ||
+    process.env.EXEF_OCR_GOOGLE_VISION_TIMEOUT_MS ||
+    process.env.EXEF_OCR_AZURE_ENDPOINT ||
+    process.env.EXEF_OCR_AZURE_KEY
+  ) {
+    settings.ocr = settings.ocr || {}
+    settings.ocr.provider = process.env.EXEF_OCR_PROVIDER || settings.ocr.provider
+    settings.ocr.api = {
+      ...(settings.ocr.api || {}),
+      googleVisionApiUrl: process.env.EXEF_OCR_GOOGLE_VISION_API_URL || (settings.ocr.api || {}).googleVisionApiUrl,
+      googleVisionKey: process.env.EXEF_OCR_GOOGLE_VISION_KEY || (settings.ocr.api || {}).googleVisionKey,
+      googleVisionTimeoutMs: process.env.EXEF_OCR_GOOGLE_VISION_TIMEOUT_MS ? parseInt(process.env.EXEF_OCR_GOOGLE_VISION_TIMEOUT_MS, 10) : (settings.ocr.api || {}).googleVisionTimeoutMs,
+      azureEndpoint: process.env.EXEF_OCR_AZURE_ENDPOINT || (settings.ocr.api || {}).azureEndpoint,
+      azureKey: process.env.EXEF_OCR_AZURE_KEY || (settings.ocr.api || {}).azureKey,
+      externalPreset: process.env.EXEF_OCR_EXTERNAL_PRESET || (settings.ocr.api || {}).externalPreset,
+      externalUrl: process.env.EXEF_OCR_EXTERNAL_URL || (settings.ocr.api || {}).externalUrl,
+      timeoutMs: process.env.EXEF_OCR_TIMEOUT_MS ? parseInt(process.env.EXEF_OCR_TIMEOUT_MS, 10) : (settings.ocr.api || {}).timeoutMs,
+      mockText: process.env.EXEF_OCR_MOCK_TEXT || (settings.ocr.api || {}).mockText,
+    }
+  }
+
+  if (scanners.length > 0) {
+    settings.channels.devices = settings.channels.devices || {}
+    settings.channels.devices.scanners = scanners
+  }
+  if (printers.length > 0) {
+    settings.channels.devices = settings.channels.devices || {}
+    settings.channels.devices.printers = printers
+  }
+
   return settings
 }
 
@@ -254,7 +333,13 @@ function isSettingsEmpty(settings) {
   const hasEmails = Array.isArray(channels.email?.accounts) && channels.email.accounts.length > 0
   const hasKsef = Array.isArray(channels.ksef?.accounts) && channels.ksef.accounts.length > 0
   const hasLocalFolders = Array.isArray(channels.localFolders?.paths) && channels.localFolders.paths.length > 0
-  return !hasConnections && !hasEmails && !hasKsef && !hasLocalFolders
+  const provider = String(settings?.ocr?.provider || '').trim().toLowerCase()
+  const api = settings?.ocr?.api && typeof settings.ocr.api === 'object' ? settings.ocr.api : null
+  const hasOcr = !!(
+    (provider && provider !== 'tesseract') ||
+    (api && (api.externalUrl || api.mockText || (api.externalPreset && String(api.externalPreset) !== 'exef_pro')))
+  )
+  return !hasConnections && !hasEmails && !hasKsef && !hasLocalFolders && !hasOcr
 }
 
 function mergeEnvSettings(existingSettings, envSettings) {
@@ -300,6 +385,36 @@ function mergeEnvSettings(existingSettings, envSettings) {
     result.channels = result.channels || {}
     result.channels.localFolders = result.channels.localFolders || {}
     result.channels.localFolders.paths = [...(result.channels.localFolders.paths || []), ...envPaths]
+  }
+
+  // Merge devices (scanners and printers)
+  const existingScannerIds = new Set((result.channels?.devices?.scanners || []).map((s) => s.id))
+  const envScanners = (envSettings.channels?.devices?.scanners || []).filter((s) => !existingScannerIds.has(s.id))
+  if (envScanners.length > 0) {
+    result.channels = result.channels || {}
+    result.channels.devices = result.channels.devices || {}
+    result.channels.devices.scanners = [...(result.channels.devices.scanners || []), ...envScanners]
+  }
+
+  const existingPrinterIds = new Set((result.channels?.devices?.printers || []).map((p) => p.id))
+  const envPrinters = (envSettings.channels?.devices?.printers || []).filter((p) => !existingPrinterIds.has(p.id))
+  if (envPrinters.length > 0) {
+    result.channels = result.channels || {}
+    result.channels.devices = result.channels.devices || {}
+    result.channels.devices.printers = [...(result.channels.devices.printers || []), ...envPrinters]
+  }
+
+  if (envSettings?.ocr && typeof envSettings.ocr === 'object') {
+    result.ocr = result.ocr && typeof result.ocr === 'object' ? { ...result.ocr } : {}
+    if (!result.ocr.provider && envSettings.ocr.provider) {
+      result.ocr.provider = envSettings.ocr.provider
+    }
+    const existingApi = result.ocr.api && typeof result.ocr.api === 'object' ? result.ocr.api : {}
+    const envApi = envSettings.ocr.api && typeof envSettings.ocr.api === 'object' ? envSettings.ocr.api : {}
+    result.ocr.api = {
+      ...envApi,
+      ...existingApi,
+    }
   }
 
   return result
@@ -382,6 +497,25 @@ function applyEmailFromSettings(currentSettings) {
   })
 }
 
+function applyOcrFromSettings(currentSettings) {
+  const cfg = currentSettings?.ocr && typeof currentSettings.ocr === 'object' ? currentSettings.ocr : null
+  if (!cfg) {
+    workflow.configureOcr({ provider: 'tesseract', api: null })
+    return
+  }
+  workflow.configureOcr({
+    provider: cfg.provider || 'tesseract',
+    api: cfg.api || null,
+  })
+}
+
+function applyDevicesFromSettings(currentSettings) {
+  const devices = currentSettings?.channels?.devices || {}
+  const scanners = Array.isArray(devices.scanners) ? devices.scanners : []
+  const printers = Array.isArray(devices.printers) ? devices.printers : []
+  workflow.configureDevices({ scanners, printers })
+}
+
 function loadSettings() {
   const defaults = getDefaultSettings()
   const fromFile = readJsonFile(settingsFilePath, defaults)
@@ -394,6 +528,14 @@ function loadSettings() {
       invoicesTable: {
         ...defaults.ui.invoicesTable,
         ...((fromFile.ui || {}).invoicesTable || {}),
+      },
+    },
+    ocr: {
+      ...defaults.ocr,
+      ...(fromFile.ocr || {}),
+      api: {
+        ...defaults.ocr.api,
+        ...((fromFile.ocr || {}).api || {}),
       },
     },
     channels: {
@@ -545,6 +687,14 @@ async function getSettingsFromBackend() {
     if (loaded?.channels?.localFolders) {
       loaded.channels.localFolders.paths = normalizeStringArray(loaded.channels.localFolders.paths)
     }
+    loaded.ocr = {
+      ...defaults.ocr,
+      ...(loaded.ocr || {}),
+      api: {
+        ...defaults.ocr.api,
+        ...((loaded.ocr || {}).api || {}),
+      },
+    }
     if (loaded?.channels) {
       loaded.channels.email = {
         ...defaults.channels.email,
@@ -672,6 +822,15 @@ if (workflow?.storageSync && typeof workflow.storageSync.setState === 'function'
 
 applyKsefFromSettings(settings)
 applyEmailFromSettings(settings)
+applyOcrFromSettings(settings)
+applyDevicesFromSettings(settings)
+
+function applyDevicesFromSettings(currentSettings) {
+  const devices = currentSettings?.channels?.devices || {}
+  const scanners = Array.isArray(devices.scanners) ? devices.scanners : []
+  const printers = Array.isArray(devices.printers) ? devices.printers : []
+  workflow.configureDevices({ scanners, printers })
+}
 
 let pendingRemoteStorageState = null
 let remoteStorageStateSaveTimer = null
@@ -788,6 +947,8 @@ if (dataLayer) {
 
       applyKsefFromSettings(settings)
       applyEmailFromSettings(settings)
+      applyOcrFromSettings(settings)
+      applyDevicesFromSettings(settings)
     } catch (_e) {
       console.error('[env] Failed to initialize settings:', _e.message)
     }
@@ -914,6 +1075,16 @@ app.put('/settings', async (req, res) => {
           ...((body.ui || {}).invoicesTable || {}),
         },
       },
+      ocr: {
+        ...defaults.ocr,
+        ...(current.ocr || {}),
+        ...(body.ocr || {}),
+        api: {
+          ...defaults.ocr.api,
+          ...((current.ocr || {}).api || {}),
+          ...((body.ocr || {}).api || {}),
+        },
+      },
       channels: {
         ...defaults.channels,
         ...(current.channels || {}),
@@ -956,6 +1127,8 @@ app.put('/settings', async (req, res) => {
 
     applyKsefFromSettings(settings)
     applyEmailFromSettings(settings)
+    applyOcrFromSettings(settings)
+    applyDevicesFromSettings(settings)
 
     res.json(settings)
   } catch (err) {
@@ -993,6 +1166,8 @@ app.post('/data/import', async (req, res) => {
 
     applyKsefFromSettings(settings)
     applyEmailFromSettings(settings)
+    applyOcrFromSettings(settings)
+    applyDevicesFromSettings(settings)
     res.json({ ok: true })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
@@ -1076,6 +1251,8 @@ app.post('/data/import/:entity', async (req, res) => {
 
       applyKsefFromSettings(settings)
       applyEmailFromSettings(settings)
+      applyOcrFromSettings(settings)
+      applyDevicesFromSettings(settings)
       return res.json({ ok: true })
     }
     return res.status(404).json({ error: 'unknown_entity' })
@@ -2018,6 +2195,153 @@ app.delete('/projects/:id', async (req, res) => {
     fs.writeFileSync(projectsFilePath, updatedLines.join('\n'), 'utf8')
     
     res.json({ message: 'Project deleted successfully' })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+// Device endpoints (scanners and printers)
+app.get('/devices', async (_req, res) => {
+  try {
+    const status = await workflow.deviceSync.getAllDevicesStatus()
+    res.json(status)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/devices/scanners', async (_req, res) => {
+  try {
+    const scanners = workflow.deviceSync.scanners || []
+    const statuses = await Promise.all(
+      scanners.map(async (s) => ({
+        ...s,
+        ...(await workflow.deviceSync.getScannerStatus(s.id)),
+      }))
+    )
+    res.json({ scanners: statuses })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/devices/scanners/:id', async (req, res) => {
+  try {
+    const status = await workflow.deviceSync.getScannerStatus(req.params.id)
+    res.json(status)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/devices/scanners/:id/scan', async (req, res) => {
+  try {
+    const options = req.body || {}
+    const result = await workflow.deviceSync.scanDocument(req.params.id, options)
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/devices/scanners/:id/documents', async (req, res) => {
+  try {
+    const documents = await workflow.deviceSync.listScannerDocuments(req.params.id)
+    res.json({ documents })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/devices/printers', async (_req, res) => {
+  try {
+    const printers = workflow.deviceSync.printers || []
+    const statuses = await Promise.all(
+      printers.map(async (p) => ({
+        ...p,
+        ...(await workflow.deviceSync.getPrinterStatus(p.id)),
+      }))
+    )
+    res.json({ printers: statuses })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/devices/printers/:id', async (req, res) => {
+  try {
+    const info = await workflow.deviceSync.getPrinterInfo(req.params.id)
+    res.json(info)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/devices/printers/:id/print', async (req, res) => {
+  try {
+    const { document, copies, duplex, colorMode, paperSize } = req.body || {}
+    if (!document) {
+      return res.status(400).json({ error: 'document_required' })
+    }
+    const result = await workflow.deviceSync.printDocument(req.params.id, document, {
+      copies, duplex, colorMode, paperSize,
+    })
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/devices/printers/:id/jobs', async (req, res) => {
+  try {
+    const jobs = await workflow.deviceSync.getPrintJobs(req.params.id)
+    res.json({ jobs })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/devices/printers/:id/jobs/:jobId', async (req, res) => {
+  try {
+    const job = await workflow.deviceSync.getPrintJobStatus(req.params.id, req.params.jobId)
+    res.json(job)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/devices/printers/:id/jobs/:jobId/cancel', async (req, res) => {
+  try {
+    const result = await workflow.deviceSync.cancelPrintJob(req.params.id, req.params.jobId)
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+// Print invoice directly
+app.post('/inbox/invoices/:id/print', async (req, res) => {
+  try {
+    const invoice = await workflow.getInvoice(req.params.id)
+    if (!invoice) {
+      return res.status(404).json({ error: 'invoice_not_found' })
+    }
+    
+    const { printerId, copies, duplex, colorMode, paperSize } = req.body || {}
+    if (!printerId) {
+      return res.status(400).json({ error: 'printer_id_required' })
+    }
+
+    const document = {
+      fileName: invoice.fileName || 'invoice.pdf',
+      fileType: invoice.fileType || 'application/pdf',
+      content: invoice.originalFile,
+    }
+
+    const result = await workflow.deviceSync.printDocument(printerId, document, {
+      copies, duplex, colorMode, paperSize,
+    })
+    res.json(result)
   } catch (err) {
     res.status(500).json({ error: err?.message ?? 'unknown_error' })
   }

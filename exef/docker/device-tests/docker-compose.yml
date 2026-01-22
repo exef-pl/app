@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # Scanner 1 - eSCL protocol (AirScan compatible)
+  mock-scanner-1:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.scanner
+    container_name: mock-scanner-1
+    ports:
+      - "8101:8101"
+    environment:
+      - SCANNER_NAME=ExEF-Scanner-1
+      - SCANNER_PORT=8101
+      - SCANNER_MODEL=HP ScanJet Pro 3000
+      - SCANNER_SERIAL=SCAN001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8101/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - device-net
+
+  # Scanner 2 - eSCL protocol
+  mock-scanner-2:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.scanner
+    container_name: mock-scanner-2
+    ports:
+      - "8102:8102"
+    environment:
+      - SCANNER_NAME=ExEF-Scanner-2
+      - SCANNER_PORT=8102
+      - SCANNER_MODEL=Epson WorkForce ES-500W
+      - SCANNER_SERIAL=SCAN002
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8102/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - device-net
+
+  # Printer 1 - IPP protocol
+  mock-printer-1:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.printer
+    container_name: mock-printer-1
+    ports:
+      - "8111:8111"
+    environment:
+      - PRINTER_NAME=ExEF-Printer-1
+      - PRINTER_PORT=8111
+      - PRINTER_MODEL=HP LaserJet Pro M404
+      - PRINTER_SERIAL=PRINT001
+    volumes:
+      - printer1-jobs:/app/jobs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8111/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - device-net
+
+  # Printer 2 - IPP protocol
+  mock-printer-2:
+    build:
+      context: ./mock-services
+      dockerfile: Dockerfile.printer
+    container_name: mock-printer-2
+    ports:
+      - "8112:8112"
+    environment:
+      - PRINTER_NAME=ExEF-Printer-2
+      - PRINTER_PORT=8112
+      - PRINTER_MODEL=Brother HL-L2350DW
+      - PRINTER_SERIAL=PRINT002
+    volumes:
+      - printer2-jobs:/app/jobs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8112/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - device-net
+
+  # Test runner
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test-runner
+    container_name: device-test-runner
+    depends_on:
+      mock-scanner-1:
+        condition: service_healthy
+      mock-scanner-2:
+        condition: service_healthy
+      mock-printer-1:
+        condition: service_healthy
+      mock-printer-2:
+        condition: service_healthy
+    environment:
+      - SCANNER_1_URL=http://mock-scanner-1:8101
+      - SCANNER_2_URL=http://mock-scanner-2:8102
+      - PRINTER_1_URL=http://mock-printer-1:8111
+      - PRINTER_2_URL=http://mock-printer-2:8112
+    volumes:
+      - ./results:/app/results
+    networks:
+      - device-net
+
+networks:
+  device-net:
+    driver: bridge
+
+volumes:
+  printer1-jobs:
+  printer2-jobs:

@@ -1,0 +1,79 @@
+{
+  "tests": [
+    {
+      "name": "Scanner 1 - Health check",
+      "status": "passed"
+    },
+    {
+      "name": "Scanner 1 - eSCL Capabilities",
+      "status": "passed"
+    },
+    {
+      "name": "Scanner 1 - List documents",
+      "status": "passed"
+    },
+    {
+      "name": "Scanner 1 - Scan document",
+      "status": "passed"
+    },
+    {
+      "name": "Scanner 2 - Health check",
+      "status": "passed"
+    },
+    {
+      "name": "Scanner 2 - eSCL Capabilities",
+      "status": "passed"
+    },
+    {
+      "name": "Scanner 2 - List documents",
+      "status": "passed"
+    },
+    {
+      "name": "Scanner 2 - Scan document",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 1 - Health check",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 1 - Printer info",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 1 - Print document",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 1 - List jobs",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 1 - Job completion",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 2 - Health check",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 2 - Printer info",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 2 - Print document",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 2 - List jobs",
+      "status": "passed"
+    },
+    {
+      "name": "Printer 2 - Job completion",
+      "status": "passed"
+    }
+  ],
+  "passed": 18,
+  "failed": 0,
+  "timestamp": "2026-01-22T13:30:05.753Z"
+}

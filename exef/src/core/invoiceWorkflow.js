@@ -8,6 +8,7 @@ const { createOcrPipeline } = require('./ocrPipeline')
 const { createAutoDescribeEngine, defaultRules } = require('./autoDescribe')
 const { createExportService } = require('./exportService')
 const { createKsefFacade } = require('./ksefFacade')
+const { DeviceSync } = require('./deviceSync')
 
 class InvoiceWorkflow extends EventEmitter {
   constructor(options = {}) {
@@ -27,6 +28,11 @@ class InvoiceWorkflow extends EventEmitter {
       watchPaths: options.watchPaths || [],
       connections: Array.isArray(options.storageConnections) ? options.storageConnections : [],
       pollInterval: options.storagePollInterval || 60000,
+    })
+
+    this.deviceSync = new DeviceSync({
+      inbox: this.inbox,
+      scanInterval: options.deviceScanInterval || 60000,
     })
 
     this.ocrPipeline = createOcrPipeline(options.ocrOptions)
@@ -57,6 +63,14 @@ class InvoiceWorkflow extends EventEmitter {
     this.ocrPipeline.on('processed', (data) => this.emit('ocr:processed', data))
     this.ocrPipeline.on('error', (data) => this.emit('ocr:error', data))
     this.autoDescribe.on('suggested', (data) => this.emit('describe:suggested', data))
+    this.deviceSync.on('scanner:scanned', (data) => this.emit('scanner:scanned', data))
+    this.deviceSync.on('scanner:documents', (data) => this.emit('scanner:documents', data))
+    this.deviceSync.on('printer:printed', (data) => this.emit('printer:printed', data))
+    this.deviceSync.on('error', (err) => this.emit('device:error', err))
+  }
+
+  configureDevices({ scanners = [], printers = [] }) {
+    this.deviceSync.configure({ scanners, printers })
   }
 
   async start() {

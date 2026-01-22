@@ -1,0 +1,11 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache curl bash
+
+WORKDIR /app
+
+COPY tests/ ./tests/
+
+RUN npm init -y && npm install node-fetch@2
+
+CMD ["node", "tests/device-sync.test.js"]

@@ -4,6 +4,8 @@
 2 szkic
 ![img_1.png](img_1.png)
 
+3 szkic
+![img_2.png](img_2.png)
 
 # exef-pl/app
 
@@ -421,7 +423,36 @@ BUMP=major make push
 
 ## Testowanie
 
-Szczegóły są w `docs/TESTING.md`.
+Szczegóły są w [`docs/TESTING.md`](docs/TESTING.md).
+
+### Szybkie testy z Makefile
+
+```bash
+# Testy jednostkowe
+make exef-test
+
+# Testy API
+make exef-test-api
+
+# Testy E2E (Python)
+make test-e2e
+
+# Docker Mock Services (Storage)
+make exef-test-storage-up      # Uruchom mock Dropbox/GDrive/OneDrive/Nextcloud
+make exef-test-storage         # Uruchom testy
+make exef-test-storage-down    # Zatrzymaj mock services
+make exef-test-storage-full    # Pełny cykl (up + test + down)
+
+# Docker Mock Services (Email)
+make exef-test-email-up        # Uruchom mock Gmail/Outlook/GreenMail
+make exef-test-email           # Uruchom testy
+make exef-test-email-down      # Zatrzymaj mock services
+make exef-test-email-full      # Pełny cykl (up + test + down)
+
+# Wszystkie mock services
+make exef-test-mocks-up        # Uruchom wszystkie mock services
+make exef-test-mocks-down      # Zatrzymaj wszystkie mock services
+```
 
 ## 🤝 Kontrybucja
 

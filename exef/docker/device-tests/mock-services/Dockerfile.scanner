@@ -1,0 +1,12 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --production
+
+COPY scanner-mock-server.js ./
+
+CMD ["node", "scanner-mock-server.js"]

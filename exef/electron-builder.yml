@@ -1,5 +1,5 @@
 appId: pl.exef.desktop
-productName: ExEF Desktop
+productName: ExEFDesktop
 directories:
   output: dist/desktop
 files:
