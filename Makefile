@@ -1,6 +1,16 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test-all test-e2e python-test ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test
+
+INCLUDE_SUBMODULES ?= 0
+
+ifeq ($(INCLUDE_SUBMODULES),1)
+SUBMODULE_BUILD_TARGETS := ksef-master-build ksef-client-js-build polish-invoicingback-build
+SUBMODULE_TEST_TARGETS := ksef-master-test ksef-client-js-test polish-invoicingback-test
+else
+SUBMODULE_BUILD_TARGETS :=
+SUBMODULE_TEST_TARGETS :=
+endif
 
 # Default target
 help:
@@ -239,10 +249,13 @@ exef-cli-install:
 all: build-all test-all
 	@echo "All applications built and tested."
 
-build-all: exef-all ksef-master-build ksef-client-js-build polish-invoicingback-build
+all-with-submodules:
+	@$(MAKE) INCLUDE_SUBMODULES=1 all
+
+build-all: exef-all $(SUBMODULE_BUILD_TARGETS)
 	@echo "All application builds completed."
 
-test-all: python-test test-e2e exef-test ksef-master-test ksef-client-js-test polish-invoicingback-test
+test-all: python-test test-e2e exef-test $(SUBMODULE_TEST_TARGETS)
 	@echo "All tests completed."
 
 test-e2e:
