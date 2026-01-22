@@ -1,5 +1,5 @@
 project: ksef-py
-generated: "2026-01-22T07:16:35.237979"
+generated: "2026-01-22T20:15:46.254765"
 modules[15]{path,lang,items}:
   ksef/exceptions.py,python,2
   ksef/cli.py,python,7

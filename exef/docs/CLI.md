@@ -69,6 +69,25 @@ npm run build:cli
 | `exef inbox export` | Eksportuj |
 | `exef inbox export-files --output-dir DIR [--status approved/all] [--project P1,P2] [--expense-type T1,T2] [--ids ID1,ID2] [--source scanner/email/storage/ksef] [--since YYYY-MM-DD]` | Eksportuj pliki faktur do folderów: `[typ wydatku]/[projekt]/[dokument]` |
 
+#### Eksport: formaty
+
+`exef inbox export --format <format>` obsługuje formaty tekstowe (wynik w `content` jako string), w tym:
+
+- **Core**: `csv`, `json`, `wfirma`
+- **Księgowe (wg todo1/*)**:
+  - `kpir_csv`
+  - `wfirma_wydatki`
+  - `optima_xml`
+  - `subiekt_epp`
+  - `symfonia`
+  - `enova`
+  - `infakt`
+  - `ifirma`
+  - `fakturownia`
+  - `jpk_pkpir`
+
+Formaty binarne (np. `kpir_xlsx`) pobieraj przez UI Desktop lub REST API `POST /inbox/export/download`.
+
 ### KSeF
 
 | Komenda | Opis |
@@ -169,6 +188,9 @@ exef inbox export --format json --output faktury.json
 # Eksport plików faktur (PDF/JPG/PNG/XML) do folderów wg typu wydatku i projektu
 exef inbox export-files --output-dir ./exported --status approved
 
+# Eksport księgowy: KPiR CSV (wg todo1/*)
+exef inbox export --format kpir_csv --output kpir.csv
+
 # Eksport tylko dla wybranych projektów
 exef inbox export-files --output-dir ./exported --project PRJ-001,PRJ-002
 
@@ -215,6 +237,10 @@ exef ksef download 1234567890-20260122-ABCDEF123456-01 --output faktura.xml
 | `exef inbox reject <id>` | `POST /inbox/invoices/:id/reject` |
 | `exef inbox export` | `POST /inbox/export` |
 | `exef inbox export-files` | `POST /inbox/export/files` |
+| (UI / API) | `GET /inbox/export/formats` |
+| (UI / API) | `POST /inbox/export/download` |
+| (UI / API) | `POST /inbox/export/documents.zip` |
+| (UI / API) | `POST /inbox/export/send-email` |
 | `exef ksef auth` | `POST /ksef/auth/token` |
 | `exef ksef session open` | `POST /ksef/sessions/online/open` |
 | `exef ksef session close` | `POST /ksef/sessions/online/close` |
@@ -275,6 +301,34 @@ exef inbox stats --json | jq '.byStatus'
 
 # Eksportuj i wyślij mailem
 exef inbox export --format csv | mail -s "Faktury" ksiegowosc@firma.pl
+```
+
+## REST API: Export (przykłady)
+
+```bash
+# Lista dostępnych formatów
+curl -s http://127.0.0.1:3030/inbox/export/formats | jq
+
+# Pobierz export jako attachment (binarki i tekst)
+curl -X POST http://127.0.0.1:3030/inbox/export/download \
+  -H 'Content-Type: application/json' \
+  -d '{"format":"kpir_xlsx"}' \
+  -o kpir.xlsx
+
+# Pobierz ZIP zatwierdzonych dokumentów
+curl -X POST http://127.0.0.1:3030/inbox/export/documents.zip \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"approved"}' \
+  -o documents.zip
+
+# Wyślij export na email (SMTP)
+curl -X POST http://127.0.0.1:3030/inbox/export/send-email \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "to":"ksiegowosc@firma.pl",
+    "type":"documents_zip",
+    "smtp": {"host":"localhost","port":3025,"secure":false,"starttls":false}
+  }'
 ```
 
 ## Kody wyjścia

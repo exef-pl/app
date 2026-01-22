@@ -1,5 +1,5 @@
 project: ksef-integration
-generated: "2026-01-22T07:16:31.641696"
+generated: "2026-01-22T20:15:42.442556"
 modules[25]{path,lang,items}:
   KsefPythonClient/ksef_cli.py,python,11
   KsefPythonClient/init_db.py,python,1

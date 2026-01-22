@@ -1,5 +1,5 @@
 project: ksef-import
-generated: "2026-01-22T07:16:28.360325"
+generated: "2026-01-22T20:15:38.524793"
 modules[1]{path,lang,items}:
   app.js,javascript,4
 

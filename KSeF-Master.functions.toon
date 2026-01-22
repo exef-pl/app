@@ -1,5 +1,5 @@
 project: KSeF-Master
-generated: "2026-01-22T07:16:12.340293"
+generated: "2026-01-22T20:15:15.592213"
 modules[30]{path,lang,items}:
   eslint.config.js,javascript,0
   vite.config.ts,typescript,0

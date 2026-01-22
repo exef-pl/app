@@ -1,5 +1,5 @@
 project: ksef_cli
-generated: "2026-01-22T07:16:43.151575"
+generated: "2026-01-22T20:15:54.727557"
 modules[13]{path,lang,items}:
   sample/test.py,python,9
   tests/test1.py,python,70

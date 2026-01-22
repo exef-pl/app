@@ -13,6 +13,9 @@
 5 szkic
 ![img_4.png](img_4.png)
 
+6 szkic
+![img_5.png](img_5.png)
+
 # exef-pl/app
 
 To repozytorium jest agregatorem projektów związanych z KSeF (Krajowy System e-Faktur):
@@ -44,9 +47,9 @@ Lista repo jest w `REPO.md`.
   make update-submodules
   ```
 
-## Indeksy (code2logic / pyhrton)
+## Indeksy (code2logic / python)
 
-Indeksy generujemy narzędziem `code2logic` (z paczki `pyhrton`) w formacie Toon.
+Indeksy generujemy narzędziem `code2logic` (z paczki `python`) w formacie Toon.
 
 Wymaganie: komenda `code2logic` musi być dostępna w `PATH`.
 
@@ -185,7 +188,7 @@ EXEF obsługuje faktury z wielu źródeł jednocześnie:
 | OCR Pipeline | `src/core/ocrPipeline.js` | Przetwarzanie PDF/JPG |
 | Auto-Describe | `src/core/autoDescribe.js` | Automatyczne opisy |
 | Draft Store | `src/core/draftStore.js` | Przechowywanie faktur |
-| Export Service | `src/core/exportService.js` | Eksport CSV/wFirma |
+| Export Service | `src/core/exportService.js` | Eksport CSV/JSON/wFirma + eksporty księgowe (KPiR/JPK/itd.) |
 | Invoice Workflow | `src/core/invoiceWorkflow.js` | Orkiestrator całości |
 
 ### Statusy faktury
@@ -207,7 +210,11 @@ pending → ocr → described → approved → booked
 | `/inbox/invoices/:id/process` | POST | Przetwórz (OCR + auto-opis) |
 | `/inbox/invoices/:id/approve` | POST | Zatwierdź |
 | `/inbox/invoices/:id/reject` | POST | Odrzuć |
-| `/inbox/export` | POST | Eksportuj zatwierdzone (CSV/JSON/wFirma) |
+| `/inbox/export` | POST | Eksportuj zatwierdzone (CSV/JSON/wFirma + formaty księgowe tekstowe) |
+| `/inbox/export/formats` | GET | Lista dostępnych formatów eksportu |
+| `/inbox/export/download` | POST | Pobierz eksport jako attachment (binarki i tekst) |
+| `/inbox/export/documents.zip` | POST | ZIP zatwierdzonych dokumentów (z filtrami) |
+| `/inbox/export/send-email` | POST | Wyślij eksport mailem (SMTP) |
 | `/inbox/ksef/poll` | POST | Pobierz nowe faktury z KSeF |
 
 ### API Endpoints (Dane / baza)
@@ -284,6 +291,7 @@ Otwórz UI:
 - Konta / Sync: `http://localhost:<PORT>/?page=accounts`
 - Projekty: `http://localhost:<PORT>/?page=projects`
 - Etykiety: `http://localhost:<PORT>/?page=labels`
+- Export: `http://localhost:<PORT>/?page=export`
 - Konfiguracja: `http://localhost:<PORT>/?page=settings`
 
 Pliki testowe:

@@ -1,5 +1,5 @@
 project: KSeF-Python-Client-Updated
-generated: "2026-01-22T07:16:16.914155"
+generated: "2026-01-22T20:15:20.905066"
 modules[465]{path,lang,items}:
   scripts/ksef_tool.py,python,1
   scripts/generate_mapping_template.py,python,1

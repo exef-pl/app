@@ -1,5 +1,5 @@
 project: ksef
-generated: "2026-01-22T07:16:39.745761"
+generated: "2026-01-22T20:15:50.932624"
 modules[393]{path,lang,items}:
   xmlvalid.py,python,12
   x-sign-signxml-xml.py,python,2

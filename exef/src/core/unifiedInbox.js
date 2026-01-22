@@ -17,6 +17,52 @@ const INVOICE_SOURCE = {
   KSEF: 'ksef',
 }
 
+const ALLOWED_INVOICE_EXTENSIONS = new Set(['.pdf', '.jpg', '.jpeg', '.png', '.xml'])
+
+function isXmlString(value) {
+  if (typeof value !== 'string') {
+    return false
+  }
+  const s = value.trim()
+  return s.startsWith('<?xml') || (s.startsWith('<') && s.includes('</'))
+}
+
+function isEmptyInvoiceFile(value) {
+  if (!value) {
+    return true
+  }
+  if (Buffer.isBuffer(value)) {
+    return value.length === 0
+  }
+  if (typeof value === 'string') {
+    return value.trim().length === 0
+  }
+  if (value && typeof value === 'object' && value.type === 'Buffer' && Array.isArray(value.data)) {
+    return value.data.length === 0
+  }
+  if (Array.isArray(value)) {
+    return value.length === 0
+  }
+  return false
+}
+
+function isAllowedInvoiceFileType({ fileName, fileType, file }) {
+  const fn = String(fileName || '').toLowerCase()
+  const ft = String(fileType || '').toLowerCase()
+  const ext = fn ? fn.slice(fn.lastIndexOf('.')) : ''
+
+  if (isXmlString(file)) {
+    return true
+  }
+  if (ext && ALLOWED_INVOICE_EXTENSIONS.has(ext)) {
+    return true
+  }
+  if (ft.includes('pdf') || ft.includes('xml') || ft.startsWith('image/')) {
+    return true
+  }
+  return false
+}
+
 class UnifiedInbox extends EventEmitter {
   constructor(options = {}) {
     super()
@@ -38,6 +84,13 @@ class UnifiedInbox extends EventEmitter {
       if (existing) {
         return existing
       }
+    }
+
+    if (isEmptyInvoiceFile(file)) {
+      throw new Error('invoice_file_required')
+    }
+    if (!isAllowedInvoiceFileType({ fileName: metadata?.fileName, fileType: metadata?.fileType, file })) {
+      throw new Error('unsupported_invoice_file_type')
     }
 
     const id = this.generateId()

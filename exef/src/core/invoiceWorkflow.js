@@ -207,10 +207,31 @@ class InvoiceWorkflow extends EventEmitter {
 
       for (const invData of invoices) {
         const ksefKey = invData?.ksefReferenceNumber || invData?.ksefId || null
-        await this.inbox.addInvoice(INVOICE_SOURCE.KSEF, null, {
-          ...invData,
-          sourceKey: ksefKey ? `ksef:${String(ksefKey)}` : null,
-        })
+        if (!ksefKey) {
+          continue
+        }
+
+        try {
+          const downloaded = await this.ksefFacade.downloadInvoice({
+            accessToken: this.ksefAccessToken,
+            ksefReferenceNumber: String(ksefKey),
+            format: 'xml',
+          })
+          const xmlText = downloaded?.format === 'xml' ? downloaded.data : null
+          if (!xmlText || !String(xmlText).trim()) {
+            continue
+          }
+
+          await this.inbox.addInvoice(INVOICE_SOURCE.KSEF, String(xmlText), {
+            ...invData,
+            sourceKey: `ksef:${String(ksefKey)}`,
+            fileName: `ksef_${String(ksefKey)}.xml`,
+            fileType: downloaded?.contentType || 'application/xml',
+            fileSize: Buffer.byteLength(String(xmlText), 'utf8'),
+          })
+        } catch (_e) {
+          continue
+        }
       }
 
       this.ksefLastPoll = new Date().toISOString()
@@ -452,6 +473,23 @@ class InvoiceWorkflow extends EventEmitter {
       return updatedInvoice
     } catch (error) {
       throw new Error(`Failed to assign invoice to labels: ${error.message}`)
+    }
+  }
+
+  async deleteInvoice(invoiceId) {
+    try {
+      const invoice = await this.inbox.getInvoice(invoiceId)
+      if (!invoice) {
+        throw new Error('Invoice not found')
+      }
+
+      await this.inbox.deleteInvoice(invoiceId)
+      
+      this.emit('invoice:deleted', { invoiceId, invoice })
+      
+      return { success: true, invoiceId }
+    } catch (error) {
+      throw new Error(`Failed to delete invoice: ${error.message}`)
     }
   }
 }

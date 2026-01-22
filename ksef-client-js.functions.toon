@@ -1,5 +1,5 @@
 project: ksef-client-js
-generated: "2026-01-22T07:16:21.475748"
+generated: "2026-01-22T20:15:30.466796"
 modules[52]{path,lang,items}:
   eslint.config.js,javascript,0
   vitest.config.ts,typescript,0

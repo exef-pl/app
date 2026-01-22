@@ -110,7 +110,7 @@ generate-indexes:
 				echo "Generated $$project_name.functions.toon and $$project_name.toon-schema.json" || \
 				echo "Failed to generate index for $$project_name"; \
 			else \
-				echo "code2logic command not found. Please install it (pyhrton) first."; \
+				echo "code2logic command not found. Please install it (python) first."; \
 			fi; \
 		fi; \
 	done

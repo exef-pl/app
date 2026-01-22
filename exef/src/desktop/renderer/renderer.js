@@ -12,6 +12,211 @@ function setApiUrl(nextUrl) {
   }
 }
 
+const invoiceThumbCache = new Map();
+const invoiceThumbObjectUrls = new Map();
+
+let pdfjsModulePromise = null;
+
+async function loadPdfjsModule() {
+  if (pdfjsModulePromise) {
+    return pdfjsModulePromise;
+  }
+  const src = new URL('/vendor/pdfjs/pdf.mjs', window.location.href).toString();
+  pdfjsModulePromise = import(src);
+  return pdfjsModulePromise;
+}
+
+async function renderPdfFirstPageThumbDataUrl(pdfBlob, options = {}) {
+  const targetWidth = Number.isFinite(options.targetWidth) ? Number(options.targetWidth) : 192;
+  const targetHeight = Number.isFinite(options.targetHeight) ? Number(options.targetHeight) : 240;
+
+  const pdfjs = await loadPdfjsModule();
+  const bytes = new Uint8Array(await pdfBlob.arrayBuffer());
+
+  const task = pdfjs.getDocument({ data: bytes, disableWorker: true });
+  const pdf = await task.promise;
+  const page = await pdf.getPage(1);
+
+  const viewport1 = page.getViewport({ scale: 1 });
+  const scale = Math.min(targetWidth / viewport1.width, targetHeight / viewport1.height);
+  const viewport = page.getViewport({ scale: Math.max(0.1, scale) });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.floor(viewport.width));
+  canvas.height = Math.max(1, Math.floor(viewport.height));
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('pdf_thumb_canvas_failed');
+  }
+
+  await page.render({ canvasContext: ctx, viewport }).promise;
+
+  const dataUrl = canvas.toDataURL('image/png');
+
+  try { page.cleanup(); } catch (_e) {}
+  try { pdf.destroy(); } catch (_e) {}
+
+  return dataUrl;
+}
+
+function cleanupInvoiceThumbObjectUrls() {
+  for (const blobUrl of invoiceThumbObjectUrls.values()) {
+    try {
+      URL.revokeObjectURL(blobUrl);
+    } catch (_e) {
+    }
+  }
+  invoiceThumbObjectUrls.clear();
+  invoiceThumbCache.clear();
+}
+
+function renderInvoiceThumbPlaceholder(invoiceId) {
+  return `<div class="invoice-thumb clickable" data-invoice-thumb="${escapeHtml(String(invoiceId))}"><div class="thumb-loading">Miniatura…</div></div>`;
+}
+
+function renderInvoiceThumbFallback(label) {
+  const safe = escapeHtml(String(label || 'Podgląd'));
+  return `<div class="invoice-thumb clickable"><div class="thumb-fallback">${safe}</div></div>`;
+}
+
+function renderInvoiceThumbFallbackOpen(invoiceId, label) {
+  const safe = escapeHtml(String(label || 'Podgląd'));
+  return `<div class="invoice-thumb clickable" data-invoice-thumb-open="${escapeHtml(String(invoiceId))}"><div class="thumb-fallback">${safe}</div></div>`;
+}
+
+async function buildInvoiceThumbHtml(invoiceId) {
+  const cached = invoiceThumbCache.get(String(invoiceId));
+  if (cached) {
+    return cached;
+  }
+
+  const invoice = await getInvoiceById(invoiceId);
+  if (!invoice) {
+    const html = renderInvoiceThumbFallback('Brak');
+    invoiceThumbCache.set(String(invoiceId), html);
+    return html;
+  }
+
+  const normalized = normalizeInvoiceFileContent(invoice);
+  const ftLower = String(normalized.fileType || '').toLowerCase();
+  const fnLower = String(normalized.fileName || '').toLowerCase();
+  const isXml = isXmlLike({ fileType: normalized.fileType, fileName: normalized.fileName, content: normalized.kind === 'text' ? normalized.text : null });
+
+  if (isXml) {
+    const xmlText = normalized.kind === 'text'
+      ? String(normalized.text || '')
+      : (normalized.kind === 'blob' && normalized.blob ? await normalized.blob.text() : '');
+
+    const htmlDoc = await renderXmlInvoiceToHtml(xmlText);
+    const html = `
+      <div class="invoice-thumb clickable" data-invoice-thumb-open="${escapeHtml(String(invoiceId))}">
+        <div class="thumb-scaled">
+          <iframe sandbox srcdoc="${escapeHtml(htmlDoc)}"></iframe>
+        </div>
+      </div>
+    `;
+    invoiceThumbCache.set(String(invoiceId), html);
+    return html;
+  }
+
+  if (normalized.kind === 'blob' && normalized.blob) {
+    if (ftLower.includes('pdf') || fnLower.endsWith('.pdf')) {
+      try {
+        const dataUrl = await renderPdfFirstPageThumbDataUrl(normalized.blob, { targetWidth: 192, targetHeight: 240 });
+        const html = `
+          <div class="invoice-thumb clickable" data-invoice-thumb-open="${escapeHtml(String(invoiceId))}">
+            <img src="${escapeHtml(dataUrl)}" alt="" />
+          </div>
+        `;
+        invoiceThumbCache.set(String(invoiceId), html);
+        return html;
+      } catch (_e) {
+        const blobUrl = URL.createObjectURL(normalized.blob);
+        invoiceThumbObjectUrls.set(String(invoiceId), blobUrl);
+        const html = `
+          <div class="invoice-thumb clickable" data-invoice-thumb-open="${escapeHtml(String(invoiceId))}">
+            <div class="thumb-scaled">
+              <iframe sandbox src="${escapeHtml(blobUrl)}"></iframe>
+            </div>
+          </div>
+        `;
+        invoiceThumbCache.set(String(invoiceId), html);
+        return html;
+      }
+    }
+
+    const blobUrl = URL.createObjectURL(normalized.blob);
+    invoiceThumbObjectUrls.set(String(invoiceId), blobUrl);
+
+    if (ftLower.startsWith('image/') || fnLower.endsWith('.png') || fnLower.endsWith('.jpg') || fnLower.endsWith('.jpeg') || fnLower.endsWith('.gif') || fnLower.endsWith('.webp')) {
+      const html = `
+        <div class="invoice-thumb clickable" data-invoice-thumb-open="${escapeHtml(String(invoiceId))}">
+          <img src="${escapeHtml(blobUrl)}" alt="" />
+        </div>
+      `;
+      invoiceThumbCache.set(String(invoiceId), html);
+      return html;
+    }
+
+    const html = renderInvoiceThumbFallbackOpen(invoiceId, 'Plik');
+    invoiceThumbCache.set(String(invoiceId), html);
+    return html;
+  }
+
+  const html = renderInvoiceThumbFallbackOpen(invoiceId, 'Plik');
+  invoiceThumbCache.set(String(invoiceId), html);
+  return html;
+}
+
+function hydrateInvoiceThumbs(container) {
+  if (!container) {
+    return;
+  }
+
+  const nodes = Array.from(container.querySelectorAll('[data-invoice-thumb]'));
+  if (!nodes.length) {
+    return;
+  }
+
+  const loadInto = async (el, invoiceId) => {
+    if (!el || el.dataset.invoiceThumbLoaded === '1') {
+      return;
+    }
+    el.dataset.invoiceThumbLoaded = '1';
+
+    try {
+      const html = await buildInvoiceThumbHtml(invoiceId);
+      el.outerHTML = html;
+      const clickable = Array.from(container.querySelectorAll('[data-invoice-thumb-open]'))
+        .find((n) => n.getAttribute('data-invoice-thumb-open') === String(invoiceId));
+      if (clickable) {
+        clickable.addEventListener('click', () => window.openInvoiceDetails(invoiceId));
+      }
+    } catch (e) {
+      el.innerHTML = `<div class="thumb-fallback">${escapeHtml(String(e?.message || 'Błąd'))}</div>`;
+    }
+  };
+
+  if (typeof IntersectionObserver !== 'function') {
+    nodes.forEach((el) => loadInto(el, el.getAttribute('data-invoice-thumb')));
+    return;
+  }
+
+  const obs = new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      const el = entry.target;
+      const invoiceId = el.getAttribute('data-invoice-thumb');
+      if (invoiceId) {
+        loadInto(el, invoiceId);
+      }
+      obs.unobserve(el);
+    }
+  }, { root: null, rootMargin: '200px', threshold: 0.01 });
+
+  nodes.forEach((el) => obs.observe(el));
+}
+
 setApiUrl(url);
 
 window.openInvoiceDetails = function(invoiceId, options = {}) {
@@ -1211,7 +1416,7 @@ window.assignInvoiceToExpenseTypeFromTable = async function(invoiceId, expenseTy
 
 async function getInvoiceById(invoiceId) {
   const fromList = invoices.find(inv => inv.id === invoiceId);
-  if (fromList) {
+  if (fromList && fromList.originalFile) {
     return fromList;
   }
   try {
@@ -1284,6 +1489,7 @@ function renderInvoices() {
       actionButtons = `
         <button onclick="processInvoice('${inv.id}')">Przetwórz</button>
         <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
+        <button class="danger" onclick="deleteInvoice('${inv.id}')">Usuń</button>
       `;
     } else if (inv.status === 'described') {
       actionButtons = `
@@ -1291,20 +1497,24 @@ function renderInvoices() {
         <button onclick="editInvoice('${inv.id}')">Edytuj</button>
         <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
         <button class="danger" onclick="rejectInvoice('${inv.id}')">Odrzuć</button>
+        <button class="danger" onclick="deleteInvoice('${inv.id}')">Usuń</button>
       `;
     } else if (inv.status === 'approved') {
       actionButtons = `
         <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
         <span style="color: #16a34a;">✓ Zatwierdzona</span>
+        <button class="danger" onclick="deleteInvoice('${inv.id}')">Usuń</button>
       `;
     } else if (inv.status === 'rejected') {
       actionButtons = `
         <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
         <span style="color: #dc2626;">✗ Odrzucona</span>
+        <button class="danger" onclick="deleteInvoice('${inv.id}')">Usuń</button>
       `;
     } else {
       actionButtons = `
         <button onclick="window.openInvoiceDetails('${inv.id}')">Otwórz</button>
+        <button class="danger" onclick="deleteInvoice('${inv.id}')">Usuń</button>
       `;
     }
 
@@ -1446,6 +1656,8 @@ function renderInvoicesTable(container) {
     return;
   }
 
+  cleanupInvoiceThumbObjectUrls();
+
   const projectSelectionMode = settings?.ui?.invoicesTable?.projectSelection || 'select';
   const expenseTypeSelectionMode = settings?.ui?.invoicesTable?.expenseTypeSelection || 'select';
 
@@ -1555,16 +1767,20 @@ function renderInvoicesTable(container) {
       workflowActions = `<span style="color: #dc2626;">✗ Odrzucona</span>`;
     }
 
+    const deleteBtn = `<button class="danger" onclick="deleteInvoice('${inv.id}')">Usuń</button>`;
+
     actions = `
       <div style="display:flex; gap:6px; flex-wrap: wrap; align-items: center;">
         ${previewBtn}
         ${detailsBtn}
         ${workflowActions}
+        ${deleteBtn}
       </div>
     `;
 
     return `
       <tr>
+        <td class="thumb-cell">${renderInvoiceThumbPlaceholder(inv.id)}</td>
         <td class="muted">${icon}</td>
         <td>
           <div style="font-weight: 600;">${inv.invoiceNumber || inv.fileName || 'Faktura'}</div>
@@ -1590,6 +1806,7 @@ function renderInvoicesTable(container) {
         <thead>
           <tr>
             <th></th>
+            <th></th>
             <th>Faktura</th>
             <th>Status</th>
             <th>Kwota</th>
@@ -1605,6 +1822,8 @@ function renderInvoicesTable(container) {
       </table>
     </div>
   `;
+
+  hydrateInvoiceThumbs(container);
 }
 
 window.processInvoice = async function(id) {
@@ -1638,6 +1857,21 @@ window.rejectInvoice = async function(id) {
     await refresh();
   } catch (e) {
     alert('Błąd odrzucania: ' + e.message);
+  }
+};
+
+window.deleteInvoice = async function(id) {
+  const confirmed = confirm('Czy na pewno chcesz usunąć tę fakturę? Tej operacji nie można cofnąć.');
+  if (!confirmed) return;
+
+  try {
+    await fetch(`${url}/inbox/invoices/${id}`, {
+      method: 'DELETE',
+    });
+    await refresh();
+    showNotification('Faktura została usunięta', 'success');
+  } catch (e) {
+    alert('Błąd usuwania: ' + e.message);
   }
 };
 

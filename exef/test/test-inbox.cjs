@@ -260,6 +260,89 @@ async function testExportSendEmail() {
   }
 }
 
+async function testExportFormatsList() {
+  console.log('\n[TEST] GET /inbox/export/formats')
+  const res = await fetch(`${BASE_URL}/inbox/export/formats`)
+  const json = await res.json().catch(() => ({}))
+  console.log('  Status:', res.status)
+  if (!res.ok) {
+    console.log('  Error:', JSON.stringify(json))
+    return false
+  }
+
+  const formats = Array.isArray(json.formats) ? json.formats : []
+  if (!formats.length) {
+    console.log('  Empty formats')
+    return false
+  }
+
+  const ids = new Set(formats.map((f) => String(f?.id || '')))
+  if (!ids.has('kpir_csv')) {
+    console.log('  Missing kpir_csv')
+    return false
+  }
+  if (!ids.has('kpir_xlsx')) {
+    console.log('  Missing kpir_xlsx')
+    return false
+  }
+
+  return true
+}
+
+async function testExportDownloadKpirXlsx() {
+  console.log('\n[TEST] POST /inbox/export/download (kpir_xlsx)')
+  const res = await fetch(`${BASE_URL}/inbox/export/download`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format: 'kpir_xlsx' }),
+  })
+
+  console.log('  Status:', res.status)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    console.log('  Error:', JSON.stringify(err))
+    return false
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer())
+  if (buf.length < 4) {
+    console.log('  Too small')
+    return false
+  }
+  const sig = buf.slice(0, 2).toString('utf8')
+  if (sig !== 'PK') {
+    console.log('  Not an XLSX zip (signature):', sig)
+    return false
+  }
+
+  return true
+}
+
+async function testExportDownloadOptimaXml() {
+  console.log('\n[TEST] POST /inbox/export/download (optima_xml)')
+  const res = await fetch(`${BASE_URL}/inbox/export/download`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format: 'optima_xml' }),
+  })
+
+  console.log('  Status:', res.status)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    console.log('  Error:', JSON.stringify(err))
+    return false
+  }
+
+  const buf = Buffer.from(await res.arrayBuffer())
+  const head = buf.slice(0, 200).toString('utf8').trim()
+  if (!head.startsWith('<?xml')) {
+    console.log('  Not XML header:', head.slice(0, 40))
+    return false
+  }
+
+  return true
+}
+
 async function testExportFilesFiltering() {
   console.log('\n[TEST] POST /inbox/export/files (filtering)')
 
@@ -975,6 +1058,9 @@ async function runAllTests() {
     results.push({ name: 'approve invoice', ok: await testApproveInvoice(jsonInvoiceId) })
     results.push({ name: 'export CSV', ok: await testExportCsv() })
     results.push({ name: 'export KPiR CSV', ok: await testExportKpirCsv() })
+    results.push({ name: 'export formats', ok: await testExportFormatsList() })
+    results.push({ name: 'export download kpir_xlsx', ok: await testExportDownloadKpirXlsx() })
+    results.push({ name: 'export download optima_xml', ok: await testExportDownloadOptimaXml() })
     results.push({ name: 'export send email', ok: await testExportSendEmail() })
     results.push({ name: 'ksef auth', ok: await testKsefEndpoints() })
     results.push({ name: 'export files hierarchy', ok: await testExportFilesHierarchy() })

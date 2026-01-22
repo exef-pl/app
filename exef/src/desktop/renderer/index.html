@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:* http://[::1]:*; style-src 'self' 'unsafe-inline'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:* http://[::1]:*; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; frame-src 'self' blob:;" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ExEF Desktop</title>
     <style>
@@ -211,6 +211,15 @@
       .invoices-table th { background: var(--surface-2); font-weight: 600; position: sticky; top: 0; z-index: 1; }
       .invoices-table td.muted { color: var(--muted); }
       .invoices-table td.center { text-align: center; }
+      .invoices-table td.thumb-cell { width: 110px; padding-right: 6px; }
+      .invoice-thumb { width: 96px; height: 120px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
+      .invoice-thumb.clickable { cursor: pointer; }
+      .invoice-thumb.clickable:hover { background: var(--surface-hover); }
+      .invoice-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .invoice-thumb .thumb-loading { color: var(--muted); font-size: 12px; padding: 8px; text-align: center; }
+      .invoice-thumb .thumb-fallback { color: var(--muted); font-size: 12px; padding: 8px; text-align: center; }
+      .invoice-thumb .thumb-scaled { width: 420px; height: 560px; transform: scale(0.23); transform-origin: top left; pointer-events: none; }
+      .invoice-thumb .thumb-scaled iframe { width: 420px; height: 560px; border: 0; background: #fff; display: block; }
       .project-col { min-width: 160px; }
       .project-radio { display: flex; align-items: center; justify-content: center; gap: 6px; }
       .project-radio input { cursor: pointer; }

@@ -1,5 +1,5 @@
 project: ksef_pyth
-generated: "2026-01-22T07:16:46.520040"
+generated: "2026-01-22T20:15:58.722186"
 modules[15]{path,lang,items}:
   ksef/__init__.py,python,0
   sample/test.py,python,17

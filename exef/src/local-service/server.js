@@ -37,7 +37,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       connectSrc: ["'self'", "http://127.0.0.1:*", "http://localhost:*", "ws://127.0.0.1:*", "ws://localhost:*"],
-      imgSrc: ["'self'", "data:", "http:", "https:"],
+      imgSrc: ["'self'", "data:", "blob:", "http:", "https:"],
       fontSrc: ["'self'", "data:", "http:", "https:"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -55,7 +55,7 @@ app.use((req, res, next) => {
       "script-src 'self' 'unsafe-inline'; " +
       "style-src 'self' 'unsafe-inline'; " +
       "connect-src 'self' http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; " +
-      "img-src 'self' data: http: https:; " +
+      "img-src 'self' data: blob: http: https:; " +
       "font-src 'self' data: http: https:; " +
       "object-src 'none'; " +
       "media-src 'self'; " +
@@ -879,6 +879,14 @@ async function setSettingsToBackend(nextSettings) {
 
 app.use('/test', express.static(path.join(__dirname, '../../test/gui')))
 
+app.use('/vendor/pdfjs', express.static(path.join(__dirname, '../../node_modules/pdfjs-dist/build'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res, _filePath) => {
+    res.setHeader('Cache-Control', 'no-store')
+  },
+}))
+
 
 // Serve desktop renderer with CSP override
 app.use('/', (req, res, next) => {
@@ -946,24 +954,6 @@ function isAllowedRemoteXslUrl(rawUrl) {
   }
 }
 
-app.get('/ksef/xsl/:name', (req, res) => {
-  const name = String(req.params.name || '')
-  const allowed = new Set(['styl-fa2.xsl', 'styl-fa3.xsl', 'upo.xsl'])
-  if (!allowed.has(name)) {
-    return res.status(404).json({ error: 'xsl_not_found' })
-  }
-
-  const filePath = path.join(__dirname, '../../../ksef', name)
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: 'xsl_not_found' })
-  }
-
-  const raw = fs.readFileSync(filePath, 'utf8')
-  const rewritten = rewriteXslImportsToProxy(raw)
-  res.setHeader('Content-Type', 'application/xml; charset=utf-8')
-  res.send(rewritten)
-})
-
 app.get('/ksef/xsl/proxy', async (req, res) => {
   const target = req.query.url
   if (!target || typeof target !== 'string' || !isAllowedRemoteXslUrl(target)) {
@@ -983,6 +973,24 @@ app.get('/ksef/xsl/proxy', async (req, res) => {
   } catch (err) {
     res.status(502).json({ error: err?.message ?? 'xsl_fetch_failed' })
   }
+})
+
+app.get('/ksef/xsl/:name', (req, res) => {
+  const name = String(req.params.name || '')
+  const allowed = new Set(['styl-fa2.xsl', 'styl-fa3.xsl', 'upo.xsl'])
+  if (!allowed.has(name)) {
+    return res.status(404).json({ error: 'xsl_not_found' })
+  }
+
+  const filePath = path.join(__dirname, '../../../ksef', name)
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'xsl_not_found' })
+  }
+
+  const raw = fs.readFileSync(filePath, 'utf8')
+  const rewritten = rewriteXslImportsToProxy(raw)
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8')
+  res.send(rewritten)
 })
 
 const ksef = createKsefFacade({})
@@ -2994,6 +3002,37 @@ app.get('/inbox/invoices/:id', async (req, res) => {
   }
 })
 
+app.post('/inbox/invoices/purge-empty', async (req, res) => {
+  try {
+    const dryRun = req.body?.dryRun !== false
+    const invoices = await workflow.listInvoices({ status: 'all' })
+
+    const candidates = invoices.filter((inv) => !inv || !inv.id)
+      ? []
+      : invoices
+
+    const deletedIds = []
+    for (const inv of candidates) {
+      const id = inv?.id ? String(inv.id) : null
+      if (!id) {
+        continue
+      }
+      const full = await workflow.getInvoice(id)
+      if (full && full.originalFile) {
+        continue
+      }
+      if (!dryRun) {
+        await workflow.inbox.deleteInvoice(id)
+      }
+      deletedIds.push(id)
+    }
+
+    res.json({ ok: true, dryRun, deleted: deletedIds.length, deletedIds })
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
 app.post('/inbox/invoices', async (req, res) => {
   try {
     const { source, file, metadata } = req.body
@@ -3026,6 +3065,15 @@ app.post('/inbox/invoices/:id/reject', async (req, res) => {
   try {
     const invoice = await workflow.rejectInvoice(req.params.id, req.body.reason)
     res.json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.delete('/inbox/invoices/:id', async (req, res) => {
+  try {
+    const result = await workflow.deleteInvoice(req.params.id)
+    res.json(result)
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }
@@ -3103,14 +3151,36 @@ app.post('/inbox/ksef/poll', async (req, res) => {
   try {
     const { accessToken, since, until } = req.body
     const invoices = await ksef.pollNewInvoices({ accessToken, since, until })
+    let added = 0
     for (const invData of invoices) {
       const ksefKey = invData?.ksefReferenceNumber || invData?.ksefId || null
-      await workflow.addManualInvoice('ksef', null, {
-        ...invData,
-        sourceKey: ksefKey ? `ksef:${String(ksefKey)}` : null,
-      })
+      if (!ksefKey) {
+        continue
+      }
+
+      try {
+        const downloaded = await ksef.downloadInvoice({
+          accessToken,
+          ksefReferenceNumber: String(ksefKey),
+          format: 'xml',
+        })
+        const xmlText = downloaded?.format === 'xml' ? downloaded.data : null
+        if (!xmlText || !String(xmlText).trim()) {
+          continue
+        }
+        await workflow.addManualInvoice('ksef', String(xmlText), {
+          ...invData,
+          sourceKey: `ksef:${String(ksefKey)}`,
+          fileName: `ksef_${String(ksefKey)}.xml`,
+          fileType: downloaded?.contentType || 'application/xml',
+          fileSize: Buffer.byteLength(String(xmlText), 'utf8'),
+        })
+        added++
+      } catch (_e) {
+        continue
+      }
     }
-    res.json({ added: invoices.length, invoices })
+    res.json({ added, invoices })
   } catch (err) {
     res.status(400).json({ error: err?.message ?? 'unknown_error' })
   }

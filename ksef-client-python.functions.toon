@@ -1,5 +1,5 @@
 project: ksef-client-python
-generated: "2026-01-22T07:16:25.147007"
+generated: "2026-01-22T20:15:34.622850"
 modules[70]{path,lang,items}:
   tests/test_base64url.py,python,2
   tests/test_services_workflows.py,python,39
