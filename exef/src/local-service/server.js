@@ -167,6 +167,49 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'exef-local-service' })
 })
 
+app.get('/settings', async (_req, res) => {
+  try {
+    settings = loadSettings()
+    res.json(settings)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.put('/settings', async (req, res) => {
+  try {
+    const defaults = getDefaultSettings()
+    const current = loadSettings()
+    const body = req.body && typeof req.body === 'object' ? req.body : {}
+
+    const merged = {
+      ...defaults,
+      ...current,
+      ...body,
+      channels: {
+        ...defaults.channels,
+        ...(current.channels || {}),
+        ...(body.channels || {}),
+        localFolders: {
+          ...defaults.channels.localFolders,
+          ...((current.channels || {}).localFolders || {}),
+          ...((body.channels || {}).localFolders || {}),
+        },
+      },
+    }
+
+    merged.channels.localFolders.paths = normalizeStringArray(merged.channels.localFolders.paths)
+    writeJsonFile(settingsFilePath, merged)
+    settings = merged
+
+    workflow.configureStorage({ watchPaths: settings.channels.localFolders.paths })
+
+    res.json(settings)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
 app.post('/ksef/auth/token', async (req, res) => {
   try {
     const result = await ksef.authenticateWithKsefToken(req.body)
@@ -524,6 +567,196 @@ app.delete('/expense-types/:id', async (req, res) => {
   }
 })
 
+app.get('/labels', async (_req, res) => {
+  try {
+    if (!fs.existsSync(labelsFilePath)) {
+      return res.json({ labels: [] })
+    }
+
+    const content = fs.readFileSync(labelsFilePath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+
+    if (lines.length < 2) {
+      return res.json({ labels: [] })
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim())
+    const labels = []
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values.length === headers.length && values[0]) {
+        const label = {}
+        headers.forEach((header, index) => {
+          label[header.toLowerCase()] = values[index]
+        })
+        labels.push(label)
+      }
+    }
+
+    res.json({ labels })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/labels', async (req, res) => {
+  try {
+    const { id, nazwa, kolor, opis } = req.body
+
+    if (!id || !nazwa) {
+      return res.status(400).json({ error: 'ID and Nazwa are required' })
+    }
+
+    let lines = []
+
+    if (fs.existsSync(labelsFilePath)) {
+      const content = fs.readFileSync(labelsFilePath, 'utf8')
+      lines = content.split('\n').filter(line => line.trim())
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+        if (values[0] === id) {
+          return res.status(400).json({ error: 'Label with this ID already exists' })
+        }
+      }
+    }
+
+    if (lines.length === 0) {
+      lines = ['ID,Nazwa,Kolor,Opis']
+    }
+
+    lines.push(`${id},"${nazwa}","${kolor || ''}","${opis || ''}"`)
+    fs.mkdirSync(path.dirname(labelsFilePath), { recursive: true })
+    fs.writeFileSync(labelsFilePath, lines.join('\n'), 'utf8')
+
+    res.status(201).json({ id, nazwa, kolor, opis, message: 'Label created successfully' })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.put('/labels/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { nazwa, kolor, opis } = req.body
+
+    if (!fs.existsSync(labelsFilePath)) {
+      return res.status(404).json({ error: 'Labels file not found' })
+    }
+
+    const content = fs.readFileSync(labelsFilePath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+
+    if (lines.length < 2) {
+      return res.status(404).json({ error: 'No labels found' })
+    }
+
+    let found = false
+    const updatedLines = [lines[0]]
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values[0] === id) {
+        found = true
+        const updatedLabel = {
+          id,
+          nazwa: nazwa || values[1],
+          kolor: kolor || values[2],
+          opis: opis || values[3],
+        }
+        const updatedLine = `${id},"${updatedLabel.nazwa}","${updatedLabel.kolor}","${updatedLabel.opis}"`
+        updatedLines.push(updatedLine)
+      } else {
+        updatedLines.push(lines[i])
+      }
+    }
+
+    if (!found) {
+      return res.status(404).json({ error: 'Label not found' })
+    }
+
+    fs.writeFileSync(labelsFilePath, updatedLines.join('\n'), 'utf8')
+    res.json({ id, nazwa, kolor, opis, message: 'Label updated successfully' })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.delete('/labels/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    if (!fs.existsSync(labelsFilePath)) {
+      return res.status(404).json({ error: 'Labels file not found' })
+    }
+
+    const content = fs.readFileSync(labelsFilePath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+
+    if (lines.length < 2) {
+      return res.status(404).json({ error: 'No labels found' })
+    }
+
+    let found = false
+    const updatedLines = [lines[0]]
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values[0] !== id) {
+        updatedLines.push(lines[i])
+      } else {
+        found = true
+      }
+    }
+
+    if (!found) {
+      return res.status(404).json({ error: 'Label not found' })
+    }
+
+    fs.writeFileSync(labelsFilePath, updatedLines.join('\n'), 'utf8')
+    res.json({ message: 'Label deleted successfully' })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/invoices/:id/assign', async (req, res) => {
+  try {
+    const { projectId } = req.body
+    
+    if (!projectId) {
+      return res.status(400).json({ error: 'Project ID is required' })
+    }
+    
+    const invoice = await workflow.assignInvoiceToProject(req.params.id, projectId)
+    res.json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/invoices/:id/assign-expense-type', async (req, res) => {
+  try {
+    const { expenseTypeId } = req.body
+    const normalized = expenseTypeId ? String(expenseTypeId) : null
+    const invoice = await workflow.assignInvoiceToExpenseType(req.params.id, normalized)
+    res.json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/inbox/invoices/:id/assign-labels', async (req, res) => {
+  try {
+    const labelIds = normalizeStringArray(req.body?.labelIds)
+    const invoice = await workflow.assignInvoiceToLabels(req.params.id, labelIds)
+    res.json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
 app.post('/projects', async (req, res) => {
   try {
     const { id, nazwa, klient, nip, budzet, status, opis } = req.body
@@ -668,33 +901,6 @@ app.delete('/projects/:id', async (req, res) => {
   }
 })
 
-// Assign invoice to project
-app.post('/inbox/invoices/:id/assign', async (req, res) => {
-  try {
-    const { projectId } = req.body
-    
-    if (!projectId) {
-      return res.status(400).json({ error: 'Project ID is required' })
-    }
-    
-    const invoice = await workflow.assignInvoiceToProject(req.params.id, projectId)
-    res.json(invoice)
-  } catch (err) {
-    res.status(400).json({ error: err?.message ?? 'unknown_error' })
-  }
-})
-
-app.post('/inbox/invoices/:id/assign-expense-type', async (req, res) => {
-  try {
-    const { expenseTypeId } = req.body
-    const normalized = expenseTypeId ? String(expenseTypeId) : null
-    const invoice = await workflow.assignInvoiceToExpenseType(req.params.id, normalized)
-    res.json(invoice)
-  } catch (err) {
-    res.status(400).json({ error: err?.message ?? 'unknown_error' })
-  }
-})
-
 function writePortFile(filePath, portNumber) {
   if (!filePath) {
     return
@@ -719,6 +925,9 @@ listenWithFallback(app, {
 }).then(({ port }) => {
   writePortFile(portFile, port)
   process.stdout.write(`exef-local-service listening on http://${host}:${port}\n`)
+  workflow.start().catch((err) => {
+    process.stderr.write(`${err?.stack ?? err}\n`)
+  })
 }).catch((err) => {
   process.stderr.write(`${err?.stack ?? err}\n`)
   process.exit(1)
