@@ -21,7 +21,156 @@ const STATUS_LABELS = {
 let currentFilter = '';
 let invoices = [];
 let projects = [];
+let expenseTypes = [];
 let currentInvoice = null;
+
+let viewMode = localStorage.getItem('exef_invoice_view') || 'cards';
+
+let activeUrlModal = null;
+let pageMode = 'list';
+
+function getUrlState() {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    view: params.get('view'),
+    filter: params.get('filter'),
+    modal: params.get('modal'),
+    invoice: params.get('invoice'),
+    action: params.get('action'),
+  };
+}
+
+function setUrlState(next, options = {}) {
+  const replace = options.replace !== false;
+  const params = new URLSearchParams(window.location.search);
+
+  Object.entries(next || {}).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === '') {
+      params.delete(key);
+    } else {
+      params.set(key, String(value));
+    }
+  });
+
+  const qs = params.toString();
+  const nextUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash || ''}`;
+  if (replace) {
+    window.history.replaceState({}, '', nextUrl);
+  } else {
+    window.history.pushState({}, '', nextUrl);
+  }
+}
+
+function updateToggleViewButton() {
+  const btn = document.getElementById('toggleViewBtn');
+  if (!btn) return;
+  btn.textContent = viewMode === 'table' ? 'Widok: tabela' : 'Widok: karty';
+}
+
+function setViewMode(nextMode) {
+  const syncUrl = arguments.length > 1 ? (arguments[1]?.syncUrl !== false) : true;
+  viewMode = nextMode;
+  localStorage.setItem('exef_invoice_view', viewMode);
+  if (syncUrl) {
+    setUrlState({ view: viewMode });
+  }
+  updateToggleViewButton();
+  renderInvoices();
+}
+
+function setActiveFilter(nextFilter) {
+  const syncUrl = arguments.length > 1 ? (arguments[1]?.syncUrl !== false) : true;
+  const shouldLoad = arguments.length > 1 ? (arguments[1]?.load !== false) : true;
+
+  currentFilter = nextFilter || '';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const tab = document.querySelector(`.tab[data-filter="${currentFilter}"]`);
+  if (tab) {
+    tab.classList.add('active');
+  }
+  if (syncUrl) {
+    setUrlState({ filter: currentFilter });
+  }
+  if (shouldLoad) {
+    loadInvoices();
+  }
+}
+
+function closeActiveUrlModal() {
+  if (activeUrlModal && typeof activeUrlModal.remove === 'function') {
+    activeUrlModal.remove();
+  }
+  activeUrlModal = null;
+}
+
+async function syncUiFromUrl() {
+  const state = getUrlState();
+  const nextView = state.view === 'table' || state.view === 'cards' ? state.view : null;
+  if (nextView && nextView !== viewMode) {
+    setViewMode(nextView, { syncUrl: false });
+  }
+
+  const nextFilter = state.filter || '';
+  const filterChanged = nextFilter !== currentFilter;
+  if (filterChanged) {
+    setActiveFilter(nextFilter, { syncUrl: false, load: false });
+    await loadInvoices();
+  }
+
+  if (state.action && state.invoice) {
+    await runActionFromUrl(state.action, state.invoice);
+    return;
+  }
+
+  if (!state.modal && state.invoice) {
+    await showInvoiceDetailsPage(state.invoice, { syncUrl: false });
+    return;
+  }
+
+  if (!state.invoice && pageMode !== 'list') {
+    showInvoiceListPage({ syncUrl: false });
+  }
+
+  closeActiveUrlModal();
+  if (state.modal === 'projects') {
+    await showProjectsManager({ syncUrl: false });
+  } else if (state.modal === 'expenseTypes') {
+    await showExpenseTypesManager({ syncUrl: false });
+  } else if (state.modal === 'assign' && state.invoice) {
+    await showAssignModal(state.invoice, { syncUrl: false });
+  } else if (state.modal === 'invoice' && state.invoice) {
+    await showInvoiceDetailsModal(state.invoice, { syncUrl: false });
+  }
+}
+
+async function runActionFromUrl(action, invoiceId) {
+  const normalized = String(action || '').trim().toLowerCase();
+
+  try {
+    if (normalized === 'process') {
+      const ok = confirm('Czy uruchomić przetwarzanie faktury?');
+      if (ok) {
+        await fetch(`${url}/inbox/invoices/${invoiceId}/process`, { method: 'POST' });
+        await refresh();
+      }
+    }
+    if (normalized === 'approve') {
+      const ok = confirm('Czy zatwierdzić fakturę?');
+      if (ok) {
+        await fetch(`${url}/inbox/invoices/${invoiceId}/approve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        await refresh();
+      }
+    }
+  } finally {
+    const state = getUrlState();
+    const clearInvoice = pageMode === 'list' && !state.modal;
+    setUrlState({ action: null, ...(clearInvoice ? { invoice: null } : {}) }, { replace: true });
+  }
+}
 
 async function checkConnection() {
   const connDot = document.getElementById('connDot');
@@ -65,6 +214,33 @@ async function loadStats() {
   }
 }
 
+window.assignInvoiceToProjectFromTable = async function(invoiceId, projectId) {
+  if (!projectId) {
+    return;
+  }
+  await assignInvoiceToProject(invoiceId, projectId);
+};
+
+window.assignInvoiceToExpenseTypeFromTable = async function(invoiceId, expenseTypeId) {
+  await assignInvoiceToExpenseType(invoiceId, expenseTypeId);
+};
+
+async function getInvoiceById(invoiceId) {
+  const fromList = invoices.find(inv => inv.id === invoiceId);
+  if (fromList) {
+    return fromList;
+  }
+  try {
+    const res = await fetch(`${url}/inbox/invoices/${invoiceId}`);
+    if (!res.ok) {
+      return null;
+    }
+    return await res.json();
+  } catch (_e) {
+    return null;
+  }
+}
+
 async function loadInvoices() {
   try {
     const filterParam = currentFilter ? `?status=${currentFilter}` : '';
@@ -81,6 +257,17 @@ async function loadInvoices() {
 
 function renderInvoices() {
   const container = document.getElementById('invoiceList');
+
+  if (pageMode !== 'list') {
+    return;
+  }
+
+  updateToggleViewButton();
+
+  if (viewMode === 'table') {
+    renderInvoicesTable(container);
+    return;
+  }
 
   if (invoices.length === 0) {
     container.innerHTML = '<div class="empty">Brak faktur do wyświetlenia</div>';
@@ -106,25 +293,33 @@ function renderInvoices() {
     if (inv.status === 'pending' || inv.status === 'ocr') {
       actions = `
         <button onclick="processInvoice('${inv.id}')">Przetwórz</button>
-        <button onclick="showProjectAssignModal('${inv.id}')">Przypisz</button>
+        <button onclick="showAssignModal('${inv.id}')">Przypisz</button>
+        <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
       `;
     } else if (inv.status === 'described') {
       actions = `
         <button class="success" onclick="approveInvoice('${inv.id}')">Zatwierdź</button>
         <button onclick="editInvoice('${inv.id}')">Edytuj</button>
-        <button onclick="showProjectAssignModal('${inv.id}')">Przypisz</button>
+        <button onclick="showAssignModal('${inv.id}')">Przypisz</button>
+        <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
         <button class="danger" onclick="rejectInvoice('${inv.id}')">Odrzuć</button>
       `;
     } else if (inv.status === 'approved') {
       actions = `
         <span style="color: #16a34a;">✓ Zatwierdzona</span>
-        <button onclick="showProjectAssignModal('${inv.id}')">Przypisz</button>
+        <button onclick="showAssignModal('${inv.id}')">Przypisz</button>
+        <button onclick="openInvoiceDetails('${inv.id}')">Otwórz</button>
       `;
     }
 
     const projectInfo = inv.projectId ? (() => {
       const project = projects.find(p => p.id === inv.projectId);
       return project ? `<div style="font-size: 12px; color: #6b7280; margin-top: 4px;">📁 Projekt: ${project.nazwa}</div>` : '';
+    })() : '';
+
+    const expenseTypeInfo = inv.expenseTypeId ? (() => {
+      const expenseType = expenseTypes.find(t => t.id === inv.expenseTypeId);
+      return expenseType ? `<div style="font-size: 12px; color: #6b7280; margin-top: 4px;">🏷️ Typ: ${expenseType.nazwa}</div>` : '';
     })() : '';
 
     return `
@@ -145,16 +340,110 @@ function renderInvoices() {
         </div>
         ${suggestion ? `<div style="margin-bottom: 8px;">${suggestion}</div>` : ''}
         ${projectInfo}
+        ${expenseTypeInfo}
         <div class="card-actions">${actions}</div>
       </div>
     `;
   }).join('');
 }
 
+function renderInvoicesTable(container) {
+  if (invoices.length === 0) {
+    container.innerHTML = '<div class="empty">Brak faktur do wyświetlenia</div>';
+    return;
+  }
+
+  const projectHeaders = projects.map((p) => {
+    const label = p?.nazwa || p?.id || '';
+    return `<th class="project-col" title="${label}">${label}</th>`;
+  }).join('');
+
+  const rows = invoices.map((inv) => {
+    const icon = SOURCE_ICONS[inv.source] || '📄';
+    const statusLabel = STATUS_LABELS[inv.status] || inv.status;
+    const statusClass = `status-${inv.status}`;
+    const amount = inv.grossAmount
+      ? `${Number(inv.grossAmount).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} ${inv.currency || 'PLN'}`
+      : '—';
+
+    const projectCells = projects.map((p) => {
+      const checked = inv.projectId && p?.id && inv.projectId === p.id ? 'checked' : '';
+      const disabled = p?.id ? '' : 'disabled';
+      return `
+        <td class="center project-col">
+          <div class="project-radio">
+            <input type="radio" name="project-${inv.id}" value="${p?.id || ''}" ${checked} ${disabled}
+              onchange="assignInvoiceToProjectFromTable('${inv.id}','${p?.id || ''}')" />
+          </div>
+        </td>
+      `;
+    }).join('');
+
+    const expenseTypeOptions = [`<option value="">—</option>`].concat(
+      expenseTypes.map((t) => {
+        const selected = inv.expenseTypeId && t?.id && inv.expenseTypeId === t.id ? 'selected' : '';
+        return `<option value="${t.id}" ${selected}>${t.nazwa}</option>`;
+      })
+    ).join('');
+
+    let actions = '';
+    if (inv.status === 'pending' || inv.status === 'ocr') {
+      actions = `<button onclick="processInvoice('${inv.id}')">Przetwórz</button>`;
+    } else if (inv.status === 'described') {
+      actions = `
+        <button class="success" onclick="approveInvoice('${inv.id}')">Zatwierdź</button>
+        <button class="danger" onclick="rejectInvoice('${inv.id}')">Odrzuć</button>
+      `;
+    } else if (inv.status === 'approved') {
+      actions = `<span style="color: #16a34a;">✓ Zatwierdzona</span>`;
+    }
+
+    return `
+      <tr>
+        <td class="muted">${icon}</td>
+        <td>
+          <div style="font-weight: 600;">${inv.invoiceNumber || inv.fileName || 'Faktura'}</div>
+          <div class="muted">${inv.contractorName || inv.sellerName || '???'}</div>
+        </td>
+        <td><span class="${statusClass}">${statusLabel}</span></td>
+        <td>${amount}</td>
+        <td class="muted">${inv.issueDate || '—'}</td>
+        <td>
+          <select onchange="assignInvoiceToExpenseTypeFromTable('${inv.id}', this.value)">${expenseTypeOptions}</select>
+        </td>
+        ${projectCells}
+        <td>${actions}</td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="invoice-table-wrapper">
+      <table class="invoices-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Faktura</th>
+            <th>Status</th>
+            <th>Kwota</th>
+            <th>Data</th>
+            <th>Typ wydatku</th>
+            ${projectHeaders}
+            <th>Akcje</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
 window.processInvoice = async function(id) {
   try {
-    await fetch(`${url}/inbox/invoices/${id}/process`, { method: 'POST' });
-    await refresh();
+    setUrlState({ action: 'process', invoice: id }, { replace: false });
+    await runActionFromUrl('process', id);
   } catch (e) {
     alert('Błąd przetwarzania: ' + e.message);
   }
@@ -162,12 +451,8 @@ window.processInvoice = async function(id) {
 
 window.approveInvoice = async function(id) {
   try {
-    await fetch(`${url}/inbox/invoices/${id}/approve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    await refresh();
+    setUrlState({ action: 'approve', invoice: id }, { replace: false });
+    await runActionFromUrl('approve', id);
   } catch (e) {
     alert('Błąd zatwierdzania: ' + e.message);
   }
@@ -219,8 +504,9 @@ async function exportApproved() {
 
 async function refresh() {
   await loadStats();
-  await loadInvoices();
   await loadProjects();
+  await loadExpenseTypes();
+  await loadInvoices();
 }
 
 // Projects management functions
@@ -230,8 +516,20 @@ async function loadProjects() {
     const data = await res.json();
     projects = data.projects || [];
     updateProjectSelects();
+    renderInvoices();
   } catch (e) {
     console.error('Failed to load projects:', e);
+  }
+}
+
+async function loadExpenseTypes() {
+  try {
+    const res = await fetch(`${url}/expense-types`);
+    const data = await res.json();
+    expenseTypes = data.expenseTypes || [];
+    renderInvoices();
+  } catch (e) {
+    console.error('Failed to load expense types:', e);
   }
 }
 
@@ -254,6 +552,223 @@ function updateProjectSelects() {
   });
 }
 
+async function showExpenseTypesManager(options = {}) {
+  if (options && typeof options.preventDefault === 'function') {
+    options = {};
+  }
+  const syncUrl = options.syncUrl !== false;
+  if (syncUrl) {
+    setUrlState({ modal: 'expenseTypes', invoice: null }, { replace: false });
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Typy wydatków</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="projects-toolbar">
+          <button class="add-expense-type-btn primary">+ Dodaj typ</button>
+        </div>
+        <div class="expense-types-list"></div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  activeUrlModal = modal;
+
+  const close = () => {
+    modal.remove();
+    if (activeUrlModal === modal) {
+      activeUrlModal = null;
+    }
+    if (syncUrl) {
+      setUrlState({ modal: null, ...(pageMode === 'list' ? { invoice: null } : {}) }, { replace: false });
+    }
+  };
+
+  modal.querySelector('.close-btn').addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+
+  await renderExpenseTypesList(modal.querySelector('.expense-types-list'));
+
+  modal.querySelector('.add-expense-type-btn').addEventListener('click', () => {
+    showExpenseTypeForm();
+  });
+}
+
+async function renderExpenseTypesList(container) {
+  container.innerHTML = '';
+
+  await loadExpenseTypes();
+
+  if (expenseTypes.length === 0) {
+    container.innerHTML = '<p class="empty">Brak typów wydatków</p>';
+    return;
+  }
+
+  const table = document.createElement('table');
+  table.className = 'projects-table';
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nazwa</th>
+        <th>Opis</th>
+        <th>Akcje</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  const tbody = table.querySelector('tbody');
+  expenseTypes.forEach(t => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${t.id}</td>
+      <td>${t.nazwa}</td>
+      <td>${t.opis || '-'}</td>
+      <td>
+        <button class="edit-expense-type-btn" data-id="${t.id}">Edytuj</button>
+        <button class="delete-expense-type-btn danger" data-id="${t.id}">Usuń</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  container.appendChild(table);
+
+  container.querySelectorAll('.edit-expense-type-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const id = e.target.dataset.id;
+      const type = expenseTypes.find(x => x.id === id);
+      showExpenseTypeForm(type);
+    });
+  });
+
+  container.querySelectorAll('.delete-expense-type-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const id = e.target.dataset.id;
+      if (confirm('Czy na pewno usunąć ten typ wydatku?')) {
+        await deleteExpenseType(id);
+        await renderExpenseTypesList(container);
+      }
+    });
+  });
+}
+
+function showExpenseTypeForm(expenseType = null) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>${expenseType ? 'Edytuj typ wydatku' : 'Dodaj typ wydatku'}</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="expense-type-form">
+          <div class="form-group">
+            <label>ID typu:</label>
+            <input type="text" name="id" value="${expenseType?.id || ''}" ${expenseType ? 'readonly' : ''} required>
+          </div>
+          <div class="form-group">
+            <label>Nazwa:</label>
+            <input type="text" name="nazwa" value="${expenseType?.nazwa || ''}" required>
+          </div>
+          <div class="form-group">
+            <label>Opis:</label>
+            <textarea name="opis" rows="3">${expenseType?.opis || ''}</textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="primary">${expenseType ? 'Zapisz zmiany' : 'Dodaj typ'}</button>
+            <button type="button" class="cancel-btn">Anuluj</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const close = () => modal.remove();
+  modal.querySelector('.close-btn').addEventListener('click', close);
+  modal.querySelector('.cancel-btn').addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+
+  modal.querySelector('.expense-type-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    try {
+      if (expenseType) {
+        await updateExpenseType(expenseType.id, data);
+        showNotification('Typ wydatku zaktualizowany', 'success');
+      } else {
+        await createExpenseType(data);
+        showNotification('Typ wydatku dodany', 'success');
+      }
+      close();
+      await loadExpenseTypes();
+      renderInvoices();
+    } catch (err) {
+      showNotification('Błąd: ' + (err?.message || err), 'error');
+    }
+  });
+}
+
+async function createExpenseType(data) {
+  const res = await fetch(`${url}/expense-types`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to create expense type');
+  }
+
+  return await res.json();
+}
+
+async function updateExpenseType(id, data) {
+  const res = await fetch(`${url}/expense-types/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to update expense type');
+  }
+
+  return await res.json();
+}
+
+async function deleteExpenseType(id) {
+  const res = await fetch(`${url}/expense-types/${id}`, {
+    method: 'DELETE'
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.error || 'Failed to delete expense type');
+  }
+
+  await loadExpenseTypes();
+  showNotification('Typ wydatku usunięty', 'success');
+}
+
 async function assignInvoiceToProject(invoiceId, projectId) {
   try {
     const res = await fetch(`${url}/inbox/invoices/${invoiceId}/assign`, {
@@ -271,6 +786,26 @@ async function assignInvoiceToProject(invoiceId, projectId) {
     }
   } catch (e) {
     showNotification('Błąd przypisania: ' + e.message, 'error');
+  }
+}
+
+async function assignInvoiceToExpenseType(invoiceId, expenseTypeId) {
+  try {
+    const res = await fetch(`${url}/inbox/invoices/${invoiceId}/assign-expense-type`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expenseTypeId: expenseTypeId || null })
+    });
+
+    if (res.ok) {
+      await loadInvoices();
+      showNotification('Typ wydatku przypisany', 'success');
+    } else {
+      const error = await res.json();
+      throw new Error(error.error || 'Assignment failed');
+    }
+  } catch (e) {
+    showNotification('Błąd przypisania typu wydatku: ' + e.message, 'error');
   }
 }
 
@@ -304,7 +839,15 @@ function showNotification(message, type = 'info') {
   }, 3000);
 }
 
-async function showProjectsManager() {
+async function showProjectsManager(options = {}) {
+  if (options && typeof options.preventDefault === 'function') {
+    options = {};
+  }
+  const syncUrl = options.syncUrl !== false;
+  if (syncUrl) {
+    setUrlState({ modal: 'projects', invoice: null }, { replace: false });
+  }
+
   const modal = document.createElement('div');
   modal.className = 'modal';
   modal.innerHTML = `
@@ -324,11 +867,22 @@ async function showProjectsManager() {
   `;
   
   document.body.appendChild(modal);
+  activeUrlModal = modal;
+
+  const close = () => {
+    modal.remove();
+    if (activeUrlModal === modal) {
+      activeUrlModal = null;
+    }
+    if (syncUrl) {
+      setUrlState({ modal: null }, { replace: false });
+    }
+  };
   
   // Close modal
-  modal.querySelector('.close-btn').addEventListener('click', () => modal.remove());
+  modal.querySelector('.close-btn').addEventListener('click', close);
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
+    if (e.target === modal) close();
   });
   
   // Load projects
@@ -588,28 +1142,35 @@ async function importProjectsFromCSV(file) {
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    currentFilter = tab.dataset.filter;
-    loadInvoices();
+    setActiveFilter(tab.dataset.filter);
   });
 });
 
 document.getElementById('refreshBtn').addEventListener('click', refresh);
+document.getElementById('toggleViewBtn').addEventListener('click', () => {
+  setViewMode(viewMode === 'table' ? 'cards' : 'table');
+});
 document.getElementById('exportBtn').addEventListener('click', exportApproved);
-document.getElementById('projectsBtn').addEventListener('click', showProjectsManager);
+document.getElementById('projectsBtn').addEventListener('click', () => showProjectsManager());
+document.getElementById('expenseTypesBtn').addEventListener('click', () => showExpenseTypesManager());
 
-// Project assignment modal
-window.showProjectAssignModal = function(invoiceId) {
-  const invoice = invoices.find(inv => inv.id === invoiceId);
-  if (!invoice) return;
-  
+window.showAssignModal = async function(invoiceId, options = {}) {
+  const syncUrl = options.syncUrl !== false;
+  if (syncUrl) {
+    setUrlState({ modal: 'assign', invoice: invoiceId }, { replace: false });
+  }
+
+  const invoice = await getInvoiceById(invoiceId);
+  if (!invoice) {
+    return;
+  }
+
   const modal = document.createElement('div');
   modal.className = 'modal';
   modal.innerHTML = `
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Przypisz fakturę do projektu</h2>
+        <h2>Przypisz</h2>
         <button class="close-btn">&times;</button>
       </div>
       <div class="modal-body">
@@ -619,47 +1180,247 @@ window.showProjectAssignModal = function(invoiceId) {
           <p>Kontrahent: ${invoice.contractorName || invoice.sellerName || '—'}</p>
         </div>
         <div class="form-group">
-          <label>Wybierz projekt:</label>
+          <label>Projekt:</label>
           <select class="project-select" id="assignProjectSelect">
             <option value="">-- wybierz projekt --</option>
           </select>
         </div>
+        <div class="form-group">
+          <label>Typ wydatku:</label>
+          <select id="assignExpenseTypeSelect"></select>
+        </div>
         <div class="form-actions">
-          <button class="primary" id="assignBtn">Przypisz</button>
+          <button class="primary" id="assignBtn">Zapisz</button>
           <button class="cancel-btn">Anuluj</button>
         </div>
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(modal);
-  
-  // Update project select
+  activeUrlModal = modal;
+
   updateProjectSelects();
-  
-  // Set current project if already assigned
   if (invoice.projectId) {
     document.getElementById('assignProjectSelect').value = invoice.projectId;
   }
-  
-  // Close modal
-  modal.querySelector('.close-btn').addEventListener('click', () => modal.remove());
-  modal.querySelector('.cancel-btn').addEventListener('click', () => modal.remove());
+
+  const expenseSelect = document.getElementById('assignExpenseTypeSelect');
+  expenseSelect.innerHTML = [`<option value="">—</option>`].concat(
+    expenseTypes.map((t) => `<option value="${t.id}">${t.nazwa}</option>`)
+  ).join('');
+  if (invoice.expenseTypeId) {
+    expenseSelect.value = invoice.expenseTypeId;
+  }
+
+  const close = () => {
+    modal.remove();
+    if (activeUrlModal === modal) {
+      activeUrlModal = null;
+    }
+    if (syncUrl) {
+      setUrlState({ modal: null, ...(pageMode === 'list' ? { invoice: null } : {}) }, { replace: false });
+    }
+  };
+
+  modal.querySelector('.close-btn').addEventListener('click', close);
+  modal.querySelector('.cancel-btn').addEventListener('click', close);
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) modal.remove();
+    if (e.target === modal) close();
   });
-  
-  // Assign project
+
   document.getElementById('assignBtn').addEventListener('click', async () => {
     const projectId = document.getElementById('assignProjectSelect').value;
-    await assignInvoiceToProject(invoiceId, projectId);
-    modal.remove();
+    const expenseTypeId = document.getElementById('assignExpenseTypeSelect').value;
+
+    if (projectId) {
+      await assignInvoiceToProject(invoiceId, projectId);
+    }
+    await assignInvoiceToExpenseType(invoiceId, expenseTypeId);
+    close();
   });
 };
+
+window.showProjectAssignModal = function(invoiceId) {
+  return window.showAssignModal(invoiceId);
+};
+
+window.openInvoiceDetails = function(invoiceId, options = {}) {
+  const syncUrl = options.syncUrl !== false;
+  if (syncUrl) {
+    setUrlState({ invoice: invoiceId, modal: null }, { replace: false });
+  }
+  return showInvoiceDetailsPage(invoiceId, { syncUrl: false });
+};
+
+function showInvoiceListPage(options = {}) {
+  pageMode = 'list';
+  currentInvoice = null;
+  if (options.syncUrl !== false) {
+    setUrlState({ invoice: null, modal: null }, { replace: false });
+  }
+  renderInvoices();
+}
+
+async function showInvoiceDetailsPage(invoiceId, options = {}) {
+  pageMode = 'invoice';
+
+  const invoice = await getInvoiceById(invoiceId);
+  if (!invoice) {
+    showInvoiceListPage({ syncUrl: options.syncUrl !== false });
+    return;
+  }
+
+  currentInvoice = invoice;
+  const container = document.getElementById('invoiceList');
+
+  const amount = invoice.grossAmount
+    ? `${Number(invoice.grossAmount).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} ${invoice.currency || 'PLN'}`
+    : '—';
+
+  const projectOptions = ['<option value="">-- wybierz projekt --</option>'].concat(
+    projects.map((p) => `<option value="${p.id}">${p.nazwa}</option>`)
+  ).join('');
+  const expenseOptions = ['<option value="">—</option>'].concat(
+    expenseTypes.map((t) => `<option value="${t.id}">${t.nazwa}</option>`)
+  ).join('');
+
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${invoice.invoiceNumber || invoice.fileName || 'Faktura'}</div>
+          <div class="card-meta">${invoice.contractorName || invoice.sellerName || '???'}${invoice.issueDate ? ` • ${invoice.issueDate}` : ''}</div>
+        </div>
+        <div class="card-actions">
+          <button id="backToListBtn">← Wróć</button>
+        </div>
+      </div>
+
+      <div class="invoice-info">
+        <p>Kwota: ${amount}</p>
+        <p>Status: ${STATUS_LABELS[invoice.status] || invoice.status}</p>
+      </div>
+
+      <div class="form-group">
+        <label>Projekt:</label>
+        <select class="project-select" id="detailsProjectSelect">${projectOptions}</select>
+      </div>
+      <div class="form-group">
+        <label>Typ wydatku:</label>
+        <select id="detailsExpenseTypeSelect">${expenseOptions}</select>
+      </div>
+
+      <div class="form-actions">
+        <button id="saveDetailsAssignmentsBtn" class="primary">Zapisz</button>
+        <button id="openAssignModalBtn">Otwórz w modalu</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('detailsProjectSelect').value = invoice.projectId || '';
+  document.getElementById('detailsExpenseTypeSelect').value = invoice.expenseTypeId || '';
+
+  document.getElementById('backToListBtn').addEventListener('click', () => {
+    showInvoiceListPage({ syncUrl: true });
+  });
+
+  document.getElementById('openAssignModalBtn').addEventListener('click', () => {
+    window.showAssignModal(invoiceId);
+  });
+
+  document.getElementById('saveDetailsAssignmentsBtn').addEventListener('click', async () => {
+    const projectId = document.getElementById('detailsProjectSelect').value;
+    const expenseTypeId = document.getElementById('detailsExpenseTypeSelect').value;
+
+    if (projectId) {
+      await assignInvoiceToProject(invoiceId, projectId);
+    }
+    await assignInvoiceToExpenseType(invoiceId, expenseTypeId);
+    await refresh();
+    await showInvoiceDetailsPage(invoiceId, { syncUrl: false });
+  });
+
+  if (options.syncUrl !== false) {
+    setUrlState({ invoice: invoiceId, modal: null }, { replace: false });
+  }
+}
+
+async function showInvoiceDetailsModal(invoiceId, options = {}) {
+  const syncUrl = options.syncUrl !== false;
+  if (syncUrl) {
+    setUrlState({ modal: 'invoice', invoice: invoiceId }, { replace: false });
+  }
+
+  const invoice = await getInvoiceById(invoiceId);
+  if (!invoice) {
+    return;
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>${invoice.invoiceNumber || invoice.fileName || 'Faktura'}</h2>
+        <button class="close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="invoice-info">
+          <p>Status: ${STATUS_LABELS[invoice.status] || invoice.status}</p>
+          <p>Kontrahent: ${invoice.contractorName || invoice.sellerName || '—'}</p>
+        </div>
+        <div class="form-actions">
+          <button id="openInvoicePageBtn" class="primary">Otwórz stronę</button>
+          <button class="cancel-btn">Zamknij</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  activeUrlModal = modal;
+
+  const close = () => {
+    modal.remove();
+    if (activeUrlModal === modal) {
+      activeUrlModal = null;
+    }
+    if (syncUrl) {
+      setUrlState({ modal: null }, { replace: false });
+    }
+  };
+
+  modal.querySelector('.close-btn').addEventListener('click', close);
+  modal.querySelector('.cancel-btn').addEventListener('click', close);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) close();
+  });
+
+  document.getElementById('openInvoicePageBtn').addEventListener('click', () => {
+    close();
+    window.openInvoiceDetails(invoiceId);
+  });
+}
 
 (async function init() {
   const connected = await checkConnection();
   if (connected) {
-    await refresh();
+    const state = getUrlState();
+    if (state.view === 'table' || state.view === 'cards') {
+      setViewMode(state.view, { syncUrl: false });
+    }
+    if (state.filter !== null) {
+      setActiveFilter(state.filter || '', { syncUrl: false, load: false });
+    }
+    await loadStats();
+    await loadProjects();
+    await loadExpenseTypes();
+    await loadInvoices();
+    await syncUiFromUrl();
   }
 })();
+
+window.addEventListener('popstate', () => {
+  syncUiFromUrl();
+});

@@ -113,6 +113,7 @@
 
     .test-badge.get { background: #dcfce7; color: #16a34a; }
     .test-badge.post { background: #fef3c7; color: #ca8a04; }
+    .test-badge.flow { background: #dbeafe; color: #1e40af; }
 
     .test-result {
       font-size: 0.8rem;
@@ -270,14 +271,14 @@
     <header>
       <h1>ExEF - Testy GUI</h1>
       <div class="status-bar">
-        <span id="apiUrl" onclick="changeApiUrl()" title="Kliknij aby zmienić URL API">http://127.0.0.1:3030</span>
+        <span id="apiUrl" title="Kliknij aby zmienić URL API">http://127.0.0.1:3030</span>
         <div class="status-dot" id="statusDot"></div>
         <span id="statusText">sprawdzanie...</span>
       </div>
     </header>
 
     <div class="run-all-bar">
-      <button class="btn btn-success" id="runAllBtn" onclick="runAllTests()">
+      <button class="btn btn-success" id="runAllBtn">
         Uruchom wszystkie testy
       </button>
       <div class="progress-bar">
@@ -296,10 +297,10 @@
         <h2 id="testTitle">Wybierz test</h2>
         <div id="testForm"></div>
         <div class="btn-group">
-          <button class="btn btn-primary" id="runTestBtn" onclick="runSelectedTest()" disabled>
+          <button class="btn btn-primary" id="runTestBtn" disabled>
             Uruchom test
           </button>
-          <button class="btn btn-secondary" onclick="clearForm()">
+          <button class="btn btn-secondary" id="clearBtn">
             Wyczyść
           </button>
         </div>
@@ -328,7 +329,7 @@
 
     function resolveDefaultApiUrl() {
       const qs = new URLSearchParams(window.location.search);
-      return qs.get('api') || localStorage.getItem('exef_api_url') || window.location.origin;
+      return qs.get('api') || window.location.origin;
     }
 
     function setApiUrl(nextUrl) {
@@ -353,6 +354,16 @@
     const TESTS = [
       { id: 'health', name: 'Health Check', method: 'GET', endpoint: '/health', params: [] },
       { id: 'inbox-stats', name: 'Inbox Stats', method: 'GET', endpoint: '/inbox/stats', params: [] },
+      { id: 'projects-list', name: 'Projects List', method: 'GET', endpoint: '/projects', params: [] },
+      { id: 'projects-create', name: 'Projects Create', method: 'POST', endpoint: '/projects', params: [
+        { name: 'id', type: 'text', required: true, placeholder: 'PRJ-001' },
+        { name: 'nazwa', type: 'text', required: true, placeholder: 'Projekt A' },
+        { name: 'klient', type: 'text', placeholder: 'Klient' },
+        { name: 'nip', type: 'text', placeholder: '1234567890' },
+        { name: 'budzet', type: 'number', placeholder: '10000.00' },
+        { name: 'status', type: 'select', options: ['aktywny', 'w_trakcie', 'zakończony', 'planowanie'] },
+        { name: 'opis', type: 'text', placeholder: 'Opis' },
+      ]},
       { id: 'inbox-list', name: 'Inbox List', method: 'GET', endpoint: '/inbox/invoices', params: [
         { name: 'status', type: 'select', options: ['', 'pending', 'ocr', 'described', 'approved', 'rejected'] },
         { name: 'source', type: 'select', options: ['', 'email', 'scanner', 'storage', 'ksef'] }
@@ -368,6 +379,65 @@
         { name: 'grossAmount', type: 'number', placeholder: '1230.00' },
         { name: 'issueDate', type: 'date' }
       ]},
+      { id: 'inbox-assign', name: 'Inbox Assign To Project', method: 'POST', endpoint: '/inbox/invoices/:id/assign', params: [
+        { name: 'id', type: 'text', required: true, placeholder: 'ID faktury' },
+        { name: 'projectId', type: 'text', required: true, placeholder: 'PRJ-001' },
+      ]},
+      { id: 'inbox-assign-flow', name: 'Inbox Assign Flow (Add+Project+Assign)', method: 'FLOW', endpoint: '/flow/assign', params: [], run: async () => {
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const idSuffix = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+        const projectId = `PRJ-${idSuffix}`;
+
+        const projectRes = await fetch(`${API_URL}/projects`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: projectId, nazwa: `Projekt ${idSuffix}`, status: 'aktywny' })
+        });
+        const projectJson = await projectRes.json().catch(() => ({}));
+        if (!projectRes.ok) {
+          throw new Error(projectJson.error || `projects create failed: ${projectRes.status}`);
+        }
+
+        const invoiceRes = await fetch(`${API_URL}/inbox/invoices`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: 'scanner',
+            metadata: {
+              invoiceNumber: `FV/${idSuffix}`,
+              contractorName: 'Kontrahent Test',
+              contractorNip: '1234567890',
+              grossAmount: 123.45,
+              issueDate: now.toISOString().slice(0, 10),
+            }
+          })
+        });
+        const invoiceJson = await invoiceRes.json().catch(() => ({}));
+        if (!invoiceRes.ok || !invoiceJson.id) {
+          throw new Error(invoiceJson.error || `invoice add failed: ${invoiceRes.status}`);
+        }
+
+        const assignRes = await fetch(`${API_URL}/inbox/invoices/${invoiceJson.id}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ projectId })
+        });
+        const assignJson = await assignRes.json().catch(() => ({}));
+        if (!assignRes.ok) {
+          throw new Error(assignJson.error || `assign failed: ${assignRes.status}`);
+        }
+
+        const getRes = await fetch(`${API_URL}/inbox/invoices/${invoiceJson.id}`, { method: 'GET' });
+        const getJson = await getRes.json().catch(() => ({}));
+        if (!getRes.ok) {
+          throw new Error(getJson.error || `get invoice failed: ${getRes.status}`);
+        }
+        if (getJson.projectId !== projectId) {
+          throw new Error(`expected projectId=${projectId}, got ${getJson.projectId}`);
+        }
+        return { project: projectJson, invoice: getJson };
+      }},
       { id: 'inbox-process', name: 'Inbox Process', method: 'POST', endpoint: '/inbox/invoices/:id/process', params: [
         { name: 'id', type: 'text', required: true, placeholder: 'ID faktury' }
       ]},
@@ -396,9 +466,33 @@
     let selectedTest = null;
     let testResults = {};
 
-    function init() {
+    async function init() {
+      document.getElementById('apiUrl').addEventListener('click', () => window.changeApiUrl());
+      document.getElementById('runAllBtn').addEventListener('click', () => runAllTests());
+      document.getElementById('runTestBtn').addEventListener('click', () => runSelectedTest());
+      document.getElementById('clearBtn').addEventListener('click', () => clearForm());
+
+      document.getElementById('testList').addEventListener('click', (e) => {
+        const item = e.target.closest('.test-item');
+        if (!item) return;
+        selectTest(item.dataset.id);
+      });
+
       renderTestList();
-      checkHealth();
+
+      const ok = await checkHealth();
+      if (ok) {
+        return;
+      }
+
+      const stored = localStorage.getItem('exef_api_url');
+      if (stored && stored !== API_URL) {
+        setApiUrl(stored);
+        const okStored = await checkHealth();
+        if (okStored) {
+          log(`Auto-detekcja: używam zapisanego API_URL: ${API_URL}`, 'info');
+        }
+      }
     }
 
     async function checkHealth() {
@@ -410,19 +504,20 @@
         if (res.ok) {
           dot.className = 'status-dot ok';
           text.textContent = 'połączono';
-        } else {
-          throw new Error('not ok');
+          return true;
         }
+        throw new Error('not ok');
       } catch (e) {
         dot.className = 'status-dot error';
         text.textContent = 'brak połączenia';
+        return false;
       }
     }
 
     function renderTestList() {
       const list = document.getElementById('testList');
       list.innerHTML = TESTS.map(test => `
-        <li class="test-item" data-id="${test.id}" onclick="selectTest('${test.id}')">
+        <li class="test-item" data-id="${test.id}">
           <span>${test.name}</span>
           <span>
             <span class="test-badge ${test.method.toLowerCase()}">${test.method}</span>
@@ -509,6 +604,40 @@
     }
 
     async function executeTest(test, values = {}) {
+      if (typeof test.run === 'function') {
+        const statusEl = document.getElementById('responseStatus');
+        const panelEl = document.getElementById('responsePanel');
+        const resultEl = document.getElementById(`result-${test.id}`);
+
+        try {
+          const startTime = Date.now();
+          const data = await test.run(values);
+          const duration = Date.now() - startTime;
+
+          statusEl.textContent = `OK (${duration}ms)`;
+          statusEl.className = 'response-status ok';
+          panelEl.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+
+          testResults[test.id] = true;
+          resultEl.textContent = 'PASS';
+          resultEl.className = 'test-result pass';
+
+          log(`${test.name}: PASS - ${duration}ms`, 'success');
+          return true;
+        } catch (e) {
+          statusEl.textContent = 'ERROR';
+          statusEl.className = 'response-status error';
+          panelEl.textContent = e.message;
+
+          testResults[test.id] = false;
+          resultEl.textContent = 'FAIL';
+          resultEl.className = 'test-result fail';
+
+          log(`${test.name}: ERROR - ${e.message}`, 'error');
+          return false;
+        }
+      }
+
       let endpoint = test.endpoint;
       const queryParams = [];
       const bodyParams = {};
@@ -614,25 +743,36 @@
       log('Rozpoczynam testy...', 'info');
 
       let passed = 0;
-      let total = TESTS.length;
+      const skipped = new Set([
+        'projects-create',
+        'inbox-get',
+        'inbox-process',
+        'inbox-approve',
+        'inbox-reject',
+        'inbox-assign',
+        'ksef-auth',
+        'ksef-poll',
+      ]);
 
-      for (let i = 0; i < TESTS.length; i++) {
-        const test = TESTS[i];
+      const runnableTests = TESTS.filter((t) => !skipped.has(t.id));
+      const total = runnableTests.length;
+
+      if (total !== TESTS.length) {
+        log(`Pomijam testy wymagające danych/konfiguracji: ${[...skipped].join(', ')}`, 'info');
+      }
+
+      for (let i = 0; i < runnableTests.length; i++) {
+        const test = runnableTests[i];
         progressText.textContent = `${i + 1} / ${total}`;
         progressFill.style.width = `${((i + 1) / total) * 100}%`;
 
-        let values = {};
-        if (test.id === 'inbox-get' || test.id === 'inbox-process' || test.id === 'inbox-approve' || test.id === 'inbox-reject') {
-          continue;
-        }
-
-        const result = await executeTest(test, values);
+        const result = await executeTest(test, {});
         if (result) passed++;
 
         await new Promise(r => setTimeout(r, 100));
       }
 
-      log(`\nZakończono: ${passed} / ${total - 4} testów przeszło pomyślnie`, passed === total - 4 ? 'success' : 'error');
+      log(`\nZakończono: ${passed} / ${total} testów przeszło pomyślnie`, passed === total ? 'success' : 'error');
 
       btn.disabled = false;
       btn.textContent = 'Uruchom wszystkie testy';

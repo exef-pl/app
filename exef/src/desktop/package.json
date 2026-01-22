@@ -1,5 +1,5 @@
 {
   "name": "exef-desktop-renderer",
   "private": true,
-  "type": "module"
+  "type": "commonjs"
 }

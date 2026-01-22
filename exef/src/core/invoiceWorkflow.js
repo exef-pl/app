@@ -255,6 +255,30 @@ class InvoiceWorkflow extends EventEmitter {
       throw new Error(`Failed to assign invoice to project: ${error.message}`)
     }
   }
+
+  async assignInvoiceToExpenseType(invoiceId, expenseTypeId) {
+    try {
+      const invoice = await this.inbox.getInvoice(invoiceId)
+      if (!invoice) {
+        throw new Error('Invoice not found')
+      }
+
+      const updatedInvoice = {
+        ...invoice,
+        expenseTypeId,
+        expenseTypeAssignedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+
+      await this.inbox.updateInvoice(invoiceId, updatedInvoice)
+
+      this.emit('invoice:expense_type_assigned', { invoice: updatedInvoice, expenseTypeId })
+
+      return updatedInvoice
+    } catch (error) {
+      throw new Error(`Failed to assign invoice to expense type: ${error.message}`)
+    }
+  }
 }
 
 function createInvoiceWorkflow(options = {}) {

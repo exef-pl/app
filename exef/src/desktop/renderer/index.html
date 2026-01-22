@@ -74,6 +74,17 @@
       .status-w_trakcie { background: #fef3c7; color: #92400e; }
       .status-zakończony { background: #e5e7eb; color: #374151; }
       .status-planowanie { background: #dbeafe; color: #1e40af; }
+
+      .invoice-table-wrapper { overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 10px; background: #fff; }
+      .invoices-table { width: 100%; border-collapse: collapse; min-width: 900px; }
+      .invoices-table th, .invoices-table td { padding: 1px 2px; text-align: left; border-bottom: 1px solid #e5e7eb; font-size: 11px; vertical-align: top; }
+      .invoices-table td { font-size: 13px; }
+      .invoices-table th { background: #f9fafb; font-weight: 600; position: sticky; top: 0; z-index: 1; }
+      .invoices-table td.muted { color: #6b7280; }
+      .invoices-table td.center { text-align: center; }
+      .project-col { max-width: 90px; }
+      .project-radio { display: flex; align-items: center; justify-content: center; gap: 6px; }
+      .project-radio input { cursor: pointer; }
     </style>
   </head>
   <body>
@@ -117,8 +128,10 @@
         </div>
         <div class="card-actions">
           <button id="refreshBtn" class="primary">Odśwież</button>
+          <button id="toggleViewBtn">Widok: karty</button>
           <button id="exportBtn">Eksportuj zatwierdzone (CSV)</button>
           <button id="projectsBtn">📁 Zarządzaj projektami</button>
+          <button id="expenseTypesBtn">🏷️ Typy wydatków</button>
         </div>
       </div>
     </div>

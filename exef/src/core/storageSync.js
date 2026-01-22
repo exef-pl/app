@@ -113,7 +113,7 @@ class StorageSync extends EventEmitter {
 
   async _syncDropbox() {
     if (!this.oauthConfig) {
-      throw new Error('Dropbox OAuth config not provided')
+      return []
     }
 
     // Placeholder - requires dropbox SDK
@@ -130,7 +130,7 @@ class StorageSync extends EventEmitter {
 
   async _syncGdrive() {
     if (!this.oauthConfig) {
-      throw new Error('Google Drive OAuth config not provided')
+      return []
     }
 
     // Placeholder - requires googleapis
@@ -160,6 +160,22 @@ class StorageSync extends EventEmitter {
     if (!this.watchPaths.includes(pathToWatch)) {
       this.watchPaths.push(pathToWatch)
     }
+  }
+
+  setWatchPaths(paths) {
+    if (!Array.isArray(paths)) {
+      this.watchPaths = []
+      return
+    }
+    const normalized = Array.from(
+      new Set(
+        paths
+          .map((p) => String(p))
+          .map((p) => p.trim())
+          .filter(Boolean)
+      )
+    )
+    this.watchPaths = normalized
   }
 
   removeWatchPath(pathToRemove) {

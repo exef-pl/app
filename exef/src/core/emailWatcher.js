@@ -90,7 +90,7 @@ class EmailWatcher extends EventEmitter {
 
   async _fetchImap() {
     if (!this.imapConfig) {
-      throw new Error('IMAP config not provided')
+      return []
     }
 
     // Placeholder - requires imap library integration
@@ -107,7 +107,7 @@ class EmailWatcher extends EventEmitter {
 
   async _fetchGmailOauth() {
     if (!this.oauthConfig) {
-      throw new Error('OAuth config not provided')
+      return []
     }
 
     // Placeholder - requires googleapis integration
@@ -124,7 +124,7 @@ class EmailWatcher extends EventEmitter {
 
   async _fetchOutlookOauth() {
     if (!this.oauthConfig) {
-      throw new Error('OAuth config not provided')
+      return []
     }
 
     // Placeholder - requires @microsoft/microsoft-graph-client

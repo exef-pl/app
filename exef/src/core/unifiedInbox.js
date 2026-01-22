@@ -30,6 +30,9 @@ class UnifiedInbox extends EventEmitter {
 
   async addInvoice(source, file, metadata = {}) {
     const id = this.generateId()
+    const normalizedLabelIds = Array.isArray(metadata.labelIds)
+      ? metadata.labelIds.map((v) => String(v)).map((v) => v.trim()).filter(Boolean)
+      : []
     const invoice = {
       id,
       source,
@@ -48,6 +51,9 @@ class UnifiedInbox extends EventEmitter {
       netAmount: metadata.netAmount || null,
       vatAmount: metadata.vatAmount || null,
       currency: metadata.currency || 'PLN',
+      projectId: metadata.projectId || null,
+      expenseTypeId: metadata.expenseTypeId || null,
+      labelIds: normalizedLabelIds,
       ocrData: null,
       parsedData: null,
       description: null,

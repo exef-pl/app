@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test-all test-e2e python-test ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test
 
 # Default target
 help:
@@ -235,6 +235,45 @@ exef-cli-build:
 exef-cli-install:
 	@echo "Installing exef CLI globally..."
 	@cd exef && /usr/share/nodejs/corepack/shims/npm link
+
+all: build-all test-all
+	@echo "All applications built and tested."
+
+build-all: exef-all ksef-master-build ksef-client-js-build polish-invoicingback-build
+	@echo "All application builds completed."
+
+test-all: python-test test-e2e exef-test ksef-master-test ksef-client-js-test polish-invoicingback-test
+	@echo "All tests completed."
+
+test-e2e:
+	@echo "Running E2E tests..."
+	@python3 -m pytest -o addopts= -m e2e
+
+python-test:
+	@echo "Running Python tests (non-e2e)..."
+	@python3 -m pytest; ec=$$?; if [ $$ec -eq 0 ] || [ $$ec -eq 5 ]; then exit 0; else exit $$ec; fi
+
+ksef-master-build:
+	@echo "Building KSeF-Master..."
+	@cd KSeF-Master && if [ -x /usr/share/nodejs/corepack/shims/npm ]; then NPM=/usr/share/nodejs/corepack/shims/npm; else NPM=$$(command -v npm); fi; $$NPM ci && $$NPM run build
+
+ksef-master-test:
+	@echo "No tests configured for KSeF-Master."
+
+ksef-client-js-build:
+	@echo "Building ksef-client-js..."
+	@cd ksef-client-js && if [ -x /usr/share/nodejs/corepack/shims/pnpm ]; then PNPM=/usr/share/nodejs/corepack/shims/pnpm; else PNPM=$$(command -v pnpm); fi; if [ -z "$$PNPM" ]; then echo "pnpm not found"; exit 1; fi; $$PNPM install --frozen-lockfile && $$PNPM run build
+
+ksef-client-js-test:
+	@echo "Testing ksef-client-js..."
+	@cd ksef-client-js && if [ -x /usr/share/nodejs/corepack/shims/pnpm ]; then PNPM=/usr/share/nodejs/corepack/shims/pnpm; else PNPM=$$(command -v pnpm); fi; if [ -z "$$PNPM" ]; then echo "pnpm not found"; exit 1; fi; $$PNPM run test
+
+polish-invoicingback-build:
+	@echo "Building polishInvoicingback..."
+	@cd polishInvoicingback && if [ -x /usr/share/nodejs/corepack/shims/npm ]; then NPM=/usr/share/nodejs/corepack/shims/npm; else NPM=$$(command -v npm); fi; $$NPM ci && $$NPM run build
+
+polish-invoicingback-test:
+	@echo "No tests configured for polishInvoicingback."
 
 # Release automation: bump version, generate docs/v/<tag>/, commit, tag and push
 push:

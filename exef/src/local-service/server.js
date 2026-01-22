@@ -51,11 +51,72 @@ app.use((req, res, next) => {
 app.use(cors())
 app.use(express.json({ limit: '10mb' }))
 
+const projectsFilePath = process.env.EXEF_PROJECTS_FILE_PATH || path.join(__dirname, '../../data/projects.csv')
+const labelsFilePath = process.env.EXEF_LABELS_FILE_PATH || path.join(__dirname, '../../data/labels.csv')
+const settingsFilePath = process.env.EXEF_SETTINGS_FILE_PATH || path.join(__dirname, '../../data/settings.json')
+
+function getDefaultSettings() {
+  return {
+    version: 1,
+    channels: {
+      localFolders: { paths: [] },
+      email: { accounts: [] },
+      ksef: { accounts: [], activeAccountId: null },
+      remoteStorage: { connections: [] },
+      devices: { printers: [], scanners: [] },
+      other: { sources: [] },
+    },
+  }
+}
+
+function readJsonFile(filePath, fallbackValue) {
+  try {
+    if (!fs.existsSync(filePath)) {
+      return fallbackValue
+    }
+    const raw = fs.readFileSync(filePath, 'utf8')
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : fallbackValue
+  } catch (_e) {
+    return fallbackValue
+  }
+}
+
+function writeJsonFile(filePath, value) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true })
+  fs.writeFileSync(filePath, JSON.stringify(value, null, 2), 'utf8')
+}
+
+function normalizeStringArray(value) {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return Array.from(new Set(value.map((v) => String(v)).map((v) => v.trim()).filter(Boolean)))
+}
+
+function loadSettings() {
+  const defaults = getDefaultSettings()
+  const fromFile = readJsonFile(settingsFilePath, defaults)
+  const merged = {
+    ...defaults,
+    ...fromFile,
+    channels: {
+      ...defaults.channels,
+      ...(fromFile.channels || {}),
+      localFolders: {
+        ...defaults.channels.localFolders,
+        ...((fromFile.channels || {}).localFolders || {}),
+      },
+    },
+  }
+  merged.channels.localFolders.paths = normalizeStringArray(merged.channels.localFolders.paths)
+  return merged
+}
+
+let settings = loadSettings()
+
 app.use('/test', express.static(path.join(__dirname, '../../test/gui')))
 
-app.get('/', (_req, res) => {
-  res.redirect('/test/')
-})
 
 // Serve desktop renderer with CSP override
 app.use('/', (req, res, next) => {
@@ -88,11 +149,19 @@ const ksef = createKsefFacade({})
 const store = createStore({
   filePath: process.env.EXEF_INVOICE_STORE_PATH || './data/invoices.json',
 })
+
+const envWatchPaths = process.env.EXEF_WATCH_PATHS ? process.env.EXEF_WATCH_PATHS.split(',') : []
+const initialWatchPaths = settings?.channels?.localFolders?.paths?.length
+  ? settings.channels.localFolders.paths
+  : envWatchPaths
+
 const workflow = createInvoiceWorkflow({
   store,
   ksefFacade: ksef,
-  watchPaths: process.env.EXEF_WATCH_PATHS ? process.env.EXEF_WATCH_PATHS.split(',') : [],
+  watchPaths: initialWatchPaths,
 })
+
+const expenseTypesFilePath = process.env.EXEF_EXPENSE_TYPES_FILE_PATH || path.join(__dirname, '../../data/expense_types.csv')
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'exef-local-service' })
@@ -259,12 +328,11 @@ app.post('/inbox/ksef/poll', async (req, res) => {
 // Projects management endpoints
 app.get('/projects', async (_req, res) => {
   try {
-    const projectsPath = path.join(__dirname, '../../data/projects.csv')
-    if (!fs.existsSync(projectsPath)) {
+    if (!fs.existsSync(projectsFilePath)) {
       return res.json({ projects: [] })
     }
     
-    const content = fs.readFileSync(projectsPath, 'utf8')
+    const content = fs.readFileSync(projectsFilePath, 'utf8')
     const lines = content.split('\n').filter(line => line.trim())
     
     if (lines.length < 2) {
@@ -291,6 +359,171 @@ app.get('/projects', async (_req, res) => {
   }
 })
 
+app.get('/expense-types', async (_req, res) => {
+  try {
+    if (!fs.existsSync(expenseTypesFilePath)) {
+      return res.json({ expenseTypes: [] })
+    }
+
+    const content = fs.readFileSync(expenseTypesFilePath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+
+    if (lines.length < 2) {
+      return res.json({ expenseTypes: [] })
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim())
+    const expenseTypes = []
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values.length === headers.length && values[0]) {
+        const expenseType = {}
+        headers.forEach((header, index) => {
+          expenseType[header.toLowerCase()] = values[index]
+        })
+        expenseTypes.push(expenseType)
+      }
+    }
+
+    res.json({ expenseTypes })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+ app.post('/expense-types', async (req, res) => {
+  try {
+    const { id, nazwa, opis } = req.body
+
+    if (!id || !nazwa) {
+      return res.status(400).json({ error: 'ID and Nazwa are required' })
+    }
+
+    let lines = []
+
+    if (fs.existsSync(expenseTypesFilePath)) {
+      const content = fs.readFileSync(expenseTypesFilePath, 'utf8')
+      lines = content.split('\n').filter(line => line.trim())
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+        if (values[0] === id) {
+          return res.status(400).json({ error: 'Expense type with this ID already exists' })
+        }
+      }
+    }
+
+    if (lines.length === 0) {
+      lines = ['ID,Nazwa,Opis']
+    }
+
+    lines.push(`${id},"${nazwa}","${opis || ''}"`)
+    fs.mkdirSync(path.dirname(expenseTypesFilePath), { recursive: true })
+    fs.writeFileSync(expenseTypesFilePath, lines.join('\n'), 'utf8')
+
+    res.status(201).json({
+      id,
+      nazwa,
+      opis,
+      message: 'Expense type created successfully'
+    })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.put('/expense-types/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const { nazwa, opis } = req.body
+
+    if (!fs.existsSync(expenseTypesFilePath)) {
+      return res.status(404).json({ error: 'Expense types file not found' })
+    }
+
+    const content = fs.readFileSync(expenseTypesFilePath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+
+    if (lines.length < 2) {
+      return res.status(404).json({ error: 'No expense types found' })
+    }
+
+    let found = false
+    const updatedLines = [lines[0]]
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values[0] === id) {
+        found = true
+        const updatedExpenseType = {
+          id,
+          nazwa: nazwa || values[1],
+          opis: opis || values[2]
+        }
+        const updatedLine = `${id},"${updatedExpenseType.nazwa}","${updatedExpenseType.opis}"`
+        updatedLines.push(updatedLine)
+      } else {
+        updatedLines.push(lines[i])
+      }
+    }
+
+    if (!found) {
+      return res.status(404).json({ error: 'Expense type not found' })
+    }
+
+    fs.writeFileSync(expenseTypesFilePath, updatedLines.join('\n'), 'utf8')
+
+    res.json({
+      id,
+      nazwa,
+      opis,
+      message: 'Expense type updated successfully'
+    })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.delete('/expense-types/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    if (!fs.existsSync(expenseTypesFilePath)) {
+      return res.status(404).json({ error: 'Expense types file not found' })
+    }
+
+    const content = fs.readFileSync(expenseTypesFilePath, 'utf8')
+    const lines = content.split('\n').filter(line => line.trim())
+
+    if (lines.length < 2) {
+      return res.status(404).json({ error: 'No expense types found' })
+    }
+
+    let found = false
+    const updatedLines = [lines[0]]
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      if (values[0] !== id) {
+        updatedLines.push(lines[i])
+      } else {
+        found = true
+      }
+    }
+
+    if (!found) {
+      return res.status(404).json({ error: 'Expense type not found' })
+    }
+
+    fs.writeFileSync(expenseTypesFilePath, updatedLines.join('\n'), 'utf8')
+
+    res.json({ message: 'Expense type deleted successfully' })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
 app.post('/projects', async (req, res) => {
   try {
     const { id, nazwa, klient, nip, budzet, status, opis } = req.body
@@ -299,32 +532,28 @@ app.post('/projects', async (req, res) => {
       return res.status(400).json({ error: 'ID and Nazwa are required' })
     }
     
-    const projectsPath = path.join(__dirname, '../../data/projects.csv')
-    let content = ''
-    
-    if (fs.existsSync(projectsPath)) {
-      content = fs.readFileSync(projectsPath, 'utf8')
-      const lines = content.split('\n').filter(line => line.trim())
-      
-      // Check if project already exists
+    let lines = []
+
+    if (fs.existsSync(projectsFilePath)) {
+      const content = fs.readFileSync(projectsFilePath, 'utf8')
+      lines = content.split('\n').filter(line => line.trim())
+
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
         if (values[0] === id) {
           return res.status(400).json({ error: 'Project with this ID already exists' })
         }
       }
-      
-      // Keep only header line
-      content = lines[0] + '\n'
-    } else {
-      // Create new file with header
-      content = 'ID,Nazwa,Klient,NIP,Budżet,Status,Opis\n'
     }
-    
-    // Add new project
-    const newLine = `${id},"${nazwa}","${klient || ''}","${nip || ''}",${budzet || 0},"${status || 'aktywny'}","${opis || ''}"\n`
-    fs.writeFileSync(projectsPath, content + newLine, 'utf8')
-    
+
+    if (lines.length === 0) {
+      lines = ['ID,Nazwa,Klient,NIP,Budżet,Status,Opis']
+    }
+
+    lines.push(`${id},"${nazwa}","${klient || ''}","${nip || ''}",${budzet || 0},"${status || 'aktywny'}","${opis || ''}"`)
+    fs.mkdirSync(path.dirname(projectsFilePath), { recursive: true })
+    fs.writeFileSync(projectsFilePath, lines.join('\n'), 'utf8')
+
     res.status(201).json({ 
       id, 
       nazwa, 
@@ -345,12 +574,11 @@ app.put('/projects/:id', async (req, res) => {
     const { id } = req.params
     const { nazwa, klient, nip, budzet, status, opis } = req.body
     
-    const projectsPath = path.join(__dirname, '../../data/projects.csv')
-    if (!fs.existsSync(projectsPath)) {
+    if (!fs.existsSync(projectsFilePath)) {
       return res.status(404).json({ error: 'Projects file not found' })
     }
     
-    const content = fs.readFileSync(projectsPath, 'utf8')
+    const content = fs.readFileSync(projectsFilePath, 'utf8')
     const lines = content.split('\n').filter(line => line.trim())
     
     if (lines.length < 2) {
@@ -384,7 +612,7 @@ app.put('/projects/:id', async (req, res) => {
       return res.status(404).json({ error: 'Project not found' })
     }
     
-    fs.writeFileSync(projectsPath, updatedLines.join('\n'), 'utf8')
+    fs.writeFileSync(projectsFilePath, updatedLines.join('\n'), 'utf8')
     
     res.json({ 
       id, 
@@ -405,12 +633,11 @@ app.delete('/projects/:id', async (req, res) => {
   try {
     const { id } = req.params
     
-    const projectsPath = path.join(__dirname, '../../data/projects.csv')
-    if (!fs.existsSync(projectsPath)) {
+    if (!fs.existsSync(projectsFilePath)) {
       return res.status(404).json({ error: 'Projects file not found' })
     }
     
-    const content = fs.readFileSync(projectsPath, 'utf8')
+    const content = fs.readFileSync(projectsFilePath, 'utf8')
     const lines = content.split('\n').filter(line => line.trim())
     
     if (lines.length < 2) {
@@ -433,7 +660,7 @@ app.delete('/projects/:id', async (req, res) => {
       return res.status(404).json({ error: 'Project not found' })
     }
     
-    fs.writeFileSync(projectsPath, updatedLines.join('\n'), 'utf8')
+    fs.writeFileSync(projectsFilePath, updatedLines.join('\n'), 'utf8')
     
     res.json({ message: 'Project deleted successfully' })
   } catch (err) {
@@ -457,6 +684,17 @@ app.post('/inbox/invoices/:id/assign', async (req, res) => {
   }
 })
 
+app.post('/inbox/invoices/:id/assign-expense-type', async (req, res) => {
+  try {
+    const { expenseTypeId } = req.body
+    const normalized = expenseTypeId ? String(expenseTypeId) : null
+    const invoice = await workflow.assignInvoiceToExpenseType(req.params.id, normalized)
+    res.json(invoice)
+  } catch (err) {
+    res.status(400).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
 function writePortFile(filePath, portNumber) {
   if (!filePath) {
     return
@@ -471,7 +709,7 @@ function writePortFile(filePath, portNumber) {
 const host = process.env.EXEF_LOCAL_SERVICE_HOST ?? process.env.LOCAL_SERVICE_HOST ?? '127.0.0.1'
 const preferredPort = Number(process.env.EXEF_LOCAL_SERVICE_PORT ?? process.env.LOCAL_SERVICE_PORT ?? 3030)
 const maxTries = Number(process.env.EXEF_LOCAL_SERVICE_PORT_MAX_TRIES ?? 50)
-const portFile = process.env.EXEF_LOCAL_SERVICE_PORT_FILE
+const portFile = process.env.EXEF_LOCAL_SERVICE_PORT_FILE ?? './.exef-local-service.port'
 
 listenWithFallback(app, {
   host,

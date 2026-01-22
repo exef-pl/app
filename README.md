@@ -1,3 +1,4 @@
+![img.png](img.png)
 # exef-pl/app
 
 To repozytorium jest agregatorem projektów związanych z KSeF (Krajowy System e-Faktur):
@@ -132,6 +133,7 @@ cd exef
 npm run build:desktop
 # lub z głównego katalogu:
 make exef-desktop-build
+cd exef && npm run desktop
 ```
 
 Smoke-test na Linux (start local-service, weryfikacja health, uruchomienie AppImage):
@@ -247,7 +249,8 @@ make exef-test-gui
 
 # Lub ręcznie:
 make exef-local-dev &
-# Otwórz: http://127.0.0.1:3030/test/
+# Otwórz: http://127.0.0.1:<PORT>/test/
+# (PORT jest wybierany automatycznie i zapisywany w exef/.exef-local-service.port)
 ```
 
 **Funkcje GUI:**
@@ -257,7 +260,10 @@ make exef-local-dev &
 - Uruchamianie wszystkich testów jednym kliknięciem
 - Log wyników testów
 
-![GUI Tests](exef/test/gui/screenshot.png)
+**Uwagi dot. portów:**
+- Strona `/test/` domyślnie używa `window.location.origin` jako API.
+- Jeśli local-service wybierze inny port (fallback), otwieraj `/test/` z tego samego portu.
+- URL API można zmienić klikając na adres w prawym górnym rogu.
 
 ## CLI (Command Line Interface)
 

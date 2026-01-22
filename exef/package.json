@@ -15,7 +15,7 @@
   "scripts": {
     "web": "node src/web/server.js",
     "local": "node src/local-service/server.js",
-    "desktop": "electron .",
+    "desktop": "electron . --no-sandbox",
     "cli": "node bin/exef.cjs",
     "dev:web": "nodemon src/web/server.js",
     "dev:local": "nodemon src/local-service/server.js",
