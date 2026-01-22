@@ -101,6 +101,7 @@ listenWithFallback(app, {
   host,
   port: Number.isNaN(preferredPort) ? 0 : preferredPort,
   maxTries: Number.isNaN(maxTries) ? 50 : maxTries,
+  allowRandom: true,
 }).then(({ port }) => {
   writePortFile(portFile, port)
   process.stdout.write(`exef-local-service listening on http://${host}:${port}\n`)

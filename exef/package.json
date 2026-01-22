@@ -1,6 +1,12 @@
 {
   "name": "exef",
   "version": "0.1.2",
+  "description": "ExEF - System integracji z KSeF",
+  "homepage": "https://github.com/exef-pl/app",
+  "author": {
+    "name": "ExEF Team",
+    "email": "team@exef.pl"
+  },
   "private": true,
   "main": "src/desktop/main.js",
   "scripts": {
@@ -39,9 +45,10 @@
     "linux": {
       "target": [
         "AppImage",
-        "deb",
-        "rpm"
-      ]
+        "deb"
+      ],
+      "category": "Office",
+      "maintainer": "ExEF Team <team@exef.pl>"
     },
     "win": {
       "target": [

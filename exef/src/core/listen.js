@@ -46,7 +46,7 @@ async function findAvailablePort({ host, preferredPort, maxTries, step }) {
   return 0
 }
 
-async function listenWithFallback(app, { host, port, maxTries, step } = {}) {
+async function listenWithFallback(app, { host, port, maxTries, step, allowRandom } = {}) {
   const effectiveHost = host ?? '0.0.0.0'
   const preferredPort = Number(port ?? 0)
   const resolvedPort = await findAvailablePort({
@@ -56,8 +56,13 @@ async function listenWithFallback(app, { host, port, maxTries, step } = {}) {
     step,
   })
 
+  const shouldAllowRandom = allowRandom === true
+  if (preferredPort !== 0 && resolvedPort === 0 && !shouldAllowRandom) {
+    throw new Error('No available port found within maxTries')
+  }
+
   return new Promise((resolve, reject) => {
-    const server = app.listen(resolvedPort, effectiveHost, () => {
+    const server = app.listen(resolvedPort === 0 && shouldAllowRandom ? 0 : resolvedPort, effectiveHost, () => {
       const address = server.address()
       const actualPort = typeof address === 'object' && address ? address.port : resolvedPort
       resolve({ server, host: effectiveHost, port: actualPort })

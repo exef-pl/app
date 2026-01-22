@@ -1,5 +1,8 @@
 const { contextBridge } = require('electron');
 const fs = require('node:fs')
+const dotenv = require('dotenv')
+
+dotenv.config(process.env.EXEF_ENV_FILE ? { path: process.env.EXEF_ENV_FILE } : {})
 
 function readPortFile(filePath) {
   if (!filePath) {

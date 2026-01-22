@@ -1,8 +1,15 @@
 # Testowanie
 
+## 📚 Nawigacja
+
+- **[⬅️ Powrót](README.md)** — główna dokumentacja
+- **[🤝 Kontrybucja](CONTRIBUTING.md)** — zasady współpracy
+
+---
+
 Ten monorepo-agregator zawiera różne projekty (submoduły) oraz nowy projekt `exef/`. Poniżej są zasady testowania.
 
-## Testy (Python SDK: `ksef-client-python`)
+## 🐍 Testy (Python SDK: `ksef-client-python`)
 
 Testy uruchamiane są przez pytest. W CI wykonywane są również statyczne kontrole jakości (ruff, mypy) oraz weryfikacja pokrycia kodu.
 
@@ -28,7 +35,7 @@ Testy E2E (marker e2e) są wyłączone w standardowym przebiegu i wymagają osob
 
 Uwaga: powyższe komendy dotyczą repozytorium `ksef-client-python/` (uruchamiaj je w tym katalogu).
 
-## Testy E2E (agregator / `exef/`)
+## 🔄 Testy E2E (agregator / `exef/`)
 
 W katalogu głównym są dodane testy E2E w pytest (marker `e2e`). Domyślnie są wyłączone.
 
@@ -52,9 +59,27 @@ pytest -m e2e
 
 E2E uruchamia procesy Node z `exef/` i sprawdza endpointy `/health`.
 
-### Desktop E2E
+### 🖥️ Desktop E2E
 
 Test desktop jest smoke-testem i może wymagać:
 
 - zainstalowanych zależności Node w `exef/` (`npm --prefix exef install`),
 - środowiska z GUI (np. `DISPLAY` na Linux) — w przeciwnym razie test zostanie pominięty.
+
+---
+
+## 🚀 Szybkie testy
+
+```bash
+# Testy jednostkowe (bez E2E)
+pytest
+
+# Testy E2E tylko
+pytest -m e2e
+
+# Wszystkie testy z pokryciem
+pytest --cov=ksef_client --cov-report=term-missing
+
+# Testy w konkretnym projekcie
+cd ksef-client-python && pytest
+```

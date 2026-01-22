@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-local-build exef-local-bin exef-desktop-build exef-all push
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-all push
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  indexes            - Alias for generate-indexes"
 	@echo "  analyze-all        - Generate indexes + write analysis_report.md"
 	@echo "  exef-web-docker     - Build docker image for exef web service (VPS)"
+	@echo "  exef-web-up         - Run exef web service via docker compose with auto-selected host port"
 	@echo "  exef-local-build    - Build local service binaries (linux+windows via pkg)"
 	@echo "  exef-local-bin      - Build only local service binaries (fast, no npm install)"
 	@echo "  exef-local-packages - Build linux deb+rpm packages for local service (via nfpm docker)"
@@ -103,6 +104,10 @@ analyze-all: generate-indexes
 exef-web-docker:
 	@echo "Building exef web docker image..."
 	@cd exef && docker build -t exef-web:latest -f docker/web/Dockerfile .
+
+exef-web-up:
+	@echo "Starting exef web via docker compose with auto-selected port..."
+	@cd exef && EXEF_WEB_PORT_MAPPING=$$(node scripts/choose-port.cjs) docker compose up --build
 
 exef-local-build:
 	@echo "Building exef local service binaries (pkg)..."

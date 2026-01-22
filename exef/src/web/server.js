@@ -91,6 +91,7 @@ listenWithFallback(app, {
   host,
   port: Number.isNaN(preferredPort) ? 0 : preferredPort,
   maxTries: Number.isNaN(maxTries) ? 50 : maxTries,
+  allowRandom: false,
 }).then(({ port }) => {
   process.stdout.write(`exef-web listening on ${host}:${port}\n`)
 }).catch((err) => {
