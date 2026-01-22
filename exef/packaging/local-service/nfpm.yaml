@@ -11,5 +11,9 @@ contents:
     dst: /usr/local/bin/exef-local-service
     file_info:
       mode: 0755
+  - src: packaging/local-service/exef.env
+    dst: /etc/exef/exef.env
+    file_info:
+      mode: 0644
   - src: packaging/local-service/exef-local-service.service
     dst: /etc/systemd/system/exef-local-service.service

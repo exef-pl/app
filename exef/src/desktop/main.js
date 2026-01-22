@@ -1,5 +1,8 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('node:path');
+const dotenv = require('dotenv')
+
+dotenv.config(process.env.EXEF_ENV_FILE ? { path: process.env.EXEF_ENV_FILE } : {})
 
 function createWindow() {
   const win = new BrowserWindow({

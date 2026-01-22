@@ -73,6 +73,7 @@ docker compose -f exef/docker-compose.yml up --build
 Uruchomienie developerskie:
 
 ```bash
+cd exef
 npm install
 npm run local
 ```
@@ -80,6 +81,7 @@ npm run local
 Build binarki (obecnie przez `pkg`):
 
 ```bash
+cd exef
 npm run build:local:bin
 ```
 
@@ -88,6 +90,7 @@ npm run build:local:bin
 Uruchomienie:
 
 ```bash
+cd exef
 npm install
 npm run desktop
 ```
@@ -95,7 +98,15 @@ npm run desktop
 Build instalatorów/paczek:
 
 ```bash
+cd exef
 npm run build:desktop
+```
+
+Alternatywnie, jeśli uruchamiasz z katalogu głównego repo (`./`), możesz użyć prefiksu:
+
+```bash
+npm --prefix exef install
+npm --prefix exef run local
 ```
 
 ## Release / tagowanie (make push)

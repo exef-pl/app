@@ -1,9 +1,11 @@
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
-require('dotenv').config()
+const dotenv = require('dotenv')
+dotenv.config(process.env.EXEF_ENV_FILE ? { path: process.env.EXEF_ENV_FILE } : {})
 
 const { createKsefFacade } = require('../core/ksefFacade')
+const { listenWithFallback } = require('../core/listen')
 
 const app = express()
 app.use(helmet())
@@ -79,7 +81,19 @@ app.post('/ksef/invoices/download', async (req, res) => {
   }
 })
 
-const port = Number(process.env.PORT ?? 3000)
-app.listen(port, () => {
-  process.stdout.write(`exef-web listening on :${port}\n`)
+const host = process.env.EXEF_WEB_HOST ?? process.env.HOST ?? '0.0.0.0'
+const preferredPort = Number(
+  process.env.EXEF_WEB_INTERNAL_PORT ?? process.env.EXEF_WEB_PORT ?? process.env.PORT ?? 3000
+)
+const maxTries = Number(process.env.EXEF_WEB_PORT_MAX_TRIES ?? 50)
+
+listenWithFallback(app, {
+  host,
+  port: Number.isNaN(preferredPort) ? 0 : preferredPort,
+  maxTries: Number.isNaN(maxTries) ? 50 : maxTries,
+}).then(({ port }) => {
+  process.stdout.write(`exef-web listening on ${host}:${port}\n`)
+}).catch((err) => {
+  process.stderr.write(`${err?.stack ?? err}\n`)
+  process.exit(1)
 })

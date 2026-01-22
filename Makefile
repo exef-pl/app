@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-local-build exef-desktop-build exef-all push
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-local-build exef-local-bin exef-desktop-build exef-all push
 
 # Default target
 help:
@@ -13,6 +13,7 @@ help:
 	@echo "  analyze-all        - Generate indexes + write analysis_report.md"
 	@echo "  exef-web-docker     - Build docker image for exef web service (VPS)"
 	@echo "  exef-local-build    - Build local service binaries (linux+windows via pkg)"
+	@echo "  exef-local-bin      - Build only local service binaries (fast, no npm install)"
 	@echo "  exef-local-packages - Build linux deb+rpm packages for local service (via nfpm docker)"
 	@echo "  exef-desktop-build  - Build desktop app installers (AppImage/deb/rpm + Windows NSIS)"
 	@echo "  exef-all            - Build all 3 exef artifacts"
@@ -55,11 +56,17 @@ generate-indexes:
 			echo "Processing $$project_name..."; \
 			if command -v code2logic >/dev/null 2>&1; then \
 				rm -f "$$project_name.functions.toon" "$$project_name.toon-schema.json"; \
-				(cd "$$dir" && code2logic ./ -f toon --compact --function-logic --with-schema -o "../$$project_name.toon") && \
+				if [ "$$project_name" = "exef" ]; then \
+					(cd "$$dir" && code2logic ./src -f toon --compact --function-logic --with-schema -o "../$$project_name.toon") && \
+					true; \
+				else \
+					(cd "$$dir" && code2logic ./ -f toon --compact --function-logic --with-schema -o "../$$project_name.toon") && \
+					true; \
+				fi && \
 				echo "Generated $$project_name.functions.toon and $$project_name.toon-schema.json" || \
 				echo "Failed to generate index for $$project_name"; \
 			else \
-				echo "code2logic command not found. Please install it (e.g. python package) first."; \
+				echo "code2logic command not found. Please install it (pyhrton) first."; \
 			fi; \
 		fi; \
 	done
@@ -99,8 +106,12 @@ exef-web-docker:
 
 exef-local-build:
 	@echo "Building exef local service binaries (pkg)..."
-	@cd exef && npm install
-	@cd exef && npm run build:local:bin
+	@cd exef && /usr/share/nodejs/corepack/shims/npm install
+	@cd exef && /usr/share/nodejs/corepack/shims/npm run build:local:bin
+
+exef-local-bin:
+	@echo "Building exef local service binaries only (fast)..."
+	@cd exef && /usr/share/nodejs/corepack/shims/npm run build:local:bin
 
 exef-local-packages: exef-local-build
 	@echo "Building exef local service packages (deb+rpm via nfpm docker)..."
@@ -108,8 +119,8 @@ exef-local-packages: exef-local-build
 
 exef-desktop-build:
 	@echo "Building exef desktop app installers (electron-builder)..."
-	@cd exef && npm install
-	@cd exef && npm run build:desktop
+	@cd exef && /usr/share/nodejs/corepack/shims/npm install
+	@cd exef && /usr/share/nodejs/corepack/shims/npm run build:desktop
 
 exef-all: exef-web-docker exef-local-packages exef-desktop-build
 	@echo "All exef artifacts built."

@@ -4,10 +4,10 @@ After=network.target
 
 [Service]
 Type=simple
+EnvironmentFile=-/etc/exef/exef.env
+RuntimeDirectory=exef
 ExecStart=/usr/local/bin/exef-local-service
 Restart=on-failure
-Environment=LOCAL_SERVICE_HOST=127.0.0.1
-Environment=LOCAL_SERVICE_PORT=3030
 
 [Install]
 WantedBy=multi-user.target

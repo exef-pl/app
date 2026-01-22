@@ -4,7 +4,13 @@ services:
       context: .
       dockerfile: docker/web/Dockerfile
     ports:
-      - "3000:3000"
+      - "${EXEF_WEB_PORT_MAPPING:-3000:3000}"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - KSEF_ENV=${KSEF_ENV:-demo}
+      - KSEF_BASE_URL=${KSEF_BASE_URL}
+      - EXEF_WEB_HOST=${EXEF_WEB_HOST:-0.0.0.0}
+      - EXEF_WEB_INTERNAL_PORT=${EXEF_WEB_INTERNAL_PORT:-3000}
+      - EXEF_WEB_PORT=${EXEF_WEB_PORT:-3000}
+      - EXEF_WEB_PORT_MAX_TRIES=${EXEF_WEB_PORT_MAX_TRIES:-50}
+      - PORT=${EXEF_WEB_INTERNAL_PORT:-3000}
