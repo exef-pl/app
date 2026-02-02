@@ -7,6 +7,7 @@ function SignatureManager() {
         signingInProgress: false,
         signingResults: [],
         verifyResult: null,
+        verifyDocumentId: '',
         signatureConfig: {
             type: 'QES',
             format: 'PADES',
@@ -31,7 +32,8 @@ function SignatureManager() {
         
         async loadCertificates() {
             try {
-                const response = await fetch(`/api/profiles/${window.appInstance.profileId}/signature/certificates`);
+                const profileId = window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
+                const response = await fetch(`/api/profiles/${profileId}/signature/certificates`);
                 const data = await response.json();
                 this.certificates = data.certificates || [];
             } catch (error) {
@@ -50,7 +52,8 @@ function SignatureManager() {
             this.signingResults = [];
             
             try {
-                const response = await fetch(`/api/profiles/${window.appInstance.profileId}/signature/sign`, {
+                const profileId = window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
+                const response = await fetch(`/api/profiles/${profileId}/signature/sign`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -84,7 +87,8 @@ function SignatureManager() {
         
         async verifySignature(documentId) {
             try {
-                const response = await fetch(`/api/profiles/${window.appInstance.profileId}/signature/verify`, {
+                const profileId = window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
+                const response = await fetch(`/api/profiles/${profileId}/signature/verify`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ document_id: documentId })
@@ -99,7 +103,8 @@ function SignatureManager() {
         
         async addTimestamp(documentId) {
             try {
-                const response = await fetch(`/api/profiles/${window.appInstance.profileId}/signature/timestamp`, {
+                const profileId = window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
+                const response = await fetch(`/api/profiles/${profileId}/signature/timestamp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ document_id: documentId })

@@ -1,6 +1,6 @@
 """EXEF E2E GUI Tests for All Views - Comprehensive UI Testing"""
 import pytest
-from playwright.async_api import Page, expect
+from playwright.sync_api import Page, expect
 import httpx
 import time
 
@@ -12,125 +12,125 @@ class TestAllViewsGUI:
     """Comprehensive GUI tests for all application views"""
     
     @pytest.fixture(autouse=True)
-    async def setup(self, page: Page):
+    def setup(self, page: Page):
         """Setup for each test - navigate to app and wait for load"""
-        await page.goto(APP_URL)
+        page.goto(APP_URL)
         time.sleep(0.5)
         # Wait for Alpine to initialize
-        await expect(page.locator(".app")).to_be_visible()
+        expect(page.locator(".app")).to_be_visible()
     
-    async def test_profiles_view_loads(self, page: Page):
+    def test_profiles_view_loads(self, page: Page):
         """Profiles view loads and displays correctly"""
         # Navigate to profiles
-        await page.locator(".nav-group:has-text('Profile') .nav-item:has-text('Zarządzanie')").click()
+        page.locator(".nav-group:has-text('Profile') .nav-item:has-text('Zarządzanie')").click()
         time.sleep(0.3)
         
         # Check main elements
-        await expect(page.locator("h1:has-text('Profile')")).to_be_visible()
-        await expect(page.locator(".view-toggle")).to_be_visible()
-        await expect(page.locator("button:has-text('Nowy profil')")).to_be_visible()
+        expect(page.locator("h1:has-text('Profile')")).to_be_visible()
+        expect(page.locator(".view-toggle")).to_be_visible()
+        expect(page.locator("button:has-text('Nowy profil')")).to_be_visible()
         
         # Check for profiles (cards or table)
-        await expect(page.locator(".cards, table")).to_be_visible()
+        expect(page.locator(".cards, table")).to_be_visible()
         
         # Test view toggle
-        await page.locator(".view-toggle button:has-text('Tabela')").click()
+        page.locator(".view-toggle button:has-text('Tabela')").click()
         time.sleep(0.2)
-        await expect(page.locator("table")).to_be_visible()
+        expect(page.locator("table")).to_be_visible()
         
-        await page.locator(".view-toggle button:has-text('Karty')").click()
+        page.locator(".view-toggle button:has-text('Karty')").click()
         time.sleep(0.2)
-        await expect(page.locator(".cards")).to_be_visible()
+        expect(page.locator(".cards")).to_be_visible()
     
-    async def test_documents_view_loads(self, page: Page):
+    def test_documents_view_loads(self, page: Page):
         """Documents view loads and displays correctly"""
         # Navigate to documents
-        await page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
+        page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
         time.sleep(0.3)
         
         # Check main elements
-        await expect(page.locator("h1:has-text('Dokumenty')")).to_be_visible()
-        await expect(page.locator(".view-toggle")).to_be_visible()
-        await expect(page.locator("button:has-text('Nowy dokument')")).to_be_visible()
+        expect(page.locator("h1:has-text('Dokumenty')")).to_be_visible()
+        expect(page.locator(".view-toggle")).to_be_visible()
+        expect(page.locator("button:has-text('Nowy dokument')")).to_be_visible()
         
         # Check filters
-        await expect(page.locator("input[placeholder='Numer lub kontrahent']")).to_be_visible()
-        await expect(page.locator("select:has-text('Wszystkie')")).to_have_count(2)  # Status and Type filters
+        expect(page.locator("input[placeholder='Numer lub kontrahent']")).to_be_visible()
+        expect(page.locator("select:has-text('Wszystkie')")).to_have_count(2)  # Status and Type filters
         
         # Test view toggle
-        await page.locator(".view-toggle button:has-text('Karty')").click()
+        page.locator(".view-toggle button:has-text('Karty')").click()
         time.sleep(0.2)
         # Cards might be hidden if no documents, but the container exists
-        await expect(page.locator(".cards")).to_be_attached()
+        expect(page.locator(".cards")).to_be_attached()
         
-        await page.locator(".view-toggle button:has-text('Tabela')").click()
+        page.locator(".view-toggle button:has-text('Tabela')").click()
         time.sleep(0.2)
-        await expect(page.locator("table")).to_be_visible()
+        expect(page.locator("table")).to_be_visible()
     
-    async def test_create_view_loads(self, page: Page):
+    def test_create_view_loads(self, page: Page):
         """Create document view loads"""
-        await page.locator(".nav-item:has-text('Utwórz')").click()
+        page.locator(".nav-item:has-text('Utwórz')").click()
         time.sleep(0.3)
         
-        await expect(page.locator("h1:has-text('Utwórz')")).to_be_visible()
+        expect(page.locator("h1:has-text('Utwórz')")).to_be_visible()
         # Should show placeholder
-        await expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
+        expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
     
-    async def test_describe_view_loads(self, page: Page):
+    def test_describe_view_loads(self, page: Page):
         """Describe view loads"""
-        await page.locator(".nav-item:has-text('Opisz')").click()
+        page.locator(".nav-item:has-text('Opisz')").click()
         time.sleep(0.3)
         
-        await expect(page.locator("h1:has-text('Opisz')")).to_be_visible()
+        expect(page.locator("h1:has-text('Opisz')")).to_be_visible()
         # Should show placeholder
-        await expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
+        expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
     
-    async def test_sign_view_loads(self, page: Page):
+    def test_sign_view_loads(self, page: Page):
         """Sign view loads"""
-        await page.locator(".nav-item:has-text('Podpisz')").click()
+        page.locator(".nav-item:has-text('Podpisz')").click()
         time.sleep(0.3)
         
-        await expect(page.locator("h1:has-text('Podpisz')")).to_be_visible()
+        expect(page.locator("h1:has-text('Podpisz')")).to_be_visible()
         # Sign view has special implementation - check for signature component
-        await expect(page.locator("template[x-if=\"view=='sign'\"]")).to_be_visible()
+        expect(page.locator("template[x-if=\"view=='sign'\"]")).to_be_visible()
     
-    async def test_upload_view_loads(self, page: Page):
+    def test_upload_view_loads(self, page: Page):
         """Upload view loads"""
-        await page.locator(".nav-item:has-text('Wgraj plik')").click()
+        page.locator(".nav-item:has-text('Wgraj plik')").click()
         time.sleep(0.3)
         
-        await expect(page.locator("h1:has-text('Wgraj plik')")).to_be_visible()
+        expect(page.locator("h1:has-text('Wgraj plik')")).to_be_visible()
         # Should show placeholder
-        await expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
+        expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
     
-    async def test_import_view_loads(self, page: Page):
+    def test_import_view_loads(self, page: Page):
         """Import view loads"""
-        await page.locator(".nav-item:has-text('Import')").click()
+        page.locator(".nav-item:has-text('Import')").click()
         time.sleep(0.3)
         
-        await expect(page.locator("h1:has-text('Import')")).to_be_visible()
+        expect(page.locator("h1:has-text('Import')")).to_be_visible()
         # Should show placeholder
-        await expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
+        expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
     
-    async def test_export_view_loads(self, page: Page):
+    def test_export_view_loads(self, page: Page):
         """Export view loads"""
-        await page.locator(".nav-item:has-text('Export')").click()
+        page.locator(".nav-item:has-text('Export')").click()
         time.sleep(0.3)
         
-        await expect(page.locator("h1:has-text('Export')")).to_be_visible()
+        expect(page.locator("h1:has-text('Export')")).to_be_visible()
         # Should show placeholder
-        await expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
+        expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
     
-    async def test_export_file_view_loads(self, page: Page):
+    def test_export_file_view_loads(self, page: Page):
         """Export file view loads"""
-        await page.locator(".nav-item:has-text('Eksport pliku')").click()
+        page.locator(".nav-item:has-text('Eksport pliku')").click()
         time.sleep(0.3)
         
-        await expect(page.locator("h1:has-text('Eksport do pliku')")).to_be_visible()
+        expect(page.locator("h1:has-text('Eksport do pliku')")).to_be_visible()
         # Should show placeholder
-        await expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
+        expect(page.locator(".empty:has-text('Widok w przygotowaniu')")).to_be_visible()
     
-    async def test_navigation_between_views(self, page: Page):
+    def test_navigation_between_views(self, page: Page):
         """Test smooth navigation between different views"""
         views = [
             ("Profile", ".nav-group:has-text('Profile') .nav-item:has-text('Zarządzanie')"),
@@ -144,118 +144,118 @@ class TestAllViewsGUI:
         ]
         
         for view_name, selector in views:
-            await page.locator(selector).click()
+            page.locator(selector).click()
             time.sleep(0.3)
-            await expect(page.locator("h1:has-text('" + view_name + "')")).to_be_visible()
+            expect(page.locator("h1:has-text('" + view_name + "')")).to_be_visible()
     
-    async def test_sidebar_navigation(self, page: Page):
+    def test_sidebar_navigation(self, page: Page):
         """Test sidebar navigation is functional"""
         # Check all navigation groups are present
-        await expect(page.locator(".nav-group:has-text('Profile')")).to_be_visible()
-        await expect(page.locator(".nav-group:has-text('Dokumenty')")).to_be_visible()
-        await expect(page.locator(".nav-group:has-text('Transfer')")).to_be_visible()
+        expect(page.locator(".nav-group:has-text('Profile')")).to_be_visible()
+        expect(page.locator(".nav-group:has-text('Dokumenty')")).to_be_visible()
+        expect(page.locator(".nav-group:has-text('Transfer')")).to_be_visible()
         
         # Check version info
-        await expect(page.locator(".version:has-text('EXEF v1.2.0')")).to_be_visible()
+        expect(page.locator(".version:has-text('EXEF v1.2.0')")).to_be_visible()
     
-    async def test_profile_selector_functionality(self, page: Page):
+    def test_profile_selector_functionality(self, page: Page):
         """Test profile selector dropdown works"""
         # Click profile selector
-        await page.click(".profile-selector")
+        page.click(".profile-selector")
         time.sleep(0.3)
         
         # Dropdown should be visible
-        await expect(page.locator(".profile-dropdown")).to_be_visible()
+        expect(page.locator(".profile-dropdown")).to_be_visible()
         
         # Should have default profile
-        await expect(page.locator(".profile-dropdown .profile-option").first).to_be_visible()
+        expect(page.locator(".profile-dropdown .profile-option").first).to_be_visible()
         
         # Should have "Add profile" option
-        await expect(page.locator(".profile-option:has-text('Dodaj profil')")).to_be_visible()
+        expect(page.locator(".profile-option:has-text('Dodaj profil')")).to_be_visible()
         
         # Click outside to close
-        await page.click(".sidebar")
+        page.click(".sidebar")
         time.sleep(0.2)
-        await expect(page.locator(".profile-dropdown")).not_to_be_visible()
+        expect(page.locator(".profile-dropdown")).not_to_be_visible()
     
-    async def test_responsive_layout(self, page: Page):
+    def test_responsive_layout(self, page: Page):
         """Test layout is responsive"""
         # Test desktop size
         page.set_viewport_size({"width": 1200, "height": 800})
-        await expect(page.locator(".sidebar")).to_be_visible()
-        await expect(page.locator(".main")).to_be_visible()
+        expect(page.locator(".sidebar")).to_be_visible()
+        expect(page.locator(".main")).to_be_visible()
         
         # Test tablet size
         page.set_viewport_size({"width": 768, "height": 1024})
-        await expect(page.locator(".sidebar")).to_be_visible()
-        await expect(page.locator(".main")).to_be_visible()
+        expect(page.locator(".sidebar")).to_be_visible()
+        expect(page.locator(".main")).to_be_visible()
         
         # Test mobile size
         page.set_viewport_size({"width": 375, "height": 667})
-        await expect(page.locator(".sidebar")).to_be_visible()
-        await expect(page.locator(".main")).to_be_visible()
+        expect(page.locator(".sidebar")).to_be_visible()
+        expect(page.locator(".main")).to_be_visible()
     
-    async def test_url_parameters(self, page: Page):
+    def test_url_parameters(self, page: Page):
         """Test URL parameters work correctly"""
         # Test direct navigation with view parameter
-        await page.goto(f"{APP_URL}?view=profiles")
+        page.goto(f"{APP_URL}?view=profiles")
         time.sleep(0.5)
-        await expect(page.locator("h1:has-text('Profile')")).to_be_visible()
+        expect(page.locator("h1:has-text('Profile')")).to_be_visible()
         
-        await page.goto(f"{APP_URL}?view=docs")
+        page.goto(f"{APP_URL}?view=docs")
         time.sleep(0.5)
-        await expect(page.locator("h1:has-text('Dokumenty')")).to_be_visible()
+        expect(page.locator("h1:has-text('Dokumenty')")).to_be_visible()
         
         # Test profile parameter
-        await page.goto(f"{APP_URL}?view=docs&profile=default")
+        page.goto(f"{APP_URL}?view=docs&profile=default")
         time.sleep(0.5)
-        await expect(page.locator("h1:has-text('Dokumenty')")).to_be_visible()
+        expect(page.locator("h1:has-text('Dokumenty')")).to_be_visible()
     
-    async def test_badges_and_counts(self, page: Page):
+    def test_badges_and_counts(self, page: Page):
         """Test badges and counts display correctly"""
         # Navigate to documents view to see badges
-        await page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
+        page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
         time.sleep(0.3)
         
         # Document count badge should be visible
-        await expect(page.locator(".nav-item:has-text('Zarządzanie') .badge")).to_be_visible()
+        expect(page.locator(".nav-item:has-text('Zarządzanie') .badge")).to_be_visible()
         
         # Check other badges in Transfer section
-        await expect(page.locator(".nav-item:has-text('Import') .badge")).to_be_visible()
-        await expect(page.locator(".nav-item:has-text('Export') .badge")).to_be_visible()
+        expect(page.locator(".nav-item:has-text('Import') .badge")).to_be_visible()
+        expect(page.locator(".nav-item:has-text('Export') .badge")).to_be_visible()
 
 
 class TestViewSpecificFeatures:
     """Test specific features in each view"""
     
-    async def test_profiles_crud_operations(self, page: Page):
+    def test_profiles_crud_operations(self, page: Page):
         """Test CRUD operations in profiles view"""
-        await page.goto(APP_URL)
-        await page.locator(".nav-group:has-text('Profile') .nav-item:has-text('Zarządzanie')").click()
+        page.goto(APP_URL)
+        page.locator(".nav-group:has-text('Profile') .nav-item:has-text('Zarządzanie')").click()
         time.sleep(0.3)
         
         # Create new profile
-        await page.locator("button:has-text('Nowy profil')").click()
+        page.locator("button:has-text('Nowy profil')").click()
         time.sleep(0.3)
         
         # Fill form
-        await page.fill("input[placeholder='Moja Firma Sp. z o.o.']", "Test CRUD Profile")
-        await page.fill("input[placeholder='1234567890']", "9876543210")
-        await page.click("button:has-text('Utwórz')")
+        page.fill("input[placeholder='Moja Firma Sp. z o.o.']", "Test CRUD Profile")
+        page.fill("input[placeholder='1234567890']", "9876543210")
+        page.click("button:has-text('Utwórz')")
         time.sleep(0.5)
         
         # Verify profile created
-        await expect(page.locator(".card-title:has-text('Test CRUD Profile')")).to_be_visible()
+        expect(page.locator(".card-title:has-text('Test CRUD Profile')")).to_be_visible()
         
         # Edit profile
         page.locator(".card-footer button[title='Edytuj']").first.click()
         time.sleep(0.3)
-        await page.fill("input[placeholder='Moja Firma Sp. z o.o.']", "Test CRUD Profile Edited")
-        await page.click("button:has-text('✓')")
+        page.fill("input[placeholder='Moja Firma Sp. z o.o.']", "Test CRUD Profile Edited")
+        page.click("button:has-text('✓')")
         time.sleep(0.3)
         
         # Verify edited
-        await expect(page.locator(".card-title:has-text('Test CRUD Profile Edited')")).to_be_visible()
+        expect(page.locator(".card-title:has-text('Test CRUD Profile Edited')")).to_be_visible()
         
         # Cleanup via API
         r = httpx.get(f"{API_URL}/api/profiles")
@@ -263,10 +263,10 @@ class TestViewSpecificFeatures:
         if profile:
             httpx.delete(f"{API_URL}/api/profiles/{profile['id']}")
     
-    async def test_documents_filters(self, page: Page):
+    def test_documents_filters(self, page: Page):
         """Test document filtering functionality"""
-        await page.goto(APP_URL)
-        await page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
+        page.goto(APP_URL)
+        page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
         time.sleep(0.3)
         
         # Test search filter
@@ -290,40 +290,40 @@ class TestViewSpecificFeatures:
         type_select.select_option("")
         time.sleep(0.3)
     
-    async def test_bulk_actions(self, page: Page):
+    def test_bulk_actions(self, page: Page):
         """Test bulk actions in documents view"""
-        await page.goto(APP_URL)
-        await page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
+        page.goto(APP_URL)
+        page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
         time.sleep(0.3)
         
         # Switch to table view for bulk actions
-        await page.locator(".view-toggle button:has-text('Tabela')").click()
+        page.locator(".view-toggle button:has-text('Tabela')").click()
         time.sleep(0.3)
         
         # Look for bulk action bar (should appear when items selected)
         # Note: This test verifies the UI elements exist, actual selection would need documents
-        await expect(page.locator("table")).to_be_visible()
-        await expect(page.locator("th input[type='checkbox']")).to_be_visible()
+        expect(page.locator("table")).to_be_visible()
+        expect(page.locator("th input[type='checkbox']")).to_be_visible()
 
 
 class TestErrorHandling:
     """Test error handling in various views"""
     
-    async def test_404_handling(self, page: Page):
+    def test_404_handling(self, page: Page):
         """Test 404 error handling"""
-        await page.goto(f"{APP_URL}?view=nonexistent")
+        page.goto(f"{APP_URL}?view=nonexistent")
         time.sleep(0.5)
         
         # Should show some kind of error or fall back to default view
-        await expect(page.locator(".app")).to_be_visible()
+        expect(page.locator(".app")).to_be_visible()
         # Should show default view or error message
-        await expect(page.locator("h1")).to_be_visible()
+        expect(page.locator("h1")).to_be_visible()
     
-    async def test_network_error_handling(self, page: Page):
+    def test_network_error_handling(self, page: Page):
         """Test handling of network errors"""
         # Navigate to documents view
-        await page.goto(APP_URL)
-        await page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
+        page.goto(APP_URL)
+        page.locator(".nav-group:has-text('Dokumenty') .nav-item:has-text('Zarządzanie')").click()
         time.sleep(0.3)
         
         # Simulate network offline
@@ -334,7 +334,7 @@ class TestErrorHandling:
         time.sleep(0.5)
         
         # Should still show the UI, possibly with error indicators
-        await expect(page.locator(".app")).to_be_visible()
+        expect(page.locator(".app")).to_be_visible()
         
         # Restore network
         page.context.set_offline(False)

@@ -179,67 +179,67 @@ class TestSignatureUI:
     
     async def test_navigate_to_signature_view(self, page: Page):
         """Should navigate to signature view"""
-        page.goto(APP_URL)
+        await page.goto(APP_URL)
         
         # Navigate to signature view
-        page.locator(".nav-item:has-text('Podpisz')").click()
+        await page.locator(".nav-item:has-text('Podpisz')").click()
         time.sleep(0.3)
         
-        expect(page.locator("h1:has-text('Podpis Elektroniczny')")).to_be_visible()
-        expect(page.locator("h3:has-text('Dostępne certyfikaty')")).to_be_visible()
-        expect(page.locator("h3:has-text('Konfiguracja podpisu')")).to_be_visible()
+        await expect(page.locator("h1:has-text('Podpis Elektroniczny')")).to_be_visible()
+        await expect(page.locator("h3:has-text('Dostępne certyfikaty')")).to_be_visible()
+        await expect(page.locator("h3:has-text('Konfiguracja podpisu')")).to_be_visible()
     
     async def test_signature_provider_selection(self, page: Page):
         """Should select signature provider"""
-        page.goto(APP_URL + "?view=sign")
+        await page.goto(APP_URL + "?view=sign")
         time.sleep(0.3)
         
         # Select different provider
-        page.select_option("select", "mobywatel")
+        await page.select_option("select", "mobywatel")
         
         # Check provider info updates
-        expect(page.locator("text=Bezpłatny - 5 podpisów/miesiąc")).to_be_visible()
+        await expect(page.locator("text=Bezpłatny - 5 podpisów/miesiąc")).to_be_visible()
     
     async def test_signature_configuration(self, page: Page):
         """Should configure signature parameters"""
-        page.goto(APP_URL + "?view=sign")
+        await page.goto(APP_URL + "?view=sign")
         time.sleep(0.3)
         
         # Change signature type
-        page.select_option("select[placeholder*='Typ podpisu']", "QSEAL")
+        await page.select_option("select[placeholder*='Typ podpisu']", "QSEAL")
         
         # Change format
-        page.select_option("select[placeholder*='Format']", "XADES")
+        await page.select_option("select[placeholder*='Format']", "XADES")
         
         # Change level
-        page.select_option("select[placeholder*='Poziom']", "LT")
+        await page.select_option("select[placeholder*='Poziom']", "LT")
         
         # Values should be selected
-        expect(page.locator("select[placeholder*='Typ podpisu']")).to_have_value("QSEAL")
-        expect(page.locator("select[placeholder*='Format']")).to_have_value("XADES")
-        expect(page.locator("select[placeholder*='Poziom']")).to_have_value("LT")
+        await expect(page.locator("select[placeholder*='Typ podpisu']")).to_have_value("QSEAL")
+        await expect(page.locator("select[placeholder*='Format']")).to_have_value("XADES")
+        await expect(page.locator("select[placeholder*='Poziom']")).to_have_value("LT")
     
     async def test_sign_documents_flow(self, page: Page):
         """Should complete document signing flow"""
         # First go to documents and select some
-        page.goto(APP_URL + "?view=docs")
+        await page.goto(APP_URL + "?view=docs")
         time.sleep(0.3)
         
         # Select a document
-        page.locator("input[type='checkbox']").first().check()
+        await page.locator("input[type='checkbox']").first().check()
         
         # Click electronic signature button
-        page.locator("button:has-text('Podpis elektroniczny')").click()
+        await page.locator("button:has-text('Podpis elektroniczny')").click()
         time.sleep(0.3)
         
         # Should be in signature view with selected documents
-        expect(page.locator("h1:has-text('Podpis Elektroniczny')")).to_be_visible()
-        expect(page.locator("text=Wybrano: 1 dokumentów")).to_be_visible()
+        await expect(page.locator("h1:has-text('Podpis Elektroniczny')")).to_be_visible()
+        await expect(page.locator("text=Wybrano: 1 dokumentów")).to_be_visible()
         
         # Click sign button
-        page.locator("button:has-text('Podpisz wybrane')").click()
+        await page.locator("button:has-text('Podpisz wybrane')").click()
         time.sleep(2)  # Wait for signing to complete
         
         # Should show results
-        expect(page.locator("text=Podpisany")).to_be_visible()
-        expect(page.locator("th:has-text('ID podpisu')")).to_be_visible()
+        await expect(page.locator("text=Podpisany")).to_be_visible()
+        await expect(page.locator("th:has-text('ID podpisu')")).to_be_visible()

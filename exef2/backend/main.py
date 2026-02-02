@@ -334,9 +334,13 @@ async def sign_documents(profile_id: str, request: SignatureRequest):
         raise HTTPException(500, f"Signing failed: {str(e)}")
 
 @app.post("/api/profiles/{profile_id}/signature/verify")
-async def verify_signature(profile_id: str, document_id: str):
+async def verify_signature(profile_id: str, request: dict):
     """Weryfikuj podpis dokumentu"""
     try:
+        document_id = request.get("document_id")
+        if not document_id:
+            raise HTTPException(400, "document_id is required")
+        
         # Pobierz dokument
         with db() as conn:
             row = conn.execute(
@@ -374,9 +378,13 @@ async def verify_signature(profile_id: str, document_id: str):
         raise HTTPException(500, f"Verification failed: {str(e)}")
 
 @app.post("/api/profiles/{profile_id}/signature/timestamp")
-async def add_timestamp(profile_id: str, document_id: str):
+async def add_timestamp(profile_id: str, request: dict):
     """Dodaj znacznik czasu do dokumentu"""
     try:
+        document_id = request.get("document_id")
+        if not document_id:
+            raise HTTPException(400, "document_id is required")
+        
         # Pobierz dokument
         with db() as conn:
             row = conn.execute(

@@ -1,3 +1,18 @@
+## [2.0.4] - 2026-02-02
+
+### Summary
+
+fix(tests): CLI interface with 3 supporting modules
+
+### Other
+
+- update exef2/backend/main.py
+- update exef2/fix_missing_await.py
+- update exef2/frontend/components/signature-manager.js
+- update exef2/tests/test_all_views_gui.py
+- update exef2/tests/test_signature.py
+
+
 ## [2.0.3] - 2026-02-02
 
 ### Summary
