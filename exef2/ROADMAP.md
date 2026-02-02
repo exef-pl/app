@@ -115,24 +115,45 @@ backend/adapters/ocr.py        - OCR with invoice extraction
 
 ---
 
-## 📋 v2.0.0 - Desktop App (Electron)
-**Status: 📅 Future**
-**ETA: 1-2 miesiące**
+## 📋 v1.6.0 - URL Routing & Document Detail
+**Status: ✅ Done**
 
 ### Tasks
-- [ ] Electron wrapper
-- [ ] Offline-first architecture
-- [ ] Local SQLite (no server needed)
+- [x] URL-based navigation (view, profile params)
+- [x] Browser back/forward support
+- [x] Document detail view with URL params
+- [x] Deep linking support
+- [x] UI tests for URL routing
+
+### Files changed
+```
+frontend/index.html  - navigate(), updateURL(), restoreFromURL()
+tests/test_e2e.py    - TestURLRouting class
+```
+
+---
+
+## 📋 v2.0.0 - Desktop App (Electron)
+**Status: 🚧 In Progress**
+
+### Tasks
+- [x] Electron wrapper
+- [x] Polish menu & shortcuts
+- [x] Offline mode UI
+- [ ] Local SQLite integration
+- [ ] Auto-sync when online
 - [ ] Auto-update mechanism
 - [ ] System tray integration
 
 ### New structure
 ```
 desktop/
-├── main.js          - Electron main
-├── preload.js       - IPC bridge
-├── package.json
-└── assets/
+├── main.js          - Electron main process
+├── preload.js       - IPC bridge (contextBridge)
+├── renderer/        - Offline UI
+├── assets/          - Icons
+├── package.json     - Electron dependencies
+└── README.md
 ```
 
 ---

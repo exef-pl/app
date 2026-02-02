@@ -84,7 +84,7 @@
         <!-- Profile Selector -->
         <div class="nav-group">
             <div class="nav-label">Profile</div>
-            <div class="nav-item" :class="{active:view=='profiles'}" @click="view='profiles'">🏢 Zarządzanie</div>
+            <div class="nav-item" :class="{active:view=='profiles'}" @click="navigate('profiles')">🏢 Zarządzanie</div>
 
             <div class="profile-selector" :class="{open:profileOpen}" @click="profileOpen=!profileOpen" @click.outside="profileOpen=false">
                 <div class="profile-current">
@@ -110,24 +110,20 @@
         </div>
         <div class="nav-group">
             <div class="nav-label">Dokumenty</div>
-            <div class="nav-item" :class="{active:view=='docs'}" @click="view='docs'">📋 Zarządzanie <span class="badge" x-text="stats.documents?.total||0"></span></div>
-            <div class="nav-item" :class="{active:view=='create'}" @click="view='create'">✨ Utwórz</div>
-            <div class="nav-item" :class="{active:view=='upload'}" @click="view='upload'">📤 Wgraj plik</div>
-            <div class="nav-item" :class="{active:view=='describe'}" @click="view='describe'">🏷️ Opis <span class="badge warn" x-text="stats.documents?.by_status?.created||0" x-show="stats.documents?.by_status?.created"></span></div>
-            <div class="nav-item" :class="{active:view=='sign'}" @click="view='sign'">✍️ Podpis <span class="badge warn" x-text="stats.documents?.by_status?.described||0" x-show="stats.documents?.by_status?.described"></span></div>
+            <div class="nav-item" :class="{active:view=='docs'}" @click="navigate('docs')">📋 Zarządzanie <span class="badge" x-text="stats.documents?.total||0"></span></div>
+            <div class="nav-item" :class="{active:view=='create'}" @click="navigate('create')">✨ Utwórz</div>
+            <div class="nav-item" :class="{active:view=='describe'}" @click="navigate('describe')">🏷️ Opis <span class="badge warn" x-text="stats.documents?.by_status?.created||0" x-show="stats.documents?.by_status?.created"></span></div>
+            <div class="nav-item" :class="{active:view=='sign'}" @click="navigate('sign')">✍️ Podpis <span class="badge warn" x-text="stats.documents?.by_status?.described||0" x-show="stats.documents?.by_status?.described"></span></div>
         </div>
         <div class="nav-group">
             <div class="nav-label">Transfer</div>
-            <div class="nav-item" :class="{active:view=='import'}" @click="view='import'">📥 Import <span class="badge purple" x-text="stats.endpoints?.import||0"></span></div>
-            <div class="nav-item" :class="{active:view=='export'}" @click="view='export'">📤 Export <span class="badge purple" x-text="stats.endpoints?.export||0"></span></div>
-            <div class="nav-item" :class="{active:view=='exportfile'}" @click="view='exportfile'">📁 Eksport pliku</div>
-        </div>
-        <div class="nav-group">
-            <div class="nav-label">Księgowość</div>
-            <div class="nav-item" :class="{active:view=='categorize'}" @click="view='categorize'">🏷️ Kategoryzacja</div>
+            <div class="nav-item" :class="{active:view=='upload'}" @click="navigate('upload')">📤 Wgraj plik</div>
+            <div class="nav-item" :class="{active:view=='import'}" @click="navigate('import')">📥 Import <span class="badge purple" x-text="stats.endpoints?.import||0"></span></div>
+            <div class="nav-item" :class="{active:view=='export'}" @click="navigate('export')">📤 Export <span class="badge purple" x-text="stats.endpoints?.export||0"></span></div>
+            <div class="nav-item" :class="{active:view=='exportfile'}" @click="navigate('exportfile')">📁 Eksport pliku</div>
         </div>
 
-        <div class="version">EXEF v1.5.0</div>
+        <div class="version">EXEF v1.6.0</div>
     </aside>
 
     <main class="main">
@@ -140,13 +136,13 @@
                         <thead><tr><th>Numer</th><th>Typ</th><th>Kontrahent</th><th>Kwota</th><th>Status</th><th>Akcje</th></tr></thead>
                         <tbody>
                         <template x-for="doc in documents" :key="doc.id">
-                            <tr>
+                            <tr style="cursor:pointer" @click="navigate('doc', {id: doc.id})">
                                 <td x-text="doc.number"></td>
                                 <td x-text="doc.type"></td>
                                 <td x-text="doc.contractor"></td>
                                 <td x-text="doc.amount+' PLN'"></td>
                                 <td><span class="status" :class="'status-'+doc.status" x-text="doc.status"></span></td>
-                                <td>
+                                <td @click.stop>
                                     <button class="btn btn-sm btn-secondary" @click="updateDoc(doc.id,'described')" x-show="doc.status=='created'">Opisz</button>
                                     <button class="btn btn-sm btn-secondary" @click="updateDoc(doc.id,'signed')" x-show="doc.status=='described'">Podpisz</button>
                                     <button class="btn btn-sm btn-danger" @click="deleteDoc(doc.id)">🗑</button>
@@ -156,6 +152,65 @@
                         </tbody>
                     </table>
                     <div class="empty" x-show="!documents.length">Brak dokumentów</div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Document Detail -->
+        <template x-if="view=='doc'">
+            <div>
+                <div class="header">
+                    <h1 class="title">Szczegóły dokumentu</h1>
+                    <button class="btn btn-secondary" @click="navigate('docs')">← Powrót</button>
+                </div>
+                <div class="card" style="max-width:600px" x-data="{doc: documents.find(d => d.id === docId) || {}}">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                        <div class="form-group">
+                            <label class="form-label">Numer</label>
+                            <div style="font-size:1.1rem;font-weight:500" x-text="doc.number || '-'"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Typ</label>
+                            <div x-text="doc.type || '-'"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kontrahent</label>
+                            <div x-text="doc.contractor || '-'"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">NIP kontrahenta</label>
+                            <div x-text="doc.contractor_nip || '-'"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kwota netto</label>
+                            <div x-text="(doc.amount || 0) + ' PLN'"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Stawka VAT</label>
+                            <div x-text="doc.vat_rate || '23%'"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Status</label>
+                            <span class="status" :class="'status-'+doc.status" x-text="doc.status"></span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Źródło</label>
+                            <div x-text="doc.source || 'manual'"></div>
+                        </div>
+                        <div class="form-group" x-show="doc.category">
+                            <label class="form-label">Kategoria KPiR</label>
+                            <div x-text="doc.category || '-'"></div>
+                        </div>
+                        <div class="form-group" x-show="doc.ocr_confidence">
+                            <label class="form-label">Pewność OCR</label>
+                            <div x-text="(doc.ocr_confidence || 0) + '%'"></div>
+                        </div>
+                    </div>
+                    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;display:flex;gap:0.5rem">
+                        <button class="btn btn-secondary" @click="updateDoc(doc.id,'described')" x-show="doc.status=='created'">Opisz</button>
+                        <button class="btn btn-secondary" @click="updateDoc(doc.id,'signed')" x-show="doc.status=='described'">Podpisz</button>
+                        <button class="btn btn-danger" @click="deleteDoc(doc.id); navigate('docs')">Usuń</button>
+                    </div>
                 </div>
             </div>
         </template>
@@ -214,25 +269,87 @@
             </div>
         </template>
 
-        <!-- Describe -->
+        <!-- Describe & Categorize -->
         <template x-if="view=='describe'">
             <div>
-                <div class="header"><h1 class="title">Opis dokumentów</h1></div>
-                <div class="card">
+                <div class="header"><h1 class="title">Opis i kategoryzacja</h1></div>
+                
+                <!-- Documents to describe -->
+                <div class="card" x-show="documents.filter(d=>d.status=='created').length">
+                    <h3 style="margin-bottom:1rem;color:#333">📝 Do opisania</h3>
                     <table>
-                        <thead><tr><th>Numer</th><th>Kontrahent</th><th>Kwota</th><th>Akcje</th></tr></thead>
+                        <thead><tr><th>Numer</th><th>Kontrahent</th><th>Kwota</th><th>Kategoria</th><th>Akcje</th></tr></thead>
                         <tbody>
                         <template x-for="doc in documents.filter(d=>d.status=='created')" :key="doc.id">
                             <tr>
                                 <td x-text="doc.number"></td>
                                 <td x-text="doc.contractor"></td>
                                 <td x-text="doc.amount+' PLN'"></td>
-                                <td><button class="btn btn-sm btn-primary" @click="updateDoc(doc.id,'described')">Opisz</button></td>
+                                <td>
+                                    <select class="form-input" style="width:auto;padding:4px 8px" x-model="doc.category" @change="categorizeDoc(doc.id, doc.category)">
+                                        <option value="">-- wybierz --</option>
+                                        <option value="towary">Zakup towarów</option>
+                                        <option value="materialy">Materiały</option>
+                                        <option value="uslugi">Usługi obce</option>
+                                        <option value="wynagrodzenia">Wynagrodzenia</option>
+                                        <option value="paliwo">Paliwo</option>
+                                        <option value="telefon">Telefon/Internet</option>
+                                        <option value="hosting">Hosting/IT</option>
+                                        <option value="oprogramowanie">Oprogramowanie</option>
+                                        <option value="marketing">Marketing</option>
+                                        <option value="biuro">Materiały biurowe</option>
+                                        <option value="transport">Transport</option>
+                                        <option value="ksiegowosc">Księgowość</option>
+                                        <option value="inne">Inne koszty</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-secondary" @click="suggestCategory(doc.id)" title="Sugeruj kategorię">💡</button>
+                                    <button class="btn btn-sm btn-primary" @click="updateDoc(doc.id,'described')">Opisz</button>
+                                </td>
                             </tr>
                         </template>
                         </tbody>
                     </table>
-                    <div class="empty" x-show="!documents.filter(d=>d.status=='created').length">Wszystko opisane ✓</div>
+                </div>
+                
+                <!-- All documents categorization -->
+                <div class="card" style="margin-top:1rem">
+                    <h3 style="margin-bottom:1rem;color:#333">🏷️ Kategoryzacja wszystkich</h3>
+                    <p style="margin-bottom:1rem;color:#666;font-size:0.9rem">Przypisz kategorie KPiR dla prawidłowego eksportu księgowego.</p>
+                    <table>
+                        <thead><tr><th>Numer</th><th>Kontrahent</th><th>Kwota</th><th>Status</th><th>Kategoria</th><th>Akcje</th></tr></thead>
+                        <tbody>
+                        <template x-for="doc in documents" :key="doc.id">
+                            <tr>
+                                <td x-text="doc.number"></td>
+                                <td x-text="doc.contractor"></td>
+                                <td x-text="doc.amount+' PLN'"></td>
+                                <td><span class="status" :class="'status-'+doc.status" x-text="doc.status"></span></td>
+                                <td>
+                                    <select class="form-input" style="width:auto;padding:4px 8px" x-model="doc.category" @change="categorizeDoc(doc.id, doc.category)">
+                                        <option value="">-- wybierz --</option>
+                                        <option value="towary">Zakup towarów</option>
+                                        <option value="materialy">Materiały</option>
+                                        <option value="uslugi">Usługi obce</option>
+                                        <option value="wynagrodzenia">Wynagrodzenia</option>
+                                        <option value="paliwo">Paliwo</option>
+                                        <option value="telefon">Telefon/Internet</option>
+                                        <option value="hosting">Hosting/IT</option>
+                                        <option value="oprogramowanie">Oprogramowanie</option>
+                                        <option value="marketing">Marketing</option>
+                                        <option value="biuro">Materiały biurowe</option>
+                                        <option value="transport">Transport</option>
+                                        <option value="ksiegowosc">Księgowość</option>
+                                        <option value="inne">Inne koszty</option>
+                                    </select>
+                                </td>
+                                <td><button class="btn btn-sm btn-secondary" @click="suggestCategory(doc.id)">💡 Sugeruj</button></td>
+                            </tr>
+                        </template>
+                        </tbody>
+                    </table>
+                    <div class="empty" x-show="!documents.length">Brak dokumentów</div>
                 </div>
             </div>
         </template>
@@ -325,48 +442,6 @@
             </div>
         </template>
 
-        <!-- Categorization -->
-        <template x-if="view=='categorize'">
-            <div>
-                <div class="header"><h1 class="title">Kategoryzacja kosztów</h1></div>
-                <div class="card">
-                    <p style="margin-bottom:1rem;color:#666">Przypisz kategorie KPiR do dokumentów dla prawidłowego eksportu księgowego.</p>
-                    <table>
-                        <thead><tr><th>Numer</th><th>Kontrahent</th><th>Kwota</th><th>Kategoria</th><th>Akcje</th></tr></thead>
-                        <tbody>
-                        <template x-for="doc in documents" :key="doc.id">
-                            <tr>
-                                <td x-text="doc.number"></td>
-                                <td x-text="doc.contractor"></td>
-                                <td x-text="doc.amount+' PLN'"></td>
-                                <td>
-                                    <select class="form-input" style="width:auto;padding:4px 8px" x-model="doc.category" @change="categorizeDoc(doc.id, doc.category)">
-                                        <option value="">-- wybierz --</option>
-                                        <option value="towary">Zakup towarów</option>
-                                        <option value="materialy">Materiały</option>
-                                        <option value="uslugi">Usługi obce</option>
-                                        <option value="wynagrodzenia">Wynagrodzenia</option>
-                                        <option value="paliwo">Paliwo</option>
-                                        <option value="telefon">Telefon/Internet</option>
-                                        <option value="hosting">Hosting/IT</option>
-                                        <option value="oprogramowanie">Oprogramowanie</option>
-                                        <option value="marketing">Marketing</option>
-                                        <option value="biuro">Materiały biurowe</option>
-                                        <option value="transport">Transport</option>
-                                        <option value="ksiegowosc">Księgowość</option>
-                                        <option value="inne">Inne koszty</option>
-                                    </select>
-                                </td>
-                                <td><button class="btn btn-sm btn-secondary" @click="suggestCategory(doc.id)">💡 Sugeruj</button></td>
-                            </tr>
-                        </template>
-                        </tbody>
-                    </table>
-                    <div class="empty" x-show="!documents.length">Brak dokumentów do kategoryzacji</div>
-                </div>
-            </div>
-        </template>
-
         <!-- Export File -->
         <template x-if="view=='exportfile'">
             <div>
@@ -449,6 +524,7 @@
     function app() {
         return {
             view: 'docs',
+            docId: null,
             profileId: localStorage.getItem('exef_profile') || 'default',
             profileOpen: false,
             profiles: [],
@@ -466,9 +542,48 @@
             get API() { return `/api/profiles/${this.profileId}` },
 
             async init() {
+                // Restore state from URL
+                this.restoreFromURL();
+                
+                // Handle browser back/forward
+                window.addEventListener('popstate', () => this.restoreFromURL());
+                
                 await this.loadProfiles();
                 await this.load();
                 this.connectWS();
+            },
+
+            // URL-based routing
+            navigate(view, params = {}) {
+                this.view = view;
+                this.docId = params.id || null;
+                this.updateURL();
+            },
+
+            updateURL() {
+                const url = new URL(window.location);
+                url.searchParams.set('view', this.view);
+                url.searchParams.set('profile', this.profileId);
+                if (this.docId) {
+                    url.searchParams.set('id', this.docId);
+                } else {
+                    url.searchParams.delete('id');
+                }
+                window.history.pushState({view: this.view, profile: this.profileId, id: this.docId}, '', url);
+            },
+
+            restoreFromURL() {
+                const params = new URLSearchParams(window.location.search);
+                const view = params.get('view');
+                const profile = params.get('profile');
+                const id = params.get('id');
+                
+                if (view) this.view = view;
+                if (id) this.docId = id;
+                if (profile) {
+                    this.profileId = profile;
+                    localStorage.setItem('exef_profile', profile);
+                }
             },
 
             async loadProfiles() {
@@ -501,6 +616,7 @@
                 this.profileId = id;
                 this.profileOpen = false;
                 localStorage.setItem('exef_profile', id);
+                this.updateURL();
                 await this.load();
                 this.reconnectWS();
             },

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+    <title>EXEF Desktop - Offline</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            max-width: 500px;
+        }
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            color: #1a1a2e;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 500;
+            margin-bottom: 2rem;
+        }
+        .status.offline {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status.online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .offline .dot { background: #f59e0b; }
+        .online .dot { background: #10b981; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .info {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+        .info h3 {
+            color: #334155;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #64748b; }
+        .info-value { color: #1e293b; font-weight: 500; }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            margin-left: 0.5rem;
+        }
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        .version {
+            color: #94a3b8;
+            font-size: 0.75rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">📋</div>
+        <h1>EXEF Desktop</h1>
+        <p class="subtitle">System Faktur Elektronicznych</p>
+        
+        <div class="status offline" id="status">
+            <span class="dot"></span>
+            <span id="status-text">Tryb offline</span>
+        </div>
+        
+        <div class="info">
+            <h3>Informacje o systemie</h3>
+            <div class="info-row">
+                <span class="info-label">Platforma</span>
+                <span class="info-value" id="platform">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Wersja</span>
+                <span class="info-value" id="version">2.0.0</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Dokumenty lokalne</span>
+                <span class="info-value" id="local-docs">0</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Ostatnia synchronizacja</span>
+                <span class="info-value" id="last-sync">Nigdy</span>
+            </div>
+        </div>
+        
+        <div>
+            <button class="btn btn-primary" id="connect-btn">
+                🔗 Połącz z serwerem
+            </button>
+            <button class="btn btn-secondary" id="settings-btn">
+                ⚙️ Ustawienia
+            </button>
+        </div>
+        
+        <p class="version">EXEF Desktop v<span id="app-version">2.0.0</span></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.electronAPI) {
+                // Get platform
+                const platform = window.electronAPI.getPlatform();
+                const platformNames = {
+                    'darwin': 'macOS',
+                    'win32': 'Windows',
+                    'linux': 'Linux'
+                };
+                document.getElementById('platform').textContent = platformNames[platform] || platform;
+                
+                // Get version
+                document.getElementById('version').textContent = window.electronAPI.getVersion();
+                document.getElementById('app-version').textContent = window.electronAPI.getVersion();
+                
+                // Check online status
+                const updateOnlineStatus = () => {
+                    const statusEl = document.getElementById('status');
+                    const statusText = document.getElementById('status-text');
+                    if (navigator.onLine) {
+                        statusEl.classList.remove('offline');
+                        statusEl.classList.add('online');
+                        statusText.textContent = 'Online';
+                    } else {
+                        statusEl.classList.remove('online');
+                        statusEl.classList.add('offline');
+                        statusText.textContent = 'Tryb offline';
+                    }
+                };
+                
+                window.addEventListener('online', updateOnlineStatus);
+                window.addEventListener('offline', updateOnlineStatus);
+                updateOnlineStatus();
+                
+                // Connect button
+                document.getElementById('connect-btn').addEventListener('click', async () => {
+                    await window.electronAPI.setOfflineMode(false);
+                });
+                
+                // Settings button
+                document.getElementById('settings-btn').addEventListener('click', () => {
+                    // Open settings modal or navigate to settings
+                    alert('Ustawienia będą dostępne w przyszłej wersji');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

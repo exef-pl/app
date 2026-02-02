@@ -781,13 +781,15 @@ class TestExportAPI:
 
 # === UI Tests for New Features ===
 class TestCategorizationUI:
-    """UI tests for categorization feature"""
+    """UI tests for categorization feature (now in describe view)"""
     
-    def test_categorization_view_loads(self, page: Page):
-        """Categorization view loads correctly"""
+    def test_describe_view_loads(self, page: Page):
+        """Describe view loads with categorization section"""
         page.goto(APP_URL)
-        page.locator(".nav-item:has-text('Kategoryzacja')").click()
-        expect(page.locator("h1:has-text('Kategoryzacja kosztów')")).to_be_visible()
+        page.locator(".nav-item:has-text('Opis')").click()
+        expect(page.locator("h1:has-text('Opis i kategoryzacja')")).to_be_visible()
+        # Check categorization section is present
+        expect(page.locator("h3:has-text('Kategoryzacja wszystkich')")).to_be_visible()
     
     def test_export_file_view_loads(self, page: Page):
         """Export file view loads with format cards"""
@@ -797,6 +799,80 @@ class TestCategorizationUI:
         # Check export format cards are visible
         expect(page.locator(".card-title:has-text('wFirma CSV')")).to_be_visible()
         expect(page.locator(".card-title:has-text('JPK_PKPIR')")).to_be_visible()
+
+
+class TestURLRouting:
+    """UI tests for URL-based routing"""
+    
+    def test_navigation_updates_url(self, page: Page):
+        """Navigation clicks update URL with view parameter"""
+        page.goto(APP_URL)
+        
+        # Click on Opis (describe)
+        page.locator(".nav-item:has-text('Opis')").click()
+        page.wait_for_timeout(300)
+        
+        # Check URL contains view=describe
+        assert "view=describe" in page.url
+    
+    def test_url_restores_view(self, page: Page):
+        """Loading URL with view param restores correct view"""
+        # Navigate directly to describe view via URL
+        page.goto(f"{APP_URL}?view=describe")
+        page.wait_for_timeout(500)
+        
+        # Check describe view is shown (now includes categorization)
+        expect(page.locator("h1:has-text('Opis i kategoryzacja')")).to_be_visible()
+    
+    def test_browser_back_works(self, page: Page):
+        """Browser back button restores previous view"""
+        page.goto(APP_URL)
+        
+        # Navigate to create
+        page.locator(".nav-item:has-text('Utwórz')").click()
+        page.wait_for_timeout(300)
+        expect(page.locator("h1:has-text('Utwórz dokument')")).to_be_visible()
+        
+        # Navigate to describe (includes categorization)
+        page.locator(".nav-item:has-text('Opis')").click()
+        page.wait_for_timeout(300)
+        expect(page.locator("h1:has-text('Opis i kategoryzacja')")).to_be_visible()
+        
+        # Go back
+        page.go_back()
+        page.wait_for_timeout(300)
+        
+        # Should be on create view
+        expect(page.locator("h1:has-text('Utwórz dokument')")).to_be_visible()
+    
+    def test_document_detail_view(self, page: Page):
+        """Can navigate to document detail via click on row"""
+        # First create a document via API
+        r = httpx.post(f"{API_URL}/api/profiles/default/documents", json={
+            "type": "invoice",
+            "number": "FV/URL/001",
+            "contractor": "URL Test",
+            "amount": 999
+        })
+        doc_id = r.json()["id"]
+        
+        # Go to docs view first to load documents
+        page.goto(APP_URL)
+        page.wait_for_timeout(500)
+        
+        # Click on the document row to navigate to detail
+        page.locator("tr:has-text('FV/URL/001')").first.click()
+        page.wait_for_timeout(300)
+        
+        # Check document detail view is shown
+        expect(page.locator("h1:has-text('Szczegóły dokumentu')")).to_be_visible()
+        
+        # Check URL contains id param
+        assert f"id={doc_id}" in page.url
+        assert "view=doc" in page.url
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/default/documents/{doc_id}")
 
 
 class TestFileUpload:
