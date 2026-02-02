@@ -5,13 +5,15 @@ function DocumentManager() {
         documents: [],
         editingDocument: null,
         selectedDocuments: new Set(),
+        profileId: null,
         filters: {
             status: '',
             type: '',
             search: ''
         },
         
-        init() {
+        init(profileId) {
+            this.profileId = profileId;
             this.loadDocuments();
         },
         
@@ -26,7 +28,7 @@ function DocumentManager() {
                 if (this.filters.status) params.append('status', this.filters.status);
                 if (this.filters.type) params.append('type', this.filters.type);
                 
-                const response = await fetch(`/api/profiles/${window.appInstance.profileId}/documents?${params}`);
+                const response = await fetch(`/api/profiles/${this.profileId}/documents?${params}`);
                 this.documents = await response.json();
             } catch (error) {
                 console.error('Failed to load documents:', error);
@@ -45,7 +47,7 @@ function DocumentManager() {
             if (!this.editingDocument) return;
             
             try {
-                const response = await fetch(`/api/profiles/${window.appInstance.profileId}/documents/${this.editingDocument.id}`, {
+                const response = await fetch(`/api/profiles/${this.profileId}/documents/${this.editingDocument.id}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -73,7 +75,7 @@ function DocumentManager() {
             if (!confirm('Usunąć dokument?')) return;
             
             try {
-                const response = await fetch(`/api/profiles/${window.appInstance.profileId}/documents/${documentId}`, {
+                const response = await fetch(`/api/profiles/${this.profileId}/documents/${documentId}`, {
                     method: 'DELETE'
                 });
                 
@@ -90,7 +92,7 @@ function DocumentManager() {
         
         async updateDocumentStatus(documentId, status) {
             try {
-                const response = await fetch(`/api/profiles/${window.appInstance.profileId}/documents/${documentId}`, {
+                const response = await fetch(`/api/profiles/${this.profileId}/documents/${documentId}`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ status })
@@ -131,7 +133,7 @@ function DocumentManager() {
             
             try {
                 const promises = Array.from(this.selectedDocuments).map(id =>
-                    fetch(`/api/profiles/${window.appInstance.profileId}/documents/${id}`, {
+                    fetch(`/api/profiles/${this.profileId}/documents/${id}`, {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ status })
@@ -169,6 +171,18 @@ function DocumentManager() {
         
         showToast(message) {
             window.dispatchEvent(new CustomEvent('toast', { detail: message }));
+        },
+        
+        // Integration with signature view
+        openSignatureView() {
+            // Pass selected documents to signature view
+            if (this.selectedDocuments.size > 0) {
+                window.signatureManager = {
+                    selectedDocuments: this.selectedDocuments,
+                    returnTo: 'docs'
+                };
+            }
+            window.appInstance.navigate('sign');
         }
     };
 }

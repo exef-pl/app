@@ -52,8 +52,6 @@ class Router {
             this.currentView = component;
             this.currentParams = params;
             this.render();
-        } else {
-            console.warn(`No route found for path: ${path}`);
         }
     }
     

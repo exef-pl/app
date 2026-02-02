@@ -1,5 +1,5 @@
 project: exef2
-generated: "2026-02-02T17:06:03.069613"
+generated: "2026-02-02T17:09:32.743662"
 modules[17]{path,lang,items}:
   backend/config.py,python,1
   backend/migrations.py,python,6

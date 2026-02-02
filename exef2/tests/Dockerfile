@@ -1,6 +1,8 @@
-FROM mcr.microsoft.com/playwright/python:v1.58.0-jammy
+FROM mcr.microsoft.com/playwright/python:v1.40.0-jammy
 WORKDIR /tests
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN playwright install chromium
 COPY test_e2e.py .
-CMD ["pytest", "test_e2e.py", "-v", "--tb=short"]
+COPY test_all_views_gui.py .
+CMD ["pytest", "test_all_views_gui.py", "-v", "--tb=short"]

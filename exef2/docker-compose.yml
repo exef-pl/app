@@ -51,6 +51,23 @@ services:
     profiles:
       - test
 
+  mock-services:
+    build:
+      context: ./tests
+      dockerfile: Dockerfile.mock
+    ports:
+      - "8888:8888"
+    networks:
+      - exef
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    profiles:
+      - test
+
 volumes:
   exef-data:
     driver: local

@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-cli exef-test-e2e exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test exef-test-storage-up exef-test-storage-down exef-test-storage exef-test-storage-full exef-test-email-up exef-test-email-down exef-test-email exef-test-email-full exef-test-mocks-up exef-test-mocks-down exef-test-devices-up exef-test-devices-down exef-test-devices exef-test-devices-full
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-cli exef-test-e2e exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test exef-test-storage-up exef-test-storage-down exef-test-storage exef-test-storage-full exef-test-email-up exef-test-email-down exef-test-email exef-test-email-full exef-test-mocks-up exef-test-mocks-down exef-test-devices-up exef-test-devices-down exef-test-devices exef-test-devices-full exef2-build exef2-up exef2-down exef2-test exef2-test-api exef2-test-gui exef2-test-all exef2-logs exef2-clean
 
 INCLUDE_SUBMODULES ?= 0
 
@@ -59,6 +59,17 @@ help:
 	@echo "  exef-cli-build      - Build standalone CLI binary (linux+windows)"
 	@echo "  exef-cli-install    - Install CLI globally (npm link)"
 	@echo "  exef-all            - Build all 3 exef artifacts"
+	@echo ""
+	@echo "  ExEF2 (New Architecture):"
+	@echo "  exef2-build         - Build all EXEF2 services (backend + frontend)"
+	@echo "  exef2-up            - Start EXEF2 services via docker compose"
+	@echo "  exef2-down          - Stop EXEF2 services"
+	@echo "  exef2-test          - Run all EXEF2 tests"
+	@echo "  exef2-test-api      - Run EXEF2 API tests only"
+	@echo "  exef2-test-gui      - Run EXEF2 GUI/E2E tests only"
+	@echo "  exef2-test-all      - Run EXEF2 API + GUI tests"
+	@echo "  exef2-logs          - Show logs from all EXEF2 services"
+	@echo "  exef2-clean         - Clean EXEF2 containers and images"
 	@echo ""
 	@echo "  Release:"
 	@echo "  push               - Bump version + generate docs/v/<tag>/ + tag + push"
@@ -370,3 +381,43 @@ exef-test-devices-full: exef-test-devices-up exef-test-devices exef-test-devices
 # Release automation: bump version, generate docs/v/<tag>/, commit, tag and push
 push:
 	@node scripts/release.cjs
+
+# EXEF2 (New Architecture) targets
+exef2-build:
+	@echo "Building EXEF2 services..."
+	@cd exef2 && docker compose build
+
+exef2-up:
+	@echo "Starting EXEF2 services..."
+	@cd exef2 && docker compose up -d
+	@echo "Waiting for services to be healthy..."
+	@cd exef2 && while ! docker compose ps | grep -q "healthy"; do sleep 1; done
+	@echo "EXEF2 is running at http://localhost:8002"
+
+exef2-down:
+	@echo "Stopping EXEF2 services..."
+	@cd exef2 && docker compose down
+
+exef2-test:
+	@echo "Running EXEF2 tests..."
+	@cd exef2 && ./tests/run_tests.sh all
+
+exef2-test-api:
+	@echo "Running EXEF2 API tests..."
+	@cd exef2 && ./tests/run_tests.sh api
+
+exef2-test-gui:
+	@echo "Running EXEF2 GUI/E2E tests..."
+	@cd exef2 && ./tests/run_tests.sh gui
+
+exef2-test-all:
+	@echo "Running all EXEF2 tests (API + GUI)..."
+	@cd exef2 && ./tests/run_tests.sh all
+
+exef2-logs:
+	@echo "Showing logs from EXEF2 services..."
+	@cd exef2 && docker compose logs -f
+
+exef2-clean:
+	@echo "Cleaning EXEF2 containers and images..."
+	@cd exef2 && docker compose down -v --rmi all

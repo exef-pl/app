@@ -1,0 +1,70 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#1a73e8', 'primaryTextColor': '#fff', 'primaryBorderColor': '#0d47a1', 'lineColor': '#666', 'secondaryColor': '#f5f5f5', 'tertiaryColor': '#e3f2fd'}}}%%
+
+flowchart TB
+    subgraph EXEF["🖥️ EXEF Desktop Application"]
+        UI["Frontend<br/>📄 Signature Manager"]
+        API["Backend API<br/>FastAPI"]
+        
+        subgraph ADAPTERS["Adapter Layer"]
+            SIG["✍️ Signature<br/>Adapter"]
+            KSEF["📋 KSeF<br/>Adapter"]
+            OCR["🔍 OCR<br/>Adapter"]
+        end
+    end
+    
+    subgraph PROVIDERS["🔐 Signature Providers"]
+        subgraph CLOUD["☁️ Cloud Providers"]
+            MSZAFIR["mSzafir<br/>(KIR)<br/>💰 od 299 zł/rok"]
+            SIMPLY["SimplySign<br/>(Asseco)<br/>💰 od 250 zł/rok"]
+            CERTUM["EuroCert/<br/>Certum<br/>💰 od 239 zł/rok"]
+        end
+        
+        subgraph FREE["🆓 Free Options"]
+            MOBYWATEL["mObywatel<br/>5 docs/month<br/>💰 BEZPŁATNY"]
+        end
+        
+        subgraph LOCAL["💳 Local/Desktop"]
+            CLOUDSIGNER["CloudSigner<br/>PKCS#11<br/>USB/Card"]
+            SZAFIR_SDK["Szafir SDK<br/>Desktop App"]
+        end
+    end
+    
+    subgraph EXTERNAL["🌐 External Systems"]
+        KSEF_API["KSeF API<br/>Ministerstwo Finansów"]
+        TSA["TSA Server<br/>Znacznik czasu"]
+        VERIFY["Weryfikacja<br/>eIDAS"]
+    end
+    
+    UI --> API
+    API --> SIG
+    API --> KSEF
+    API --> OCR
+    
+    SIG --> MSZAFIR
+    SIG --> SIMPLY
+    SIG --> CERTUM
+    SIG --> MOBYWATEL
+    SIG --> CLOUDSIGNER
+    
+    CLOUDSIGNER --> SZAFIR_SDK
+    
+    MSZAFIR --> TSA
+    SIMPLY --> TSA
+    
+    KSEF --> KSEF_API
+    SIG -.->|"Certyfikat MCU"| KSEF_API
+    
+    MSZAFIR --> VERIFY
+    SIMPLY --> VERIFY
+    
+    classDef primary fill:#1a73e8,stroke:#0d47a1,color:#fff
+    classDef secondary fill:#34a853,stroke:#137333,color:#fff
+    classDef warning fill:#fbbc04,stroke:#f9a825,color:#000
+    classDef free fill:#ea4335,stroke:#c5221f,color:#fff
+    classDef external fill:#9e9e9e,stroke:#616161,color:#fff
+    
+    class SIG,KSEF,OCR primary
+    class MSZAFIR,SIMPLY,CERTUM secondary
+    class CLOUDSIGNER,SZAFIR_SDK warning
+    class MOBYWATEL free
+    class KSEF_API,TSA,VERIFY external

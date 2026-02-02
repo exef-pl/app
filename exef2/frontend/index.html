@@ -64,7 +64,7 @@
     <!-- Main Content -->
     <main class="main">
         <!-- Profiles View -->
-        <template x-if="view=='profiles'" x-data="ProfileManager()">
+        <template x-if="view=='profiles'" x-data="ProfileManager()" x-init="init(profileId)">
             <div>
                 <div class="header">
                     <h1 class="title">Profile</h1>
@@ -280,7 +280,7 @@
         </template>
 
         <!-- Documents View -->
-        <template x-if="view=='docs'" x-data="DocumentManager()">
+        <template x-if="view=='docs'" x-data="DocumentManager()" x-init="init(profileId)">
             <div>
                 <div class="header">
                     <h1 class="title">Dokumenty</h1>
@@ -327,7 +327,7 @@
                     <div style="display:flex;gap:8px;align-items:center">
                         <span x-text="`Wybrano: ${selectedDocuments.size}`"></span>
                         <button class="btn btn-sm btn-secondary" @click="bulkUpdateStatus('described')">Opisz</button>
-                        <button class="btn btn-sm btn-secondary" @click="bulkUpdateStatus('signed')">Podpisz</button>
+                        <button class="btn btn-sm btn-primary" @click="openSignatureView()">🔐 Podpis elektroniczny</button>
                         <button class="btn btn-sm btn-danger" @click="selectedDocuments.clear()">Wyczyść</button>
                     </div>
                 </div>
@@ -434,8 +434,186 @@
             </div>
         </template>
 
+        <!-- Signature View -->
+        <template x-if="view=='sign'" x-data="SignatureManager()">
+            <div>
+                <div class="header">
+                    <h1 class="title">🔐 Podpis Elektroniczny</h1>
+                    <div style="display:flex;gap:12px;align-items:center">
+                        <select class="form-input" style="width:200px" x-model="currentProvider">
+                            <template x-for="provider in providers" :key="provider.value">
+                                <option :value="provider.value" x-text="provider.label"></option>
+                            </template>
+                        </select>
+                        <button class="btn btn-secondary" @click="loadCertificates()">🔄 Odśwież certyfikaty</button>
+                    </div>
+                </div>
+
+                <!-- Provider Info -->
+                <div class="card" style="margin-bottom:16px">
+                    <h3 style="margin-bottom:8px">ℹ️ Dostawca podpisu</h3>
+                    <div x-text="providers.find(p => p.value === currentProvider)?.description"></div>
+                </div>
+
+                <!-- Certificates -->
+                <div class="card" style="margin-bottom:16px">
+                    <h3 style="margin-bottom:12px">📜 Dostępne certyfikaty</h3>
+                    <template x-if="certificates.length">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Właściciel</th>
+                                        <th>Ważny od</th>
+                                        <th>Ważny do</th>
+                                        <th>Typ</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="cert in certificates" :key="cert.id">
+                                        <tr>
+                                            <td x-text="cert.subject"></td>
+                                            <td x-text="new Date(cert.valid_from).toLocaleDateString()"></td>
+                                            <td x-text="new Date(cert.valid_to).toLocaleDateString()"></td>
+                                            <td>
+                                                <span class="badge" x-text="cert.type"></span>
+                                            </td>
+                                            <td>
+                                                <span class="status status-signed">Aktywny</span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                    <template x-if="!certificates.length">
+                        <div class="empty">Brak dostępnych certyfikatów</div>
+                    </template>
+                </div>
+
+                <!-- Signature Configuration -->
+                <div class="card" style="margin-bottom:16px">
+                    <h3 style="margin-bottom:12px">⚙️ Konfiguracja podpisu</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Typ podpisu</label>
+                            <select class="form-input" x-model="signatureConfig.type">
+                                <option value="QES">Podpis kwalifikowany (osoba)</option>
+                                <option value="QSEAL">Pieczęć kwalifikowana (firma)</option>
+                                <option value="ADVANCED">Podpis zaawansowany</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Format</label>
+                            <select class="form-input" x-model="signatureConfig.format">
+                                <option value="PADES">PAdES (PDF)</option>
+                                <option value="XADES">XAdES (XML/KSeF)</option>
+                                <option value="CADES">CAdES (CMS)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Poziom</label>
+                            <select class="form-input" x-model="signatureConfig.level">
+                                <option value="T">Timestamp (z czasem)</option>
+                                <option value="B">Basic</option>
+                                <option value="LT">Long-Term</option>
+                                <option value="LTA">Long-Term Archival</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Documents to Sign -->
+                <div class="card" style="margin-bottom:16px">
+                    <h3 style="margin-bottom:12px">📄 Dokumenty do podpisu</h3>
+                    <div style="margin-bottom:12px">
+                        <button class="btn btn-primary" @click="navigate('docs')" x-show="selectedDocuments.size === 0">
+                            Wybierz dokumenty
+                        </button>
+                        <template x-if="selectedDocuments.size > 0">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
+                                <span x-text="`Wybrano: ${selectedDocuments.size} dokumentów`"></span>
+                                <button class="btn btn-primary" @click="signDocuments()" :disabled="signingInProgress">
+                                    <span x-show="!signingInProgress">✍️ Podpisz wybrane</span>
+                                    <span x-show="signingInProgress">⏳ Podpisywanie...</span>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <!-- Signing Results -->
+                    <template x-if="signingResults.length">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Dokument</th>
+                                        <th>Status</th>
+                                        <th>ID podpisu</th>
+                                        <th>Podpisany przez</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="result in signingResults" :key="result.document_id">
+                                        <tr>
+                                            <td x-text="result.document_id"></td>
+                                            <td>
+                                                <span class="status" :class="result.success ? 'status-signed' : 'status-created'" 
+                                                      x-text="result.success ? 'Podpisany' : 'Błąd'"></span>
+                                            </td>
+                                            <td x-text="result.signature_id || '-'"></td>
+                                            <td x-text="result.signer?.name || '-'"></td>
+                                            <td x-text="result.timestamp ? new Date(result.timestamp).toLocaleString() : '-'"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Verify Section -->
+                <div class="card">
+                    <h3 style="margin-bottom:12px">🔍 Weryfikacja podpisu</h3>
+                    <div class="form-group">
+                        <label class="form-label">Wybierz dokument do weryfikacji</label>
+                        <select class="form-input" x-model="verifyDocumentId">
+                            <option value="">-- Wybierz --</option>
+                            <!-- Options would be populated from documents with signatures -->
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" @click="verifyResult = null" x-show="verifyResult">
+                        Wyczyść wynik
+                    </button>
+                    
+                    <template x-if="verifyResult">
+                        <div style="margin-top:16px;padding:16px;background:var(--bg3);border-radius:6px">
+                            <h4 style="margin-bottom:8px">Wynik weryfikacji:</h4>
+                            <div style="display:grid;gap:8px">
+                                <div><strong>Ważność:</strong> <span :class="verifyResult.valid ? 'status-signed' : 'status-created'" x-text="verifyResult.valid ? 'Ważny' : 'Nieważny'"></span></div>
+                                <template x-if="verifyResult.signatures?.length">
+                                    <div><strong>Podpisy:</strong></div>
+                                    <template x-for="sig in verifyResult.signatures" :key="sig.certificate">
+                                        <div style="margin-left:20px">
+                                            - <span x-text="sig.signer"></span> (ważny do <span x-text="new Date(sig.valid_to).toLocaleDateString()"></span>)
+                                        </div>
+                                    </template>
+                                </template>
+                                <template x-if="verifyResult.timestamps?.length">
+                                    <div><strong>Znaczniki czasu:</strong> <span x-text="verifyResult.timestamps.length"></span></div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+
         <!-- Other views (simplified) -->
-        <template x-if="!['profiles', 'docs'].includes(view)">
+        <template x-if="!['profiles', 'docs', 'sign'].includes(view)">
             <div class="header">
                 <h1 class="title" x-text="viewTitle(view)"></h1>
             </div>
@@ -453,6 +631,7 @@
 <script src="router.js"></script>
 <script src="components/profile-manager.js"></script>
 <script src="components/document-manager.js"></script>
+<script src="components/signature-manager.js"></script>
 <script>
     function app() {
         return {

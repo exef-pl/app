@@ -53,7 +53,7 @@ D:
     e: Router
     Router: constructor(0),init(0),register(2),navigate(1),handleRoute(0)
   desktop/sync.js:
-    e: stopAutoSync,pullFromServer,checkOnline,setServerUrl,processSyncQueue,forceSync,syncItem,setStatusCallback
+    e: setStatusCallback,processSyncQueue,startAutoSync,stopAutoSync,notifyStatus,forceSync,setServerUrl,pullFromServer
     setServerUrl(url)->None
     setStatusCallback(callback)->None
     notifyStatus(status)->None
@@ -63,7 +63,7 @@ D:
     pullFromServer(profileId)->None
     startAutoSync()->None
   desktop/database.js:
-    e: updateProfile,getDocuments,createProfile,initialize,addToSyncQueue,getDbPath,getStats,deleteEndpoint
+    e: getStats,initialize,createDocument,createEndpoint,markSyncItemFailed,getDocuments,getDocument,updateProfile
     getDbPath()->None
     initialize()->None
     close()->None

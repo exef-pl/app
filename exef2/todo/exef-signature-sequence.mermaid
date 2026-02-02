@@ -1,0 +1,56 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'actorTextColor': '#333', 'actorBkg': '#e3f2fd', 'signalColor': '#1a73e8'}}}%%
+
+sequenceDiagram
+    autonumber
+    participant U as 👤 Użytkownik
+    participant EXEF as 🖥️ EXEF Desktop
+    participant SIG as ✍️ Signature Adapter
+    participant MSZAFIR as ☁️ mSzafir API
+    participant APP as 📱 Aplikacja mobilna
+    participant KSEF as 📋 KSeF
+
+    Note over U,KSEF: 🔐 Scenariusz 1: Podpis kwalifikowany przez mSzafir
+
+    U->>EXEF: Wybierz dokumenty do podpisu
+    EXEF->>SIG: sign_documents(docs, "QES", "PAdES")
+    SIG->>MSZAFIR: POST /signing/init
+    MSZAFIR-->>SIG: sessionId + authorizationUrl
+    SIG-->>EXEF: Wymaga autoryzacji w aplikacji
+    EXEF-->>U: 📱 Potwierdź w aplikacji mSzafir
+    
+    U->>APP: Otwórz powiadomienie push
+    APP->>APP: Wprowadź PIN
+    APP->>MSZAFIR: authorize(sessionId)
+    MSZAFIR-->>APP: ✅ Authorized
+    
+    loop Polling (max 30s)
+        SIG->>MSZAFIR: GET /signing/status/{sessionId}
+        MSZAFIR-->>SIG: status: pending / completed
+    end
+    
+    MSZAFIR-->>SIG: signedDocument + signatureId
+    SIG-->>EXEF: Dokumenty podpisane
+    EXEF-->>U: ✅ Sukces! Podpisano 3 dokumenty
+
+    Note over U,KSEF: 📋 Scenariusz 2: Wysyłka do KSeF z pieczęcią
+
+    U->>EXEF: Wyślij faktury do KSeF
+    EXEF->>SIG: seal_documents(invoices, "QSEAL", "XAdES")
+    Note right of SIG: Pieczęć automatyczna<br/>(bez autoryzacji użytkownika)
+    SIG->>MSZAFIR: POST /sealing/sign (auto)
+    MSZAFIR-->>SIG: sealedDocuments
+    SIG-->>EXEF: Faktury opieczętowane
+    
+    EXEF->>KSEF: POST /api/v1/invoices/batch
+    Note right of KSEF: Certyfikat MCU<br/>do autoryzacji
+    KSEF-->>EXEF: ksef_ids[], status: accepted
+    EXEF-->>U: ✅ Wysłano 10 faktur do KSeF
+
+    Note over U,KSEF: 🔍 Scenariusz 3: Weryfikacja podpisu
+
+    U->>EXEF: Weryfikuj podpisany PDF
+    EXEF->>SIG: verify(signedDocument)
+    SIG->>MSZAFIR: POST /verification/verify
+    MSZAFIR-->>SIG: valid: true, signatures: [...]
+    SIG-->>EXEF: Raport weryfikacji
+    EXEF-->>U: ✅ Podpis ważny do 2027-01-15<br/>Podpisał: Jan Kowalski<br/>Certyfikat: KIR mSzafir

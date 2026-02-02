@@ -3,10 +3,11 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocke
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Optional, Literal
+from typing import Optional, Literal, List, Dict, Any
 from datetime import datetime
 from contextlib import asynccontextmanager
 import sqlite3, json, asyncio, httpx, uuid, os
+from adapters.signature import get_signature_adapter, SignatureType, SignatureFormat, SignatureLevel
 
 # === Config ===
 DB_PATH = os.getenv("EXEF_DB_PATH", os.path.join(os.path.dirname(__file__), "..", "data", "exef.db"))
@@ -56,6 +57,12 @@ class ProfileDelegate(BaseModel):
     active: bool = True
     created_at: str = None
     updated_at: str = None
+
+class SignatureRequest(BaseModel):
+    document_ids: List[str]
+    signature_type: Literal["QES", "QSEAL", "ADVANCED"] = "QES"
+    signature_format: Literal["PADES", "XADES", "CADES"] = "PADES"
+    signature_level: Literal["B", "T", "LT", "LTA"] = "T"
 
 # === Database ===
 def db():
@@ -239,6 +246,173 @@ async def delete_delegate(profile_id: str, id: str):
         conn.execute("DELETE FROM profile_delegates WHERE id = ? AND profile_id = ?", (id, profile_id))
     await hub.broadcast({"event": "delegate.deleted", "id": id}, profile_id)
     return {"ok": True}
+
+# === Signature API ===
+@app.get("/api/profiles/{profile_id}/signature/certificates")
+async def get_certificates(profile_id: str):
+    """Pobierz dostępne certyfikaty podpisu"""
+    try:
+        adapter = get_signature_adapter()
+        certificates = await adapter.get_certificates()
+        return {
+            "success": True,
+            "certificates": certificates,
+            "provider": adapter.provider_name
+        }
+    except Exception as e:
+        raise HTTPException(500, f"Failed to get certificates: {str(e)}")
+
+@app.post("/api/profiles/{profile_id}/signature/sign")
+async def sign_documents(profile_id: str, request: SignatureRequest):
+    """Podpisz dokumenty elektronicznie"""
+    try:
+        # Pobierz dokumenty z bazy
+        with db() as conn:
+            placeholders = ",".join(["?"] * len(request.document_ids))
+            rows = conn.execute(
+                f"SELECT data FROM documents WHERE id IN ({placeholders}) AND profile_id = ?",
+                (*request.document_ids, profile_id)
+            ).fetchall()
+        
+        if len(rows) != len(request.document_ids):
+            raise HTTPException(404, "Some documents not found")
+        
+        documents = [json.loads(r["data"]) for r in rows]
+        
+        # Konwertuj typy
+        sig_type = SignatureType[request.signature_type]
+        sig_format = SignatureFormat[request.signature_format]
+        sig_level = SignatureLevel[request.signature_level]
+        
+        # Podpisz dokumenty
+        adapter = get_signature_adapter()
+        result = await adapter.sign_documents(
+            documents=documents,
+            sig_type=sig_type,
+            sig_format=sig_format,
+            sig_level=sig_level
+        )
+        
+        # Zaktualizuj status podpisanych dokumentów
+        if result["signed"] > 0:
+            signed_ids = [r["document_id"] for r in result["results"] if r["success"]]
+            placeholders = ",".join(["?"] * len(signed_ids))
+            
+            with db() as conn:
+                # Dodaj metadane podpisu
+                for doc_result in result["results"]:
+                    if doc_result["success"]:
+                        doc = next(d for d in documents if d["id"] == doc_result["document_id"])
+                        doc["status"] = "signed"
+                        doc["signature_id"] = doc_result.get("signature_id")
+                        doc["signature_data"] = {
+                            "signer": doc_result.get("signer"),
+                            "timestamp": doc_result.get("timestamp"),
+                            "provider": doc_result.get("provider"),
+                            "type": request.signature_type,
+                            "format": request.signature_format,
+                            "level": request.signature_level
+                        }
+                        
+                        conn.execute(
+                            "UPDATE documents SET data = ? WHERE id = ?",
+                            (json.dumps(doc), doc_result["document_id"])
+                        )
+                
+                # Powiadom przez WebSocket
+                for doc_id in signed_ids:
+                    await hub.broadcast(
+                        {"event": "document.signed", "document_id": doc_id},
+                        profile_id
+                    )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Signing failed: {str(e)}")
+
+@app.post("/api/profiles/{profile_id}/signature/verify")
+async def verify_signature(profile_id: str, document_id: str):
+    """Weryfikuj podpis dokumentu"""
+    try:
+        # Pobierz dokument
+        with db() as conn:
+            row = conn.execute(
+                "SELECT data FROM documents WHERE id = ? AND profile_id = ?",
+                (document_id, profile_id)
+            ).fetchone()
+        
+        if not row:
+            raise HTTPException(404, "Document not found")
+        
+        doc = json.loads(row["data"])
+        
+        # Sprawdź czy dokument jest podpisany
+        if not doc.get("signature_id"):
+            return {
+                "valid": False,
+                "error": "Document is not signed"
+            }
+        
+        # Weryfikuj podpis
+        adapter = get_signature_adapter()
+        # W rzeczywistości przekazać by podpisany dokument
+        # Tutaj symulujemy weryfikację
+        result = await adapter.verify_signature(b"mock_signed_document")
+        
+        return {
+            "document_id": document_id,
+            "signature_id": doc.get("signature_id"),
+            **result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Verification failed: {str(e)}")
+
+@app.post("/api/profiles/{profile_id}/signature/timestamp")
+async def add_timestamp(profile_id: str, document_id: str):
+    """Dodaj znacznik czasu do dokumentu"""
+    try:
+        # Pobierz dokument
+        with db() as conn:
+            row = conn.execute(
+                "SELECT data FROM documents WHERE id = ? AND profile_id = ?",
+                (document_id, profile_id)
+            ).fetchone()
+        
+        if not row:
+            raise HTTPException(404, "Document not found")
+        
+        doc = json.loads(row["data"])
+        
+        # Dodaj znacznik czasu
+        adapter = get_signature_adapter()
+        result = await adapter.add_timestamp(b"mock_document_content")
+        
+        # Zaktualizuj metadane
+        if result.get("success"):
+            doc["timestamp"] = result.get("timestamp")
+            doc["tsa"] = result.get("tsa")
+            
+            with db() as conn:
+                conn.execute(
+                    "UPDATE documents SET data = ? WHERE id = ?",
+                    (json.dumps(doc), document_id)
+                )
+        
+        return {
+            "document_id": document_id,
+            **result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Timestamp failed: {str(e)}")
 
 # === Endpoints ===
 @app.get("/api/profiles/{profile_id}/endpoints")

@@ -36,9 +36,22 @@ shell:
 test:
 	docker-compose --profile test up --build --abort-on-container-exit tests
 
+# Run E2E tests with mock services
+test-e2e:
+	@echo "Running E2E tests with mock services..."
+	@cd tests && ./run_e2e_tests.sh
+
 # Run API tests only
 test-api:
 	docker-compose exec backend pytest -v
+
+# Run signature tests
+test-signature:
+	docker-compose exec backend pytest tests/test_signature.py -v
+
+# Run complete E2E tests
+test-complete:
+	docker-compose --profile test up --build --abort-on-container-exit tests
 
 # Lint code
 lint:
@@ -140,6 +153,10 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test        - Run all tests"
+	@echo "  make test-e2e    - Run E2E tests with mock services"
+	@echo "  make test-api    - Run API tests only"
+	@echo "  make test-signature - Run signature tests"
+	@echo "  make test-complete - Run complete E2E tests"
 	@echo "  make lint        - Lint code"
 	@echo ""
 	@echo "Database:"

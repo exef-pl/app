@@ -1,3 +1,29 @@
+## [2.0.3] - 2026-02-02
+
+### Summary
+
+fix(tests): deep code analysis engine with 6 supporting modules
+
+### Docs
+
+- docs: update README
+- docs: update exef-podpis-kwalifikowany.md
+
+### Other
+
+- build: update Makefile
+- update exef2/.env.example
+- update exef2/.env.test
+- build: update Makefile
+- update exef2/backend/adapters/signature.py
+- update exef2/backend/main.py
+- docker: update docker-compose.yml
+- update exef2/fix_double_await.py
+- update exef2/fix_signature_tests.py
+- update exef2/fix_tests.py
+- ... and 19 more
+
+
 ## [2.0.2] - 2026-02-02
 
 ### Summary

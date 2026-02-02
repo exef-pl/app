@@ -9,7 +9,15 @@ function ProfileManager() {
         expandedRows: new Set(),
         
         init() {
-            this.loadProfiles();
+            // Wait for app instance to be available
+            const checkAppInstance = () => {
+                if (window.appInstance) {
+                    this.loadProfiles();
+                } else {
+                    setTimeout(checkAppInstance, 50);
+                }
+            };
+            checkAppInstance();
         },
         
         toggleView(mode) {
