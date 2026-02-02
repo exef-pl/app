@@ -435,7 +435,7 @@
         </template>
 
         <!-- Signature View -->
-        <template x-if="view=='sign'" x-data="SignatureManager()">
+        <template x-if="view=='sign'" x-data="SignatureManager()" x-init="init(profileId)">
             <div>
                 <div class="header">
                     <h1 class="title">🔐 Podpis Elektroniczny</h1>
@@ -585,9 +585,14 @@
                             <!-- Options would be populated from documents with signatures -->
                         </select>
                     </div>
-                    <button class="btn btn-secondary" @click="verifyResult = null" x-show="verifyResult">
-                        Wyczyść wynik
-                    </button>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn btn-primary" @click="verifySignature(verifyDocumentId)" :disabled="!verifyDocumentId">
+                            🔍 Weryfikuj
+                        </button>
+                        <button class="btn btn-secondary" @click="verifyResult = null" x-show="verifyResult">
+                            Wyczyść wynik
+                        </button>
+                    </div>
                     
                     <template x-if="verifyResult">
                         <div style="margin-top:16px;padding:16px;background:var(--bg3);border-radius:6px">

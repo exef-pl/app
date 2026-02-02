@@ -8,6 +8,7 @@ function SignatureManager() {
         signingResults: [],
         verifyResult: null,
         verifyDocumentId: '',
+        profileId: null,
         signatureConfig: {
             type: 'QES',
             format: 'PADES',
@@ -21,7 +22,8 @@ function SignatureManager() {
         ],
         currentProvider: 'mock',
         
-        init() {
+        init(profileId) {
+            this.profileId = profileId;
             // Check if documents were passed from documents view
             if (window.signatureManager && window.signatureManager.selectedDocuments) {
                 this.selectedDocuments = window.signatureManager.selectedDocuments;
@@ -32,7 +34,7 @@ function SignatureManager() {
         
         async loadCertificates() {
             try {
-                const profileId = window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
+                const profileId = this.profileId || localStorage.getItem('exef_profile') || 'default';
                 const response = await fetch(`/api/profiles/${profileId}/signature/certificates`);
                 const data = await response.json();
                 this.certificates = data.certificates || [];
@@ -52,7 +54,7 @@ function SignatureManager() {
             this.signingResults = [];
             
             try {
-                const profileId = window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
+                const profileId = this.profileId || localStorage.getItem('exef_profile') || 'default';
                 const response = await fetch(`/api/profiles/${profileId}/signature/sign`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -87,7 +89,7 @@ function SignatureManager() {
         
         async verifySignature(documentId) {
             try {
-                const profileId = window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
+                const profileId = this.profileId || localStorage.getItem('exef_profile') || 'default';
                 const response = await fetch(`/api/profiles/${profileId}/signature/verify`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -103,7 +105,7 @@ function SignatureManager() {
         
         async addTimestamp(documentId) {
             try {
-                const profileId = window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
+                const profileId = this.profileId || localStorage.getItem('exef_profile') || 'default';
                 const response = await fetch(`/api/profiles/${profileId}/signature/timestamp`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
