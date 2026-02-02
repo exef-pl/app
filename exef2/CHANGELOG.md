@@ -1,3 +1,17 @@
+## [2.0.1] - 2026-02-02
+
+### Summary
+
+feat(exef2): deep code analysis engine with 4 supporting modules
+
+### Other
+
+- update exef2/frontend/index.html
+- update exef2/project.functions.toon
+- scripts: update project.sh
+- update exef2/project.toon-schema.json
+
+
 ## [1.0.4] - 2026-02-02
 
 ### Summary

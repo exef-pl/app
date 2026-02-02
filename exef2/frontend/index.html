@@ -112,8 +112,8 @@
             <div class="nav-label">Dokumenty</div>
             <div class="nav-item" :class="{active:view=='docs'}" @click="navigate('docs')">📋 Zarządzanie <span class="badge" x-text="stats.documents?.total||0"></span></div>
             <div class="nav-item" :class="{active:view=='create'}" @click="navigate('create')">✨ Utwórz</div>
-            <div class="nav-item" :class="{active:view=='describe'}" @click="navigate('describe')">🏷️ Opis <span class="badge warn" x-text="stats.documents?.by_status?.created||0" x-show="stats.documents?.by_status?.created"></span></div>
-            <div class="nav-item" :class="{active:view=='sign'}" @click="navigate('sign')">✍️ Podpis <span class="badge warn" x-text="stats.documents?.by_status?.described||0" x-show="stats.documents?.by_status?.described"></span></div>
+            <div class="nav-item" :class="{active:view=='describe'}" @click="navigate('describe')">🏷️ Opisz <span class="badge warn" x-text="stats.documents?.by_status?.created||0" x-show="stats.documents?.by_status?.created"></span></div>
+            <div class="nav-item" :class="{active:view=='sign'}" @click="navigate('sign')">✍️ Podpisz <span class="badge warn" x-text="stats.documents?.by_status?.described||0" x-show="stats.documents?.by_status?.described"></span></div>
         </div>
         <div class="nav-group">
             <div class="nav-label">Transfer</div>
@@ -535,13 +535,15 @@
             get API() { return `/api/profiles/${this.profileId}` },
 
             async init() {
-                // Restore state from URL
+                // Load profiles first to get default profile
+                await this.loadProfiles();
+                
+                // Restore state from URL (will use default profile if not in URL)
                 this.restoreFromURL();
                 
                 // Handle browser back/forward
                 window.addEventListener('popstate', () => this.restoreFromURL());
                 
-                await this.loadProfiles();
                 await this.load();
                 this.connectWS();
             },
@@ -575,7 +577,6 @@
                 if (id) this.docId = id;
                 if (profile) {
                     this.profileId = profile;
-                    localStorage.setItem('exef_profile', profile);
                 }
             },
 
@@ -608,7 +609,6 @@
             async switchProfile(id) {
                 this.profileId = id;
                 this.profileOpen = false;
-                localStorage.setItem('exef_profile', id);
                 this.updateURL();
                 await this.load();
                 this.reconnectWS();
