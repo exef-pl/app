@@ -36,7 +36,7 @@
                             </div>
                         </div>
                     </template>
-                    <div class="profile-option add" @click.stop="showModal='profile';profileOpen=false">➕ Dodaj profil</div>
+                    <div class="profile-option add" @click.stop="profileOpen=false; navigate('profiles')">➕ Dodaj profil</div>
                 </div>
             </div>
         </div>
@@ -434,6 +434,293 @@
             </div>
         </template>
 
+        <!-- Create Document View -->
+        <template x-if="view=='create'">
+            <div x-init="ensureNewDoc()">
+                <div class="header">
+                    <h1 class="title">Utwórz dokument</h1>
+                </div>
+                <div class="card" style="max-width:480px">
+                    <div class="form-group">
+                        <label class="form-label">Typ</label>
+                        <select class="form-input" x-model="newDoc.type">
+                            <option value="invoice">Faktura</option>
+                            <option value="contract">Umowa</option>
+                            <option value="payment">Płatność</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Numer</label>
+                            <input class="form-input" x-model="newDoc.number" placeholder="FV/2026/01/001">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">VAT</label>
+                            <select class="form-input" x-model="newDoc.vat_rate">
+                                <option value="23%">23%</option>
+                                <option value="8%">8%</option>
+                                <option value="5%">5%</option>
+                                <option value="0%">0%</option>
+                                <option value="ZW">ZW</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kontrahent</label>
+                        <input class="form-input" x-model="newDoc.contractor" placeholder="Nazwa firmy">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kwota netto</label>
+                        <input class="form-input" type="number" x-model="newDoc.amount" placeholder="0">
+                    </div>
+                    <button class="btn btn-primary" @click="createDoc()">Utwórz dokument</button>
+                </div>
+            </div>
+        </template>
+
+        <!-- Describe View -->
+        <template x-if="view=='describe'">
+            <div x-init="load(); loadCategories()">
+                <div class="header">
+                    <h1 class="title">Opis i kategoryzacja</h1>
+                </div>
+
+                <div class="card" x-show="documents.filter(d=>d.status=='created').length">
+                    <h3 style="margin-bottom:1rem">📝 Do opisania</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Numer</th>
+                                    <th>Kontrahent</th>
+                                    <th>Kwota</th>
+                                    <th>Kategoria</th>
+                                    <th>Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="doc in documents.filter(d=>d.status=='created')" :key="doc.id">
+                                    <tr>
+                                        <td x-text="doc.number"></td>
+                                        <td x-text="doc.contractor"></td>
+                                        <td x-text="doc.amount + ' PLN'"></td>
+                                        <td>
+                                            <select class="form-input" style="width:auto;padding:4px 8px" :value="doc.category || ''" @change="categorizeDoc(doc.id, $event.target.value)">
+                                                <option value="">-- wybierz --</option>
+                                                <template x-for="cat in categories" :key="cat.id">
+                                                    <option :value="cat.id" x-text="cat.name"></option>
+                                                </template>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-secondary" @click="suggestCategory(doc.id)" title="Sugeruj kategorię">💡</button>
+                                            <button class="btn btn-sm btn-primary" @click="showDescribeModal(doc)">Opisz</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card" x-show="!documents.filter(d=>d.status=='created').length">
+                    <div class="empty">Wszystko opisane ✓</div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Upload View -->
+        <template x-if="view=='upload'">
+            <div>
+                <div class="header">
+                    <h1 class="title">Wgraj plik</h1>
+                </div>
+                <div class="card" style="max-width:600px">
+                    <p style="margin-bottom:1rem;color:var(--muted)">Wgraj fakturę PDF lub zdjęcie. System automatycznie rozpozna dane za pomocą OCR.</p>
+                    <div
+                        style="border:2px dashed var(--border);border-radius:12px;padding:3rem;text-align:center;cursor:pointer;transition:all 0.2s"
+                        @click="$refs.fileInput.click()"
+                        @dragover.prevent="$event.target.style.borderColor='var(--accent)'"
+                        @dragleave.prevent="$event.target.style.borderColor='var(--border)'"
+                        @drop.prevent="handleFileDrop($event)"
+                    >
+                        <div style="font-size:3rem;margin-bottom:1rem">📄</div>
+                        <div style="font-size:1.1rem;font-weight:500;margin-bottom:0.5rem">Przeciągnij plik tutaj</div>
+                        <div style="color:var(--muted)">lub kliknij aby wybrać</div>
+                        <div style="margin-top:1rem;font-size:0.85rem;color:var(--muted)">Obsługiwane: PDF, JPG, PNG</div>
+                    </div>
+                    <input type="file" x-ref="fileInput" @change="uploadFile($event)" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+
+                    <div x-show="uploadProgress" style="margin-top:1rem">
+                        <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden">
+                            <div style="background:linear-gradient(90deg,var(--accent),#a29bfe);height:100%;transition:width 0.3s" :style="{width:uploadProgress+'%'}"></div>
+                        </div>
+                        <div style="text-align:center;margin-top:0.5rem;color:var(--muted)" x-text="uploadProgress < 100 ? 'Przetwarzanie...' : 'Gotowe!'">
+                        </div>
+                    </div>
+
+                    <div x-show="lastUpload" style="margin-top:1.5rem;padding:1rem;background:rgba(0,212,170,0.08);border-radius:8px;border:1px solid rgba(0,212,170,0.35)">
+                        <div style="font-weight:500;color:var(--accent);margin-bottom:0.5rem">✓ Plik przetworzony</div>
+                        <div style="font-size:0.9rem">
+                            <div><strong>Numer:</strong> <span x-text="lastUpload?.number || '-'"></span></div>
+                            <div><strong>Kwota:</strong> <span x-text="(lastUpload?.amount || 0) + ' PLN'"></span></div>
+                            <div><strong>Pewność OCR:</strong> <span x-text="(lastUpload?.ocr_confidence || 0) + '%'"></span></div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" @click="navigate('docs')">Zobacz dokumenty</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="view=='import'" x-init="load()">
+            <div>
+                <div class="header">
+                    <h1 class="title">Import</h1>
+                    <button class="btn btn-primary" @click="createEndpointPrompt('import')">+ Dodaj źródło</button>
+                </div>
+                <div class="cards">
+                    <template x-for="ep in (endpoints || []).filter(e => e.direction == 'import')" :key="ep.id">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon" style="background:linear-gradient(135deg,#74b9ff,#0984e3)" x-text="ep.type=='ksef'?'🔐':ep.type=='email'?'📧':'📥'"></div>
+                                <button class="btn btn-sm btn-danger" @click="deleteEndpoint(ep.id)">🗑</button>
+                            </div>
+                            <div class="card-title" x-text="ep.name"></div>
+                            <div class="card-desc" x-text="ep.type"></div>
+                            <div class="card-footer">
+                                <button class="btn btn-secondary btn-sm" @click="pullEndpoint(ep.id)">Pobierz</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="empty" x-show="!(endpoints || []).filter(e => e.direction == 'import').length">Brak źródeł importu</div>
+            </div>
+        </template>
+
+        <template x-if="view=='export'" x-init="load()">
+            <div>
+                <div class="header">
+                    <h1 class="title">Export</h1>
+                    <button class="btn btn-primary" @click="createEndpointPrompt('export')">+ Dodaj cel</button>
+                </div>
+                <div class="cards">
+                    <template x-for="ep in (endpoints || []).filter(e => e.direction == 'export')" :key="ep.id">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon" style="background:linear-gradient(135deg,#fdcb6e,#f39c12)" x-text="ep.type=='ksef'?'🔐':ep.type=='wfirma'?'📊':'📤'"></div>
+                                <button class="btn btn-sm btn-danger" @click="deleteEndpoint(ep.id)">🗑</button>
+                            </div>
+                            <div class="card-title" x-text="ep.name"></div>
+                            <div class="card-desc" x-text="ep.type"></div>
+                            <div class="card-footer">
+                                <button class="btn btn-secondary btn-sm" @click="pushEndpoint(ep.id)">Eksportuj</button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                <div class="empty" x-show="!(endpoints || []).filter(e => e.direction == 'export').length">Brak celów eksportu</div>
+            </div>
+        </template>
+
+        <template x-if="view=='exportfile'" x-init="load()">
+            <div>
+                <div class="header">
+                    <h1 class="title">Eksport do pliku</h1>
+                </div>
+                <div class="cards">
+                    <div class="card" style="cursor:pointer" @click="exportToFormat('wfirma')">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#fdcb6e,#f39c12)">📊</div></div>
+                        <div class="card-title">wFirma CSV</div>
+                        <div class="card-desc">Format KPiR dla wFirma.pl</div>
+                    </div>
+                    <div class="card" style="cursor:pointer" @click="exportToFormat('jpk_pkpir')">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#e17055,#d63031)">📄</div></div>
+                        <div class="card-title">JPK_PKPIR</div>
+                        <div class="card-desc">Jednolity Plik Kontrolny XML</div>
+                    </div>
+                    <div class="card" style="cursor:pointer" @click="exportToFormat('comarch')">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#00b894,#00cec9)">🏢</div></div>
+                        <div class="card-title">Comarch Optima</div>
+                        <div class="card-desc">Import XML do Comarch ERP</div>
+                    </div>
+                    <div class="card" style="cursor:pointer" @click="exportToFormat('symfonia')">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#6c5ce7,#a29bfe)">🎵</div></div>
+                        <div class="card-title">Symfonia</div>
+                        <div class="card-desc">Format CSV dla Symfonia</div>
+                    </div>
+                    <div class="card" style="cursor:pointer" @click="exportToFormat('enova')">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#74b9ff,#0984e3)">💼</div></div>
+                        <div class="card-title">enova365</div>
+                        <div class="card-desc">Format XML dla enova</div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top:16px" x-show="exportResult">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <div>
+                            <div class="card-title">Wynik eksportu</div>
+                            <div class="card-desc" x-text="exportResult?.filename || ''"></div>
+                        </div>
+                        <button class="btn btn-primary" @click="downloadExport()" x-show="exportResult?.content">Pobierz</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="view=='doc'" x-init="load()">
+            <div>
+                <div class="header">
+                    <h1 class="title">Szczegóły dokumentu</h1>
+                    <button class="btn btn-secondary" @click="navigate('docs')">← Dokumenty</button>
+                </div>
+
+                <template x-if="currentDoc">
+                    <div class="card">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Numer</label>
+                                <div x-text="currentDoc.number"></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Status</label>
+                                <div><span class="status" :class="'status-'+currentDoc.status" x-text="currentDoc.status"></span></div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Kontrahent</label>
+                                <div x-text="currentDoc.contractor || '-' "></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Kwota</label>
+                                <div x-text="(currentDoc.amount || 0) + ' PLN'"></div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">VAT</label>
+                                <div x-text="currentDoc.vat_rate || '-' "></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Kategoria</label>
+                                <div x-text="currentDoc.category || '-' "></div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:16px;display:flex;gap:8px">
+                            <button class="btn btn-secondary" @click="navigate('describe')" x-show="currentDoc.status=='created'">Opisz</button>
+                            <button class="btn btn-secondary" @click="updateDocStatus(currentDoc.id,'described')" x-show="currentDoc.status=='created'">Ustaw jako opisany</button>
+                            <button class="btn btn-danger" @click="deleteDoc(currentDoc.id)">Usuń</button>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="card" x-show="!currentDoc">
+                    <div class="empty">Nie znaleziono dokumentu</div>
+                </div>
+            </div>
+        </template>
+
         <!-- Signature View -->
         <template x-if="view=='sign'" x-data="SignatureManager()" x-init="init(profileId)">
             <div>
@@ -617,16 +904,34 @@
             </div>
         </template>
 
-        <!-- Other views (simplified) -->
-        <template x-if="!['profiles', 'docs', 'sign'].includes(view)">
-            <div class="header">
-                <h1 class="title" x-text="viewTitle(view)"></h1>
+        <div x-show="describeModal.show" @click.self="describeModal.show = false" x-cloak style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:300">
+            <div class="card" style="max-width:600px;width:calc(100% - 32px)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <h3>Opis dokumentu</h3>
+                    <button class="btn btn-sm" @click="describeModal.show = false">✕</button>
+                </div>
+                <div style="margin-bottom:1rem">
+                    <strong>Dokument:</strong> <span x-text="describeModal.doc?.number"></span><br>
+                    <strong>Kontrahent:</strong> <span x-text="describeModal.doc?.contractor"></span><br>
+                    <strong>Kwota:</strong> <span x-text="(describeModal.doc?.amount || 0) + ' PLN'"></span>
+                </div>
+                <label style="display:block;margin-bottom:0.5rem;font-weight:500">Opis:</label>
+                <textarea
+                    id="describe-textarea"
+                    class="form-input"
+                    x-model="describeModal.comment"
+                    @input="autoResizeTextarea($event)"
+                    placeholder="Wprowadź opis dokumentu..."
+                    style="min-height:80px;resize:none;overflow:hidden;line-height:1.5"
+                ></textarea>
+                <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+                    <button class="btn btn-secondary" @click="describeModal.show = false">Anuluj</button>
+                    <button class="btn btn-primary" @click="saveDescription()">Zapisz i zamknij</button>
+                </div>
             </div>
-            <div class="card">
-                <div class="empty">Widok w przygotowaniu...</div>
-            </div>
-        </template>
-    </main>
+        </div>
+
+            </main>
 </div>
 
 <!-- Toast -->
@@ -649,12 +954,29 @@
             endpoints: [],
             stats: {},
             toast: '',
-            
+            newDoc: null,
+            uploadProgress: 0,
+            lastUpload: null,
+            describeModal: { show: false, doc: null, comment: '' },
+            categories: [],
+            exportResult: null,
+
             get currentProfile() { 
                 return this.profiles.find(p => p.id === this.profileId) 
             },
+
+            get API() {
+                return `/api/profiles/${this.profileId}`;
+            },
+
+            get currentDoc() {
+                if (!this.docId) return null;
+                return (this.documents || []).find(d => d.id === this.docId) || null;
+            },
             
             async init() {
+                console.log('App init - view:', this.view, 'profileId:', this.profileId);
+                window.appInstance = this;
                 await this.loadProfiles();
                 this.restoreFromURL();
                 window.addEventListener('popstate', () => this.restoreFromURL());
@@ -668,6 +990,7 @@
             },
             
             navigate(view, params = {}) {
+                console.log('Navigate to:', view, 'params:', params);
                 this.view = view;
                 this.docId = params.id || null;
                 this.updateURL();
@@ -691,11 +1014,15 @@
                 const profile = params.get('profile');
                 const id = params.get('id');
                 
+                console.log('Restore from URL - view:', view, 'profile:', profile, 'id:', id);
+                
                 if (view) this.view = view;
                 if (id) this.docId = id;
                 if (profile) {
                     this.profileId = profile;
                 }
+                
+                console.log('After restore - current view:', this.view, 'profileId:', this.profileId);
             },
             
             async loadProfiles() {
@@ -739,6 +1066,336 @@
             reconnectWS() {
                 if (this.ws) this.ws.close();
                 this.connectWS();
+            },
+
+            ensureNewDoc() {
+                if (!this.newDoc) {
+                    this.newDoc = {type:'invoice',number:'',contractor:'',amount:0,vat_rate:'23%'};
+                }
+            },
+
+            showToast(message) {
+                window.dispatchEvent(new CustomEvent('toast', { detail: message }));
+            },
+
+            async createDoc() {
+                this.ensureNewDoc();
+                try {
+                    const r = await fetch(this.API + '/documents', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.newDoc)
+                    });
+                    if (!r.ok) {
+                        this.showToast('Błąd tworzenia dokumentu');
+                        return;
+                    }
+                    this.newDoc = {type:'invoice',number:'',contractor:'',amount:0,vat_rate:'23%'};
+                    this.showToast('Dokument utworzony');
+                    await this.load();
+                    this.navigate('docs');
+                } catch (e) {
+                    console.error('Create doc failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            async loadCategories() {
+                try {
+                    const r = await fetch('/api/categories');
+                    if (!r.ok) return;
+                    const data = await r.json();
+                    const cats = data?.categories || {};
+                    this.categories = Object.entries(cats).map(([id, cfg]) => ({
+                        id,
+                        name: cfg?.name || id
+                    }));
+                } catch (e) {
+                    console.error('Load categories failed:', e);
+                }
+            },
+
+            async categorizeDoc(id, category) {
+                try {
+                    const r = await fetch(this.API + '/documents/' + id + '/categorize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ category })
+                    });
+                    if (r.ok) {
+                        this.showToast('Kategoria zapisana');
+                        await this.load();
+                    } else {
+                        this.showToast('Błąd zapisu kategorii');
+                    }
+                } catch (e) {
+                    console.error('Categorize failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            async suggestCategory(id) {
+                try {
+                    const r = await fetch(this.API + '/documents/' + id + '/suggest', { method: 'POST' });
+                    const data = r.ok ? await r.json() : null;
+                    if (data?.category) {
+                        await this.categorizeDoc(id, data.category);
+                        this.showToast(`Sugestia: ${data.category_name} (${data.confidence}%)`);
+                    } else {
+                        this.showToast('Brak sugestii kategorii');
+                    }
+                } catch (e) {
+                    console.error('Suggest failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            showDescribeModal(doc) {
+                this.describeModal.doc = doc;
+                this.describeModal.comment = doc?.description || '';
+                this.describeModal.show = true;
+                this.$nextTick(() => {
+                    const textarea = document.querySelector('#describe-textarea');
+                    if (textarea) {
+                        textarea.focus();
+                        textarea.style.height = 'auto';
+                        textarea.style.height = textarea.scrollHeight + 'px';
+                    }
+                });
+            },
+
+            async saveDescription() {
+                const doc = this.describeModal?.doc;
+                if (!doc?.id) return;
+                try {
+                    const r = await fetch(this.API + '/documents/' + doc.id, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            description: this.describeModal.comment,
+                            status: 'described'
+                        })
+                    });
+                    if (r.ok) {
+                        this.showToast('Opis zapisany');
+                        this.describeModal.show = false;
+                        await this.load();
+                    } else {
+                        this.showToast('Błąd zapisu opisu');
+                    }
+                } catch (e) {
+                    console.error('Save description failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            autoResizeTextarea(event) {
+                event.target.style.height = 'auto';
+                event.target.style.height = event.target.scrollHeight + 'px';
+            },
+
+            async uploadFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                await this.doUpload(file);
+            },
+
+            handleFileDrop(event) {
+                const file = event.dataTransfer.files[0];
+                if (!file) return;
+                this.doUpload(file);
+            },
+
+            async doUpload(file) {
+                this.uploadProgress = 10;
+                this.lastUpload = null;
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                this.uploadProgress = 30;
+
+                try {
+                    const r = await fetch(this.API + '/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    this.uploadProgress = 80;
+
+                    if (r.ok) {
+                        this.lastUpload = await r.json();
+                        this.showToast('Plik przetworzony pomyślnie');
+                        await this.load();
+                    } else {
+                        this.showToast('Błąd przesyłania pliku');
+                    }
+                } catch (e) {
+                    console.error('Upload failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+
+                this.uploadProgress = 100;
+                setTimeout(() => { this.uploadProgress = 0; }, 2000);
+            },
+
+            async deleteEndpoint(id) {
+                try {
+                    const r = await fetch(this.API + '/endpoints/' + id, { method: 'DELETE' });
+                    if (r.ok) {
+                        this.showToast('Endpoint usunięty');
+                        await this.load();
+                    } else {
+                        this.showToast('Błąd usuwania endpointu');
+                    }
+                } catch (e) {
+                    console.error('Delete endpoint failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            async pullEndpoint(id) {
+                try {
+                    this.showToast('Pobieranie...');
+                    const r = await fetch(this.API + '/flow/pull/' + id, { method: 'POST' });
+                    const data = r.ok ? await r.json() : null;
+                    if (data?.imported !== undefined) {
+                        this.showToast(`Zaimportowano ${data.imported} dok.`);
+                    } else {
+                        this.showToast('Błąd importu');
+                    }
+                    await this.load();
+                } catch (e) {
+                    console.error('Pull failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            async pushEndpoint(id) {
+                try {
+                    const docs = (this.documents || []).filter(d => d.status === 'signed').map(d => d.id);
+                    if (!docs.length) {
+                        this.showToast('Brak dokumentów do eksportu');
+                        return;
+                    }
+                    const r = await fetch(this.API + '/flow/push/' + id, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(docs)
+                    });
+                    const data = r.ok ? await r.json() : null;
+                    if (data?.success) {
+                        this.showToast(`Wyeksportowano ${data.exported} dok.`);
+                    } else {
+                        this.showToast('Błąd eksportu');
+                    }
+                    await this.load();
+                } catch (e) {
+                    console.error('Push failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            async createEndpointPrompt(direction) {
+                const name = window.prompt(direction === 'import' ? 'Nazwa źródła importu:' : 'Nazwa celu eksportu:');
+                if (!name) return;
+
+                let type = 'email';
+                if (direction === 'export') type = 'wfirma';
+
+                try {
+                    const r = await fetch(this.API + '/endpoints', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            direction,
+                            type,
+                            name,
+                            config: {}
+                        })
+                    });
+                    if (r.ok) {
+                        this.showToast('Endpoint dodany');
+                        await this.load();
+                    } else {
+                        this.showToast('Błąd dodawania endpointu');
+                    }
+                } catch (e) {
+                    console.error('Create endpoint failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            async updateDocStatus(id, status) {
+                try {
+                    const r = await fetch(this.API + '/documents/' + id, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status })
+                    });
+                    if (r.ok) {
+                        this.showToast('Status zaktualizowany');
+                        await this.load();
+                    } else {
+                        this.showToast('Błąd zmiany statusu');
+                    }
+                } catch (e) {
+                    console.error('Update status failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            async deleteDoc(id) {
+                if (!window.confirm('Usunąć dokument?')) return;
+                try {
+                    const r = await fetch(this.API + '/documents/' + id, { method: 'DELETE' });
+                    if (r.ok) {
+                        this.showToast('Dokument usunięty');
+                        await this.load();
+                        this.navigate('docs');
+                    } else {
+                        this.showToast('Błąd usuwania dokumentu');
+                    }
+                } catch (e) {
+                    console.error('Delete doc failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            async exportToFormat(format) {
+                try {
+                    this.showToast('Eksportowanie...');
+                    const signedDocs = (this.documents || []).filter(d => d.status === 'signed' || d.status === 'exported');
+                    if (!signedDocs.length) {
+                        this.showToast('Brak podpisanych dokumentów do eksportu');
+                        return;
+                    }
+                    const r = await fetch(this.API + '/export/' + format, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ document_ids: signedDocs.map(d => d.id) })
+                    });
+                    if (r.ok) {
+                        this.exportResult = await r.json();
+                        this.showToast(`Wyeksportowano ${this.exportResult.count} dokumentów`);
+                    } else {
+                        this.showToast('Błąd eksportu');
+                    }
+                } catch (e) {
+                    console.error('Export failed:', e);
+                    this.showToast('Błąd połączenia');
+                }
+            },
+
+            downloadExport() {
+                if (!this.exportResult?.content) return;
+                const blob = new Blob([this.exportResult.content], {type: 'text/plain;charset=utf-8'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = this.exportResult.filename || 'export.txt';
+                a.click();
+                URL.revokeObjectURL(url);
             },
             
             viewTitle(view) {

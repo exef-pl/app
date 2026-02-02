@@ -13,7 +13,7 @@ function DocumentManager() {
         },
         
         init(profileId) {
-            this.profileId = profileId;
+            this.profileId = profileId || window.appInstance?.profileId || localStorage.getItem('exef_profile') || 'default';
             this.loadDocuments();
         },
         

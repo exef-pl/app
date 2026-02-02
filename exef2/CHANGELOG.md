@@ -1,3 +1,21 @@
+## [2.0.5] - 2026-02-03
+
+### Summary
+
+fix(tests): deep code analysis engine with 3 supporting modules
+
+### Other
+
+- update exef2/fix_async_tests.py
+- update exef2/frontend/components/document-manager.js
+- update exef2/frontend/index.html
+- docker: update Dockerfile
+- update exef2/tests/pytest.ini
+- update exef2/tests/requirements.txt
+- update exef2/tests/simple_gui_test.py
+- update exef2/tests/test_all_views_gui.py
+
+
 ## [2.0.4] - 2026-02-02
 
 ### Summary

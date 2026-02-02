@@ -5,4 +5,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN playwright install chromium
 COPY test_e2e.py .
 COPY test_all_views_gui.py .
-CMD ["pytest", "test_all_views_gui.py", "-v", "--tb=short"]
+COPY simple_gui_test.py .
+COPY pytest.ini .
+CMD ["python", "simple_gui_test.py"]
