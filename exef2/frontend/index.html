@@ -82,28 +82,32 @@
         <div class="logo"><span>📄</span> EXEF</div>
 
         <!-- Profile Selector -->
-        <div class="profile-selector" :class="{open:profileOpen}" @click="profileOpen=!profileOpen" @click.outside="profileOpen=false">
-            <div class="profile-current">
-                <div class="profile-avatar" :style="{background:currentProfile?.color||'#6c5ce7'}" x-text="(currentProfile?.name||'?').substring(0,2).toUpperCase()"></div>
-                <div>
-                    <div class="profile-name" x-text="currentProfile?.name||'Wybierz profil'"></div>
-                    <div class="profile-nip" x-text="'NIP: '+(currentProfile?.nip||'-')"></div>
+        <div class="nav-group">
+            <div class="nav-label">Profile</div>
+            <div class="nav-item" :class="{active:view=='profiles'}" @click="view='profiles'">🏢 Zarządzanie</div>
+
+            <div class="profile-selector" :class="{open:profileOpen}" @click="profileOpen=!profileOpen" @click.outside="profileOpen=false">
+                <div class="profile-current">
+                    <div class="profile-avatar" :style="{background:currentProfile?.color||'#6c5ce7'}" x-text="(currentProfile?.name||'?').substring(0,2).toUpperCase()"></div>
+                    <div>
+                        <div class="profile-name" x-text="currentProfile?.name||'Wybierz profil'"></div>
+                        <div class="profile-nip" x-text="'NIP: '+(currentProfile?.nip||'-')"></div>
+                    </div>
+                </div>
+                <div class="profile-dropdown">
+                    <template x-for="p in profiles" :key="p.id">
+                        <div class="profile-option" @click.stop="switchProfile(p.id)">
+                            <div class="profile-avatar" :style="{background:p.color}" x-text="p.name.substring(0,2).toUpperCase()"></div>
+                            <div>
+                                <div class="profile-name" x-text="p.name"></div>
+                                <div class="profile-nip" x-text="'NIP: '+p.nip"></div>
+                            </div>
+                        </div>
+                    </template>
+                    <div class="profile-option add" @click.stop="showModal='profile';profileOpen=false">➕ Dodaj profil</div>
                 </div>
             </div>
-            <div class="profile-dropdown">
-                <template x-for="p in profiles" :key="p.id">
-                    <div class="profile-option" @click.stop="switchProfile(p.id)">
-                        <div class="profile-avatar" :style="{background:p.color}" x-text="p.name.substring(0,2).toUpperCase()"></div>
-                        <div>
-                            <div class="profile-name" x-text="p.name"></div>
-                            <div class="profile-nip" x-text="'NIP: '+p.nip"></div>
-                        </div>
-                    </div>
-                </template>
-                <div class="profile-option add" @click.stop="showModal='profile';profileOpen=false">➕ Dodaj profil</div>
-            </div>
         </div>
-
         <div class="nav-group">
             <div class="nav-label">Dokumenty</div>
             <div class="nav-item" :class="{active:view=='docs'}" @click="view='docs'">📋 Zarządzanie <span class="badge" x-text="stats.documents?.total||0"></span></div>
@@ -116,10 +120,7 @@
             <div class="nav-item" :class="{active:view=='import'}" @click="view='import'">📥 Import <span class="badge purple" x-text="stats.endpoints?.import||0"></span></div>
             <div class="nav-item" :class="{active:view=='export'}" @click="view='export'">📤 Export <span class="badge purple" x-text="stats.endpoints?.export||0"></span></div>
         </div>
-        <div class="nav-group">
-            <div class="nav-label">Profile</div>
-            <div class="nav-item" :class="{active:view=='profiles'}" @click="view='profiles'">🏢 Zarządzanie</div>
-        </div>
+
         <div class="version">EXEF v1.1.0</div>
     </aside>
 

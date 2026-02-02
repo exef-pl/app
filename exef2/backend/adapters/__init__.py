@@ -93,3 +93,11 @@ def get_adapter(adapter_type: str, config: dict) -> BaseAdapter:
 def list_adapters() -> list[str]:
     """List registered adapters"""
     return list(_adapters.keys())
+
+
+# Import all adapter modules to register them
+from . import ksef
+from . import email
+from . import export
+from . import categorize
+from . import ocr

@@ -1,3 +1,26 @@
+## [1.0.3] - 2026-02-02
+
+### Summary
+
+feat(docs): deep code analysis engine with 6 supporting modules
+
+### Docs
+
+- docs: update ROADMAP.md
+
+### Other
+
+- docker: update Dockerfile
+- update exef2/backend/adapters/__init__.py
+- update exef2/backend/adapters/categorize.py
+- update exef2/backend/adapters/ocr.py
+- update exef2/backend/main.py
+- update exef2/frontend/index.html
+- update exef2/tests/test_e2e.py
+- update project.functions.toon
+- update project.toon
+
+
 ## [1.0.2] - 2026-02-02
 
 ### Summary

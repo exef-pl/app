@@ -248,15 +248,15 @@ class TestUI:
         page.goto(APP_URL)
         
         # Navigate to Create
-        page.click("text=Utwórz")
+        page.locator(".nav-item:has-text('Utwórz')").click()
         expect(page.locator("h1:has-text('Utwórz dokument')")).to_be_visible()
         
         # Navigate to Import
-        page.click("text=Import")
+        page.locator(".nav-item:has-text('Import')").click()
         expect(page.locator("text=Dodaj źródło")).to_be_visible()
         
         # Navigate to Export
-        page.click("text=Export")
+        page.locator(".nav-item:has-text('Export')").click()
         expect(page.locator("text=Dodaj cel")).to_be_visible()
         
         # Navigate back to Documents
@@ -267,7 +267,7 @@ class TestUI:
         page.goto(APP_URL)
         
         # Go to create view
-        page.click("text=Utwórz")
+        page.locator(".nav-item:has-text('Utwórz')").click()
         
         # Fill form
         page.fill("input[placeholder='FV/2026/01/001']", "UI-TEST-001")
@@ -602,6 +602,180 @@ class TestProfileScopedAPI:
         assert doc["status"] == "exported"
         
         # Cleanup - deleting profile cascades to documents and endpoints
+        httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+
+
+# === Export & Categorization API Tests ===
+class TestExportAPI:
+    """Tests for export and categorization features"""
+    
+    def test_list_categories(self):
+        """Can list available expense categories"""
+        r = httpx.get(f"{API_URL}/api/categories")
+        assert r.status_code == 200
+        data = r.json()
+        assert "categories" in data
+        assert "towary" in data["categories"]
+        assert "paliwo" in data["categories"]
+    
+    def test_list_export_formats(self):
+        """Can list available export formats"""
+        r = httpx.get(f"{API_URL}/api/export/formats")
+        assert r.status_code == 200
+        data = r.json()
+        assert "formats" in data
+        format_ids = [f["id"] for f in data["formats"]]
+        assert "wfirma" in format_ids
+        assert "jpk_pkpir" in format_ids
+    
+    def test_suggest_category(self):
+        """Can get category suggestion for document"""
+        # Create profile and document
+        r = httpx.post(f"{API_URL}/api/profiles", json={"name": "Suggest Test", "nip": "111"})
+        profile_id = r.json()["id"]
+        
+        # Create document with keywords that should trigger categorization
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/documents", json={
+            "type": "invoice",
+            "number": "HOSTING-001",
+            "contractor": "Cloud Hosting Provider",
+            "amount": 500,
+            "description": "Hosting serwera VPS"
+        })
+        doc_id = r.json()["id"]
+        
+        # Get suggestion
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/documents/{doc_id}/suggest")
+        assert r.status_code == 200
+        data = r.json()
+        assert "category" in data
+        assert "confidence" in data
+        # Should suggest "hosting" based on keywords
+        assert data["category"] == "hosting"
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+    
+    def test_categorize_document(self):
+        """Can apply category to document"""
+        # Create profile and document
+        r = httpx.post(f"{API_URL}/api/profiles", json={"name": "Cat Test", "nip": "222"})
+        profile_id = r.json()["id"]
+        
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/documents", json={
+            "type": "invoice",
+            "number": "CAT-001",
+            "contractor": "Supplier",
+            "amount": 1000
+        })
+        doc_id = r.json()["id"]
+        
+        # Apply category
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/documents/{doc_id}/categorize", 
+                      json={"category": "oprogramowanie"})
+        assert r.status_code == 200
+        assert r.json()["category"] == "oprogramowanie"
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+    
+    def test_export_wfirma(self):
+        """Can export documents to wFirma CSV format"""
+        # Create profile with documents
+        r = httpx.post(f"{API_URL}/api/profiles", json={"name": "Export Test", "nip": "9876543210"})
+        profile_id = r.json()["id"]
+        
+        # Create signed document
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/documents", json={
+            "type": "invoice",
+            "number": "EXP-001",
+            "contractor": "Export Supplier",
+            "contractor_nip": "1234567890",
+            "amount": 1230,
+            "status": "signed",
+            "category": "uslugi"
+        })
+        doc_id = r.json()["id"]
+        
+        # Export to wFirma
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/export/wfirma", 
+                      json={"document_ids": [doc_id]})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["success"] == True
+        assert data["format"] == "wfirma"
+        assert data["count"] == 1
+        assert "content" in data  # CSV content
+        assert "EXP-001" in data["content"]
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+    
+    def test_export_jpk_pkpir(self):
+        """Can export documents to JPK_PKPIR XML format"""
+        # Create profile with documents
+        r = httpx.post(f"{API_URL}/api/profiles", json={"name": "JPK Test", "nip": "5555555555"})
+        profile_id = r.json()["id"]
+        
+        # Create signed document
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/documents", json={
+            "type": "invoice",
+            "number": "JPK-001",
+            "contractor": "JPK Supplier",
+            "amount": 500,
+            "status": "signed"
+        })
+        doc_id = r.json()["id"]
+        
+        # Export to JPK_PKPIR
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/export/jpk_pkpir",
+                      json={"document_ids": [doc_id]})
+        assert r.status_code == 200
+        data = r.json()
+        assert data["success"] == True
+        assert data["format"] == "jpk_pkpir"
+        assert "<?xml" in data["content"]
+        assert "JPK_PKPIR" in data["content"]
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+    
+    def test_list_adapters(self):
+        """Can list available adapters"""
+        r = httpx.get(f"{API_URL}/api/adapters")
+        assert r.status_code == 200
+        data = r.json()
+        assert "adapters" in data
+        # Should have at least the export adapters
+        assert len(data["adapters"]) > 0
+    
+    def test_ocr_mock_processing(self):
+        """Can process document with mock OCR"""
+        # Create profile and document
+        r = httpx.post(f"{API_URL}/api/profiles", json={"name": "OCR Test", "nip": "333"})
+        profile_id = r.json()["id"]
+        
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/documents", json={
+            "type": "invoice",
+            "number": "",
+            "contractor": "Unknown",
+            "amount": 0
+        })
+        doc_id = r.json()["id"]
+        
+        # Process with mock OCR
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/documents/{doc_id}/ocr",
+                      json={"provider": "ocr_mock"})
+        assert r.status_code == 200
+        data = r.json()
+        
+        # Should have extracted data from mock OCR
+        assert data["number"] == "FV/2026/01/001"
+        assert data["amount"] == 1230.00
+        assert "ocr_data" in data
+        assert data["ocr_confidence"] == 85
+        
+        # Cleanup
         httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
 
 

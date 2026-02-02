@@ -28,103 +28,89 @@ Używamy [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
 ---
 
 ## 📋 v1.1.0 - Configuration & Profiles
-**Status: 🔄 In Progress**
-**ETA: 1-2 tygodnie**
+**Status: ✅ Done**
 
 ### Tasks
-- [ ] Konfiguracja przez zmienne środowiskowe
-- [ ] Multi-profile support (wiele firm)
-- [ ] Profile switching w UI
-- [ ] Persystencja konfiguracji endpointów
+- [x] Konfiguracja przez zmienne środowiskowe
+- [x] Multi-profile support (wiele firm)
+- [x] Profile switching w UI
+- [x] Persystencja konfiguracji endpointów
 
-### Files to change
+### Files changed
 ```
-backend/main.py      - Add profiles table, env config
-backend/config.py    - NEW: configuration management
+backend/main.py      - Profiles table, env config
+backend/config.py    - Configuration management
 frontend/index.html  - Profile selector UI
 ```
 
 ---
 
 ## 📋 v1.2.0 - Real KSeF Integration
-**Status: 📅 Planned**
-**ETA: 2-3 tygodnie**
+**Status: ✅ Done**
 
 ### Tasks
-- [ ] KSeF API client (produkcja + demo)
-- [ ] Certyfikat MCU management
-- [ ] Pobieranie faktur zakupowych
-- [ ] Wysyłanie faktur sprzedażowych
-- [ ] Walidacja XML FA(2)
+- [x] KSeF API client (produkcja + demo)
+- [x] Certyfikat MCU management
+- [x] Pobieranie faktur zakupowych
+- [x] Wysyłanie faktur sprzedażowych
+- [x] Walidacja XML FA(2)
 
-### Dependencies
-- Certyfikat kwalifikowany lub MCU
-- Dostęp do KSeF API (demo/prod)
-
-### Files to add
+### Files added
 ```
-backend/adapters/ksef.py     - KSeF API client
-backend/adapters/ksef_xml.py - XML FA(2) generator
+backend/adapters/ksef.py     - KSeF API client + XML generator
 ```
 
 ---
 
 ## 📋 v1.3.0 - Email IMAP Integration
-**Status: 📅 Planned**
-**ETA: 1 tydzień**
+**Status: ✅ Done**
 
 ### Tasks
-- [ ] IMAP client (SSL/TLS)
-- [ ] Attachment extraction (PDF, images)
-- [ ] OCR integration (Tesseract or API)
-- [ ] Auto-categorization rules
+- [x] IMAP client (SSL/TLS)
+- [x] Attachment extraction (PDF, images)
+- [x] OCR integration (Tesseract, Google Vision, Azure)
+- [x] Auto-categorization rules
 
-### Files to add
+### Files added
 ```
 backend/adapters/email.py    - IMAP client
-backend/adapters/ocr.py      - OCR processing
+backend/adapters/ocr.py      - OCR processing (multi-provider)
+backend/adapters/categorize.py - Auto-categorization
 ```
 
 ---
 
 ## 📋 v1.4.0 - Export Adapters
-**Status: 📅 Planned**
-**ETA: 2 tygodnie**
+**Status: ✅ Done**
 
 ### Tasks
-- [ ] wFirma CSV export (KPiR format)
-- [ ] Comarch Optima XML
-- [ ] Symfonia export
-- [ ] enova365 export
-- [ ] JPK_PKPIR XML generation
+- [x] wFirma CSV export (KPiR format)
+- [x] Comarch Optima XML
+- [x] Symfonia export
+- [x] enova365 export
+- [x] JPK_PKPIR XML generation
 
-### Files to add
+### Files added
 ```
-backend/adapters/wfirma.py
-backend/adapters/comarch.py
-backend/adapters/symfonia.py
-backend/adapters/enova.py
-backend/adapters/jpk.py
+backend/adapters/export.py   - All export adapters in one file
 ```
 
 ---
 
 ## 📋 v1.5.0 - Document Processing
-**Status: 📅 Planned**
-**ETA: 2 tygodnie**
+**Status: ✅ Done**
 
 ### Tasks
-- [ ] PDF preview/viewer
-- [ ] Document annotation
-- [ ] Auto-description (AI-powered)
-- [ ] Expense categorization (KPiR columns)
-- [ ] R&D deduction tagging
+- [x] Auto-description (rule-based + history)
+- [x] Expense categorization (30+ KPiR categories)
+- [x] R&D deduction tagging
+- [ ] PDF preview/viewer (frontend)
+- [ ] Document annotation (frontend)
 
-### Files to add
+### Files added
 ```
-backend/processing/categorizer.py
-backend/processing/ai_describe.py
-frontend/components/pdf-viewer.html
+backend/adapters/categorize.py - Categorization engine
+backend/adapters/ocr.py        - OCR with invoice extraction
 ```
 
 ---

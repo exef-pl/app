@@ -395,6 +395,150 @@ async def legacy_push(endpoint_id: str, document_ids: list[str]):
 async def legacy_websocket(ws: WebSocket):
     await websocket_endpoint(ws, "default")
 
+# === Categorization ===
+@app.get("/api/categories")
+def list_categories():
+    """List all available expense categories"""
+    from adapters.categorize import CATEGORIES
+    return {"categories": CATEGORIES}
+
+@app.post("/api/profiles/{profile_id}/documents/{id}/suggest")
+async def suggest_category(profile_id: str, id: str):
+    """Get category suggestion for document"""
+    from adapters.categorize import suggest_category as _suggest
+    with db() as conn:
+        row = conn.execute("SELECT data FROM documents WHERE id = ? AND profile_id = ?", (id, profile_id)).fetchone()
+        if not row: raise HTTPException(404)
+        doc = json.loads(row["data"])
+    return _suggest(doc)
+
+@app.post("/api/profiles/{profile_id}/documents/{id}/categorize")
+async def categorize_document(profile_id: str, id: str, body: dict):
+    """Apply category to document and save to history"""
+    from adapters.categorize import save_categorization
+    category = body.get("category")
+    if not category:
+        raise HTTPException(400, "Category required")
+    
+    with db() as conn:
+        row = conn.execute("SELECT data FROM documents WHERE id = ? AND profile_id = ?", (id, profile_id)).fetchone()
+        if not row: raise HTTPException(404)
+        doc = json.loads(row["data"])
+    
+    # Save to history for future suggestions
+    nip = doc.get("contractor_nip") or doc.get("contractorNip")
+    if nip:
+        save_categorization(nip, category, id)
+    
+    # Update document with category
+    return await update_document(profile_id, id, {"category": category})
+
+# === Export ===
+@app.get("/api/export/formats")
+def list_export_formats():
+    """List available export formats"""
+    return {
+        "formats": [
+            {"id": "wfirma", "name": "wFirma (CSV)", "type": "csv"},
+            {"id": "jpk_pkpir", "name": "JPK_PKPIR (XML)", "type": "xml"},
+            {"id": "comarch", "name": "Comarch Optima (XML)", "type": "xml"},
+            {"id": "symfonia", "name": "Symfonia (CSV)", "type": "csv"},
+            {"id": "enova", "name": "enova365 (XML)", "type": "xml"},
+        ]
+    }
+
+@app.post("/api/profiles/{profile_id}/export/{format}")
+async def export_documents(profile_id: str, format: str, body: dict = None):
+    """Export documents to specified format"""
+    from adapters import get_adapter
+    from adapters.export import WFirmaAdapter, JPKPKPIRAdapter, ComarchAdapter, SymfoniaAdapter, EnovaAdapter
+    
+    # Get documents to export
+    doc_ids = body.get("document_ids") if body else None
+    with db() as conn:
+        if doc_ids:
+            placeholders = ",".join("?" * len(doc_ids))
+            rows = conn.execute(f"SELECT data FROM documents WHERE id IN ({placeholders}) AND profile_id = ?", 
+                              (*doc_ids, profile_id)).fetchall()
+        else:
+            # Export all signed/approved documents
+            rows = conn.execute(
+                "SELECT data FROM documents WHERE profile_id = ? AND json_extract(data, '$.status') IN ('signed', 'exported')",
+                (profile_id,)
+            ).fetchall()
+    
+    docs = [json.loads(r["data"]) for r in rows]
+    
+    if not docs:
+        raise HTTPException(400, "No documents to export")
+    
+    # Get profile info for export config
+    with db() as conn:
+        profile_row = conn.execute("SELECT data FROM profiles WHERE id = ?", (profile_id,)).fetchone()
+        profile = json.loads(profile_row["data"]) if profile_row else {}
+    
+    config = {
+        "nip": profile.get("nip", ""),
+        "company_name": profile.get("name", ""),
+        **(body or {})
+    }
+    
+    # Get appropriate adapter
+    adapter = get_adapter(format, config)
+    result = await adapter.push(docs)
+    
+    if not result.success:
+        raise HTTPException(500, f"Export failed: {', '.join(result.errors)}")
+    
+    return {
+        "success": True,
+        "format": format,
+        "count": result.count,
+        "content": result.metadata.get("csv_content") or result.metadata.get("xml_content"),
+        "filename": result.metadata.get("filename"),
+        "totals": result.metadata.get("totals")
+    }
+
+# === OCR Processing ===
+@app.post("/api/profiles/{profile_id}/documents/{id}/ocr")
+async def process_document_ocr(profile_id: str, id: str, body: dict = None):
+    """Process document with OCR to extract invoice data"""
+    from adapters import get_adapter
+    
+    with db() as conn:
+        row = conn.execute("SELECT data FROM documents WHERE id = ? AND profile_id = ?", (id, profile_id)).fetchone()
+        if not row: raise HTTPException(404)
+        doc = json.loads(row["data"])
+    
+    provider = (body or {}).get("provider", "ocr_mock")
+    config = (body or {}).get("config", {})
+    
+    adapter = get_adapter(provider, config)
+    result = await adapter.push([doc])
+    
+    if not result.success:
+        raise HTTPException(500, f"OCR failed: {', '.join(result.errors)}")
+    
+    if result.documents:
+        processed = result.documents[0]
+        # Update document with OCR results
+        return await update_document(profile_id, id, {
+            "number": processed.get("number"),
+            "contractor_nip": processed.get("contractor_nip"),
+            "amount": processed.get("amount"),
+            "ocr_data": processed.get("ocr_data"),
+            "ocr_confidence": processed.get("ocr_confidence"),
+        })
+    
+    return doc
+
+# === Adapters Info ===
+@app.get("/api/adapters")
+def list_adapters():
+    """List available adapters"""
+    from adapters import list_adapters as _list
+    return {"adapters": _list()}
+
 # === Health ===
 @app.get("/health")
 def health():
