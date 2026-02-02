@@ -311,45 +311,7 @@
                         </template>
                         </tbody>
                     </table>
-                </div>
-                
-                <!-- All documents categorization -->
-                <div class="card" style="margin-top:1rem">
-                    <h3 style="margin-bottom:1rem;color:#333">🏷️ Kategoryzacja wszystkich</h3>
-                    <p style="margin-bottom:1rem;color:#666;font-size:0.9rem">Przypisz kategorie KPiR dla prawidłowego eksportu księgowego.</p>
-                    <table>
-                        <thead><tr><th>Numer</th><th>Kontrahent</th><th>Kwota</th><th>Status</th><th>Kategoria</th><th>Akcje</th></tr></thead>
-                        <tbody>
-                        <template x-for="doc in documents" :key="doc.id">
-                            <tr>
-                                <td x-text="doc.number"></td>
-                                <td x-text="doc.contractor"></td>
-                                <td x-text="doc.amount+' PLN'"></td>
-                                <td><span class="status" :class="'status-'+doc.status" x-text="doc.status"></span></td>
-                                <td>
-                                    <select class="form-input" style="width:auto;padding:4px 8px" x-model="doc.category" @change="categorizeDoc(doc.id, doc.category)">
-                                        <option value="">-- wybierz --</option>
-                                        <option value="towary">Zakup towarów</option>
-                                        <option value="materialy">Materiały</option>
-                                        <option value="uslugi">Usługi obce</option>
-                                        <option value="wynagrodzenia">Wynagrodzenia</option>
-                                        <option value="paliwo">Paliwo</option>
-                                        <option value="telefon">Telefon/Internet</option>
-                                        <option value="hosting">Hosting/IT</option>
-                                        <option value="oprogramowanie">Oprogramowanie</option>
-                                        <option value="marketing">Marketing</option>
-                                        <option value="biuro">Materiały biurowe</option>
-                                        <option value="transport">Transport</option>
-                                        <option value="ksiegowosc">Księgowość</option>
-                                        <option value="inne">Inne koszty</option>
-                                    </select>
-                                </td>
-                                <td><button class="btn btn-sm btn-secondary" @click="suggestCategory(doc.id)">💡 Sugeruj</button></td>
-                            </tr>
-                        </template>
-                        </tbody>
-                    </table>
-                    <div class="empty" x-show="!documents.length">Brak dokumentów</div>
+                    <div class="empty" x-show="!documents.filter(d=>d.status=='created').length">Wszystko opisane ✓</div>
                 </div>
             </div>
         </template>

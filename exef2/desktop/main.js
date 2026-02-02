@@ -182,38 +182,38 @@ ipcMain.handle('get-offline-mode', () => {
 ipcMain.handle('set-offline-mode', (event, enabled) => {
     store.set('offlineMode', enabled);
     if (enabled) {
-        sync.stopAutoSync();
+        if (sync) sync.stopAutoSync();
         mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
     } else {
-        sync.startAutoSync(30000);
+        if (sync && db) sync.startAutoSync(30000);
         mainWindow.loadURL(store.get('serverUrl'));
     }
     return true;
 });
 
 // Database IPC handlers (for offline mode)
-ipcMain.handle('db-get-profiles', () => db.getProfiles());
-ipcMain.handle('db-get-profile', (event, id) => db.getProfile(id));
-ipcMain.handle('db-create-profile', (event, profile) => db.createProfile(profile));
-ipcMain.handle('db-update-profile', (event, id, updates) => db.updateProfile(id, updates));
-ipcMain.handle('db-delete-profile', (event, id) => db.deleteProfile(id));
+ipcMain.handle('db-get-profiles', () => db ? db.getProfiles() : []);
+ipcMain.handle('db-get-profile', (event, id) => db ? db.getProfile(id) : null);
+ipcMain.handle('db-create-profile', (event, profile) => db ? db.createProfile(profile) : null);
+ipcMain.handle('db-update-profile', (event, id, updates) => db ? db.updateProfile(id, updates) : null);
+ipcMain.handle('db-delete-profile', (event, id) => db ? db.deleteProfile(id) : false);
 
-ipcMain.handle('db-get-documents', (event, profileId) => db.getDocuments(profileId));
-ipcMain.handle('db-get-document', (event, profileId, id) => db.getDocument(profileId, id));
-ipcMain.handle('db-create-document', (event, profileId, doc) => db.createDocument(profileId, doc));
-ipcMain.handle('db-update-document', (event, profileId, id, updates) => db.updateDocument(profileId, id, updates));
-ipcMain.handle('db-delete-document', (event, profileId, id) => db.deleteDocument(profileId, id));
+ipcMain.handle('db-get-documents', (event, profileId) => db ? db.getDocuments(profileId) : []);
+ipcMain.handle('db-get-document', (event, profileId, id) => db ? db.getDocument(profileId, id) : null);
+ipcMain.handle('db-create-document', (event, profileId, doc) => db ? db.createDocument(profileId, doc) : null);
+ipcMain.handle('db-update-document', (event, profileId, id, updates) => db ? db.updateDocument(profileId, id, updates) : null);
+ipcMain.handle('db-delete-document', (event, profileId, id) => db ? db.deleteDocument(profileId, id) : false);
 
-ipcMain.handle('db-get-endpoints', (event, profileId) => db.getEndpoints(profileId));
-ipcMain.handle('db-create-endpoint', (event, profileId, endpoint) => db.createEndpoint(profileId, endpoint));
-ipcMain.handle('db-delete-endpoint', (event, profileId, id) => db.deleteEndpoint(profileId, id));
+ipcMain.handle('db-get-endpoints', (event, profileId) => db ? db.getEndpoints(profileId) : []);
+ipcMain.handle('db-create-endpoint', (event, profileId, endpoint) => db ? db.createEndpoint(profileId, endpoint) : null);
+ipcMain.handle('db-delete-endpoint', (event, profileId, id) => db ? db.deleteEndpoint(profileId, id) : false);
 
-ipcMain.handle('db-get-stats', (event, profileId) => db.getStats(profileId));
+ipcMain.handle('db-get-stats', (event, profileId) => db ? db.getStats(profileId) : {});
 
 // Sync IPC handlers
-ipcMain.handle('sync-force', () => sync.forceSync());
-ipcMain.handle('sync-status', () => ({ online: sync.isOnline() }));
-ipcMain.handle('sync-pull', (event, profileId) => sync.pullFromServer(profileId));
+ipcMain.handle('sync-force', () => sync ? sync.forceSync() : Promise.resolve());
+ipcMain.handle('sync-status', () => ({ online: sync ? sync.isOnline() : false, dbAvailable: !!db }));
+ipcMain.handle('sync-pull', (event, profileId) => sync ? sync.pullFromServer(profileId) : null);
 
 // File dialog handlers
 ipcMain.handle('select-file', async () => {
@@ -245,25 +245,36 @@ ipcMain.handle('save-file', async (event, data, defaultPath) => {
 
 // App lifecycle
 app.whenReady().then(() => {
-    // Initialize database
-    db = require('./database');
-    db.initialize();
+    // Initialize database (may fail if native module not rebuilt)
+    try {
+        db = require('./database');
+        db.initialize();
+        console.log('Local database initialized');
+    } catch (err) {
+        console.error('Database init failed (run npm rebuild):', err.message);
+        db = null;
+    }
     
     // Initialize sync
-    sync = require('./sync');
-    sync.setServerUrl(store.get('serverUrl'));
-    sync.setStatusCallback((status) => {
-        if (mainWindow) {
-            mainWindow.webContents.send('sync-status', status);
+    try {
+        sync = require('./sync');
+        sync.setServerUrl(store.get('serverUrl'));
+        sync.setStatusCallback((status) => {
+            if (mainWindow) {
+                mainWindow.webContents.send('sync-status', status);
+            }
+        });
+        
+        // Start auto-sync if not in offline mode and db available
+        if (!store.get('offlineMode') && db) {
+            sync.startAutoSync(30000);
         }
-    });
+    } catch (err) {
+        console.error('Sync init failed:', err.message);
+        sync = null;
+    }
     
     createWindow();
-    
-    // Start auto-sync if not in offline mode
-    if (!store.get('offlineMode')) {
-        sync.startAutoSync(30000);
-    }
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
