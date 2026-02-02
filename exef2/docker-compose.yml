@@ -3,23 +3,36 @@ version: "3.9"
 services:
   backend:
     build: ./backend
+    environment:
+      - EXEF_DB_PATH=/data/exef.db
+      - EXEF_DEBUG=${EXEF_DEBUG:-false}
+      - EXEF_KSEF_ENV=${EXEF_KSEF_ENV:-demo}
+      - EXEF_KSEF_NIP=${EXEF_KSEF_NIP:-}
+      - EXEF_KSEF_TOKEN=${EXEF_KSEF_TOKEN:-}
+      - EXEF_IMAP_HOST=${EXEF_IMAP_HOST:-}
+      - EXEF_IMAP_PORT=${EXEF_IMAP_PORT:-993}
+      - EXEF_IMAP_USER=${EXEF_IMAP_USER:-}
+      - EXEF_IMAP_PASS=${EXEF_IMAP_PASS:-}
     volumes:
       - exef-data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 5s
-      timeout: 3s
+      interval: 10s
+      timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
     networks:
       - exef
 
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "${EXEF_PORT:-3000}:80"
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
     networks:
       - exef
 
@@ -30,6 +43,9 @@ services:
         condition: service_healthy
       frontend:
         condition: service_started
+    environment:
+      - API_URL=http://backend:8000
+      - APP_URL=http://frontend:80
     networks:
       - exef
     profiles:
@@ -37,6 +53,7 @@ services:
 
 volumes:
   exef-data:
+    driver: local
 
 networks:
   exef:

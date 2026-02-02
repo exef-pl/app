@@ -144,4 +144,4 @@ async def adapter_push(ep: dict, docs: list[dict]) -> bool:
 
 ## Licencja
 
-MIT
+Apache Software
