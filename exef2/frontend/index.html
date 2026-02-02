@@ -305,7 +305,7 @@
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-secondary" @click="suggestCategory(doc.id)" title="Sugeruj kategorię">💡</button>
-                                    <button class="btn btn-sm btn-primary" @click="updateDoc(doc.id,'described')">Opisz</button>
+                                    <button class="btn btn-sm btn-primary" @click="showDescribeModal(doc)">Opisz</button>
                                 </td>
                             </tr>
                         </template>
@@ -448,6 +448,36 @@
     </main>
 </div>
 
+<!-- Describe Modal -->
+<div class="modal" x-show="describeModal.show" @click.self="describeModal.show = false" x-cloak>
+    <div class="modal-content" style="max-width:600px">
+        <div class="modal-header">
+            <h3>Opis dokumentu</h3>
+            <button class="btn btn-sm" @click="describeModal.show = false">✕</button>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom:1rem">
+                <strong>Dokument:</strong> <span x-text="describeModal.doc?.number"></span><br>
+                <strong>Kontrahent:</strong> <span x-text="describeModal.doc?.contractor"></span><br>
+                <strong>Kwota:</strong> <span x-text="describeModal.doc?.amount + ' PLN'"></span>
+            </div>
+            <label style="display:block;margin-bottom:0.5rem;font-weight:500">Opis:</label>
+            <textarea 
+                id="describe-textarea"
+                class="form-input" 
+                x-model="describeModal.comment"
+                @input="autoResizeTextarea($event)"
+                placeholder="Wprowadź opis dokumentu..."
+                style="min-height:80px;resize:none;overflow:hidden;line-height:1.5"
+            ></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" @click="describeModal.show = false">Anuluj</button>
+            <button class="btn btn-primary" @click="saveDescription()">Zapisz i zamknij</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modals -->
 <div class="modal" x-show="showModal" @click.self="showModal=null" x-cloak>
     <!-- Endpoint Modal -->
@@ -499,6 +529,7 @@
             newEndpoint: {direction:'import',type:'email',name:'',config:{}},
             newProfile: {name:'',nip:'',address:'',color:'#6c5ce7'},
             ws: null,
+            describeModal: { show: false, doc: null, comment: '' },
 
             get currentProfile() { return this.profiles.find(p => p.id === this.profileId) },
             get API() { return `/api/profiles/${this.profileId}` },
@@ -668,6 +699,44 @@
                     body:JSON.stringify({category})
                 });
                 this.toast = 'Kategoria zapisana';
+            },
+
+            // Document description
+            showDescribeModal(doc) {
+                this.describeModal.doc = doc;
+                this.describeModal.comment = doc.description || '';
+                this.describeModal.show = true;
+                // Focus textarea after render
+                this.$nextTick(() => {
+                    const textarea = document.querySelector('#describe-textarea');
+                    if (textarea) {
+                        textarea.focus();
+                        // Auto-resize
+                        textarea.style.height = 'auto';
+                        textarea.style.height = textarea.scrollHeight + 'px';
+                    }
+                });
+            },
+
+            async saveDescription() {
+                if (this.describeModal.doc) {
+                    await fetch(this.API+'/documents/'+this.describeModal.doc.id, {
+                        method:'PUT',
+                        headers:{'Content-Type':'application/json'},
+                        body:JSON.stringify({ 
+                            description: this.describeModal.comment,
+                            status: 'described'
+                        })
+                    });
+                    this.toast = 'Opis zapisany';
+                    this.describeModal.show = false;
+                    await this.load();
+                }
+            },
+
+            autoResizeTextarea(event) {
+                event.target.style.height = 'auto';
+                event.target.style.height = event.target.scrollHeight + 'px';
             },
 
             async suggestCategory(id) {
