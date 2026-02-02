@@ -1,3 +1,20 @@
+## [1.0.2] - 2026-02-02
+
+### Summary
+
+refactor(tests): deep code analysis engine with 4 supporting modules
+
+### Other
+
+- update exef2/backend/main.py
+- update exef2/backend/main_v1.1.py
+- update exef2/frontend/index.html
+- docker: update Dockerfile
+- update exef2/tests/test_e2e.py
+- update project.functions.toon
+- update project.toon
+
+
 ## [1.0.1] - 2026-02-02
 
 ### Summary

@@ -352,9 +352,21 @@
             },
 
             async load() {
-                this.documents = await (await fetch(this.API+'/documents')).json();
-                this.endpoints = await (await fetch(this.API+'/endpoints')).json();
-                this.stats = await (await fetch(this.API+'/stats')).json();
+                try {
+                    const [docs, eps, stats] = await Promise.all([
+                        fetch(this.API+'/documents').then(r => r.ok ? r.json() : []),
+                        fetch(this.API+'/endpoints').then(r => r.ok ? r.json() : []),
+                        fetch(this.API+'/stats').then(r => r.ok ? r.json() : {})
+                    ]);
+                    this.documents = Array.isArray(docs) ? docs : [];
+                    this.endpoints = Array.isArray(eps) ? eps : [];
+                    this.stats = stats || {};
+                } catch (e) {
+                    console.error('Load error:', e);
+                    this.documents = [];
+                    this.endpoints = [];
+                    this.stats = {};
+                }
             },
 
             async switchProfile(id) {

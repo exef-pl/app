@@ -1,28 +1,40 @@
-# exef | 22f 10688L | javascript:22
+# exef | 34f 18747L | javascript:34
 # Keys: M=modules, D=details, i=imports, c=classes, f=functions, m=methods
-M[22]:
-  docker/email-tests/tests/email-sync.test.js,422
+M[34]:
+  docker/email-tests/tests/email-sync.test.js,456
   docker/email-tests/mock-services/outlook-mock-server.js,288
   docker/email-tests/mock-services/gmail-mock-server.js,237
-  src/core/storageSync.js,879
-  src/core/emailWatcher.js,145
+  docker/storage-tests/tests/storage-sync.test.js,488
+  docker/storage-tests/mock-services/nextcloud-mock-server.js,210
+  docker/storage-tests/mock-services/gdrive-mock-server.js,157
+  docker/storage-tests/mock-services/dropbox-mock-server.js,184
+  docker/storage-tests/mock-services/onedrive-mock-server.js,201
+  docker/ocr-tests/tests/ocr-rest.test.js,74
+  docker/ocr-tests/mock-services/google-vision-mock-server.js,46
+  docker/device-tests/tests/device-sync.test.js,160
+  docker/device-tests/mock-services/printer-mock-server.js,228
+  docker/device-tests/mock-services/scanner-mock-server.js,218
+  src/core/storageSync.js,887
+  src/core/emailWatcher.js,160
+  src/core/kpirExport.js,710
   src/core/sqliteDb.js,114
-  src/core/invoiceWorkflow.js,271
+  src/core/invoiceWorkflow.js,422
   src/core/listen.js,60
-  src/core/sqliteDataLayer.js,327
+  src/core/deviceSync.js,251
+  src/core/sqliteDataLayer.js,494
   src/core/validators.js,127
   src/core/draftStore.js,107
-  src/core/exportService.js,182
-  src/core/ksefFacade.js,279
+  src/core/exportService.js,189
+  src/core/ksefFacade.js,292
   src/core/autoDescribe.js,257
-  src/core/ocrPipeline.js,357
+  src/core/ocrPipeline.js,597
   src/core/invoiceBuilder.js,246
-  src/core/unifiedInbox.js,242
+  src/core/unifiedInbox.js,289
   src/web/server.js,210
-  src/desktop/preload.js,34
-  src/desktop/main.js,27
-  src/local-service/server.js,1431
-  src/desktop/renderer/renderer.js,2836
+  src/desktop/preload.js,37
+  src/desktop/main.js,39
+  src/local-service/server.js,3681
+  src/desktop/renderer/renderer.js,4000
 D:
   docker/email-tests/tests/email-sync.test.js:
     e: MockEmailWatcher
@@ -33,6 +45,38 @@ D:
   docker/email-tests/mock-services/gmail-mock-server.js:
     e: initializeMockData
     initializeMockData()->None
+  docker/storage-tests/tests/storage-sync.test.js:
+    e: MockStorageSync
+    MockStorageSync: constructor(0),refreshAccessToken(0),_refreshDropboxToken(0),_refreshGdriveToken(0),_refreshOnedriveToken(0)
+  docker/storage-tests/mock-services/nextcloud-mock-server.js:
+    e: initializeMockData,checkAuth
+    initializeMockData()->None
+    checkAuth(req;res;next)->None
+  docker/storage-tests/mock-services/gdrive-mock-server.js:
+    e: initializeMockData
+    initializeMockData()->None
+  docker/storage-tests/mock-services/dropbox-mock-server.js:
+    e: initializeMockData
+    initializeMockData()->None
+  docker/storage-tests/mock-services/onedrive-mock-server.js:
+    e: initializeMockData,handleDelta
+    initializeMockData()->None
+    handleDelta(req;res;folderId)->None
+  docker/ocr-tests/tests/ocr-rest.test.js:
+    e: sleep,waitFor,makeTinyPdfBuffer
+    sleep(ms)->None
+    waitFor(fn)->None
+    makeTinyPdfBuffer()->None
+  docker/device-tests/tests/device-sync.test.js:
+    e: testPrinterInfo,testScannerScan,testPrinterJobs,testScannerHealth,testScannerDocuments,runTests,testPrinterHealth,testPrinterJobStatus
+    log(message)->None
+    test(name;fn)->None
+    testScannerHealth(url;name)->None
+    testScannerCapabilities(url)->None
+    testScannerScan(url)->None
+    testScannerDocuments(url)->None
+    testPrinterHealth(url;name)->None
+    testPrinterInfo(url)->None
   src/core/storageSync.js:
     e: createStorageSync,StorageSync
     StorageSync: constructor(0),getState(0),setState(1),start(0),stop(0)
@@ -41,33 +85,48 @@ D:
     e: createEmailWatcher,EmailWatcher
     EmailWatcher: constructor(0),start(0),stop(0),_poll(0),checkForInvoices(0)
     createEmailWatcher()->None
+  src/core/kpirExport.js:
+    e: escapeXml,toNumber,buildXlsxBuffer,encodeWindows1250,KpirExportService,createKpirExportService,columnLetter
+    KpirExportService: constructor(0),getAvailableFormats(0),getExpenseCategories(0),mapInvoiceToKpirEntry(1),exportInvoices(2)
+    escapeXml(value)->None
+    toNumber(value)->None
+    columnLetter(idx1)->None
+    buildXlsxBuffer()->None
+    encodeWindows1250(content)->None
+    createKpirExportService()->None
   src/core/sqliteDb.js:
-    e: SqliteDb,createSqliteDb,loadSqlJs
+    e: loadSqlJs,SqliteDb,createSqliteDb
     SqliteDb: constructor(0),_init(0),exec(1),all(1),get(1)
     loadSqlJs()->None
     createSqliteDb()->None
   src/core/invoiceWorkflow.js:
     e: InvoiceWorkflow,createInvoiceWorkflow
-    InvoiceWorkflow: constructor(0),_setupEventForwarding(0),start(0),stop(0),_startKsefPolling(0)
+    InvoiceWorkflow: constructor(0),_setupEventForwarding(0),_looksLikeXmlInvoice(1),_autoExtractXmlMetadata(1),configureDevices(0)
     createInvoiceWorkflow()->None
   src/core/listen.js:
-    e: findAvailablePort,isPortNumber,listenWithFallback,canBind
+    e: isPortNumber,canBind,findAvailablePort,listenWithFallback
     isPortNumber(value)->None
     canBind(host;port)->None
     findAvailablePort()->None
     listenWithFallback(app)->None
+  src/core/deviceSync.js:
+    e: DeviceSync
+    DeviceSync: constructor(0),configure(0),setState(1),getState(0),start(0)
   src/core/sqliteDataLayer.js:
-    e: SqliteJsonRepo,createSqliteDataLayer,SqliteContractorsRepo,SqliteKeyValueRepo,safeJsonParse,nowIso,initDataLayer,SqliteInvoiceStore
+    e: SqliteJsonRepo,initDataLayer,SqliteContractorsRepo,SqliteKeyValueRepo,stripOriginalFileForJson,SqliteInvoiceStore,nowIso,normalizeFileToBuffer
     SqliteKeyValueRepo: constructor(1),init(0),get(1),set(2)
     SqliteJsonRepo: constructor(2),init(0),list(0),get(1),upsert(1)
     SqliteContractorsRepo: constructor(1),init(0),upsertFromInvoice(1),list(0),replaceAll(1)
-    SqliteInvoiceStore: constructor(2),init(0),save(1),get(1),list(0)
+    SqliteInvoiceStore: constructor(2),init(0),_migrateFilesToBlobs(0),save(1),get(1)
     nowIso()->None
     safeJsonParse(raw;fallback)->None
+    stripOriginalFileForJson(invoice)->None
+    normalizeFileToBuffer(value)->None
+    normalizeDbBlob(value)->None
     initDataLayer(layer)->None
     createSqliteDataLayer()->None
   src/core/validators.js:
-    e: calcVat,calcGross,isValidNip,isValidKsefNumber,round2,isValidEmail,isValidIban,isValidDate
+    e: isValidNip,isValidInvoiceNumber,isValidDate,sanitizeNip,isValidIban,isValidKsefNumber,formatIban,isValidVatRate
     sanitizeNip(nip)->None
     isValidNip(nip)->None
     isValidIban(iban)->None
@@ -77,7 +136,7 @@ D:
     isValidKsefNumber(ksefNumber)->None
     isValidInvoiceNumber(invoiceNumber)->None
   src/core/draftStore.js:
-    e: JsonFileStore,SqliteStore,createStore,InMemoryStore
+    e: createStore,InMemoryStore,SqliteStore,JsonFileStore
     InMemoryStore: constructor(0),save(1),get(1),list(0),delete(1)
     JsonFileStore: constructor(1),_load(0),_persist(0),save(1),get(1)
     SqliteStore: constructor(0),_init(0),save(1),get(1),list(0)
@@ -91,22 +150,25 @@ D:
     KsefFacade: constructor(0),authenticateWithKsefToken(0),openOnlineSession(0),closeOnlineSession(0),sendOnlineInvoice(0)
     createKsefFacade(options)->None
   src/core/autoDescribe.js:
-    e: AutoDescribeEngine,createAutoDescribeEngine
+    e: createAutoDescribeEngine,AutoDescribeEngine
     AutoDescribeEngine: constructor(0),suggest(1),_suggestFromHistory(1),_suggestFromRules(1),_matchRule(2)
     createAutoDescribeEngine()->None
   src/core/ocrPipeline.js:
-    e: createOcrPipeline,OcrPipeline
+    e: OcrPipeline,createOcrPipeline
     OcrPipeline: constructor(0),process(1),parseKsefXml(1),_extractFromKsefXml(1),runOcr(1)
     createOcrPipeline()->None
   src/core/invoiceBuilder.js:
-    e: InvoiceLineBuilder,InvoiceBuilder,generateInvoiceNumber,EntityBuilder
+    e: generateInvoiceNumber,InvoiceBuilder,InvoiceLineBuilder,EntityBuilder
     EntityBuilder: constructor(0),withName(1),withNip(1),withAddress(4),withEmail(1)
     InvoiceLineBuilder: constructor(0),withLineNumber(1),withProduct(1),withQuantity(1),withUnitPrice(1)
     InvoiceBuilder: constructor(0),withInvoiceNumber(1),withInvoiceType(1),withIssueDate(1),withSaleDate(1)
     generateInvoiceNumber()->None
   src/core/unifiedInbox.js:
-    e: UnifiedInbox,createUnifiedInbox
+    e: isAllowedInvoiceFileType,createUnifiedInbox,UnifiedInbox,isEmptyInvoiceFile,isXmlString
     UnifiedInbox: constructor(0),generateId(0),addInvoice(2),_ensureSourceKeyIndexLoaded(0),_loadSourceKeyIndex(0)
+    isXmlString(value)->None
+    isEmptyInvoiceFile(value)->None
+    isAllowedInvoiceFileType()->None
     createUnifiedInbox()->None
   src/web/server.js:
     e: parseJsonEnv
@@ -119,22 +181,22 @@ D:
     e: createWindow
     createWindow()->None
   src/local-service/server.js:
-    e: canUseSqliteBackend,contrastRatio,normalizeStringArray,parseCssColor,writeJsonFile,srgbToLinear,getSettingsFromBackend,buildContrastChecks
+    e: applyDevicesFromSettings,isAllowedRemoteXslUrl,buildMimeWithAttachment,srgbToLinear,rewriteXslImportsToProxy,mergeEnvSettings,readJsonFile,isInvoiceFileName
     canUseSqliteBackend()->None
     getDefaultSettings()->None
+    buildSettingsFromEnv()->None
+    isSettingsEmpty(settings)->None
+    mergeEnvSettings(existingSettings;envSettings)->None
     readJsonFile(filePath;fallbackValue)->None
     writeJsonFile(filePath;value)->None
     normalizeStringArray(value)->None
-    loadSettings()->None
-    parseCssColor(input)->None
-    srgbToLinear(channel)->None
   src/desktop/renderer/renderer.js:
-    e: deleteProject,loadLabels,getUrlState,assignInvoiceToExpenseType,applyTheme,setViewMode,arrayBufferToBase64,assignInvoiceToLabels
+    e: loadPdfjsModule,exportProjectsCsv,assignInvoiceToExpenseType,saveEmailAccountsToSettings,showEmailAccountsManager,readFileAsText,showNotification,setActivePage
     setApiUrl(nextUrl)->None
-    fetchJsonWithTimeout(fullUrl;timeoutMs)->None
-    probeLocalService(baseUrl;timeoutMs)->None
-    resolveApiBaseUrl()->None
-    applyTheme(nextTheme)->None
-    persistThemeToApi(nextTheme)->None
-    cycleTheme()->None
-    readCssVar(varName)->None
+    loadPdfjsModule()->None
+    renderPdfFirstPageThumbDataUrl(pdfBlob)->None
+    cleanupInvoiceThumbObjectUrls()->None
+    renderInvoiceThumbPlaceholder(invoiceId)->None
+    renderInvoiceThumbFallback(label)->None
+    renderInvoiceThumbFallbackOpen(invoiceId;label)->None
+    buildInvoiceThumbHtml(invoiceId)->None
