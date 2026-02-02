@@ -532,6 +532,65 @@ async def process_document_ocr(profile_id: str, id: str, body: dict = None):
     
     return doc
 
+# === File Upload ===
+from fastapi import UploadFile, File
+import base64
+
+@app.post("/api/profiles/{profile_id}/upload")
+async def upload_file(profile_id: str, file: UploadFile = File(...)):
+    """Upload file and create document with OCR processing"""
+    from adapters import get_adapter
+    
+    # Read file content
+    content = await file.read()
+    content_b64 = base64.b64encode(content).decode()
+    
+    # Create document from upload
+    doc_id = str(uuid.uuid4())
+    doc = {
+        "id": doc_id,
+        "profile_id": profile_id,
+        "type": "invoice",
+        "number": "",
+        "contractor": "",
+        "amount": 0,
+        "status": "created",
+        "source": "upload",
+        "attachment_filename": file.filename,
+        "attachment_mime": file.content_type,
+        "attachment_content": content_b64,
+        "created_at": datetime.utcnow().isoformat()
+    }
+    
+    # Save document
+    with db() as conn:
+        conn.execute("INSERT INTO documents (id, profile_id, data) VALUES (?, ?, ?)",
+                    (doc_id, profile_id, json.dumps(doc)))
+    
+    # Process with mock OCR
+    adapter = get_adapter("ocr_mock", {})
+    result = await adapter.push([doc])
+    
+    if result.success and result.documents:
+        processed = result.documents[0]
+        # Update document with OCR results
+        updates = {
+            "number": processed.get("number") or doc["number"],
+            "contractor_nip": processed.get("contractor_nip"),
+            "amount": processed.get("amount") or doc["amount"],
+            "ocr_data": processed.get("ocr_data"),
+            "ocr_confidence": processed.get("ocr_confidence"),
+        }
+        with db() as conn:
+            row = conn.execute("SELECT data FROM documents WHERE id = ?", (doc_id,)).fetchone()
+            existing = json.loads(row["data"])
+            existing.update(updates)
+            conn.execute("UPDATE documents SET data = ? WHERE id = ?", (json.dumps(existing), doc_id))
+        doc.update(updates)
+    
+    await hub.broadcast({"event": "upload", "document_id": doc_id}, profile_id)
+    return doc
+
 # === Adapters Info ===
 @app.get("/api/adapters")
 def list_adapters():

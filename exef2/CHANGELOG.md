@@ -1,3 +1,16 @@
+## [1.0.4] - 2026-02-02
+
+### Summary
+
+feat(tests): deep code analysis engine with 3 supporting modules
+
+### Other
+
+- update exef2/backend/main.py
+- update exef2/frontend/index.html
+- update exef2/tests/test_e2e.py
+
+
 ## [1.0.3] - 2026-02-02
 
 ### Summary

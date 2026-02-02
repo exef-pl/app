@@ -779,6 +779,54 @@ class TestExportAPI:
         httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
 
 
+# === UI Tests for New Features ===
+class TestCategorizationUI:
+    """UI tests for categorization feature"""
+    
+    def test_categorization_view_loads(self, page: Page):
+        """Categorization view loads correctly"""
+        page.goto(APP_URL)
+        page.locator(".nav-item:has-text('Kategoryzacja')").click()
+        expect(page.locator("h1:has-text('Kategoryzacja kosztów')")).to_be_visible()
+    
+    def test_export_file_view_loads(self, page: Page):
+        """Export file view loads with format cards"""
+        page.goto(APP_URL)
+        page.locator(".nav-item:has-text('Eksport pliku')").click()
+        expect(page.locator("h1:has-text('Eksport do pliku')")).to_be_visible()
+        # Check export format cards are visible
+        expect(page.locator(".card-title:has-text('wFirma CSV')")).to_be_visible()
+        expect(page.locator(".card-title:has-text('JPK_PKPIR')")).to_be_visible()
+
+
+class TestFileUpload:
+    """Tests for file upload functionality"""
+    
+    def test_upload_file(self):
+        """Can upload file and process with OCR"""
+        # Create profile
+        r = httpx.post(f"{API_URL}/api/profiles", json={"name": "Upload Test", "nip": "444"})
+        profile_id = r.json()["id"]
+        
+        # Create a test file (simple text simulating PDF)
+        test_content = b"Faktura VAT FV/2026/01/TEST\nNIP: 1234567890\nKwota: 1000.00 PLN"
+        files = {"file": ("test_invoice.pdf", test_content, "application/pdf")}
+        
+        # Upload file
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_id}/upload", files=files)
+        assert r.status_code == 200
+        data = r.json()
+        
+        assert data["source"] == "upload"
+        assert data["attachment_filename"] == "test_invoice.pdf"
+        assert "ocr_data" in data
+        # Mock OCR should have processed it
+        assert data["ocr_confidence"] == 85
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+
+
 @pytest.fixture(scope="session")
 def browser_context_args():
     return {"viewport": {"width": 1280, "height": 720}}

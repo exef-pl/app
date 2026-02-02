@@ -112,6 +112,7 @@
             <div class="nav-label">Dokumenty</div>
             <div class="nav-item" :class="{active:view=='docs'}" @click="view='docs'">📋 Zarządzanie <span class="badge" x-text="stats.documents?.total||0"></span></div>
             <div class="nav-item" :class="{active:view=='create'}" @click="view='create'">✨ Utwórz</div>
+            <div class="nav-item" :class="{active:view=='upload'}" @click="view='upload'">📤 Wgraj plik</div>
             <div class="nav-item" :class="{active:view=='describe'}" @click="view='describe'">🏷️ Opis <span class="badge warn" x-text="stats.documents?.by_status?.created||0" x-show="stats.documents?.by_status?.created"></span></div>
             <div class="nav-item" :class="{active:view=='sign'}" @click="view='sign'">✍️ Podpis <span class="badge warn" x-text="stats.documents?.by_status?.described||0" x-show="stats.documents?.by_status?.described"></span></div>
         </div>
@@ -119,9 +120,14 @@
             <div class="nav-label">Transfer</div>
             <div class="nav-item" :class="{active:view=='import'}" @click="view='import'">📥 Import <span class="badge purple" x-text="stats.endpoints?.import||0"></span></div>
             <div class="nav-item" :class="{active:view=='export'}" @click="view='export'">📤 Export <span class="badge purple" x-text="stats.endpoints?.export||0"></span></div>
+            <div class="nav-item" :class="{active:view=='exportfile'}" @click="view='exportfile'">📁 Eksport pliku</div>
+        </div>
+        <div class="nav-group">
+            <div class="nav-label">Księgowość</div>
+            <div class="nav-item" :class="{active:view=='categorize'}" @click="view='categorize'">🏷️ Kategoryzacja</div>
         </div>
 
-        <div class="version">EXEF v1.1.0</div>
+        <div class="version">EXEF v1.5.0</div>
     </aside>
 
     <main class="main">
@@ -167,6 +173,43 @@
                     <div class="form-group"><label class="form-label">Kontrahent</label><input class="form-input" x-model="newDoc.contractor" placeholder="Nazwa firmy"></div>
                     <div class="form-group"><label class="form-label">Kwota netto</label><input class="form-input" type="number" x-model="newDoc.amount" placeholder="0"></div>
                     <button class="btn btn-primary" @click="createDoc()">Utwórz dokument</button>
+                </div>
+            </div>
+        </template>
+
+        <!-- Upload -->
+        <template x-if="view=='upload'">
+            <div>
+                <div class="header"><h1 class="title">Wgraj plik</h1></div>
+                <div class="card" style="max-width:600px">
+                    <p style="margin-bottom:1rem;color:#666">Wgraj fakturę PDF lub zdjęcie. System automatycznie rozpozna dane za pomocą OCR.</p>
+                    <div class="upload-zone" 
+                         style="border:2px dashed #ddd;border-radius:12px;padding:3rem;text-align:center;cursor:pointer;transition:all 0.2s"
+                         @click="$refs.fileInput.click()"
+                         @dragover.prevent="$event.target.style.borderColor='#6c5ce7'"
+                         @dragleave.prevent="$event.target.style.borderColor='#ddd'"
+                         @drop.prevent="handleFileDrop($event)">
+                        <div style="font-size:3rem;margin-bottom:1rem">📄</div>
+                        <div style="font-size:1.1rem;font-weight:500;margin-bottom:0.5rem">Przeciągnij plik tutaj</div>
+                        <div style="color:#999">lub kliknij aby wybrać</div>
+                        <div style="margin-top:1rem;font-size:0.85rem;color:#999">Obsługiwane: PDF, JPG, PNG</div>
+                    </div>
+                    <input type="file" x-ref="fileInput" @change="uploadFile($event)" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
+                    <div x-show="uploadProgress" style="margin-top:1rem">
+                        <div style="background:#eee;border-radius:8px;height:8px;overflow:hidden">
+                            <div style="background:linear-gradient(90deg,#6c5ce7,#a29bfe);height:100%;transition:width 0.3s" :style="{width:uploadProgress+'%'}"></div>
+                        </div>
+                        <div style="text-align:center;margin-top:0.5rem;color:#666" x-text="uploadProgress < 100 ? 'Przetwarzanie...' : 'Gotowe!'"></div>
+                    </div>
+                    <div x-show="lastUpload" style="margin-top:1.5rem;padding:1rem;background:#f0fff4;border-radius:8px;border:1px solid #00b894">
+                        <div style="font-weight:500;color:#00b894;margin-bottom:0.5rem">✓ Plik przetworzony</div>
+                        <div style="font-size:0.9rem">
+                            <div><strong>Numer:</strong> <span x-text="lastUpload?.number || '-'"></span></div>
+                            <div><strong>Kwota:</strong> <span x-text="(lastUpload?.amount || 0) + ' PLN'"></span></div>
+                            <div><strong>Pewność OCR:</strong> <span x-text="(lastUpload?.ocr_confidence || 0) + '%'"></span></div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" @click="view='docs'">Zobacz dokumenty</button>
+                    </div>
                 </div>
             </div>
         </template>
@@ -278,6 +321,90 @@
                             </div>
                         </div>
                     </template>
+                </div>
+            </div>
+        </template>
+
+        <!-- Categorization -->
+        <template x-if="view=='categorize'">
+            <div>
+                <div class="header"><h1 class="title">Kategoryzacja kosztów</h1></div>
+                <div class="card">
+                    <p style="margin-bottom:1rem;color:#666">Przypisz kategorie KPiR do dokumentów dla prawidłowego eksportu księgowego.</p>
+                    <table>
+                        <thead><tr><th>Numer</th><th>Kontrahent</th><th>Kwota</th><th>Kategoria</th><th>Akcje</th></tr></thead>
+                        <tbody>
+                        <template x-for="doc in documents" :key="doc.id">
+                            <tr>
+                                <td x-text="doc.number"></td>
+                                <td x-text="doc.contractor"></td>
+                                <td x-text="doc.amount+' PLN'"></td>
+                                <td>
+                                    <select class="form-input" style="width:auto;padding:4px 8px" x-model="doc.category" @change="categorizeDoc(doc.id, doc.category)">
+                                        <option value="">-- wybierz --</option>
+                                        <option value="towary">Zakup towarów</option>
+                                        <option value="materialy">Materiały</option>
+                                        <option value="uslugi">Usługi obce</option>
+                                        <option value="wynagrodzenia">Wynagrodzenia</option>
+                                        <option value="paliwo">Paliwo</option>
+                                        <option value="telefon">Telefon/Internet</option>
+                                        <option value="hosting">Hosting/IT</option>
+                                        <option value="oprogramowanie">Oprogramowanie</option>
+                                        <option value="marketing">Marketing</option>
+                                        <option value="biuro">Materiały biurowe</option>
+                                        <option value="transport">Transport</option>
+                                        <option value="ksiegowosc">Księgowość</option>
+                                        <option value="inne">Inne koszty</option>
+                                    </select>
+                                </td>
+                                <td><button class="btn btn-sm btn-secondary" @click="suggestCategory(doc.id)">💡 Sugeruj</button></td>
+                            </tr>
+                        </template>
+                        </tbody>
+                    </table>
+                    <div class="empty" x-show="!documents.length">Brak dokumentów do kategoryzacji</div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Export File -->
+        <template x-if="view=='exportfile'">
+            <div>
+                <div class="header"><h1 class="title">Eksport do pliku</h1></div>
+                <div class="cards">
+                    <div class="card" @click="exportToFormat('wfirma')" style="cursor:pointer">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#fdcb6e,#f39c12)">📊</div></div>
+                        <div class="card-title">wFirma CSV</div>
+                        <div class="card-desc">Format KPiR dla wFirma.pl</div>
+                    </div>
+                    <div class="card" @click="exportToFormat('jpk_pkpir')" style="cursor:pointer">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#e17055,#d63031)">📄</div></div>
+                        <div class="card-title">JPK_PKPIR</div>
+                        <div class="card-desc">Jednolity Plik Kontrolny XML</div>
+                    </div>
+                    <div class="card" @click="exportToFormat('comarch')" style="cursor:pointer">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#00b894,#00cec9)">🏢</div></div>
+                        <div class="card-title">Comarch Optima</div>
+                        <div class="card-desc">Import XML do Comarch ERP</div>
+                    </div>
+                    <div class="card" @click="exportToFormat('symfonia')" style="cursor:pointer">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#6c5ce7,#a29bfe)">🎵</div></div>
+                        <div class="card-title">Symfonia</div>
+                        <div class="card-desc">Format CSV dla Symfonia</div>
+                    </div>
+                    <div class="card" @click="exportToFormat('enova')" style="cursor:pointer">
+                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#74b9ff,#0984e3)">💼</div></div>
+                        <div class="card-title">enova365</div>
+                        <div class="card-desc">Format XML dla enova</div>
+                    </div>
+                </div>
+                <div class="card" x-show="exportResult" style="margin-top:1rem">
+                    <div class="card-title">Wynik eksportu</div>
+                    <div style="margin:1rem 0">
+                        <span class="status status-signed" x-text="'Wyeksportowano: ' + (exportResult?.count || 0) + ' dokumentów'"></span>
+                    </div>
+                    <pre style="background:#f5f5f5;padding:1rem;border-radius:8px;overflow:auto;max-height:300px;font-size:12px" x-text="exportResult?.content"></pre>
+                    <button class="btn btn-primary" style="margin-top:1rem" @click="downloadExport()">📥 Pobierz plik</button>
                 </div>
             </div>
         </template>
@@ -451,6 +578,113 @@
                 if (this.profileId === id) this.profileId = 'default';
                 await this.loadProfiles();
                 await this.load();
+            },
+
+            // Categorization
+            exportResult: null,
+
+            async categorizeDoc(id, category) {
+                await fetch(this.API+'/documents/'+id+'/categorize', {
+                    method:'POST', 
+                    headers:{'Content-Type':'application/json'}, 
+                    body:JSON.stringify({category})
+                });
+                this.toast = 'Kategoria zapisana';
+            },
+
+            async suggestCategory(id) {
+                const r = await fetch(this.API+'/documents/'+id+'/suggest', {method:'POST'});
+                const data = await r.json();
+                if (data.category) {
+                    const doc = this.documents.find(d => d.id === id);
+                    if (doc) {
+                        doc.category = data.category;
+                        await this.categorizeDoc(id, data.category);
+                        this.toast = `Sugestia: ${data.category_name} (${data.confidence}%)`;
+                    }
+                } else {
+                    this.toast = 'Brak sugestii kategorii';
+                }
+            },
+
+            // File Export
+            async exportToFormat(format) {
+                this.toast = 'Eksportowanie...';
+                const signedDocs = this.documents.filter(d => d.status === 'signed' || d.status === 'exported');
+                if (!signedDocs.length) {
+                    this.toast = 'Brak podpisanych dokumentów do eksportu';
+                    return;
+                }
+                const r = await fetch(this.API+'/export/'+format, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({document_ids: signedDocs.map(d => d.id)})
+                });
+                if (r.ok) {
+                    this.exportResult = await r.json();
+                    this.toast = `Wyeksportowano ${this.exportResult.count} dokumentów`;
+                } else {
+                    this.toast = 'Błąd eksportu';
+                }
+            },
+
+            downloadExport() {
+                if (!this.exportResult?.content) return;
+                const blob = new Blob([this.exportResult.content], {type: 'text/plain;charset=utf-8'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = this.exportResult.filename || 'export.txt';
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+
+            // File Upload
+            uploadProgress: 0,
+            lastUpload: null,
+
+            async uploadFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                await this.doUpload(file);
+            },
+
+            handleFileDrop(event) {
+                const file = event.dataTransfer.files[0];
+                if (!file) return;
+                this.doUpload(file);
+            },
+
+            async doUpload(file) {
+                this.uploadProgress = 10;
+                this.lastUpload = null;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                this.uploadProgress = 30;
+                
+                try {
+                    const r = await fetch(this.API + '/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    this.uploadProgress = 80;
+                    
+                    if (r.ok) {
+                        this.lastUpload = await r.json();
+                        this.toast = 'Plik przetworzony pomyślnie';
+                        await this.load();
+                    } else {
+                        this.toast = 'Błąd przesyłania pliku';
+                    }
+                } catch (e) {
+                    this.toast = 'Błąd połączenia';
+                }
+                
+                this.uploadProgress = 100;
+                setTimeout(() => { this.uploadProgress = 0; }, 2000);
             }
         };
     }
