@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXEF</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        :root{--bg:#0a0a0b;--bg2:#111113;--bg3:#1a1a1d;--border:#2a2a2e;--text:#f0f0f2;--muted:#606068;--accent:#00d4aa;--warn:#fdcb6e;--danger:#ff6b6b}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+        .app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+        .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:16px}
+        .logo{font-size:20px;font-weight:700;margin-bottom:24px;display:flex;align-items:center;gap:8px}
+        .logo span{background:var(--accent);color:#000;padding:4px 8px;border-radius:4px}
+        .nav-group{margin-bottom:20px}
+        .nav-label{font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;letter-spacing:1px}
+        .nav-item{padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:#a0a0a8;margin-bottom:2px}
+        .nav-item:hover{background:var(--bg3);color:var(--text)}
+        .nav-item.active{background:rgba(0,212,170,0.1);color:var(--accent)}
+        .badge{margin-left:auto;background:var(--accent);color:#000;font-size:10px;padding:2px 6px;border-radius:8px}
+        .badge.warn{background:var(--warn)}
+        .main{padding:24px}
+        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+        .title{font-size:24px;font-weight:600}
+        .btn{padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px}
+        .btn-primary{background:var(--accent);color:#000}
+        .btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+        .btn-danger{background:rgba(255,107,107,0.2);color:var(--danger)}
+        .btn-sm{padding:5px 10px;font-size:12px}
+        .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+        .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
+        .card-header{display:flex;justify-content:space-between;margin-bottom:12px}
+        .card-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+        .card-title{font-weight:600;margin-bottom:4px}
+        .card-desc{font-size:12px;color:var(--muted);margin-bottom:12px}
+        .card-stats{display:flex;gap:16px;padding-top:12px;border-top:1px solid var(--border)}
+        .stat-value{font-size:18px;font-weight:600}
+        .stat-label{font-size:10px;color:var(--muted);text-transform:uppercase}
+        .card-footer{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border)}
+        th{font-size:10px;text-transform:uppercase;color:var(--muted);background:var(--bg3)}
+        tr:hover td{background:rgba(255,255,255,0.02)}
+        .status{padding:3px 8px;border-radius:10px;font-size:10px}
+        .status-created{background:rgba(116,185,255,0.2);color:#74b9ff}
+        .status-described{background:rgba(253,203,110,0.2);color:var(--warn)}
+        .status-signed{background:rgba(0,212,170,0.2);color:var(--accent)}
+        .status-exported{background:rgba(162,155,254,0.2);color:#a29bfe}
+        .modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100}
+        .modal-content{background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:90%;max-width:480px;max-height:90vh;overflow:auto}
+        .modal-header{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+        .modal-body{padding:16px}
+        .modal-footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--bg3)}
+        .form-group{margin-bottom:14px}
+        .form-label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+        .form-input{width:100%;padding:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px}
+        .form-input:focus{outline:none;border-color:var(--accent)}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .toast{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--border);padding:12px 16px;border-radius:8px;font-size:13px;z-index:200}
+        .empty{text-align:center;padding:40px;color:var(--muted)}
+    </style>
+</head>
+<body x-data="app()" x-init="init()">
+    <div class="app">
+        <aside class="sidebar">
+            <div class="logo"><span>📄</span> EXEF</div>
+            <div class="nav-group">
+                <div class="nav-label">Dokumenty</div>
+                <div class="nav-item" :class="{active:view=='docs'}" @click="view='docs'">📋 Zarządzanie <span class="badge" x-text="stats.documents?.total||0"></span></div>
+                <div class="nav-item" :class="{active:view=='create'}" @click="view='create'">✨ Utwórz</div>
+            </div>
+            <div class="nav-group">
+                <div class="nav-label">Transfer</div>
+                <div class="nav-item" :class="{active:view=='import'}" @click="view='import'">📥 Import <span class="badge" x-text="endpoints.filter(e=>e.direction=='import').length"></span></div>
+                <div class="nav-item" :class="{active:view=='export'}" @click="view='export'">📤 Export <span class="badge" x-text="endpoints.filter(e=>e.direction=='export').length"></span></div>
+            </div>
+        </aside>
+        <main class="main">
+            <!-- Documents View -->
+            <template x-if="view=='docs'">
+                <div>
+                    <div class="header"><h1 class="title">Dokumenty</h1></div>
+                    <div class="card" style="margin-bottom:20px">
+                        <table>
+                            <thead><tr><th>Dokument</th><th>Typ</th><th>Kontrahent</th><th>Kwota</th><th>Status</th><th>Akcje</th></tr></thead>
+                            <tbody>
+                                <template x-for="doc in documents" :key="doc.id">
+                                    <tr>
+                                        <td x-text="doc.number"></td>
+                                        <td x-text="doc.type"></td>
+                                        <td x-text="doc.contractor"></td>
+                                        <td x-text="doc.amount+' PLN'"></td>
+                                        <td><span class="status" :class="'status-'+doc.status" x-text="doc.status"></span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-secondary" @click="updateDoc(doc.id,'described')" x-show="doc.status=='created'">Opisz</button>
+                                            <button class="btn btn-sm btn-secondary" @click="updateDoc(doc.id,'signed')" x-show="doc.status=='described'">Podpisz</button>
+                                            <button class="btn btn-sm btn-danger" @click="deleteDoc(doc.id)">🗑</button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                        <div class="empty" x-show="!documents.length">Brak dokumentów</div>
+                    </div>
+                </div>
+            </template>
+            <!-- Create Document View -->
+            <template x-if="view=='create'">
+                <div>
+                    <div class="header"><h1 class="title">Utwórz dokument</h1></div>
+                    <div class="card" style="max-width:500px">
+                        <div class="form-group"><label class="form-label">Typ</label><select class="form-input" x-model="newDoc.type"><option value="invoice">Faktura</option><option value="contract">Umowa</option><option value="payment">Płatność</option></select></div>
+                        <div class="form-group"><label class="form-label">Numer</label><input class="form-input" x-model="newDoc.number" placeholder="FV/2026/01/001"></div>
+                        <div class="form-group"><label class="form-label">Kontrahent</label><input class="form-input" x-model="newDoc.contractor" placeholder="Nazwa firmy"></div>
+                        <div class="form-group"><label class="form-label">Kwota</label><input class="form-input" type="number" x-model="newDoc.amount" placeholder="0"></div>
+                        <button class="btn btn-primary" @click="createDoc()">Utwórz dokument</button>
+                    </div>
+                </div>
+            </template>
+            <!-- Import View -->
+            <template x-if="view=='import'">
+                <div>
+                    <div class="header"><h1 class="title">Import</h1><button class="btn btn-primary" @click="showModal='endpoint';newEndpoint={direction:'import',type:'email',name:'',config:{}}">+ Dodaj źródło</button></div>
+                    <div class="cards">
+                        <template x-for="ep in endpoints.filter(e=>e.direction=='import')" :key="ep.id">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-icon" :style="{background:ep.type=='ksef'?'linear-gradient(135deg,#00d4aa,#00b894)':ep.type=='email'?'linear-gradient(135deg,#74b9ff,#0984e3)':'linear-gradient(135deg,#a29bfe,#6c5ce7)'}" x-text="ep.type=='ksef'?'🔐':ep.type=='email'?'📧':'📠'"></div>
+                                    <button class="btn btn-sm btn-danger" @click="deleteEndpoint(ep.id)">🗑</button>
+                                </div>
+                                <div class="card-title" x-text="ep.name"></div>
+                                <div class="card-desc" x-text="ep.type"></div>
+                                <div class="card-footer"><button class="btn btn-secondary btn-sm" @click="pullEndpoint(ep.id)">Pobierz teraz</button></div>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="empty" x-show="!endpoints.filter(e=>e.direction=='import').length">Brak źródeł importu</div>
+                </div>
+            </template>
+            <!-- Export View -->
+            <template x-if="view=='export'">
+                <div>
+                    <div class="header"><h1 class="title">Export</h1><button class="btn btn-primary" @click="showModal='endpoint';newEndpoint={direction:'export',type:'wfirma',name:'',config:{}}">+ Dodaj cel</button></div>
+                    <div class="cards">
+                        <template x-for="ep in endpoints.filter(e=>e.direction=='export')" :key="ep.id">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-icon" :style="{background:ep.type=='ksef'?'linear-gradient(135deg,#00d4aa,#00b894)':ep.type=='wfirma'?'linear-gradient(135deg,#fdcb6e,#f39c12)':'linear-gradient(135deg,#74b9ff,#0984e3)'}" x-text="ep.type=='ksef'?'🔐':ep.type=='wfirma'?'📊':'🖨️'"></div>
+                                    <button class="btn btn-sm btn-danger" @click="deleteEndpoint(ep.id)">🗑</button>
+                                </div>
+                                <div class="card-title" x-text="ep.name"></div>
+                                <div class="card-desc" x-text="ep.type"></div>
+                                <div class="card-footer"><button class="btn btn-secondary btn-sm" @click="pushEndpoint(ep.id)">Eksportuj</button></div>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="empty" x-show="!endpoints.filter(e=>e.direction=='export').length">Brak celów eksportu</div>
+                </div>
+            </template>
+        </main>
+    </div>
+    <!-- Modal -->
+    <div class="modal" x-show="showModal" @click.self="showModal=null" x-cloak>
+        <div class="modal-content" x-show="showModal=='endpoint'">
+            <div class="modal-header"><h3>Dodaj endpoint</h3><button class="btn btn-sm" @click="showModal=null">✕</button></div>
+            <div class="modal-body">
+                <div class="form-group"><label class="form-label">Nazwa</label><input class="form-input" x-model="newEndpoint.name" placeholder="np. Skrzynka faktur"></div>
+                <div class="form-group"><label class="form-label">Typ</label>
+                    <select class="form-input" x-model="newEndpoint.type">
+                        <template x-if="newEndpoint.direction=='import'"><option value="email">Email (IMAP)</option></template>
+                        <template x-if="newEndpoint.direction=='import'"><option value="ksef">KSeF</option></template>
+                        <template x-if="newEndpoint.direction=='import'"><option value="webhook">Webhook</option></template>
+                        <template x-if="newEndpoint.direction=='import'"><option value="scanner">Skaner</option></template>
+                        <template x-if="newEndpoint.direction=='export'"><option value="ksef">KSeF</option></template>
+                        <template x-if="newEndpoint.direction=='export'"><option value="wfirma">wFirma</option></template>
+                        <template x-if="newEndpoint.direction=='export'"><option value="webhook">Webhook</option></template>
+                        <template x-if="newEndpoint.direction=='export'"><option value="printer">Drukarka</option></template>
+                    </select>
+                </div>
+                <div class="form-group" x-show="newEndpoint.type=='webhook'"><label class="form-label">URL</label><input class="form-input" x-model="newEndpoint.config.url" placeholder="https://..."></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" @click="showModal=null">Anuluj</button><button class="btn btn-primary" @click="createEndpoint()">Dodaj</button></div>
+        </div>
+    </div>
+    <!-- Toast -->
+    <div class="toast" x-show="toast" x-text="toast" x-transition x-init="$watch('toast',v=>{if(v)setTimeout(()=>toast='',3000)})"></div>
+    <script>
+        const API = '/api';
+        function app() {
+            return {
+                view: 'docs',
+                documents: [],
+                endpoints: [],
+                stats: {},
+                showModal: null,
+                toast: '',
+                newDoc: {type:'invoice',number:'',contractor:'',amount:0},
+                newEndpoint: {direction:'import',type:'email',name:'',config:{}},
+                ws: null,
+                async init() {
+                    await this.load();
+                    this.connectWS();
+                },
+                async load() {
+                    this.documents = await (await fetch(API+'/documents')).json();
+                    this.endpoints = await (await fetch(API+'/endpoints')).json();
+                    this.stats = await (await fetch(API+'/stats')).json();
+                },
+                connectWS() {
+                    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    this.ws = new WebSocket(proto + '//' + location.host + '/ws');
+                    this.ws.onmessage = (e) => { const msg = JSON.parse(e.data); this.toast = msg.event; this.load(); };
+                    this.ws.onclose = () => setTimeout(() => this.connectWS(), 2000);
+                },
+                async createDoc() {
+                    await fetch(API+'/documents', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(this.newDoc)});
+                    this.newDoc = {type:'invoice',number:'',contractor:'',amount:0};
+                    this.toast = 'Dokument utworzony';
+                    this.view = 'docs';
+                    await this.load();
+                },
+                async updateDoc(id, status) {
+                    await fetch(API+'/documents/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})});
+                    await this.load();
+                },
+                async deleteDoc(id) {
+                    await fetch(API+'/documents/'+id, {method:'DELETE'});
+                    await this.load();
+                },
+                async createEndpoint() {
+                    await fetch(API+'/endpoints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(this.newEndpoint)});
+                    this.showModal = null;
+                    this.toast = 'Endpoint dodany';
+                    await this.load();
+                },
+                async deleteEndpoint(id) {
+                    await fetch(API+'/endpoints/'+id, {method:'DELETE'});
+                    await this.load();
+                },
+                async pullEndpoint(id) {
+                    this.toast = 'Pobieranie...';
+                    const r = await fetch(API+'/flow/pull/'+id, {method:'POST'});
+                    const data = await r.json();
+                    this.toast = `Zaimportowano ${data.imported} dokumentów`;
+                    await this.load();
+                },
+                async pushEndpoint(id) {
+                    const docs = this.documents.filter(d => d.status === 'signed').map(d => d.id);
+                    if (!docs.length) { this.toast = 'Brak dokumentów do eksportu'; return; }
+                    const r = await fetch(API+'/flow/push/'+id, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(docs)});
+                    const data = await r.json();
+                    this.toast = `Wyeksportowano ${data.exported} dokumentów`;
+                    await this.load();
+                }
+            };
+        }
+    </script>
+</body>
+</html>
