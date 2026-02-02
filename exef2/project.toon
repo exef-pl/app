@@ -1,0 +1,134 @@
+# exef2 | 17f 5222L | python:10/javascript:7
+# Keys: M=modules, D=details, i=imports, c=classes, f=functions, m=methods
+M[17]:
+  backend/config.py,29
+  backend/migrations.py,235
+  backend/main.py,536
+  frontend/router.js,67
+  desktop/preload.js,34
+  desktop/sync.js,195
+  desktop/database.js,254
+  desktop/main.js,260
+  tests/test_e2e.py,730
+  frontend/components/document-manager.js,151
+  frontend/components/profile-manager.js,193
+  backend/adapters/export.py,349
+  backend/adapters/ksef.py,231
+  backend/adapters/email.py,185
+  backend/adapters/__init__.py,77
+  backend/adapters/categorize.py,220
+  backend/adapters/ocr.py,282
+D:
+  backend/config.py:
+    i: functools.lru_cache,pydantic_settings.BaseSettings,typing.Optional
+    e: Settings,get_settings
+    Settings: 
+    get_settings()->Settings
+  backend/migrations.py:
+    i: sqlite3,os,sys,datetime
+    e: DB_PATH,MIGRATIONS,get_db,get_current_version,upgrade,downgrade,status,create_migration
+    get_db()->None
+    get_current_version(conn)->int
+    upgrade()->None
+    downgrade()->None
+    status()->None
+    create_migration(name:str)->None
+  backend/main.py:
+    i: fastapi,fastapi.middleware.cors.CORSMiddleware,fastapi.staticfiles.StaticFiles,pydantic.BaseModel,typing.Optional
+    e: DB_PATH,VERSION,Profile,Endpoint,Document,ProfileDelegate,db,init_db
+    Profile: 
+    Endpoint: 
+    Document: 
+    ProfileDelegate: 
+    Hub: __init__(0),connect(2),disconnect(2),broadcast(2)
+    db()->None
+    init_db()->None
+    adapter_pull(ep:dict)->list[dict]
+    adapter_push(ep:dict;docs:list[dict])->dict
+    lifespan(app:FastAPI)->None
+    list_profiles()->None
+    create_profile(p:Profile)->None
+    get_profile(id:str)->None
+  frontend/router.js:
+    e: Router
+    Router: constructor(0),init(0),register(2),navigate(1),handleRoute(0)
+  desktop/sync.js:
+    e: stopAutoSync,pullFromServer,checkOnline,setServerUrl,processSyncQueue,forceSync,syncItem,setStatusCallback
+    setServerUrl(url)->None
+    setStatusCallback(callback)->None
+    notifyStatus(status)->None
+    checkOnline()->None
+    syncItem(item)->None
+    processSyncQueue()->None
+    pullFromServer(profileId)->None
+    startAutoSync()->None
+  desktop/database.js:
+    e: updateProfile,getDocuments,createProfile,initialize,addToSyncQueue,getDbPath,getStats,deleteEndpoint
+    getDbPath()->None
+    initialize()->None
+    close()->None
+    getProfiles()->None
+    getProfile(id)->None
+    createProfile(profile)->None
+    updateProfile(id;updates)->None
+    deleteProfile(id)->None
+  desktop/main.js:
+    e: createMenu,createWindow,showAbout
+    createWindow()->None
+    createMenu()->None
+    showAbout()->None
+  tests/test_e2e.py:
+    i: pytest,httpx,time,uuid,playwright.sync_api.{Page,expect}
+    e: API_URL,APP_URL,TestProfileAPI,TestProfileDelegatesAPI,TestLegacyAPI,TestUI,TestIntegration,TestProfileUI
+    TestProfileAPI: test_list_profiles(0),test_create_profile(0),test_get_profile(0),test_update_profile(0),test_delete_profile(0)  # Tests for profile management API (v1....
+    TestProfileDelegatesAPI: test_list_delegates_empty(0),test_create_delegate(0),test_get_delegate(0),test_update_delegate_role(0),test_toggle_delegate_active(0)  # Tests for profile delegation/permissi...
+    TestLegacyAPI: test_health(0),test_create_endpoint(0),test_create_document(0),test_document_flow(0),test_pull_from_mock_ksef(0)  # Tests for backward-compatible legacy...
+    TestUI: test_page_loads(1),test_navigation(1),test_create_document_ui(1),test_add_import_endpoint_ui(1),test_document_status_workflow_ui(1)
+    TestIntegration: test_full_import_export_flow(0),test_webhook_integration(0)
+    browser_context_args()->None
+  frontend/components/document-manager.js:
+    e: DocumentManager
+    DocumentManager()->None
+  frontend/components/profile-manager.js:
+    e: ProfileManager
+    ProfileManager()->None
+  backend/adapters/export.py:
+    i: csv,io,datetime,BaseAdapter,AdapterResult,register_adapter,typing.Optional
+    e: KPIR_COLUMNS,CATEGORY_MAPPING,WFirmaAdapter,JPKPKPIRAdapter,ComarchAdapter,SymfoniaAdapter,EnovaAdapter
+    WFirmaAdapter: __init__(1),_pull(0),_push(1),_document_to_row(2),_format_date(1)  # wFirma CSV export adapter
+    JPKPKPIRAdapter: _pull(0),_push(1),_generate_xml(5)  # JPK_PKPIR XML export adapter
+    ComarchAdapter: _pull(0),_push(1)  # Comarch Optima XML export adapter
+    SymfoniaAdapter: _pull(0),_push(1)  # Symfonia export adapter
+    EnovaAdapter: _pull(0),_push(1)  # enova365 export adapter
+  backend/adapters/ksef.py:
+    i: httpx,base64,hashlib,datetime,BaseAdapter,AdapterResult,register_adapter,os,datetime.timedelta,typing.Optional
+    e: KSEF_URLS,KSeFAdapter,KSeFMockAdapter
+    KSeFAdapter: __init__(1),_validate_config(0),_get_session(0),_pull(0),_push(1)  # KSeF (Krajowy System e-Faktur) adapter
+    KSeFMockAdapter: _pull(0),_push(1)  # Mock KSeF adapter for testing
+  backend/adapters/email.py:
+    i: asyncio,email,imaplib,datetime,os,base64,BaseAdapter,datetime.timedelta,email.header.decode_header,typing.Optional
+    e: EmailIMAPAdapter,EmailMockAdapter
+    EmailIMAPAdapter: __init__(1),_validate_config(0),_pull(0),_push(1),_fetch_emails(0)  # Email IMAP import adapter
+    EmailMockAdapter: _pull(0),_push(1)  # Mock email adapter for testing
+  backend/adapters/__init__.py:
+    i: datetime,ksef,email,export,categorize,ocr,abc.{ABC,abstractmethod},pydantic.BaseModel,typing.Optional
+    e: AdapterResult,BaseAdapter,register_adapter,get_adapter,list_adapters
+    AdapterResult:   # Result of adapter operation
+    BaseAdapter: __init__(1),pull(0),push(1),_pull(0),_push(1)  # Base adapter interface
+    register_adapter(name:str)->None
+    get_adapter(adapter_type:str;config:dict)->BaseAdapter
+    list_adapters()->list[str]
+  backend/adapters/categorize.py:
+    i: datetime,typing.Optional
+    e: CATEGORIES,DEFAULT_RULES,Suggestion,AutoCategorizer,get_categorizer,suggest_category,save_categorization
+    Suggestion: __init__(5),to_dict(0)  # Categorization suggestion
+    AutoCategorizer: __init__(2),suggest(1),_suggest_from_history(1),_suggest_from_rules(1),save_to_history(3)  # Auto-categorization engine
+    get_categorizer()->AutoCategorizer
+    suggest_category(document:dict)->dict
+    save_categorization(nip:str;category:str;document_id:str)->None
+  backend/adapters/ocr.py:
+    i: base64,re,datetime,BaseAdapter,AdapterResult,register_adapter,typing.Optional
+    e: OCR_PROVIDERS,InvoiceExtractor,OCRAdapter,OCRMockAdapter
+    InvoiceExtractor: extract(1),_find_first(2),_normalize_date(1),_normalize_nip(1),_parse_amount(1)  # Extract invoice data from OCR text
+    OCRAdapter: __init__(1),_pull(0),_push(1),_run_ocr(2),_ocr_tesseract(2)  # OCR processing adapter
+    OCRMockAdapter: _pull(0),_push(1)  # Mock OCR adapter for testing

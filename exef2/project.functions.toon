@@ -1,14 +1,17 @@
 project: exef2
-generated: "2026-02-02T16:47:50.478270"
-modules[14]{path,lang,items}:
+generated: "2026-02-02T17:06:03.069613"
+modules[17]{path,lang,items}:
   backend/config.py,python,1
   backend/migrations.py,python,6
-  backend/main.py,python,46
+  backend/main.py,python,51
+  frontend/router.js,javascript,7
   desktop/preload.js,javascript,0
   desktop/sync.js,javascript,10
   desktop/database.js,javascript,21
   desktop/main.js,javascript,3
-  tests/test_e2e.py,python,47
+  tests/test_e2e.py,python,59
+  frontend/components/document-manager.js,javascript,1
+  frontend/components/profile-manager.js,javascript,1
   backend/adapters/export.py,python,15
   backend/adapters/ksef.py,python,10
   backend/adapters/email.py,python,12
@@ -22,60 +25,74 @@ function_details:
       get_settings,function,() -> Settings,43-44,false,2,1,retrieves settings
   backend/migrations.py:
     functions[6]{name,kind,sig,loc,async,lines,cc,does}:
-      get_db,function,() -> None,120-123,false,4,1,retrieves db
-      get_current_version,function,(conn) -> int,126-132,false,7,3,Get current migration version
-      upgrade,function,() -> None,135-164,false,30,5,Apply all pending migrations
-      downgrade,function,() -> None,167-191,false,25,5,Rollback last migration
-      status,function,() -> None,194-208,false,15,3,Show migration status
-      create_migration,function,"(name:str) -> None",211-223,false,13,1,Generate new migration template
+      get_db,function,() -> None,144-147,false,4,1,retrieves db
+      get_current_version,function,(conn) -> int,150-156,false,7,3,Get current migration version
+      upgrade,function,() -> None,159-188,false,30,5,Apply all pending migrations
+      downgrade,function,() -> None,191-215,false,25,5,Rollback last migration
+      status,function,() -> None,218-232,false,15,3,Show migration status
+      create_migration,function,"(name:str) -> None",235-247,false,13,1,Generate new migration template
   backend/main.py:
-    functions[46]{name,kind,sig,loc,async,lines,cc,does}:
-      db,function,() -> None,49-52,false,4,1,db
-      init_db,function,() -> None,54-67,false,14,2,creates db
-      adapter_pull,function,"(ep:dict) -> list[dict]",89-103,true,15,6,adapter pull
-      adapter_push,function,"(ep:dict, docs:list[dict]) -> dict",105-129,true,25,7,adapter push
-      lifespan,function,"(app:FastAPI) -> None",133-135,true,3,1,lifespan
-      list_profiles,function,() -> None,142-144,false,3,2,list profiles
-      create_profile,function,"(p:Profile) -> None",147-153,true,7,2,creates profile
-      get_profile,function,"(id:str) -> None",156-160,false,5,2,retrieves profile
-      update_profile,function,"(id:str, updates:dict) -> None",163-171,true,9,2,updates profile
-      delete_profile,function,"(id:str) -> None",174-180,false,7,2,deletes profile
-      list_endpoints,function,"(profile_id:str, direction:str=None) -> None",184-188,false,5,5,list endpoints
-      create_endpoint,function,"(profile_id:str, ep:Endpoint) -> None",191-197,true,7,2,creates endpoint
-      delete_endpoint,function,"(profile_id:str, id:str) -> None",200-204,true,5,1,deletes endpoint
-      list_documents,function,"(profile_id:str, status:str=None, type:str=None, limit:int=100) -> None",208-217,false,10,8,list documents
-      create_document,function,"(profile_id:str, doc:Document) -> None",220-227,true,8,2,creates document
-      update_document,function,"(profile_id:str, id:str, updates:dict) -> None",230-238,true,9,2,updates document
-      delete_document,function,"(profile_id:str, id:str) -> None",241-245,true,5,1,deletes document
-      pull_from_endpoint,function,"(profile_id:str, endpoint_id:str) -> None",249-277,true,29,5,pull from endpoint
-      push_to_endpoint,function,"(profile_id:str, endpoint_id:str, document_ids:list[str]) -> None",280-304,true,25,7,sends to endpoint
-      webhook_receive,function,"(profile_id:str, endpoint_id:str, payload:dict) -> None",308-318,true,11,1,webhook receive
-      get_profile_stats,function,"(profile_id:str) -> None",322-336,false,15,13,retrieves profile stats
-      get_global_stats,function,() -> None,339-344,false,6,1,retrieves global stats
-      websocket_endpoint,function,"(ws:WebSocket, profile_id:str='default') -> None",348-353,true,6,3,websocket endpoint
-      legacy_list_endpoints,function,"(direction:str=None) -> None",357-358,false,2,1,legacy list endpoints
-      legacy_create_endpoint,function,"(ep:Endpoint) -> None",361-363,true,3,1,legacy create endpoint
-      legacy_delete_endpoint,function,"(id:str) -> None",366-367,true,2,1,legacy delete endpoint
-      legacy_list_documents,function,"(status:str=None, type:str=None) -> None",370-371,false,2,1,legacy list documents
-      legacy_create_document,function,"(doc:Document) -> None",374-376,true,3,1,legacy create document
-      legacy_update_document,function,"(id:str, updates:dict) -> None",379-380,true,2,1,legacy update document
-      legacy_delete_document,function,"(id:str) -> None",383-384,true,2,1,legacy delete document
-      legacy_pull,function,"(endpoint_id:str) -> None",387-388,true,2,1,legacy pull
-      legacy_push,function,"(endpoint_id:str, document_ids:list[str]) -> None",391-392,true,2,1,legacy push
-      legacy_websocket,function,"(ws:WebSocket) -> None",395-396,true,2,1,legacy websocket
-      list_categories,function,() -> None,400-403,false,4,1,List all available expense categories
-      suggest_category,function,"(profile_id:str, id:str) -> None",406-413,true,8,2,Get category suggestion for document
-      categorize_document,function,"(profile_id:str, id:str, body:dict) -> None",416-434,true,19,5,Apply category to document and save to history
-      list_export_formats,function,() -> None,438-448,false,11,1,List available export formats
-      export_documents,function,"(profile_id:str, format:str, body:dict=None) -> None",451-500,true,50,9,Export documents to specified format
-      process_document_ocr,function,"(profile_id:str, id:str, body:dict=None) -> None",504-533,true,30,6,Process document with OCR to extract invoice data
-      upload_file,function,"(profile_id:str, file:UploadFile=File(...)) -> None",540-592,true,53,5,Upload file and create document with OCR processing
-      list_adapters,function,() -> None,596-599,false,4,1,List available adapters
-      health,function,() -> None,603-604,false,2,1,health
-      Hub.__init__,method,() -> None,71-71,false,1,1,creates
-      Hub.connect,method,"(ws:WebSocket, profile_id:str='default') -> None",73-75,true,3,1,registers
-      Hub.disconnect,method,"(ws:WebSocket, profile_id:str='default') -> None",77-79,false,3,3,disconnect
-      Hub.broadcast,method,"(msg:dict, profile_id:str='default') -> None",81-84,true,4,3,broadcast
+    functions[51]{name,kind,sig,loc,async,lines,cc,does}:
+      db,function,() -> None,61-64,false,4,1,db
+      init_db,function,() -> None,66-81,false,16,2,creates db
+      adapter_pull,function,"(ep:dict) -> list[dict]",103-117,true,15,6,adapter pull
+      adapter_push,function,"(ep:dict, docs:list[dict]) -> dict",119-143,true,25,7,adapter push
+      lifespan,function,"(app:FastAPI) -> None",147-149,true,3,1,lifespan
+      list_profiles,function,() -> None,156-158,false,3,2,list profiles
+      create_profile,function,"(p:Profile) -> None",161-167,true,7,2,creates profile
+      get_profile,function,"(id:str) -> None",170-174,false,5,2,retrieves profile
+      update_profile,function,"(id:str, updates:dict) -> None",177-185,true,9,2,updates profile
+      delete_profile,function,"(id:str) -> None",188-195,false,8,2,deletes profile
+      list_delegates,function,"(profile_id:str) -> None",199-202,false,4,2,list delegates
+      create_delegate,function,"(profile_id:str, d:ProfileDelegate) -> None",205-215,true,11,3,creates delegate
+      get_delegate,function,"(profile_id:str, id:str) -> None",218-222,false,5,2,retrieves delegate
+      update_delegate,function,"(profile_id:str, id:str, updates:dict) -> None",225-234,true,10,2,updates delegate
+      delete_delegate,function,"(profile_id:str, id:str) -> None",237-241,true,5,1,deletes delegate
+      list_endpoints,function,"(profile_id:str, direction:str=None) -> None",245-249,false,5,5,list endpoints
+      create_endpoint,function,"(profile_id:str, ep:Endpoint) -> None",252-258,true,7,2,creates endpoint
+      delete_endpoint,function,"(profile_id:str, id:str) -> None",261-265,true,5,1,deletes endpoint
+      list_documents,function,"(profile_id:str, status:str=None, type:str=None, limit:int=100) -> None",269-278,false,10,8,list documents
+      create_document,function,"(profile_id:str, doc:Document) -> None",281-288,true,8,2,creates document
+      update_document,function,"(profile_id:str, id:str, updates:dict) -> None",291-299,true,9,2,updates document
+      delete_document,function,"(profile_id:str, id:str) -> None",302-306,true,5,1,deletes document
+      pull_from_endpoint,function,"(profile_id:str, endpoint_id:str) -> None",310-338,true,29,5,pull from endpoint
+      push_to_endpoint,function,"(profile_id:str, endpoint_id:str, document_ids:list[str]) -> None",341-365,true,25,7,sends to endpoint
+      webhook_receive,function,"(profile_id:str, endpoint_id:str, payload:dict) -> None",369-379,true,11,1,webhook receive
+      get_profile_stats,function,"(profile_id:str) -> None",383-397,false,15,13,retrieves profile stats
+      get_global_stats,function,() -> None,400-405,false,6,1,retrieves global stats
+      websocket_endpoint,function,"(ws:WebSocket, profile_id:str='default') -> None",409-414,true,6,3,websocket endpoint
+      legacy_list_endpoints,function,"(direction:str=None) -> None",418-419,false,2,1,legacy list endpoints
+      legacy_create_endpoint,function,"(ep:Endpoint) -> None",422-424,true,3,1,legacy create endpoint
+      legacy_delete_endpoint,function,"(id:str) -> None",427-428,true,2,1,legacy delete endpoint
+      legacy_list_documents,function,"(status:str=None, type:str=None) -> None",431-432,false,2,1,legacy list documents
+      legacy_create_document,function,"(doc:Document) -> None",435-437,true,3,1,legacy create document
+      legacy_update_document,function,"(id:str, updates:dict) -> None",440-441,true,2,1,legacy update document
+      legacy_delete_document,function,"(id:str) -> None",444-445,true,2,1,legacy delete document
+      legacy_pull,function,"(endpoint_id:str) -> None",448-449,true,2,1,legacy pull
+      legacy_push,function,"(endpoint_id:str, document_ids:list[str]) -> None",452-453,true,2,1,legacy push
+      legacy_websocket,function,"(ws:WebSocket) -> None",456-457,true,2,1,legacy websocket
+      list_categories,function,() -> None,461-464,false,4,1,List all available expense categories
+      suggest_category,function,"(profile_id:str, id:str) -> None",467-474,true,8,2,Get category suggestion for document
+      categorize_document,function,"(profile_id:str, id:str, body:dict) -> None",477-495,true,19,5,Apply category to document and save to history
+      list_export_formats,function,() -> None,499-509,false,11,1,List available export formats
+      export_documents,function,"(profile_id:str, format:str, body:dict=None) -> None",512-561,true,50,9,Export documents to specified format
+      process_document_ocr,function,"(profile_id:str, id:str, body:dict=None) -> None",565-594,true,30,6,Process document with OCR to extract invoice data
+      upload_file,function,"(profile_id:str, file:UploadFile=File(...)) -> None",601-653,true,53,5,Upload file and create document with OCR processing
+      list_adapters,function,() -> None,657-660,false,4,1,List available adapters
+      health,function,() -> None,664-665,false,2,1,health
+      Hub.__init__,method,() -> None,85-85,false,1,1,creates
+      Hub.connect,method,"(ws:WebSocket, profile_id:str='default') -> None",87-89,true,3,1,registers
+      Hub.disconnect,method,"(ws:WebSocket, profile_id:str='default') -> None",91-93,false,3,3,disconnect
+      Hub.broadcast,method,"(msg:dict, profile_id:str='default') -> None",95-98,true,4,3,broadcast
+  frontend/router.js:
+    functions[7]{name,kind,sig,loc,async,lines,cc,does}:
+      Router.constructor,method,() -> None,3-8,false,6,1,constructor
+      Router.init,method,() -> None,10-13,false,4,1,creates
+      Router.register,method,"(path, component) -> None",15-17,false,3,1,registers
+      Router.navigate,method,(path) -> None,19-31,false,13,1,navigate
+      Router.handleRoute,method,() -> None,33-58,false,26,1,handles route
+      Router.matchPath,method,"(routePath, actualPath) -> None",60-74,false,15,1,filters path
+      Router.render,method,() -> None,76-83,false,8,1,formats
   desktop/sync.js:
     functions[10]{name,kind,sig,loc,async,lines,cc,does}:
       setServerUrl,function,(url) -> None,10-12,false,3,1,updates server url
@@ -117,8 +134,8 @@ function_details:
       createMenu,function,() -> None,59-156,false,98,1,creates menu
       showAbout,function,() -> None,158-166,false,9,1,show about
   tests/test_e2e.py:
-    functions[47]{name,kind,sig,loc,async,lines,cc,does}:
-      browser_context_args,function,() -> None,907-908,false,2,1,browser context args
+    functions[59]{name,kind,sig,loc,async,lines,cc,does}:
+      browser_context_args,function,() -> None,1125-1126,false,2,1,browser context args
       TestProfileAPI.test_list_profiles,method,() -> None,16-22,false,7,2,Default profile should exist
       TestProfileAPI.test_create_profile,method,() -> None,24-39,false,16,1,Can create a new profile
       TestProfileAPI.test_get_profile,method,() -> None,41-46,false,6,1,Can get a specific profile
@@ -126,45 +143,63 @@ function_details:
       TestProfileAPI.test_delete_profile,method,() -> None,62-74,false,13,1,Can delete a profile (except default)
       TestProfileAPI.test_cannot_delete_default_profile,method,() -> None,76-79,false,4,1,Cannot delete the default profile
       TestProfileAPI.test_profile_isolation,method,() -> None,81-113,false,33,5,Documents in one profile are not visible in another
-      TestLegacyAPI.test_health,method,() -> None,120-124,false,5,1,checks health
-      TestLegacyAPI.test_create_endpoint,method,() -> None,126-135,false,10,1,checks create endpoint
-      TestLegacyAPI.test_create_document,method,() -> None,137-146,false,10,1,checks create document
-      TestLegacyAPI.test_document_flow,method,() -> None,148-164,false,17,1,checks document flow
-      TestLegacyAPI.test_pull_from_mock_ksef,method,() -> None,166-182,false,17,2,checks pull from mock ksef
-      TestLegacyAPI.test_push_to_mock_wfirma,method,() -> None,184-209,false,26,3,checks push to mock wfirma
-      TestLegacyAPI.test_webhook_receive,method,() -> None,211-231,false,21,2,checks webhook receive
-      TestLegacyAPI.test_stats,method,() -> None,233-238,false,6,1,checks stats
-      TestUI.test_page_loads,method,"(page:Page) -> None",243-245,false,3,1,checks page loads
-      TestUI.test_navigation,method,"(page:Page) -> None",247-264,false,18,1,checks navigation
-      TestUI.test_create_document_ui,method,"(page:Page) -> None",266-288,false,23,4,checks create document ui
-      TestUI.test_add_import_endpoint_ui,method,"(page:Page) -> None",290-315,false,26,4,checks add import endpoint ui
-      TestUI.test_document_status_workflow_ui,method,"(page:Page) -> None",317-347,false,31,3,checks document status workflow ui
-      TestIntegration.test_full_import_export_flow,method,() -> None,352-393,false,42,3,"Test complete flow: create import endpoint -> pull -> describe -> sign -> create..."
-      TestIntegration.test_webhook_integration,method,() -> None,395-422,false,28,3,Test webhook endpoint receiving external document and exporting it
-      TestProfileUI.test_profile_selector_visible,method,"(page:Page) -> None",429-432,false,4,1,Profile selector should be visible in sidebar
-      TestProfileUI.test_profile_dropdown_opens,method,"(page:Page) -> None",434-439,false,6,1,Clicking profile selector opens dropdown
-      TestProfileUI.test_navigate_to_profiles_view,method,"(page:Page) -> None",441-447,false,7,1,Can navigate to profiles management view
-      TestProfileUI.test_create_profile_ui,method,"(page:Page) -> None",449-477,false,29,4,Can create a new profile via UI
-      TestProfileUI.test_switch_profile_ui,method,"(page:Page) -> None",479-502,false,24,1,Can switch between profiles
-      TestProfileScopedAPI.test_create_document_in_profile,method,() -> None,509-524,false,16,1,Can create document in specific profile
-      TestProfileScopedAPI.test_create_endpoint_in_profile,method,() -> None,526-541,false,16,1,Can create endpoint in specific profile
-      TestProfileScopedAPI.test_profile_stats,method,() -> None,543-564,false,22,1,Can get stats for specific profile
-      TestProfileScopedAPI.test_full_profile_workflow,method,() -> None,566-605,false,40,3,"Complete workflow within a profile: create -> import -> describe -> sign -> expo..."
-      TestExportAPI.test_list_categories,method,() -> None,612-619,false,8,1,Can list available expense categories
-      TestExportAPI.test_list_export_formats,method,() -> None,621-629,false,9,2,Can list available export formats
-      TestExportAPI.test_suggest_category,method,() -> None,631-657,false,27,1,Can get category suggestion for document
-      TestExportAPI.test_categorize_document,method,() -> None,659-680,false,22,1,Can apply category to document
-      TestExportAPI.test_export_wfirma,method,() -> None,682-712,false,31,1,Can export documents to wFirma CSV format
-      TestExportAPI.test_export_jpk_pkpir,method,() -> None,714-741,false,28,1,Can export documents to JPK_PKPIR XML format
-      TestExportAPI.test_list_adapters,method,() -> None,743-750,false,8,1,Can list available adapters
-      TestExportAPI.test_ocr_mock_processing,method,() -> None,752-779,false,28,1,Can process document with mock OCR
-      TestCategorizationUI.test_describe_view_loads,method,"(page:Page) -> None",786-792,false,7,1,Describe view loads with categorization section
-      TestCategorizationUI.test_export_file_view_loads,method,"(page:Page) -> None",794-801,false,8,1,Export file view loads with format cards
-      TestURLRouting.test_navigation_updates_url,method,"(page:Page) -> None",807-816,false,10,1,Navigation clicks update URL with view parameter
-      TestURLRouting.test_url_restores_view,method,"(page:Page) -> None",818-825,false,8,1,Loading URL with view param restores correct view
-      TestURLRouting.test_browser_back_works,method,"(page:Page) -> None",827-846,false,20,1,Browser back button restores previous view
-      TestURLRouting.test_document_detail_view,method,"(page:Page) -> None",848-875,false,28,1,Can navigate to document detail via click on row
-      TestFileUpload.test_upload_file,method,() -> None,881-903,false,23,1,Can upload file and process with OCR
+      TestProfileDelegatesAPI.test_list_delegates_empty,method,() -> None,120-125,false,6,1,List delegates for profile with no delegates
+      TestProfileDelegatesAPI.test_create_delegate,method,() -> None,127-143,false,17,1,Can add a delegate to a profile
+      TestProfileDelegatesAPI.test_get_delegate,method,() -> None,145-160,false,16,1,Can get a specific delegate
+      TestProfileDelegatesAPI.test_update_delegate_role,method,() -> None,162-177,false,16,1,Can update delegate role
+      TestProfileDelegatesAPI.test_toggle_delegate_active,method,() -> None,179-199,false,21,1,Can activate/deactivate delegate
+      TestProfileDelegatesAPI.test_delete_delegate,method,() -> None,201-216,false,16,1,Can delete a delegate
+      TestProfileDelegatesAPI.test_delegates_isolated_per_profile,method,() -> None,218-242,false,25,3,Delegates are isolated per profile
+      TestProfileDelegatesAPI.test_delete_profile_cascades_delegates,method,() -> None,244-267,false,24,1,Deleting profile removes all its delegates
+      TestLegacyAPI.test_health,method,() -> None,274-278,false,5,1,checks health
+      TestLegacyAPI.test_create_endpoint,method,() -> None,280-289,false,10,1,checks create endpoint
+      TestLegacyAPI.test_create_document,method,() -> None,291-300,false,10,1,checks create document
+      TestLegacyAPI.test_document_flow,method,() -> None,302-318,false,17,1,checks document flow
+      TestLegacyAPI.test_pull_from_mock_ksef,method,() -> None,320-336,false,17,2,checks pull from mock ksef
+      TestLegacyAPI.test_push_to_mock_wfirma,method,() -> None,338-363,false,26,3,checks push to mock wfirma
+      TestLegacyAPI.test_webhook_receive,method,() -> None,365-385,false,21,2,checks webhook receive
+      TestLegacyAPI.test_stats,method,() -> None,387-392,false,6,1,checks stats
+      TestUI.test_page_loads,method,"(page:Page) -> None",397-399,false,3,1,checks page loads
+      TestUI.test_navigation,method,"(page:Page) -> None",401-418,false,18,1,checks navigation
+      TestUI.test_create_document_ui,method,"(page:Page) -> None",420-442,false,23,4,checks create document ui
+      TestUI.test_add_import_endpoint_ui,method,"(page:Page) -> None",444-469,false,26,4,checks add import endpoint ui
+      TestUI.test_document_status_workflow_ui,method,"(page:Page) -> None",471-501,false,31,3,checks document status workflow ui
+      TestIntegration.test_full_import_export_flow,method,() -> None,506-547,false,42,3,"Test complete flow: create import endpoint -> pull -> describe -> sign -> create..."
+      TestIntegration.test_webhook_integration,method,() -> None,549-576,false,28,3,Test webhook endpoint receiving external document and exporting it
+      TestProfileUI.test_profile_selector_visible,method,"(page:Page) -> None",583-586,false,4,1,Profile selector should be visible in sidebar
+      TestProfileUI.test_profile_dropdown_opens,method,"(page:Page) -> None",588-593,false,6,1,Clicking profile selector opens dropdown
+      TestProfileUI.test_navigate_to_profiles_view,method,"(page:Page) -> None",595-601,false,7,1,Can navigate to profiles management view
+      TestProfileUI.test_create_profile_ui,method,"(page:Page) -> None",603-631,false,29,4,Can create a new profile via UI
+      TestProfileUI.test_switch_profile_ui,method,"(page:Page) -> None",633-656,false,24,1,Can switch between profiles
+      TestProfileDelegatesUI.test_delegates_button_visible,method,"(page:Page) -> None",663-668,false,6,1,Delegates button should be visible on profile cards
+      TestProfileDelegatesUI.test_navigate_to_delegates_view,method,"(page:Page) -> None",670-677,false,8,1,Can navigate to delegates view from profile card
+      TestProfileDelegatesUI.test_add_delegate_ui,method,"(page:Page) -> None",679-710,false,32,1,Can add a delegate via UI
+      TestProfileDelegatesUI.test_role_descriptions_visible,method,"(page:Page) -> None",712-720,false,9,1,Role descriptions should be visible in delegates view
+      TestProfileScopedAPI.test_create_document_in_profile,method,() -> None,727-742,false,16,1,Can create document in specific profile
+      TestProfileScopedAPI.test_create_endpoint_in_profile,method,() -> None,744-759,false,16,1,Can create endpoint in specific profile
+      TestProfileScopedAPI.test_profile_stats,method,() -> None,761-782,false,22,1,Can get stats for specific profile
+      TestProfileScopedAPI.test_full_profile_workflow,method,() -> None,784-823,false,40,3,"Complete workflow within a profile: create -> import -> describe -> sign -> expo..."
+      TestExportAPI.test_list_categories,method,() -> None,830-837,false,8,1,Can list available expense categories
+      TestExportAPI.test_list_export_formats,method,() -> None,839-847,false,9,2,Can list available export formats
+      TestExportAPI.test_suggest_category,method,() -> None,849-875,false,27,1,Can get category suggestion for document
+      TestExportAPI.test_categorize_document,method,() -> None,877-898,false,22,1,Can apply category to document
+      TestExportAPI.test_export_wfirma,method,() -> None,900-930,false,31,1,Can export documents to wFirma CSV format
+      TestExportAPI.test_export_jpk_pkpir,method,() -> None,932-959,false,28,1,Can export documents to JPK_PKPIR XML format
+      TestExportAPI.test_list_adapters,method,() -> None,961-968,false,8,1,Can list available adapters
+      TestExportAPI.test_ocr_mock_processing,method,() -> None,970-997,false,28,1,Can process document with mock OCR
+      TestCategorizationUI.test_describe_view_loads,method,"(page:Page) -> None",1004-1010,false,7,1,Describe view loads with categorization section
+      TestCategorizationUI.test_export_file_view_loads,method,"(page:Page) -> None",1012-1019,false,8,1,Export file view loads with format cards
+      TestURLRouting.test_navigation_updates_url,method,"(page:Page) -> None",1025-1034,false,10,1,Navigation clicks update URL with view parameter
+      TestURLRouting.test_url_restores_view,method,"(page:Page) -> None",1036-1043,false,8,1,Loading URL with view param restores correct view
+      TestURLRouting.test_browser_back_works,method,"(page:Page) -> None",1045-1064,false,20,1,Browser back button restores previous view
+      TestURLRouting.test_document_detail_view,method,"(page:Page) -> None",1066-1093,false,28,1,Can navigate to document detail via click on row
+      TestFileUpload.test_upload_file,method,() -> None,1099-1121,false,23,1,Can upload file and process with OCR
+  frontend/components/document-manager.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      DocumentManager,function,() -> None,2-174,false,173,1,document manager
+  frontend/components/profile-manager.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      ProfileManager,function,() -> None,2-228,false,227,1,profile manager
   backend/adapters/export.py:
     functions[15]{name,kind,sig,loc,async,lines,cc,does}:
       WFirmaAdapter.__init__,method,"(config:dict) -> None",80-84,false,5,1,creates

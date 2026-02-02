@@ -3,81 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXEF</title>
+    <title>EXEF v1.2.0</title>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        :root{--bg:#0a0a0b;--bg2:#111113;--bg3:#1a1a1d;--border:#2a2a2e;--text:#f0f0f2;--muted:#606068;--accent:#00d4aa;--warn:#fdcb6e;--danger:#ff6b6b;--purple:#a29bfe}
-        *{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-        .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
-        .sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:16px;display:flex;flex-direction:column}
-        .logo{font-size:20px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
-        .logo span{background:var(--accent);color:#000;padding:4px 8px;border-radius:4px}
-        .profile-selector{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:20px;cursor:pointer;position:relative}
-        .profile-selector:hover{border-color:var(--accent)}
-        .profile-current{display:flex;align-items:center;gap:10px}
-        .profile-avatar{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600}
-        .profile-name{font-size:13px;font-weight:500}
-        .profile-nip{font-size:10px;color:var(--muted)}
-        .profile-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-top:4px;z-index:100;display:none}
-        .profile-selector.open .profile-dropdown{display:block}
-        .profile-option{padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px}
-        .profile-option:hover{background:var(--bg3)}
-        .profile-option.add{color:var(--accent);border-top:1px solid var(--border)}
-        .nav-group{margin-bottom:16px}
-        .nav-label{font-size:10px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;letter-spacing:1px}
-        .nav-item{padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:#a0a0a8;margin-bottom:2px}
-        .nav-item:hover{background:var(--bg3);color:var(--text)}
-        .nav-item.active{background:rgba(0,212,170,0.1);color:var(--accent)}
-        .badge{margin-left:auto;background:var(--accent);color:#000;font-size:10px;padding:2px 6px;border-radius:8px}
-        .badge.warn{background:var(--warn)}.badge.purple{background:var(--purple)}
-        .main{padding:20px}
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-        .title{font-size:22px;font-weight:600}
-        .btn{padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px}
-        .btn-primary{background:var(--accent);color:#000}
-        .btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
-        .btn-danger{background:rgba(255,107,107,0.2);color:var(--danger)}
-        .btn-sm{padding:5px 10px;font-size:12px}
-        .btn:hover{opacity:0.9}
-        .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-        .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
-        .card-header{display:flex;justify-content:space-between;margin-bottom:10px}
-        .card-icon{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px}
-        .card-title{font-weight:600;font-size:14px;margin-bottom:2px}
-        .card-desc{font-size:11px;color:var(--muted);margin-bottom:10px}
-        .card-stats{display:flex;gap:14px;padding-top:10px;border-top:1px solid var(--border)}
-        .stat-value{font-size:16px;font-weight:600}
-        .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase}
-        .card-footer{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
-        th{font-size:10px;text-transform:uppercase;color:var(--muted);background:var(--bg3)}
-        tr:hover td{background:rgba(255,255,255,0.02)}
-        .status{padding:3px 8px;border-radius:10px;font-size:10px}
-        .status-created{background:rgba(116,185,255,0.2);color:#74b9ff}
-        .status-described{background:rgba(253,203,110,0.2);color:var(--warn)}
-        .status-signed{background:rgba(0,212,170,0.2);color:var(--accent)}
-        .status-exported{background:rgba(162,155,254,0.2);color:var(--purple)}
-        .modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:100}
-        .modal-content{background:var(--bg2);border:1px solid var(--border);border-radius:10px;width:90%;max-width:440px;max-height:90vh;overflow:auto}
-        .modal-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-        .modal-body{padding:16px}
-        .modal-footer{padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--bg3)}
-        .form-group{margin-bottom:12px}
-        .form-label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
-        .form-input{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px}
-        .form-input:focus{outline:none;border-color:var(--accent)}
-        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-        .toast{position:fixed;bottom:16px;right:16px;background:var(--bg2);border:1px solid var(--border);padding:10px 14px;border-radius:6px;font-size:12px;z-index:200}
-        .empty{text-align:center;padding:30px;color:var(--muted)}
-        .tabs{display:flex;gap:4px;background:var(--bg3);padding:4px;border-radius:6px;margin-bottom:16px}
-        .tab{flex:1;padding:8px;text-align:center;border-radius:4px;cursor:pointer;font-size:12px;color:var(--muted)}
-        .tab.active{background:var(--bg2);color:var(--text)}
-        .version{margin-top:auto;padding-top:16px;font-size:10px;color:var(--muted);text-align:center}
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body x-data="app()" x-init="init()">
+<body x-data="app()" x-init="init()" x-cloak>
 <div class="app">
+    <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo"><span>📄</span> EXEF</div>
 
@@ -108,6 +40,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Navigation -->
         <div class="nav-group">
             <div class="nav-label">Dokumenty</div>
             <div class="nav-item" :class="{active:view=='docs'}" @click="navigate('docs')">📋 Zarządzanie <span class="badge" x-text="stats.documents?.total||0"></span></div>
@@ -115,6 +49,7 @@
             <div class="nav-item" :class="{active:view=='describe'}" @click="navigate('describe')">🏷️ Opisz <span class="badge warn" x-text="stats.documents?.by_status?.created||0" x-show="stats.documents?.by_status?.created"></span></div>
             <div class="nav-item" :class="{active:view=='sign'}" @click="navigate('sign')">✍️ Podpisz <span class="badge warn" x-text="stats.documents?.by_status?.described||0" x-show="stats.documents?.by_status?.described"></span></div>
         </div>
+
         <div class="nav-group">
             <div class="nav-label">Transfer</div>
             <div class="nav-item" :class="{active:view=='upload'}" @click="navigate('upload')">📤 Wgraj plik</div>
@@ -123,438 +58,437 @@
             <div class="nav-item" :class="{active:view=='exportfile'}" @click="navigate('exportfile')">📁 Eksport pliku</div>
         </div>
 
-        <div class="version">EXEF v1.6.0</div>
+        <div class="version">EXEF v1.2.0</div>
     </aside>
 
+    <!-- Main Content -->
     <main class="main">
-        <!-- Documents -->
-        <template x-if="view=='docs'">
+        <!-- Profiles View -->
+        <template x-if="view=='profiles'" x-data="ProfileManager()">
             <div>
-                <div class="header"><h1 class="title">Dokumenty</h1></div>
-                <div class="card">
-                    <table>
-                        <thead><tr><th>Numer</th><th>Typ</th><th>Kontrahent</th><th>Kwota</th><th>Status</th><th>Akcje</th></tr></thead>
-                        <tbody>
-                        <template x-for="doc in documents" :key="doc.id">
-                            <tr style="cursor:pointer" @click="navigate('doc', {id: doc.id})">
-                                <td x-text="doc.number"></td>
-                                <td x-text="doc.type"></td>
-                                <td x-text="doc.contractor"></td>
-                                <td x-text="doc.amount+' PLN'"></td>
-                                <td><span class="status" :class="'status-'+doc.status" x-text="doc.status"></span></td>
-                                <td @click.stop>
-                                    <button class="btn btn-sm btn-secondary" @click="updateDoc(doc.id,'described')" x-show="doc.status=='created'">Opisz</button>
-                                    <button class="btn btn-sm btn-secondary" @click="updateDoc(doc.id,'signed')" x-show="doc.status=='described'">Podpisz</button>
-                                    <button class="btn btn-sm btn-danger" @click="deleteDoc(doc.id)">🗑</button>
-                                </td>
-                            </tr>
-                        </template>
-                        </tbody>
-                    </table>
-                    <div class="empty" x-show="!documents.length">Brak dokumentów</div>
+                <div class="header">
+                    <h1 class="title">Profile</h1>
+                    <div style="display:flex;gap:12px;align-items:center">
+                        <div class="view-toggle">
+                            <button :class="{active:viewMode=='cards'}" @click="toggleView('cards')">📋 Karty</button>
+                            <button :class="{active:viewMode=='table'}" @click="toggleView('table')">📊 Tabela</button>
+                        </div>
+                        <button class="btn btn-primary" @click="createProfile()">+ Nowy profil</button>
+                    </div>
                 </div>
+
+                <!-- Cards View -->
+                <template x-if="viewMode=='cards'">
+                    <div class="cards">
+                        <template x-for="profile in profiles" :key="profile.id">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-icon" :style="{background:profile.color}" x-text="profile.name.substring(0,2).toUpperCase()"></div>
+                                    <button class="btn btn-sm btn-danger" @click="deleteProfile(profile.id)" x-show="profile.id!='default'">🗑</button>
+                                </div>
+                                <div class="card-title" x-text="profile.name"></div>
+                                <div class="card-desc" x-text="'NIP: '+profile.nip"></div>
+                                <div class="card-footer">
+                                    <button class="btn btn-sm btn-secondary" @click="switchProfile(profile.id)" x-show="profileId!=profile.id">Aktywuj</button>
+                                    <span class="status status-signed" x-show="profileId==profile.id">Aktywny</span>
+                                    <button class="btn btn-sm btn-secondary" @click="startEditProfile(profile)" title="Edytuj">✏️</button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Table View -->
+                <template x-if="viewMode=='table'">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:30px"></th>
+                                    <th>Nazwa</th>
+                                    <th>NIP</th>
+                                    <th>Adres</th>
+                                    <th>Uprawnienia</th>
+                                    <th>Status</th>
+                                    <th style="width:120px">Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="profile in profiles" :key="profile.id">
+                                    <!-- Profile Row -->
+                                    <tr class="expandable-row" :class="{expanded: expandedRows.has(profile.id)}" @click="toggleExpand(profile.id)">
+                                        <td>
+                                            <span class="expand-icon" x-show="delegates[profile.id]?.length">▶</span>
+                                        </td>
+                                        <td>
+                                            <div style="display:flex;align-items:center;gap:8px">
+                                                <div class="card-icon" style="width:24px;height:24px;font-size:10px" :style="{background:profile.color}" x-text="profile.name.substring(0,2).toUpperCase()"></div>
+                                                <template x-if="editingProfile?.id == profile.id">
+                                                    <input class="form-input" style="width:200px" x-model="editingProfile.name" @click.stop>
+                                                </template>
+                                                <template x-if="!editingProfile || editingProfile.id != profile.id">
+                                                    <span class="inline-edit" x-text="profile.name"></span>
+                                                </template>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <template x-if="editingProfile?.id == profile.id">
+                                                <input class="form-input" style="width:120px" x-model="editingProfile.nip" @click.stop>
+                                            </template>
+                                            <template x-if="!editingProfile || editingProfile.id != profile.id">
+                                                <span class="inline-edit" x-text="profile.nip"></span>
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <template x-if="editingProfile?.id == profile.id">
+                                                <input class="form-input" style="width:200px" x-model="editingProfile.address" @click.stop>
+                                            </template>
+                                            <template x-if="!editingProfile || editingProfile.id != profile.id">
+                                                <span class="inline-edit" x-text="profile.address || '-'"></span>
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <span class="badge" x-text="(delegates[profile.id] || []).length + ' osób'"></span>
+                                        </td>
+                                        <td>
+                                            <span class="status status-signed" x-show="profileId==profile.id">Aktywny</span>
+                                            <span class="status status-created" x-show="profileId!=profile.id">Nieaktywny</span>
+                                        </td>
+                                        <td @click.stop>
+                                            <template x-if="editingProfile?.id == profile.id">
+                                                <button class="btn btn-sm btn-primary" @click="saveProfile()">✓</button>
+                                                <button class="btn btn-sm btn-secondary" @click="cancelEditProfile()">✕</button>
+                                            </template>
+                                            <template x-if="!editingProfile || editingProfile.id != profile.id">
+                                                <button class="btn btn-sm btn-secondary" @click="startEditProfile(profile)" title="Edytuj">✏️</button>
+                                                <button class="btn btn-sm btn-danger" @click="deleteProfile(profile.id)" x-show="profile.id!='default'" title="Usuń">🗑</button>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                    
+                                    <!-- Delegates Sub-table -->
+                                    <template x-if="expandedRows.has(profile.id) && delegates[profile.id]?.length">
+                                        <tr class="expandable-content" :class="{show: expandedRows.has(profile.id)}">
+                                            <td colspan="7">
+                                                <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+                                                    <h4 style="margin:0;font-size:14px">👥 Uprawnienia do profilu</h4>
+                                                    <button class="btn btn-sm btn-primary" @click="startEditDelegate(profile.id)">+ Dodaj osobę</button>
+                                                </div>
+                                                <table style="background:var(--bg2)">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Osoba/Firma</th>
+                                                            <th>Email</th>
+                                                            <th>NIP</th>
+                                                            <th>Rola</th>
+                                                            <th>Status</th>
+                                                            <th>Akcje</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <template x-for="delegate in delegates[profile.id]" :key="delegate.id">
+                                                            <tr>
+                                                                <td>
+                                                                    <template x-if="editingDelegate?.profileId == profile.id && editingDelegate?.delegate?.id == delegate.id">
+                                                                        <input class="form-input" x-model="editingDelegate.delegate.delegate_name" @click.stop>
+                                                                    </template>
+                                                                    <template x-if="!editingDelegate || editingDelegate.profileId != profile.id || editingDelegate.delegate.id != delegate.id">
+                                                                        <span x-text="delegate.delegate_name"></span>
+                                                                    </template>
+                                                                </td>
+                                                                <td>
+                                                                    <template x-if="editingDelegate?.profileId == profile.id && editingDelegate?.delegate?.id == delegate.id">
+                                                                        <input class="form-input" x-model="editingDelegate.delegate.delegate_email" @click.stop>
+                                                                    </template>
+                                                                    <template x-if="!editingDelegate || editingDelegate.profileId != profile.id || editingDelegate.delegate.id != delegate.id">
+                                                                        <span x-text="delegate.delegate_email || '-'"></span>
+                                                                    </template>
+                                                                </td>
+                                                                <td>
+                                                                    <template x-if="editingDelegate?.profileId == profile.id && editingDelegate?.delegate?.id == delegate.id">
+                                                                        <input class="form-input" x-model="editingDelegate.delegate.delegate_nip" @click.stop>
+                                                                    </template>
+                                                                    <template x-if="!editingDelegate || editingDelegate.profileId != profile.id || editingDelegate.delegate.id != delegate.id">
+                                                                        <span x-text="delegate.delegate_nip || '-'"></span>
+                                                                    </template>
+                                                                </td>
+                                                                <td>
+                                                                    <template x-if="editingDelegate?.profileId == profile.id && editingDelegate?.delegate?.id == delegate.id">
+                                                                        <select class="form-input" x-model="editingDelegate.delegate.role" @click.stop>
+                                                                            <option value="owner">Właściciel</option>
+                                                                            <option value="admin">Administrator</option>
+                                                                            <option value="editor">Edytor</option>
+                                                                            <option value="viewer">Podgląd</option>
+                                                                        </select>
+                                                                    </template>
+                                                                    <template x-if="!editingDelegate || editingDelegate.profileId != profile.id || editingDelegate.delegate.id != delegate.id">
+                                                                        <select class="form-input" style="width:auto" :value="delegate.role" @change="saveDelegateStatus(profile.id, delegate.id, $event.target.value)">
+                                                                            <option value="owner">Właściciel</option>
+                                                                            <option value="admin">Administrator</option>
+                                                                            <option value="editor">Edytor</option>
+                                                                            <option value="viewer">Podgląd</option>
+                                                                        </select>
+                                                                    </template>
+                                                                </td>
+                                                                <td>
+                                                                    <span class="status" :class="delegate.active ? 'status-signed' : 'status-created'" x-text="delegate.active ? 'Aktywny' : 'Nieaktywny'"></span>
+                                                                </td>
+                                                                <td>
+                                                                    <template x-if="editingDelegate?.profileId == profile.id && editingDelegate?.delegate?.id == delegate.id">
+                                                                        <button class="btn btn-sm btn-primary" @click="saveDelegate()">✓</button>
+                                                                        <button class="btn btn-sm btn-secondary" @click="cancelEditDelegate()">✕</button>
+                                                                    </template>
+                                                                    <template x-if="!editingDelegate || editingDelegate.profileId != profile.id || editingDelegate.delegate.id != delegate.id">
+                                                                        <button class="btn btn-sm btn-secondary" @click="toggleDelegateStatus(profile.id, delegate)" x-text="delegate.active ? 'Dezaktywuj' : 'Aktywuj'"></button>
+                                                                        <button class="btn btn-sm btn-danger" @click="deleteDelegate(profile.id, delegate.id)">🗑</button>
+                                                                    </template>
+                                                                </td>
+                                                            </tr>
+                                                        </template>
+                                                        
+                                                        <!-- Add new delegate row -->
+                                                        <template x-if="editingDelegate?.profileId == profile.id && !editingDelegate.delegate.id">
+                                                            <tr style="background:var(--bg3)">
+                                                                <td><input class="form-input" x-model="editingDelegate.delegate.delegate_name" placeholder="Nazwa" @click.stop></td>
+                                                                <td><input class="form-input" x-model="editingDelegate.delegate.delegate_email" placeholder="Email" @click.stop></td>
+                                                                <td><input class="form-input" x-model="editingDelegate.delegate.delegate_nip" placeholder="NIP" @click.stop></td>
+                                                                <td>
+                                                                    <select class="form-input" x-model="editingDelegate.delegate.role" @click.stop>
+                                                                        <option value="viewer">Podgląd</option>
+                                                                        <option value="editor">Edytor</option>
+                                                                        <option value="admin">Administrator</option>
+                                                                        <option value="owner">Właściciel</option>
+                                                                    </select>
+                                                                </td>
+                                                                <td colspan="2">
+                                                                    <button class="btn btn-sm btn-primary" @click="saveDelegate()">Dodaj</button>
+                                                                    <button class="btn btn-sm btn-secondary" @click="cancelEditDelegate()">Anuluj</button>
+                                                                </td>
+                                                            </tr>
+                                                        </template>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
             </div>
         </template>
 
-        <!-- Document Detail -->
-        <template x-if="view=='doc'">
+        <!-- Documents View -->
+        <template x-if="view=='docs'" x-data="DocumentManager()">
             <div>
                 <div class="header">
-                    <h1 class="title">Szczegóły dokumentu</h1>
-                    <button class="btn btn-secondary" @click="navigate('docs')">← Powrót</button>
+                    <h1 class="title">Dokumenty</h1>
+                    <div style="display:flex;gap:12px;align-items:center">
+                        <div class="view-toggle">
+                            <button :class="{active:viewMode=='table'}" @click="toggleView('table')">📊 Tabela</button>
+                            <button :class="{active:viewMode=='cards'}" @click="toggleView('cards')">📋 Karty</button>
+                        </div>
+                        <button class="btn btn-primary" @click="navigate('create')">+ Nowy dokument</button>
+                    </div>
                 </div>
-                <div class="card" style="max-width:600px" x-data="{doc: documents.find(d => d.id === docId) || {}}">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
+                <!-- Filters -->
+                <div class="card" style="margin-bottom:16px">
+                    <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Numer</label>
-                            <div style="font-size:1.1rem;font-weight:500" x-text="doc.number || '-'"></div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Typ</label>
-                            <div x-text="doc.type || '-'"></div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Kontrahent</label>
-                            <div x-text="doc.contractor || '-'"></div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">NIP kontrahenta</label>
-                            <div x-text="doc.contractor_nip || '-'"></div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Kwota netto</label>
-                            <div x-text="(doc.amount || 0) + ' PLN'"></div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Stawka VAT</label>
-                            <div x-text="doc.vat_rate || '23%'"></div>
+                            <label class="form-label">Szukaj</label>
+                            <input class="form-input" placeholder="Numer lub kontrahent" x-model="filters.search" @input="loadDocuments()">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Status</label>
-                            <span class="status" :class="'status-'+doc.status" x-text="doc.status"></span>
+                            <select class="form-input" x-model="filters.status" @change="loadDocuments()">
+                                <option value="">Wszystkie</option>
+                                <option value="created">Utworzone</option>
+                                <option value="described">Opisane</option>
+                                <option value="signed">Podpisane</option>
+                                <option value="exported">Wyeksportowane</option>
+                            </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Źródło</label>
-                            <div x-text="doc.source || 'manual'"></div>
+                            <label class="form-label">Typ</label>
+                            <select class="form-input" x-model="filters.type" @change="loadDocuments()">
+                                <option value="">Wszystkie</option>
+                                <option value="invoice">Faktura</option>
+                                <option value="contract">Umowa</option>
+                                <option value="payment">Płatność</option>
+                            </select>
                         </div>
-                        <div class="form-group" x-show="doc.category">
-                            <label class="form-label">Kategoria KPiR</label>
-                            <div x-text="doc.category || '-'"></div>
-                        </div>
-                        <div class="form-group" x-show="doc.ocr_confidence">
-                            <label class="form-label">Pewność OCR</label>
-                            <div x-text="(doc.ocr_confidence || 0) + '%'"></div>
-                        </div>
-                    </div>
-                    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #eee;display:flex;gap:0.5rem">
-                        <button class="btn btn-secondary" @click="updateDoc(doc.id,'described')" x-show="doc.status=='created'">Opisz</button>
-                        <button class="btn btn-secondary" @click="updateDoc(doc.id,'signed')" x-show="doc.status=='described'">Podpisz</button>
-                        <button class="btn btn-danger" @click="deleteDoc(doc.id); navigate('docs')">Usuń</button>
                     </div>
                 </div>
-            </div>
-        </template>
 
-        <!-- Create -->
-        <template x-if="view=='create'">
-            <div>
-                <div class="header"><h1 class="title">Utwórz dokument</h1></div>
-                <div class="card" style="max-width:480px">
-                    <div class="form-group"><label class="form-label">Typ</label><select class="form-input" x-model="newDoc.type"><option value="invoice">Faktura</option><option value="contract">Umowa</option><option value="payment">Płatność</option></select></div>
-                    <div class="form-row">
-                        <div class="form-group"><label class="form-label">Numer</label><input class="form-input" x-model="newDoc.number" placeholder="FV/2026/01/001"></div>
-                        <div class="form-group"><label class="form-label">VAT</label><select class="form-input" x-model="newDoc.vat_rate"><option>23%</option><option>8%</option><option>5%</option><option>0%</option><option>ZW</option></select></div>
-                    </div>
-                    <div class="form-group"><label class="form-label">Kontrahent</label><input class="form-input" x-model="newDoc.contractor" placeholder="Nazwa firmy"></div>
-                    <div class="form-group"><label class="form-label">Kwota netto</label><input class="form-input" type="number" x-model="newDoc.amount" placeholder="0"></div>
-                    <button class="btn btn-primary" @click="createDoc()">Utwórz dokument</button>
-                </div>
-            </div>
-        </template>
-
-        <!-- Upload -->
-        <template x-if="view=='upload'">
-            <div>
-                <div class="header"><h1 class="title">Wgraj plik</h1></div>
-                <div class="card" style="max-width:600px">
-                    <p style="margin-bottom:1rem;color:#666">Wgraj fakturę PDF lub zdjęcie. System automatycznie rozpozna dane za pomocą OCR.</p>
-                    <div class="upload-zone" 
-                         style="border:2px dashed #ddd;border-radius:12px;padding:3rem;text-align:center;cursor:pointer;transition:all 0.2s"
-                         @click="$refs.fileInput.click()"
-                         @dragover.prevent="$event.target.style.borderColor='#6c5ce7'"
-                         @dragleave.prevent="$event.target.style.borderColor='#ddd'"
-                         @drop.prevent="handleFileDrop($event)">
-                        <div style="font-size:3rem;margin-bottom:1rem">📄</div>
-                        <div style="font-size:1.1rem;font-weight:500;margin-bottom:0.5rem">Przeciągnij plik tutaj</div>
-                        <div style="color:#999">lub kliknij aby wybrać</div>
-                        <div style="margin-top:1rem;font-size:0.85rem;color:#999">Obsługiwane: PDF, JPG, PNG</div>
-                    </div>
-                    <input type="file" x-ref="fileInput" @change="uploadFile($event)" accept=".pdf,.jpg,.jpeg,.png" style="display:none">
-                    <div x-show="uploadProgress" style="margin-top:1rem">
-                        <div style="background:#eee;border-radius:8px;height:8px;overflow:hidden">
-                            <div style="background:linear-gradient(90deg,#6c5ce7,#a29bfe);height:100%;transition:width 0.3s" :style="{width:uploadProgress+'%'}"></div>
-                        </div>
-                        <div style="text-align:center;margin-top:0.5rem;color:#666" x-text="uploadProgress < 100 ? 'Przetwarzanie...' : 'Gotowe!'"></div>
-                    </div>
-                    <div x-show="lastUpload" style="margin-top:1.5rem;padding:1rem;background:#f0fff4;border-radius:8px;border:1px solid #00b894">
-                        <div style="font-weight:500;color:#00b894;margin-bottom:0.5rem">✓ Plik przetworzony</div>
-                        <div style="font-size:0.9rem">
-                            <div><strong>Numer:</strong> <span x-text="lastUpload?.number || '-'"></span></div>
-                            <div><strong>Kwota:</strong> <span x-text="(lastUpload?.amount || 0) + ' PLN'"></span></div>
-                            <div><strong>Pewność OCR:</strong> <span x-text="(lastUpload?.ocr_confidence || 0) + '%'"></span></div>
-                        </div>
-                        <button class="btn btn-secondary btn-sm" style="margin-top:0.5rem" @click="view='docs'">Zobacz dokumenty</button>
+                <!-- Bulk Actions -->
+                <div class="card" style="margin-bottom:16px" x-show="selectedDocuments.size">
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <span x-text="`Wybrano: ${selectedDocuments.size}`"></span>
+                        <button class="btn btn-sm btn-secondary" @click="bulkUpdateStatus('described')">Opisz</button>
+                        <button class="btn btn-sm btn-secondary" @click="bulkUpdateStatus('signed')">Podpisz</button>
+                        <button class="btn btn-sm btn-danger" @click="selectedDocuments.clear()">Wyczyść</button>
                     </div>
                 </div>
-            </div>
-        </template>
 
-        <!-- Describe & Categorize -->
-        <template x-if="view=='describe'">
-            <div>
-                <div class="header"><h1 class="title">Opis i kategoryzacja</h1></div>
-                
-                <!-- Documents to describe -->
-                <div class="card" x-show="documents.filter(d=>d.status=='created').length">
-                    <h3 style="margin-bottom:1rem;color:#333">📝 Do opisania</h3>
-                    <table>
-                        <thead><tr><th>Numer</th><th>Kontrahent</th><th>Kwota</th><th>Kategoria</th><th>Akcje</th></tr></thead>
-                        <tbody>
-                        <template x-for="doc in documents.filter(d=>d.status=='created')" :key="doc.id">
-                            <tr>
-                                <td x-text="doc.number"></td>
-                                <td x-text="doc.contractor"></td>
-                                <td x-text="doc.amount+' PLN'"></td>
-                                <td>
-                                    <select class="form-input" style="width:auto;padding:4px 8px" x-model="doc.category" @change="categorizeDoc(doc.id, doc.category)">
-                                        <option value="">-- wybierz --</option>
-                                        <option value="towary">Zakup towarów</option>
-                                        <option value="materialy">Materiały</option>
-                                        <option value="uslugi">Usługi obce</option>
-                                        <option value="wynagrodzenia">Wynagrodzenia</option>
-                                        <option value="paliwo">Paliwo</option>
-                                        <option value="telefon">Telefon/Internet</option>
-                                        <option value="hosting">Hosting/IT</option>
-                                        <option value="oprogramowanie">Oprogramowanie</option>
-                                        <option value="marketing">Marketing</option>
-                                        <option value="biuro">Materiały biurowe</option>
-                                        <option value="transport">Transport</option>
-                                        <option value="ksiegowosc">Księgowość</option>
-                                        <option value="inne">Inne koszty</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-secondary" @click="suggestCategory(doc.id)" title="Sugeruj kategorię">💡</button>
-                                    <button class="btn btn-sm btn-primary" @click="showDescribeModal(doc)">Opisz</button>
-                                </td>
-                            </tr>
+                <!-- Table View -->
+                <template x-if="viewMode=='table'">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:30px">
+                                        <input type="checkbox" @change="selectAll()" :checked="selectedDocuments.size == documents.length">
+                                    </th>
+                                    <th>Numer</th>
+                                    <th>Typ</th>
+                                    <th>Kontrahent</th>
+                                    <th>Kwota</th>
+                                    <th>VAT</th>
+                                    <th>Status</th>
+                                    <th style="width:120px">Akcje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="doc in filteredDocuments()" :key="doc.id">
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox" :checked="selectedDocuments.has(doc.id)" @change="toggleSelection(doc.id)">
+                                        </td>
+                                        <td>
+                                            <template x-if="editingDocument?.id == doc.id">
+                                                <input class="form-input" x-model="editingDocument.number" @click.stop>
+                                            </template>
+                                            <template x-if="!editingDocument || editingDocument.id != doc.id">
+                                                <span class="inline-edit" x-text="doc.number" @click="navigate('doc', {id: doc.id})"></span>
+                                            </template>
+                                        </td>
+                                        <td x-text="doc.type"></td>
+                                        <td>
+                                            <template x-if="editingDocument?.id == doc.id">
+                                                <input class="form-input" x-model="editingDocument.contractor" @click.stop>
+                                            </template>
+                                            <template x-if="!editingDocument || editingDocument.id != doc.id">
+                                                <span class="inline-edit" x-text="doc.contractor"></span>
+                                            </template>
+                                        </td>
+                                        <td>
+                                            <template x-if="editingDocument?.id == doc.id">
+                                                <input class="form-input" type="number" x-model="editingDocument.amount" @click.stop>
+                                            </template>
+                                            <template x-if="!editingDocument || editingDocument.id != doc.id">
+                                                <span x-text="doc.amount + ' PLN'"></span>
+                                            </template>
+                                        </td>
+                                        <td x-text="doc.vat_rate"></td>
+                                        <td>
+                                            <span class="status" :class="'status-'+doc.status" x-text="doc.status"></span>
+                                        </td>
+                                        <td>
+                                            <template x-if="editingDocument?.id == doc.id">
+                                                <button class="btn btn-sm btn-primary" @click="saveDocument()">✓</button>
+                                                <button class="btn btn-sm btn-secondary" @click="cancelEditDocument()">✕</button>
+                                            </template>
+                                            <template x-if="!editingDocument || editingDocument.id != doc.id">
+                                                <button class="btn btn-sm btn-secondary" @click="startEditDocument(doc)" title="Edytuj">✏️</button>
+                                                <button class="btn btn-sm btn-danger" @click="deleteDocument(doc.id)" title="Usuń">🗑</button>
+                                            </template>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </template>
+
+                <!-- Cards View -->
+                <template x-if="viewMode=='cards'">
+                    <div class="cards">
+                        <template x-for="doc in filteredDocuments()" :key="doc.id">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-icon" :style="{background:doc.type=='invoice'?'linear-gradient(135deg,#00d4aa,#00b894)':doc.type=='contract'?'linear-gradient(135deg,#fdcb6e,#f39c12)':'linear-gradient(135deg,#74b9ff,#0984e3)'}" x-text="doc.type=='invoice'?'🧾':doc.type=='contract'?'📄':'💳'"></div>
+                                    <span class="status" :class="'status-'+doc.status" x-text="doc.status"></span>
+                                </div>
+                                <div class="card-title" x-text="doc.number"></div>
+                                <div class="card-desc" x-text="doc.contractor"></div>
+                                <div class="card-stats">
+                                    <div>
+                                        <div class="stat-value" x-text="doc.amount + ' PLN'"></div>
+                                        <div class="stat-label">Kwota</div>
+                                    </div>
+                                    <div>
+                                        <div class="stat-value" x-text="doc.vat_rate"></div>
+                                        <div class="stat-label">VAT</div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    <button class="btn btn-sm btn-secondary" @click="startEditDocument(doc)">Edytuj</button>
+                                    <button class="btn btn-sm btn-danger" @click="deleteDocument(doc.id)">🗑</button>
+                                </div>
+                            </div>
                         </template>
-                        </tbody>
-                    </table>
-                    <div class="empty" x-show="!documents.filter(d=>d.status=='created').length">Wszystko opisane ✓</div>
-                </div>
+                    </div>
+                </template>
             </div>
         </template>
 
-        <!-- Sign -->
-        <template x-if="view=='sign'">
-            <div>
-                <div class="header"><h1 class="title">Podpis dokumentów</h1></div>
-                <div class="card">
-                    <table>
-                        <thead><tr><th>Numer</th><th>Kontrahent</th><th>Kwota</th><th>Akcje</th></tr></thead>
-                        <tbody>
-                        <template x-for="doc in documents.filter(d=>d.status=='described')" :key="doc.id">
-                            <tr>
-                                <td x-text="doc.number"></td>
-                                <td x-text="doc.contractor"></td>
-                                <td x-text="doc.amount+' PLN'"></td>
-                                <td><button class="btn btn-sm btn-primary" @click="updateDoc(doc.id,'signed')">Podpisz</button></td>
-                            </tr>
-                        </template>
-                        </tbody>
-                    </table>
-                    <div class="empty" x-show="!documents.filter(d=>d.status=='described').length">Wszystko podpisane ✓</div>
-                </div>
+        <!-- Other views (simplified) -->
+        <template x-if="!['profiles', 'docs'].includes(view)">
+            <div class="header">
+                <h1 class="title" x-text="viewTitle(view)"></h1>
             </div>
-        </template>
-
-        <!-- Import -->
-        <template x-if="view=='import'">
-            <div>
-                <div class="header"><h1 class="title">Import</h1><button class="btn btn-primary" @click="showModal='endpoint';newEndpoint={direction:'import',type:'email',name:'',config:{}}">+ Dodaj źródło</button></div>
-                <div class="cards">
-                    <template x-for="ep in endpoints.filter(e=>e.direction=='import')" :key="ep.id">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon" :style="{background:ep.type=='ksef'?'linear-gradient(135deg,#00d4aa,#00b894)':ep.type=='email'?'linear-gradient(135deg,#74b9ff,#0984e3)':'linear-gradient(135deg,#a29bfe,#6c5ce7)'}" x-text="ep.type=='ksef'?'🔐':ep.type=='email'?'📧':'📠'"></div>
-                                <button class="btn btn-sm btn-danger" @click="deleteEndpoint(ep.id)">🗑</button>
-                            </div>
-                            <div class="card-title" x-text="ep.name"></div>
-                            <div class="card-desc" x-text="ep.type"></div>
-                            <div class="card-footer"><button class="btn btn-secondary btn-sm" @click="pullEndpoint(ep.id)">Pobierz</button></div>
-                        </div>
-                    </template>
-                </div>
-                <div class="empty" x-show="!endpoints.filter(e=>e.direction=='import').length">Brak źródeł importu</div>
-            </div>
-        </template>
-
-        <!-- Export -->
-        <template x-if="view=='export'">
-            <div>
-                <div class="header"><h1 class="title">Export</h1><button class="btn btn-primary" @click="showModal='endpoint';newEndpoint={direction:'export',type:'wfirma',name:'',config:{}}">+ Dodaj cel</button></div>
-                <div class="cards">
-                    <template x-for="ep in endpoints.filter(e=>e.direction=='export')" :key="ep.id">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon" :style="{background:ep.type=='ksef'?'linear-gradient(135deg,#00d4aa,#00b894)':ep.type=='wfirma'?'linear-gradient(135deg,#fdcb6e,#f39c12)':'linear-gradient(135deg,#74b9ff,#0984e3)'}" x-text="ep.type=='ksef'?'🔐':ep.type=='wfirma'?'📊':'🖨️'"></div>
-                                <button class="btn btn-sm btn-danger" @click="deleteEndpoint(ep.id)">🗑</button>
-                            </div>
-                            <div class="card-title" x-text="ep.name"></div>
-                            <div class="card-desc" x-text="ep.type"></div>
-                            <div class="card-footer"><button class="btn btn-secondary btn-sm" @click="pushEndpoint(ep.id)">Eksportuj</button></div>
-                        </div>
-                    </template>
-                </div>
-                <div class="empty" x-show="!endpoints.filter(e=>e.direction=='export').length">Brak celów eksportu</div>
-            </div>
-        </template>
-
-        <!-- Profiles -->
-        <template x-if="view=='profiles'">
-            <div>
-                <div class="header"><h1 class="title">Profile</h1><button class="btn btn-primary" @click="showModal='profile'">+ Dodaj profil</button></div>
-                <div class="cards">
-                    <template x-for="p in profiles" :key="p.id">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon" :style="{background:p.color}" x-text="p.name.substring(0,2).toUpperCase()"></div>
-                                <button class="btn btn-sm btn-danger" @click="deleteProfile(p.id)" x-show="p.id!='default'">🗑</button>
-                            </div>
-                            <div class="card-title" x-text="p.name"></div>
-                            <div class="card-desc" x-text="'NIP: '+p.nip"></div>
-                            <div class="card-footer">
-                                <button class="btn btn-secondary btn-sm" @click="switchProfile(p.id)" x-show="profileId!=p.id">Aktywuj</button>
-                                <span class="status status-signed" x-show="profileId==p.id">Aktywny</span>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </template>
-
-        <!-- Export File -->
-        <template x-if="view=='exportfile'">
-            <div>
-                <div class="header"><h1 class="title">Eksport do pliku</h1></div>
-                <div class="cards">
-                    <div class="card" @click="exportToFormat('wfirma')" style="cursor:pointer">
-                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#fdcb6e,#f39c12)">📊</div></div>
-                        <div class="card-title">wFirma CSV</div>
-                        <div class="card-desc">Format KPiR dla wFirma.pl</div>
-                    </div>
-                    <div class="card" @click="exportToFormat('jpk_pkpir')" style="cursor:pointer">
-                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#e17055,#d63031)">📄</div></div>
-                        <div class="card-title">JPK_PKPIR</div>
-                        <div class="card-desc">Jednolity Plik Kontrolny XML</div>
-                    </div>
-                    <div class="card" @click="exportToFormat('comarch')" style="cursor:pointer">
-                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#00b894,#00cec9)">🏢</div></div>
-                        <div class="card-title">Comarch Optima</div>
-                        <div class="card-desc">Import XML do Comarch ERP</div>
-                    </div>
-                    <div class="card" @click="exportToFormat('symfonia')" style="cursor:pointer">
-                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#6c5ce7,#a29bfe)">🎵</div></div>
-                        <div class="card-title">Symfonia</div>
-                        <div class="card-desc">Format CSV dla Symfonia</div>
-                    </div>
-                    <div class="card" @click="exportToFormat('enova')" style="cursor:pointer">
-                        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#74b9ff,#0984e3)">💼</div></div>
-                        <div class="card-title">enova365</div>
-                        <div class="card-desc">Format XML dla enova</div>
-                    </div>
-                </div>
-                <div class="card" x-show="exportResult" style="margin-top:1rem">
-                    <div class="card-title">Wynik eksportu</div>
-                    <div style="margin:1rem 0">
-                        <span class="status status-signed" x-text="'Wyeksportowano: ' + (exportResult?.count || 0) + ' dokumentów'"></span>
-                    </div>
-                    <pre style="background:#f5f5f5;padding:1rem;border-radius:8px;overflow:auto;max-height:300px;font-size:12px" x-text="exportResult?.content"></pre>
-                    <button class="btn btn-primary" style="margin-top:1rem" @click="downloadExport()">📥 Pobierz plik</button>
-                </div>
+            <div class="card">
+                <div class="empty">Widok w przygotowaniu...</div>
             </div>
         </template>
     </main>
 </div>
 
-<!-- Describe Modal -->
-<div class="modal" x-show="describeModal.show" @click.self="describeModal.show = false" x-cloak>
-    <div class="modal-content" style="max-width:600px">
-        <div class="modal-header">
-            <h3>Opis dokumentu</h3>
-            <button class="btn btn-sm" @click="describeModal.show = false">✕</button>
-        </div>
-        <div class="modal-body">
-            <div style="margin-bottom:1rem">
-                <strong>Dokument:</strong> <span x-text="describeModal.doc?.number"></span><br>
-                <strong>Kontrahent:</strong> <span x-text="describeModal.doc?.contractor"></span><br>
-                <strong>Kwota:</strong> <span x-text="describeModal.doc?.amount + ' PLN'"></span>
-            </div>
-            <label style="display:block;margin-bottom:0.5rem;font-weight:500">Opis:</label>
-            <textarea 
-                id="describe-textarea"
-                class="form-input" 
-                x-model="describeModal.comment"
-                @input="autoResizeTextarea($event)"
-                placeholder="Wprowadź opis dokumentu..."
-                style="min-height:80px;resize:none;overflow:hidden;line-height:1.5"
-            ></textarea>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" @click="describeModal.show = false">Anuluj</button>
-            <button class="btn btn-primary" @click="saveDescription()">Zapisz i zamknij</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modals -->
-<div class="modal" x-show="showModal" @click.self="showModal=null" x-cloak>
-    <!-- Endpoint Modal -->
-    <div class="modal-content" x-show="showModal=='endpoint'">
-        <div class="modal-header"><h3>Dodaj endpoint</h3><button class="btn btn-sm" @click="showModal=null">✕</button></div>
-        <div class="modal-body">
-            <div class="form-group"><label class="form-label">Nazwa</label><input class="form-input" x-model="newEndpoint.name" placeholder="np. Skrzynka faktur"></div>
-            <div class="form-group"><label class="form-label">Typ</label>
-                <select class="form-input" x-model="newEndpoint.type">
-                    <template x-if="newEndpoint.direction=='import'"><optgroup label="Import"><option value="email">Email (IMAP)</option><option value="ksef">KSeF</option><option value="webhook">Webhook</option><option value="scanner">Skaner</option></optgroup></template>
-                    <template x-if="newEndpoint.direction=='export'"><optgroup label="Export"><option value="ksef">KSeF</option><option value="wfirma">wFirma</option><option value="webhook">Webhook</option><option value="printer">Drukarka</option></optgroup></template>
-                </select>
-            </div>
-            <div class="form-group" x-show="newEndpoint.type=='webhook'"><label class="form-label">URL</label><input class="form-input" x-model="newEndpoint.config.url" placeholder="https://..."></div>
-        </div>
-        <div class="modal-footer"><button class="btn btn-secondary" @click="showModal=null">Anuluj</button><button class="btn btn-primary" @click="createEndpoint()">Dodaj</button></div>
-    </div>
-    <!-- Profile Modal -->
-    <div class="modal-content" x-show="showModal=='profile'">
-        <div class="modal-header"><h3>Nowy profil</h3><button class="btn btn-sm" @click="showModal=null">✕</button></div>
-        <div class="modal-body">
-            <div class="form-group"><label class="form-label">Nazwa firmy</label><input class="form-input" x-model="newProfile.name" placeholder="Moja Firma Sp. z o.o."></div>
-            <div class="form-row">
-                <div class="form-group"><label class="form-label">NIP</label><input class="form-input" x-model="newProfile.nip" placeholder="1234567890"></div>
-                <div class="form-group"><label class="form-label">Kolor</label><input class="form-input" type="color" x-model="newProfile.color"></div>
-            </div>
-            <div class="form-group"><label class="form-label">Adres</label><input class="form-input" x-model="newProfile.address" placeholder="ul. Przykładowa 1"></div>
-        </div>
-        <div class="modal-footer"><button class="btn btn-secondary" @click="showModal=null">Anuluj</button><button class="btn btn-primary" @click="createProfile()">Utwórz</button></div>
-    </div>
-</div>
-
+<!-- Toast -->
 <div class="toast" x-show="toast" x-text="toast" x-transition x-init="$watch('toast',v=>{if(v)setTimeout(()=>toast='',3000)})"></div>
 
+<!-- Scripts -->
+<script src="router.js"></script>
+<script src="components/profile-manager.js"></script>
+<script src="components/document-manager.js"></script>
 <script>
     function app() {
         return {
-            view: 'docs',
-            docId: null,
+            view: new URLSearchParams(window.location.search).get('view') || 'profiles',
+            docId: new URLSearchParams(window.location.search).get('id'),
             profileId: localStorage.getItem('exef_profile') || 'default',
             profileOpen: false,
             profiles: [],
             documents: [],
             endpoints: [],
             stats: {},
-            showModal: null,
             toast: '',
-            newDoc: {type:'invoice',number:'',contractor:'',amount:0,vat_rate:'23%'},
-            newEndpoint: {direction:'import',type:'email',name:'',config:{}},
-            newProfile: {name:'',nip:'',address:'',color:'#6c5ce7'},
-            ws: null,
-            describeModal: { show: false, doc: null, comment: '' },
-
-            get currentProfile() { return this.profiles.find(p => p.id === this.profileId) },
-            get API() { return `/api/profiles/${this.profileId}` },
-
+            
+            get currentProfile() { 
+                return this.profiles.find(p => p.id === this.profileId) 
+            },
+            
             async init() {
-                // Load profiles first to get default profile
                 await this.loadProfiles();
-                
-                // Restore state from URL (will use default profile if not in URL)
                 this.restoreFromURL();
-                
-                // Handle browser back/forward
                 window.addEventListener('popstate', () => this.restoreFromURL());
-                
                 await this.load();
                 this.connectWS();
+                
+                // Listen for toast events
+                window.addEventListener('toast', (e) => {
+                    this.toast = e.detail;
+                });
             },
-
-            // URL-based routing
+            
             navigate(view, params = {}) {
                 this.view = view;
                 this.docId = params.id || null;
                 this.updateURL();
             },
-
+            
             updateURL() {
                 const url = new URL(window.location);
                 url.searchParams.set('view', this.view);
@@ -566,7 +500,7 @@
                 }
                 window.history.pushState({view: this.view, profile: this.profileId, id: this.docId}, '', url);
             },
-
+            
             restoreFromURL() {
                 const params = new URLSearchParams(window.location.search);
                 const view = params.get('view');
@@ -579,33 +513,30 @@
                     this.profileId = profile;
                 }
             },
-
+            
             async loadProfiles() {
-                const response = await (await fetch('/api/profiles')).json();
-                this.profiles = Array.isArray(response) ? response : [];
+                const response = await fetch('/api/profiles');
+                this.profiles = await response.json();
                 if (!this.profiles.find(p => p.id === this.profileId)) {
                     this.profileId = this.profiles[0]?.id || 'default';
                 }
             },
-
+            
             async load() {
                 try {
                     const [docs, eps, stats] = await Promise.all([
-                        fetch(this.API+'/documents').then(r => r.ok ? r.json() : []),
-                        fetch(this.API+'/endpoints').then(r => r.ok ? r.json() : []),
-                        fetch(this.API+'/stats').then(r => r.ok ? r.json() : {})
+                        fetch(`/api/profiles/${this.profileId}/documents`).then(r => r.ok ? r.json() : []),
+                        fetch(`/api/profiles/${this.profileId}/endpoints`).then(r => r.ok ? r.json() : []),
+                        fetch(`/api/profiles/${this.profileId}/stats`).then(r => r.ok ? r.json() : {})
                     ]);
-                    this.documents = Array.isArray(docs) ? docs : [];
-                    this.endpoints = Array.isArray(eps) ? eps : [];
-                    this.stats = stats || {};
+                    this.documents = docs;
+                    this.endpoints = eps;
+                    this.stats = stats;
                 } catch (e) {
                     console.error('Load error:', e);
-                    this.documents = [];
-                    this.endpoints = [];
-                    this.stats = {};
                 }
             },
-
+            
             async switchProfile(id) {
                 this.profileId = id;
                 this.profileOpen = false;
@@ -613,228 +544,39 @@
                 await this.load();
                 this.reconnectWS();
             },
-
+            
             connectWS() {
                 const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
                 this.ws = new WebSocket(`${proto}//${location.host}/ws/${this.profileId}`);
                 this.ws.onmessage = (e) => { this.toast = JSON.parse(e.data).event; this.load(); };
                 this.ws.onclose = () => setTimeout(() => this.connectWS(), 2000);
             },
-
+            
             reconnectWS() {
                 if (this.ws) this.ws.close();
                 this.connectWS();
             },
-
-            async createDoc() {
-                await fetch(this.API+'/documents', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(this.newDoc)});
-                this.newDoc = {type:'invoice',number:'',contractor:'',amount:0,vat_rate:'23%'};
-                this.toast = 'Dokument utworzony';
-                this.view = 'docs';
-                await this.load();
-            },
-
-            async updateDoc(id, status) {
-                await fetch(this.API+'/documents/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status})});
-                await this.load();
-            },
-
-            async deleteDoc(id) {
-                await fetch(this.API+'/documents/'+id, {method:'DELETE'});
-                await this.load();
-            },
-
-            async createEndpoint() {
-                await fetch(this.API+'/endpoints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(this.newEndpoint)});
-                this.showModal = null;
-                this.toast = 'Endpoint dodany';
-                await this.load();
-            },
-
-            async deleteEndpoint(id) {
-                await fetch(this.API+'/endpoints/'+id, {method:'DELETE'});
-                await this.load();
-            },
-
-            async pullEndpoint(id) {
-                this.toast = 'Pobieranie...';
-                const r = await fetch(this.API+'/flow/pull/'+id, {method:'POST'});
-                const data = await r.json();
-                this.toast = `Zaimportowano ${data.imported} dok.`;
-                await this.load();
-            },
-
-            async pushEndpoint(id) {
-                const docs = this.documents.filter(d => d.status === 'signed').map(d => d.id);
-                if (!docs.length) { this.toast = 'Brak dokumentów do eksportu'; return; }
-                const r = await fetch(this.API+'/flow/push/'+id, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(docs)});
-                const data = await r.json();
-                this.toast = data.success ? `Wyeksportowano ${data.exported} dok.` : 'Błąd eksportu';
-                await this.load();
-            },
-
-            async createProfile() {
-                await fetch('/api/profiles', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(this.newProfile)});
-                this.showModal = null;
-                this.newProfile = {name:'',nip:'',address:'',color:'#6c5ce7'};
-                this.toast = 'Profil utworzony';
-                await this.loadProfiles();
-            },
-
-            async deleteProfile(id) {
-                if (!confirm('Usunąć profil i wszystkie dokumenty?')) return;
-                await fetch('/api/profiles/'+id, {method:'DELETE'});
-                if (this.profileId === id) this.profileId = 'default';
-                await this.loadProfiles();
-                await this.load();
-            },
-
-            // Categorization
-            exportResult: null,
-
-            async categorizeDoc(id, category) {
-                await fetch(this.API+'/documents/'+id+'/categorize', {
-                    method:'POST', 
-                    headers:{'Content-Type':'application/json'}, 
-                    body:JSON.stringify({category})
-                });
-                this.toast = 'Kategoria zapisana';
-            },
-
-            // Document description
-            showDescribeModal(doc) {
-                this.describeModal.doc = doc;
-                this.describeModal.comment = doc.description || '';
-                this.describeModal.show = true;
-                // Focus textarea after render
-                this.$nextTick(() => {
-                    const textarea = document.querySelector('#describe-textarea');
-                    if (textarea) {
-                        textarea.focus();
-                        // Auto-resize
-                        textarea.style.height = 'auto';
-                        textarea.style.height = textarea.scrollHeight + 'px';
-                    }
-                });
-            },
-
-            async saveDescription() {
-                if (this.describeModal.doc) {
-                    await fetch(this.API+'/documents/'+this.describeModal.doc.id, {
-                        method:'PUT',
-                        headers:{'Content-Type':'application/json'},
-                        body:JSON.stringify({ 
-                            description: this.describeModal.comment,
-                            status: 'described'
-                        })
-                    });
-                    this.toast = 'Opis zapisany';
-                    this.describeModal.show = false;
-                    await this.load();
-                }
-            },
-
-            autoResizeTextarea(event) {
-                event.target.style.height = 'auto';
-                event.target.style.height = event.target.scrollHeight + 'px';
-            },
-
-            async suggestCategory(id) {
-                const r = await fetch(this.API+'/documents/'+id+'/suggest', {method:'POST'});
-                const data = await r.json();
-                if (data.category) {
-                    const doc = this.documents.find(d => d.id === id);
-                    if (doc) {
-                        doc.category = data.category;
-                        await this.categorizeDoc(id, data.category);
-                        this.toast = `Sugestia: ${data.category_name} (${data.confidence}%)`;
-                    }
-                } else {
-                    this.toast = 'Brak sugestii kategorii';
-                }
-            },
-
-            // File Export
-            async exportToFormat(format) {
-                this.toast = 'Eksportowanie...';
-                const signedDocs = this.documents.filter(d => d.status === 'signed' || d.status === 'exported');
-                if (!signedDocs.length) {
-                    this.toast = 'Brak podpisanych dokumentów do eksportu';
-                    return;
-                }
-                const r = await fetch(this.API+'/export/'+format, {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({document_ids: signedDocs.map(d => d.id)})
-                });
-                if (r.ok) {
-                    this.exportResult = await r.json();
-                    this.toast = `Wyeksportowano ${this.exportResult.count} dokumentów`;
-                } else {
-                    this.toast = 'Błąd eksportu';
-                }
-            },
-
-            downloadExport() {
-                if (!this.exportResult?.content) return;
-                const blob = new Blob([this.exportResult.content], {type: 'text/plain;charset=utf-8'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = this.exportResult.filename || 'export.txt';
-                a.click();
-                URL.revokeObjectURL(url);
-            },
-
-            // File Upload
-            uploadProgress: 0,
-            lastUpload: null,
-
-            async uploadFile(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                await this.doUpload(file);
-            },
-
-            handleFileDrop(event) {
-                const file = event.dataTransfer.files[0];
-                if (!file) return;
-                this.doUpload(file);
-            },
-
-            async doUpload(file) {
-                this.uploadProgress = 10;
-                this.lastUpload = null;
-                
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                this.uploadProgress = 30;
-                
-                try {
-                    const r = await fetch(this.API + '/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    this.uploadProgress = 80;
-                    
-                    if (r.ok) {
-                        this.lastUpload = await r.json();
-                        this.toast = 'Plik przetworzony pomyślnie';
-                        await this.load();
-                    } else {
-                        this.toast = 'Błąd przesyłania pliku';
-                    }
-                } catch (e) {
-                    this.toast = 'Błąd połączenia';
-                }
-                
-                this.uploadProgress = 100;
-                setTimeout(() => { this.uploadProgress = 0; }, 2000);
+            
+            viewTitle(view) {
+                const titles = {
+                    'docs': 'Dokumenty',
+                    'create': 'Utwórz dokument',
+                    'describe': 'Opis i kategoryzacja',
+                    'sign': 'Podpis dokumentów',
+                    'upload': 'Wgraj plik',
+                    'import': 'Import',
+                    'export': 'Export',
+                    'exportfile': 'Eksport do pliku'
+                };
+                return titles[view] || view;
             }
         };
     }
+    
+    // Initialize global app instance
+    document.addEventListener('alpine:init', () => {
+        window.appInstance = Alpine.data('app', app);
+    });
 </script>
 </body>
 </html>

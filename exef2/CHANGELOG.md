@@ -1,3 +1,28 @@
+## [2.0.2] - 2026-02-02
+
+### Summary
+
+feat(docs): deep code analysis engine with 4 supporting modules
+
+### Docs
+
+- docs: update README
+
+### Other
+
+- update exef2/backend/main.py
+- update exef2/backend/migrations.py
+- update exef2/data/exef.db
+- update exef2/frontend/components/document-manager.js
+- update exef2/frontend/components/profile-manager.js
+- update exef2/frontend/index-old.html
+- update exef2/frontend/index.html
+- update exef2/frontend/router.js
+- update exef2/frontend/styles.css
+- update exef2/project.functions.toon
+- ... and 4 more
+
+
 ## [2.0.1] - 2026-02-02
 
 ### Summary

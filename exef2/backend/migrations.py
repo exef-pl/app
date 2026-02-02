@@ -11,7 +11,7 @@ import os
 import sys
 from datetime import datetime
 
-DB_PATH = os.getenv("EXEF_DB_PATH", "/data/exef.db")
+DB_PATH = os.getenv("EXEF_DB_PATH", os.path.join(os.path.dirname(__file__), "..", "data", "exef.db"))
 
 # Migration definitions: (version, name, up_sql, down_sql)
 MIGRATIONS = [
@@ -113,6 +113,30 @@ MIGRATIONS = [
         CREATE INDEX IF NOT EXISTS idx_sync_queue_status ON sync_queue(status);
     """, """
         DROP TABLE IF EXISTS sync_queue;
+    """),
+    
+    (6, "add_profile_delegates", """
+        CREATE TABLE IF NOT EXISTS profile_delegates (
+            id TEXT PRIMARY KEY,
+            profile_id TEXT NOT NULL,
+            delegate_name TEXT NOT NULL,
+            delegate_email TEXT,
+            delegate_nip TEXT,
+            role TEXT DEFAULT 'viewer',
+            permissions JSON DEFAULT '{}',
+            active INTEGER DEFAULT 1,
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_delegates_profile ON profile_delegates(profile_id);
+        CREATE INDEX IF NOT EXISTS idx_delegates_email ON profile_delegates(delegate_email);
+        CREATE INDEX IF NOT EXISTS idx_delegates_nip ON profile_delegates(delegate_nip);
+    """, """
+        DROP INDEX IF EXISTS idx_delegates_nip;
+        DROP INDEX IF EXISTS idx_delegates_email;
+        DROP INDEX IF EXISTS idx_delegates_profile;
+        DROP TABLE IF EXISTS profile_delegates;
     """),
 ]
 

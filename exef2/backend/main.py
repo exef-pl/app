@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 import sqlite3, json, asyncio, httpx, uuid, os
 
 # === Config ===
-DB_PATH = os.getenv("EXEF_DB_PATH", "/data/exef.db")
+DB_PATH = os.getenv("EXEF_DB_PATH", os.path.join(os.path.dirname(__file__), "..", "data", "exef.db"))
 VERSION = "1.1.0"
 
 # === Models ===
@@ -45,6 +45,18 @@ class Document(BaseModel):
     data: dict = {}
     created_at: str = None
 
+class ProfileDelegate(BaseModel):
+    id: str = None
+    profile_id: str = None
+    delegate_name: str
+    delegate_email: str = ""
+    delegate_nip: str = ""
+    role: Literal["owner", "admin", "editor", "viewer"] = "viewer"
+    permissions: dict = {}
+    active: bool = True
+    created_at: str = None
+    updated_at: str = None
+
 # === Database ===
 def db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -58,8 +70,10 @@ def init_db():
                            CREATE TABLE IF NOT EXISTS endpoints (id TEXT PRIMARY KEY, profile_id TEXT, data JSON);
                            CREATE TABLE IF NOT EXISTS documents (id TEXT PRIMARY KEY, profile_id TEXT, data JSON);
                            CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, type TEXT, data JSON);
+                           CREATE TABLE IF NOT EXISTS profile_delegates (id TEXT PRIMARY KEY, profile_id TEXT, data JSON);
                            CREATE INDEX IF NOT EXISTS idx_endpoints_profile ON endpoints(profile_id);
                            CREATE INDEX IF NOT EXISTS idx_documents_profile ON documents(profile_id);
+                           CREATE INDEX IF NOT EXISTS idx_delegates_profile ON profile_delegates(profile_id);
                            """)
         # Create default profile if none exists
         if not conn.execute("SELECT 1 FROM profiles LIMIT 1").fetchone():
@@ -177,6 +191,53 @@ def delete_profile(id: str):
         conn.execute("DELETE FROM profiles WHERE id = ?", (id,))
         conn.execute("DELETE FROM endpoints WHERE profile_id = ?", (id,))
         conn.execute("DELETE FROM documents WHERE profile_id = ?", (id,))
+        conn.execute("DELETE FROM profile_delegates WHERE profile_id = ?", (id,))
+    return {"ok": True}
+
+# === Profile Delegates ===
+@app.get("/api/profiles/{profile_id}/delegates")
+def list_delegates(profile_id: str):
+    with db() as conn:
+        rows = conn.execute("SELECT data FROM profile_delegates WHERE profile_id = ?", (profile_id,)).fetchall()
+    return [json.loads(r["data"]) for r in rows]
+
+@app.post("/api/profiles/{profile_id}/delegates")
+async def create_delegate(profile_id: str, d: ProfileDelegate):
+    d.id = d.id or uuid.uuid4().hex[:12]
+    d.profile_id = profile_id
+    d.created_at = datetime.utcnow().isoformat()
+    d.updated_at = d.created_at
+    with db() as conn:
+        row = conn.execute("SELECT 1 FROM profiles WHERE id = ?", (profile_id,)).fetchone()
+        if not row: raise HTTPException(404, "Profile not found")
+        conn.execute("INSERT OR REPLACE INTO profile_delegates VALUES (?, ?, ?)", (d.id, profile_id, d.model_dump_json()))
+    await hub.broadcast({"event": "delegate.created", "data": d.model_dump()}, profile_id)
+    return d
+
+@app.get("/api/profiles/{profile_id}/delegates/{id}")
+def get_delegate(profile_id: str, id: str):
+    with db() as conn:
+        row = conn.execute("SELECT data FROM profile_delegates WHERE id = ? AND profile_id = ?", (id, profile_id)).fetchone()
+        if not row: raise HTTPException(404)
+        return json.loads(row["data"])
+
+@app.patch("/api/profiles/{profile_id}/delegates/{id}")
+async def update_delegate(profile_id: str, id: str, updates: dict):
+    with db() as conn:
+        row = conn.execute("SELECT data FROM profile_delegates WHERE id = ? AND profile_id = ?", (id, profile_id)).fetchone()
+        if not row: raise HTTPException(404)
+        d = json.loads(row["data"])
+        d.update(updates)
+        d["updated_at"] = datetime.utcnow().isoformat()
+        conn.execute("UPDATE profile_delegates SET data = ? WHERE id = ?", (json.dumps(d), id))
+    await hub.broadcast({"event": "delegate.updated", "data": d}, profile_id)
+    return d
+
+@app.delete("/api/profiles/{profile_id}/delegates/{id}")
+async def delete_delegate(profile_id: str, id: str):
+    with db() as conn:
+        conn.execute("DELETE FROM profile_delegates WHERE id = ? AND profile_id = ?", (id, profile_id))
+    await hub.broadcast({"event": "delegate.deleted", "id": id}, profile_id)
     return {"ok": True}
 
 # === Endpoints ===

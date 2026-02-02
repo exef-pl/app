@@ -113,6 +113,160 @@ class TestProfileAPI:
         httpx.delete(f"{API_URL}/api/profiles/{profile_b}")
 
 
+# === Profile Delegates API Tests ===
+class TestProfileDelegatesAPI:
+    """Tests for profile delegation/permissions management API"""
+    
+    def test_list_delegates_empty(self):
+        """List delegates for profile with no delegates"""
+        r = httpx.get(f"{API_URL}/api/profiles/default/delegates")
+        assert r.status_code == 200
+        delegates = r.json()
+        assert isinstance(delegates, list)
+    
+    def test_create_delegate(self):
+        """Can add a delegate to a profile"""
+        delegate_data = {
+            "delegate_name": "Jan Kowalski",
+            "delegate_email": "jan@example.com",
+            "delegate_nip": "9876543210",
+            "role": "editor"
+        }
+        r = httpx.post(f"{API_URL}/api/profiles/default/delegates", json=delegate_data)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["delegate_name"] == "Jan Kowalski"
+        assert data["delegate_email"] == "jan@example.com"
+        assert data["role"] == "editor"
+        assert data["id"] is not None
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/default/delegates/{data['id']}")
+    
+    def test_get_delegate(self):
+        """Can get a specific delegate"""
+        # Create delegate
+        r = httpx.post(f"{API_URL}/api/profiles/default/delegates", json={
+            "delegate_name": "Test User",
+            "role": "viewer"
+        })
+        delegate_id = r.json()["id"]
+        
+        # Get delegate
+        r = httpx.get(f"{API_URL}/api/profiles/default/delegates/{delegate_id}")
+        assert r.status_code == 200
+        assert r.json()["delegate_name"] == "Test User"
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/default/delegates/{delegate_id}")
+    
+    def test_update_delegate_role(self):
+        """Can update delegate role"""
+        # Create delegate
+        r = httpx.post(f"{API_URL}/api/profiles/default/delegates", json={
+            "delegate_name": "Role Test",
+            "role": "viewer"
+        })
+        delegate_id = r.json()["id"]
+        
+        # Update role
+        r = httpx.patch(f"{API_URL}/api/profiles/default/delegates/{delegate_id}", json={"role": "admin"})
+        assert r.status_code == 200
+        assert r.json()["role"] == "admin"
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/default/delegates/{delegate_id}")
+    
+    def test_toggle_delegate_active(self):
+        """Can activate/deactivate delegate"""
+        # Create delegate
+        r = httpx.post(f"{API_URL}/api/profiles/default/delegates", json={
+            "delegate_name": "Active Test",
+            "role": "viewer"
+        })
+        delegate_id = r.json()["id"]
+        assert r.json()["active"] == True
+        
+        # Deactivate
+        r = httpx.patch(f"{API_URL}/api/profiles/default/delegates/{delegate_id}", json={"active": False})
+        assert r.status_code == 200
+        assert r.json()["active"] == False
+        
+        # Reactivate
+        r = httpx.patch(f"{API_URL}/api/profiles/default/delegates/{delegate_id}", json={"active": True})
+        assert r.json()["active"] == True
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/default/delegates/{delegate_id}")
+    
+    def test_delete_delegate(self):
+        """Can delete a delegate"""
+        # Create delegate
+        r = httpx.post(f"{API_URL}/api/profiles/default/delegates", json={
+            "delegate_name": "Delete Test",
+            "role": "viewer"
+        })
+        delegate_id = r.json()["id"]
+        
+        # Delete
+        r = httpx.delete(f"{API_URL}/api/profiles/default/delegates/{delegate_id}")
+        assert r.status_code == 200
+        
+        # Verify deleted
+        r = httpx.get(f"{API_URL}/api/profiles/default/delegates/{delegate_id}")
+        assert r.status_code == 404
+    
+    def test_delegates_isolated_per_profile(self):
+        """Delegates are isolated per profile"""
+        # Create two profiles
+        r1 = httpx.post(f"{API_URL}/api/profiles", json={"name": "Delegate Profile A", "nip": "DPA"})
+        profile_a = r1.json()["id"]
+        r2 = httpx.post(f"{API_URL}/api/profiles", json={"name": "Delegate Profile B", "nip": "DPB"})
+        profile_b = r2.json()["id"]
+        
+        # Add delegate to profile A
+        r = httpx.post(f"{API_URL}/api/profiles/{profile_a}/delegates", json={
+            "delegate_name": "Delegate A Only",
+            "role": "admin"
+        })
+        delegate_a_id = r.json()["id"]
+        
+        # Check delegate only in profile A
+        delegates_a = httpx.get(f"{API_URL}/api/profiles/{profile_a}/delegates").json()
+        assert any(d["delegate_name"] == "Delegate A Only" for d in delegates_a)
+        
+        delegates_b = httpx.get(f"{API_URL}/api/profiles/{profile_b}/delegates").json()
+        assert not any(d["delegate_name"] == "Delegate A Only" for d in delegates_b)
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/{profile_a}")
+        httpx.delete(f"{API_URL}/api/profiles/{profile_b}")
+    
+    def test_delete_profile_cascades_delegates(self):
+        """Deleting profile removes all its delegates"""
+        # Create profile
+        r = httpx.post(f"{API_URL}/api/profiles", json={"name": "Cascade Test", "nip": "CASCADE"})
+        profile_id = r.json()["id"]
+        
+        # Add delegates
+        httpx.post(f"{API_URL}/api/profiles/{profile_id}/delegates", json={
+            "delegate_name": "Cascade Delegate 1", "role": "viewer"
+        })
+        httpx.post(f"{API_URL}/api/profiles/{profile_id}/delegates", json={
+            "delegate_name": "Cascade Delegate 2", "role": "admin"
+        })
+        
+        # Verify delegates exist
+        delegates = httpx.get(f"{API_URL}/api/profiles/{profile_id}/delegates").json()
+        assert len(delegates) == 2
+        
+        # Delete profile
+        httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+        
+        # Profile and delegates should be gone
+        r = httpx.get(f"{API_URL}/api/profiles/{profile_id}")
+        assert r.status_code == 404
+
+
 # === Legacy API Tests (backward compatibility) ===
 class TestLegacyAPI:
     """Tests for backward-compatible legacy API (uses default profile)"""
@@ -500,6 +654,70 @@ class TestProfileUI:
         
         # Cleanup
         httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+
+
+# === Profile Delegates UI Tests ===
+class TestProfileDelegatesUI:
+    """UI tests for profile delegates management"""
+    
+    def test_delegates_button_visible(self, page: Page):
+        """Delegates button should be visible on profile cards"""
+        page.goto(APP_URL)
+        page.locator(".nav-group:has-text('Profile') .nav-item").click()
+        time.sleep(0.3)
+        expect(page.locator(".card-footer button[title='Zarządzaj uprawnieniami']").first).to_be_visible()
+    
+    def test_navigate_to_delegates_view(self, page: Page):
+        """Can navigate to delegates view from profile card"""
+        page.goto(APP_URL)
+        page.locator(".nav-group:has-text('Profile') .nav-item").click()
+        time.sleep(0.3)
+        page.locator(".card-footer button[title='Zarządzaj uprawnieniami']").first.click()
+        time.sleep(0.3)
+        expect(page.locator("h1:has-text('Uprawnienia do profilu')")).to_be_visible()
+    
+    def test_add_delegate_ui(self, page: Page):
+        """Can add a delegate via UI"""
+        # Create test profile via API
+        r = httpx.post(f"{API_URL}/api/profiles", json={"name": "UI Delegate Test", "nip": "UITEST"})
+        profile_id = r.json()["id"]
+        
+        page.goto(APP_URL)
+        page.locator(".nav-group:has-text('Profile') .nav-item").click()
+        time.sleep(0.3)
+        
+        # Click delegates button for the test profile
+        page.locator(f".card:has-text('UI Delegate Test') button[title='Zarządzaj uprawnieniami']").click()
+        time.sleep(0.3)
+        
+        # Open add delegate modal
+        page.locator("button:has-text('Dodaj osobę')").click()
+        time.sleep(0.3)
+        expect(page.locator(".modal-content h3:has-text('Dodaj osobę/firmę')")).to_be_visible()
+        
+        # Fill form
+        page.fill("input[placeholder*='Jan Kowalski']", "UI Test Delegate")
+        page.fill("input[placeholder='jan@example.com']", "test@example.com")
+        
+        # Submit
+        page.click(".modal-content button:has-text('Dodaj')")
+        time.sleep(0.5)
+        
+        # Verify delegate appears in table
+        expect(page.locator("td:has-text('UI Test Delegate')")).to_be_visible()
+        
+        # Cleanup
+        httpx.delete(f"{API_URL}/api/profiles/{profile_id}")
+    
+    def test_role_descriptions_visible(self, page: Page):
+        """Role descriptions should be visible in delegates view"""
+        page.goto(APP_URL)
+        page.locator(".nav-group:has-text('Profile') .nav-item").click()
+        time.sleep(0.3)
+        page.locator(".card-footer button[title='Zarządzaj uprawnieniami']").first.click()
+        time.sleep(0.3)
+        expect(page.locator("text=Opis ról")).to_be_visible()
+        expect(page.locator("text=Właściciel:")).to_be_visible()
 
 
 # === Profile-Scoped API Tests ===
