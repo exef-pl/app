@@ -9,32 +9,25 @@ Ten skrypt pokazuje wszystkie możliwości pakietu:
 
 Uruchomienie:
     python complete_demo.py
-    
+
 Z OCR (wymaga paddleocr lub tesseract):
     python complete_demo.py --with-ocr sample.pdf
 """
 
-import sys
 import json
-from pathlib import Path
 from datetime import date
 
 # Import pakietu
 from exef_docid import (
+    AmountNormalizer,
+    DateNormalizer,
     # Główny generator
     DocumentIDGenerator,
     DocumentType,
-    
+    InvoiceNumberNormalizer,
+    NIPValidator,
     # Skróty dla popularnych typów
     generate_invoice_id,
-    generate_receipt_id,
-    generate_contract_id,
-    
-    # Normalizatory
-    NIPValidator,
-    AmountNormalizer,
-    DateNormalizer,
-    InvoiceNumberNormalizer,
 )
 
 
@@ -54,7 +47,7 @@ def print_subheader(title: str):
 def demo_invoice():
     """Demonstracja generowania ID faktur."""
     print_header("FAKTURY VAT")
-    
+
     # Standardowa faktura
     doc_id = generate_invoice_id(
         seller_nip="5213017228",
@@ -63,16 +56,16 @@ def demo_invoice():
         gross_amount=1230.50,
     )
     print(f"  Faktura VAT:        {doc_id}")
-    
+
     # Ta sama faktura w różnych formatach danych
     print_subheader("Determinizm - różne formaty, ten sam ID:")
-    
+
     formats = [
         ("NIP z myślnikami", "521-301-72-28", "fv/2025/00142", "15.01.2025", "1 230,50 zł"),
         ("NIP z prefiksem PL", "PL5213017228", "FV-2025-00142", "2025/01/15", "1230.50 PLN"),
         ("NIP ze spacjami", "521 301 72 28", "FV 2025 142", "15-01-2025", 1230.5),
     ]
-    
+
     for desc, nip, number, date_str, amount in formats:
         doc_id = generate_invoice_id(
             seller_nip=nip,
@@ -86,9 +79,9 @@ def demo_invoice():
 def demo_receipt():
     """Demonstracja generowania ID paragonów."""
     print_header("PARAGONY FISKALNE")
-    
+
     gen = DocumentIDGenerator()
-    
+
     # Paragon podstawowy
     receipt_id = gen.generate_receipt_id(
         seller_nip="5213017228",
@@ -96,7 +89,7 @@ def demo_receipt():
         gross_amount=45.99,
     )
     print(f"  Paragon (podstawowy):     {receipt_id}")
-    
+
     # Paragon z numerem
     receipt_id = gen.generate_receipt_id(
         seller_nip="5213017228",
@@ -105,7 +98,7 @@ def demo_receipt():
         receipt_number="00012345",
     )
     print(f"  Paragon (z numerem):      {receipt_id}")
-    
+
     # Paragon z numerem kasy
     receipt_id = gen.generate_receipt_id(
         seller_nip="5213017228",
@@ -115,7 +108,7 @@ def demo_receipt():
         cash_register_number="001",
     )
     print(f"  Paragon (pełny):          {receipt_id}")
-    
+
     print_subheader("Porównanie - różne paragony tego samego dnia:")
     for i, amount in enumerate([15.99, 29.50, 45.00], 1):
         receipt_id = gen.generate_receipt_id(
@@ -130,9 +123,9 @@ def demo_receipt():
 def demo_contracts():
     """Demonstracja generowania ID umów."""
     print_header("UMOWY")
-    
+
     gen = DocumentIDGenerator()
-    
+
     # Umowa podstawowa
     contract_id = gen.generate_contract_id(
         party1_nip="5213017228",
@@ -140,7 +133,7 @@ def demo_contracts():
         contract_date="2025-01-15",
     )
     print(f"  Umowa (podstawowa):       {contract_id}")
-    
+
     # Umowa z numerem
     contract_id = gen.generate_contract_id(
         party1_nip="5213017228",
@@ -150,7 +143,7 @@ def demo_contracts():
         contract_type="ZLECENIE",
     )
     print(f"  Umowa zlecenie:           {contract_id}")
-    
+
     print_subheader("Niezależność od kolejności stron:")
     id_ab = gen.generate_contract_id(
         party1_nip="5213017228",
@@ -170,9 +163,9 @@ def demo_contracts():
 def demo_cash_documents():
     """Demonstracja dokumentów kasowych KP/KW."""
     print_header("DOKUMENTY KASOWE (KP/KW)")
-    
+
     gen = DocumentIDGenerator()
-    
+
     # KP - Kasa Przyjmie
     kp_id = gen.generate_cash_receipt_id(
         document_number="KP/2025/001",
@@ -182,7 +175,7 @@ def demo_cash_documents():
         payer_name="Jan Kowalski",
     )
     print(f"  KP (wpłata gotówki):      {kp_id}")
-    
+
     # KW - Kasa Wyda
     kw_id = gen.generate_cash_disbursement_id(
         document_number="KW/2025/001",
@@ -197,9 +190,9 @@ def demo_cash_documents():
 def demo_other_documents():
     """Demonstracja innych typów dokumentów."""
     print_header("INNE DOKUMENTY")
-    
+
     gen = DocumentIDGenerator()
-    
+
     # Rachunek (bez VAT)
     bill_id = gen.generate_bill_id(
         issuer_nip="5213017228",
@@ -208,7 +201,7 @@ def demo_other_documents():
         gross_amount=500.00,
     )
     print(f"  Rachunek (bez VAT):       {bill_id}")
-    
+
     # Nota księgowa
     note_id = gen.generate_debit_note_id(
         issuer_nip="5213017228",
@@ -218,7 +211,7 @@ def demo_other_documents():
         recipient_nip="9876543210",
     )
     print(f"  Nota księgowa:            {note_id}")
-    
+
     # Faktura korygująca
     correction_id = gen.generate_correction_id(
         seller_nip="5213017228",
@@ -228,7 +221,7 @@ def demo_other_documents():
         gross_amount=-100.00,
     )
     print(f"  Faktura korygująca:       {correction_id}")
-    
+
     # Wyciąg bankowy
     statement_id = gen.generate_bank_statement_id(
         account_number="PL61 1090 1014 0000 0712 1981 2874",
@@ -236,7 +229,7 @@ def demo_other_documents():
         statement_number="001/2025",
     )
     print(f"  Wyciąg bankowy:           {statement_id}")
-    
+
     # WZ - Wydanie Zewnętrzne
     wz_id = gen.generate_delivery_note_id(
         issuer_nip="5213017228",
@@ -245,7 +238,7 @@ def demo_other_documents():
         recipient_nip="9876543210",
     )
     print(f"  WZ (wydanie zewn.):       {wz_id}")
-    
+
     # Delegacja
     expense_id = gen.generate_expense_report_id(
         employee_id="EMP001",
@@ -260,7 +253,7 @@ def demo_other_documents():
 def demo_normalization():
     """Demonstracja normalizacji danych."""
     print_header("NORMALIZACJA DANYCH")
-    
+
     print_subheader("NIP:")
     nip_examples = [
         "521-301-72-28",
@@ -273,7 +266,7 @@ def demo_normalization():
         is_valid = NIPValidator.validate(normalized)
         status = "✓" if is_valid else "✗"
         print(f"    {nip:25} -> {normalized} {status}")
-    
+
     print_subheader("Kwoty:")
     amount_examples = [
         "1 230,50 zł",
@@ -285,7 +278,7 @@ def demo_normalization():
     for amount in amount_examples:
         normalized = AmountNormalizer.normalize(amount)
         print(f"    {str(amount):25} -> {normalized}")
-    
+
     print_subheader("Daty:")
     date_examples = [
         "15.01.2025",
@@ -298,7 +291,7 @@ def demo_normalization():
     for d in date_examples:
         normalized = DateNormalizer.normalize(d)
         print(f"    {str(d):25} -> {normalized}")
-    
+
     print_subheader("Numery faktur:")
     number_examples = [
         "fv/2025/00142",
@@ -314,7 +307,7 @@ def demo_normalization():
 def demo_id_parsing():
     """Demonstracja parsowania ID."""
     print_header("PARSOWANIE IDENTYFIKATORÓW")
-    
+
     ids = [
         "EXEF-FV-A7B3C9D2E1F04856",
         "EXEF-PAR-D5F3AF3409E0E9FF",
@@ -322,7 +315,7 @@ def demo_id_parsing():
         "EXEF-KP-1234567890ABCDEF",
         "EXEF-KOR-FEDCBA0987654321",
     ]
-    
+
     for doc_id in ids:
         try:
             parsed = DocumentIDGenerator.parse_id(doc_id)
@@ -337,10 +330,10 @@ def demo_id_parsing():
 def demo_document_types():
     """Pokazuje wszystkie obsługiwane typy dokumentów."""
     print_header("OBSŁUGIWANE TYPY DOKUMENTÓW")
-    
+
     print(f"  {'Kod':<6} {'Nazwa':<20} {'Opis':<40}")
     print(f"  {'-'*6} {'-'*20} {'-'*40}")
-    
+
     descriptions = {
         "FV": "Faktura VAT",
         "PAR": "Paragon fiskalny",
@@ -358,7 +351,7 @@ def demo_document_types():
         "DEL": "Delegacja / rozliczenie",
         "DOC": "Inny dokument",
     }
-    
+
     for doc_type in DocumentType:
         desc = descriptions.get(doc_type.value, "")
         print(f"  {doc_type.value:<6} {doc_type.name:<20} {desc:<40}")
@@ -367,9 +360,9 @@ def demo_document_types():
 def demo_custom_prefix():
     """Demonstracja niestandardowego prefiksu."""
     print_header("NIESTANDARDOWE PREFIKSY")
-    
+
     print_subheader("Ta sama faktura, różne systemy:")
-    
+
     for prefix in ["EXEF", "KSEF", "ACME", "INT"]:
         gen = DocumentIDGenerator(prefix=prefix)
         doc_id = gen.generate_invoice_id(
@@ -384,17 +377,17 @@ def demo_custom_prefix():
 def demo_ocr():
     """Demonstracja OCR (jeśli dostępny)."""
     print_header("PRZETWARZANIE OCR")
-    
+
     try:
         from exef_docid import (
-            OCRProcessor,
-            OCREngine,
             DocumentPipeline,
+            OCREngine,
+            OCRProcessor,
             process_document,
         )
-        
+
         print("  ✓ Moduł OCR dostępny")
-        
+
         # Sprawdź dostępne silniki
         for engine in [OCREngine.PADDLE, OCREngine.TESSERACT]:
             try:
@@ -403,24 +396,24 @@ def demo_ocr():
                 print(f"    ✓ {engine.value}: dostępny")
             except ImportError as e:
                 print(f"    ✗ {engine.value}: niedostępny ({e})")
-        
+
         print_subheader("Przykład użycia (z plikiem):")
         print("""
     from exef_docid import process_document, get_document_id
-    
+
     # Pełne przetwarzanie
     result = process_document("faktura.pdf")
     print(result.document_id)           # EXEF-FV-A7B3C9D2E1F04856
     print(result.extraction.issuer_nip) # 5213017228
     print(result.ocr_confidence)        # 0.95
-    
+
     # Tylko ID
     doc_id = get_document_id("paragon.jpg")
-    
+
     # Weryfikacja
     is_same = verify_document_id("skan.png", "EXEF-FV-A7B3C9D2E1F04856")
         """)
-        
+
     except ImportError as e:
         print(f"  ✗ Moduł OCR niedostępny: {e}")
         print("\n  Aby zainstalować OCR:")
@@ -432,12 +425,12 @@ def demo_ocr():
 def demo_json_export():
     """Demonstracja eksportu do JSON."""
     print_header("EKSPORT DO JSON")
-    
+
     gen = DocumentIDGenerator()
-    
+
     # Przykładowe dokumenty
     documents = []
-    
+
     # Faktura
     doc_id = gen.generate_invoice_id("5213017228", "FV/2025/001", "2025-01-15", 1230.50)
     documents.append({
@@ -448,7 +441,7 @@ def demo_json_export():
         "date": "2025-01-15",
         "amount": 1230.50,
     })
-    
+
     # Paragon
     doc_id = gen.generate_receipt_id("5213017228", "2025-01-15", 45.99, "00012345")
     documents.append({
@@ -459,7 +452,7 @@ def demo_json_export():
         "amount": 45.99,
         "receipt_number": "00012345",
     })
-    
+
     # KP
     doc_id = gen.generate_cash_receipt_id("KP/2025/001", "2025-01-15", 500.00, "5213017228")
     documents.append({
@@ -469,7 +462,7 @@ def demo_json_export():
         "date": "2025-01-15",
         "amount": 500.00,
     })
-    
+
     print("  Przykładowy eksport:")
     print(json.dumps(documents, indent=4, ensure_ascii=False))
 
@@ -482,7 +475,7 @@ def main():
     print("#" + "  Deterministyczne identyfikatory dokumentów".center(66) + "#")
     print("#" + " " * 68 + "#")
     print("#" * 70)
-    
+
     # Uruchom wszystkie demonstracje
     demo_document_types()
     demo_invoice()
@@ -495,7 +488,7 @@ def main():
     demo_custom_prefix()
     demo_json_export()
     demo_ocr()
-    
+
     print_header("PODSUMOWANIE")
     print("""
   ✓ Generowanie deterministycznych ID dla 15 typów dokumentów
@@ -503,10 +496,10 @@ def main():
   ✓ Niezależność od formatu danych wejściowych
   ✓ Opcjonalna obsługa OCR (PaddleOCR / Tesseract)
   ✓ CLI do przetwarzania plików
-  
+
   Użycie w kodzie:
     from exef_docid import generate_invoice_id, process_document
-    
+
   Użycie CLI:
     docid process faktura.pdf
     docid generate-id --type invoice --nip 5213017228 ...

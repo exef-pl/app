@@ -28,6 +28,7 @@ keywords = ["ocr", "document", "invoice", "ksef", "polish", "accounting"]
 dependencies = [
     "pillow>=9.0.0",
     "pdf2image>=1.16.0",
+    "numpy>=1.21.0",
 ]
 
 [project.optional-dependencies]

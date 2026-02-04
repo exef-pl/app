@@ -8,26 +8,26 @@ w jeden spójny proces.
 import hashlib
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional, Union, List, Dict, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
 
 from .document_id import (
+    AmountNormalizer,
+    DateNormalizer,
     DocumentIDGenerator,
     DocumentType,
     NIPValidator,
-    AmountNormalizer,
-    DateNormalizer,
-)
-from .ocr_processor import (
-    OCRProcessor,
-    OCREngine,
-    DocumentOCRResult,
 )
 from .extractors import (
+    DocumentCategory,
     DocumentExtractor,
     ExtractionResult,
-    DocumentCategory,
+)
+from .ocr_processor import (
+    DocumentOCRResult,
+    OCREngine,
+    OCRProcessor,
 )
 
 logger = logging.getLogger(__name__)
@@ -37,32 +37,32 @@ logger = logging.getLogger(__name__)
 class ProcessedDocument:
     """
     Pełny wynik przetwarzania dokumentu.
-    
+
     Zawiera wygenerowany ID, dane wyekstrahowane z OCR,
     oraz wszystkie metadane potrzebne do dalszego przetwarzania.
     """
     # Identyfikator
     document_id: str
     document_type: DocumentType
-    
+
     # Dane kanoniczne (użyte do generowania ID)
     canonical_string: str
-    
+
     # Wyekstrahowane dane
     extraction: ExtractionResult
-    
+
     # OCR
     ocr_result: DocumentOCRResult
     ocr_confidence: float
-    
+
     # Metadane
     source_file: str
     processed_at: datetime = field(default_factory=datetime.now)
-    
+
     # Flagi
     is_duplicate: bool = False
     duplicate_of: Optional[str] = None
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Konwertuje do słownika."""
         return {
@@ -92,13 +92,13 @@ class ProcessedDocument:
 class DocumentPipeline:
     """
     Główny pipeline przetwarzania dokumentów.
-    
+
     Przykład użycia:
         pipeline = DocumentPipeline()
         result = pipeline.process("faktura.pdf")
         print(result.document_id)  # EXEF-FV-A7B3C9D2E1F04856
     """
-    
+
     def __init__(
         self,
         ocr_engine: OCREngine = OCREngine.PADDLE,
@@ -120,10 +120,10 @@ class DocumentPipeline:
         )
         self.extractor = DocumentExtractor()
         self.id_generator = DocumentIDGenerator(prefix=id_prefix)
-        
+
         # Cache przetworzonych dokumentów (dla wykrywania duplikatów)
         self._processed_ids: Dict[str, str] = {}  # canonical_string -> document_id
-    
+
     def process(
         self,
         file_path: Union[str, Path],
@@ -131,20 +131,20 @@ class DocumentPipeline:
     ) -> ProcessedDocument:
         """
         Przetwarza pojedynczy plik (obraz lub PDF).
-        
+
         Args:
             file_path: Ścieżka do pliku
             force_type: Wymuś typ dokumentu (opcjonalne)
-        
+
         Returns:
             ProcessedDocument z wygenerowanym ID
         """
         file_path = Path(file_path)
         logger.info(f"Processing: {file_path}")
-        
+
         # 1. OCR
         ocr_result = self.ocr.process(file_path)
-        
+
         # Dla PDF bierz pierwszą stronę (lub połącz)
         if isinstance(ocr_result, list):
             if len(ocr_result) == 0:
@@ -154,7 +154,7 @@ class DocumentPipeline:
             combined_lines = []
             for r in ocr_result:
                 combined_lines.extend(r.lines)
-            
+
             ocr_result = DocumentOCRResult(
                 full_text=combined_text,
                 lines=combined_lines,
@@ -166,27 +166,27 @@ class DocumentPipeline:
                 detected_dates=list(set(sum((r.detected_dates for r in ocr_result), []))),
                 detected_invoice_numbers=list(set(sum((r.detected_invoice_numbers for r in ocr_result), []))),
             )
-        
+
         # 2. Ekstrakcja danych
         extraction = self.extractor.extract(ocr_result)
-        
+
         # 3. Mapowanie kategorii na typ dokumentu
         doc_type = force_type or self._map_category_to_type(extraction.category)
-        
+
         # 4. Generowanie ID
         document_id, canonical_string = self._generate_id(extraction, doc_type, ocr_result)
-        
+
         # 5. Sprawdzenie duplikatów
         is_duplicate = False
         duplicate_of = None
-        
+
         if canonical_string in self._processed_ids:
             is_duplicate = True
             duplicate_of = self._processed_ids[canonical_string]
             logger.warning(f"Duplicate detected: {document_id} is duplicate of {duplicate_of}")
         else:
             self._processed_ids[canonical_string] = document_id
-        
+
         return ProcessedDocument(
             document_id=document_id,
             document_type=doc_type,
@@ -198,7 +198,7 @@ class DocumentPipeline:
             is_duplicate=is_duplicate,
             duplicate_of=duplicate_of,
         )
-    
+
     def process_batch(
         self,
         file_paths: List[Union[str, Path]],
@@ -206,32 +206,32 @@ class DocumentPipeline:
     ) -> List[ProcessedDocument]:
         """
         Przetwarza wiele plików.
-        
+
         Args:
             file_paths: Lista ścieżek do plików
             skip_duplicates: Czy pomijać duplikaty w wynikach
-        
+
         Returns:
             Lista ProcessedDocument
         """
         results = []
-        
+
         for file_path in file_paths:
             try:
                 result = self.process(file_path)
-                
+
                 if skip_duplicates and result.is_duplicate:
                     logger.info(f"Skipping duplicate: {file_path}")
                     continue
-                
+
                 results.append(result)
-                
+
             except Exception as e:
                 logger.error(f"Error processing {file_path}: {e}")
                 continue
-        
+
         return results
-    
+
     def _map_category_to_type(self, category: DocumentCategory) -> DocumentType:
         """Mapuje kategorię ekstrakcji na typ dokumentu."""
         mapping = {
@@ -242,7 +242,7 @@ class DocumentPipeline:
             DocumentCategory.UNKNOWN: DocumentType.OTHER,
         }
         return mapping.get(category, DocumentType.OTHER)
-    
+
     def _generate_id(
         self,
         extraction: ExtractionResult,
@@ -251,7 +251,7 @@ class DocumentPipeline:
     ) -> tuple[str, str]:
         """
         Generuje ID na podstawie wyekstrahowanych danych.
-        
+
         Returns:
             Tuple (document_id, canonical_string)
         """
@@ -269,7 +269,7 @@ class DocumentPipeline:
                 issue_date=extraction.document_date or "",
                 gross_amount=extraction.gross_amount or "0",
             )
-        
+
         elif doc_type == DocumentType.RECEIPT:
             # Paragon: NIP | Data | Kwota | Nr paragonu/kasy
             parts = [
@@ -281,7 +281,7 @@ class DocumentPipeline:
                 parts.append(extraction.receipt_number)
             if extraction.cash_register_number:
                 parts.append(extraction.cash_register_number)
-            
+
             canonical = "|".join(parts)
             doc_id = self.id_generator.generate_receipt_id(
                 seller_nip=extraction.issuer_nip or "",
@@ -290,7 +290,7 @@ class DocumentPipeline:
                 receipt_number=extraction.receipt_number,
                 cash_register_number=extraction.cash_register_number,
             )
-        
+
         elif doc_type == DocumentType.CONTRACT:
             # Umowa: NIP1 | NIP2 (sorted) | Data | Numer
             nips = sorted([
@@ -304,7 +304,7 @@ class DocumentPipeline:
             ]
             if extraction.contract_number:
                 parts.append(extraction.contract_number.upper())
-            
+
             canonical = "|".join(parts)
             doc_id = self.id_generator.generate_contract_id(
                 party1_nip=extraction.issuer_nip or "",
@@ -312,7 +312,7 @@ class DocumentPipeline:
                 contract_date=extraction.document_date or "",
                 contract_number=extraction.contract_number,
             )
-        
+
         else:
             # Nieznany dokument - hash treści
             content_hash = hashlib.sha256(ocr_result.full_text.encode()).hexdigest()
@@ -327,9 +327,9 @@ class DocumentPipeline:
                 document_date=extraction.document_date,
                 issuer_nip=extraction.issuer_nip,
             )
-        
+
         return doc_id, canonical
-    
+
     def verify_document(
         self,
         file_path: Union[str, Path],
@@ -337,12 +337,12 @@ class DocumentPipeline:
     ) -> bool:
         """
         Weryfikuje czy dokument ma oczekiwany ID.
-        
+
         Przydatne do sprawdzenia czy skan odpowiada oryginałowi.
         """
         result = self.process(file_path)
         return result.document_id == expected_id
-    
+
     def get_canonical_string(
         self,
         file_path: Union[str, Path],
@@ -368,7 +368,7 @@ def get_pipeline() -> DocumentPipeline:
 def process_document(file_path: Union[str, Path]) -> ProcessedDocument:
     """
     Przetwarza dokument i zwraca wynik z ID.
-    
+
     Przykład:
         result = process_document("faktura.pdf")
         print(result.document_id)
@@ -379,7 +379,7 @@ def process_document(file_path: Union[str, Path]) -> ProcessedDocument:
 def get_document_id(file_path: Union[str, Path]) -> str:
     """
     Zwraca tylko ID dokumentu.
-    
+
     Przykład:
         doc_id = get_document_id("faktura.pdf")
         print(doc_id)  # EXEF-FV-A7B3C9D2E1F04856
@@ -390,7 +390,7 @@ def get_document_id(file_path: Union[str, Path]) -> str:
 def verify_document_id(file_path: Union[str, Path], expected_id: str) -> bool:
     """
     Weryfikuje czy dokument ma oczekiwany ID.
-    
+
     Przykład:
         is_valid = verify_document_id("skan.jpg", "EXEF-FV-A7B3C9D2E1F04856")
     """

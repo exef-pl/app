@@ -6,14 +6,13 @@ niezależnie od formatu źródłowego (skan, PDF, KSeF XML).
 """
 
 import hashlib
-import uuid
 import re
+import uuid
 from dataclasses import dataclass
 from datetime import date, datetime
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Optional, Union
-
 
 # Namespace UUID dla EXEF (RFC 4122 UUID v5)
 EXEF_NAMESPACE = uuid.UUID('a1b2c3d4-e5f6-7890-abcd-ef1234567890')
@@ -43,19 +42,19 @@ class CanonicalData:
     """Kanoniczne dane dokumentu do generowania ID."""
     document_type: DocumentType
     canonical_string: str
-    
+
     # Opcjonalne dane źródłowe dla debugowania
     raw_fields: Optional[dict] = None
 
 
 class NIPValidator:
     """Walidator i normalizator NIP."""
-    
+
     @staticmethod
     def normalize(nip: str) -> str:
         """
         Normalizuje NIP do formatu 10 cyfr bez separatorów.
-        
+
         >>> NIPValidator.normalize("521-301-72-28")
         '5213017228'
         >>> NIPValidator.normalize("PL 521 301 72 28")
@@ -67,19 +66,19 @@ class NIPValidator:
         cleaned = re.sub(r'^[A-Z]{2}', '', nip.upper())
         cleaned = re.sub(r'[\s\-\.]', '', cleaned)
         return cleaned
-    
+
     @staticmethod
     def validate(nip: str) -> bool:
         """
         Waliduje NIP według algorytmu kontrolnego.
-        
+
         >>> NIPValidator.validate("5213017228")
         True
         """
         nip = NIPValidator.normalize(nip)
         if len(nip) != 10 or not nip.isdigit():
             return False
-        
+
         weights = [6, 5, 7, 2, 3, 4, 5, 6, 7]
         checksum = sum(int(nip[i]) * weights[i] for i in range(9))
         return checksum % 11 == int(nip[9])
@@ -87,12 +86,12 @@ class NIPValidator:
 
 class AmountNormalizer:
     """Normalizator kwot pieniężnych."""
-    
+
     @staticmethod
     def normalize(amount: Union[str, float, Decimal]) -> str:
         """
         Normalizuje kwotę do formatu z 2 miejscami po przecinku.
-        
+
         >>> AmountNormalizer.normalize("1 230,50 zł")
         '1230.50'
         >>> AmountNormalizer.normalize(1230.5)
@@ -100,7 +99,7 @@ class AmountNormalizer:
         """
         if isinstance(amount, (int, float)):
             return f"{Decimal(str(amount)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)}"
-        
+
         # Parsowanie stringa
         cleaned = str(amount).upper()
         # Usuń walutę i spacje
@@ -115,17 +114,17 @@ class AmountNormalizer:
             cleaned = f"{integer_part}.{decimal_part}"
         else:
             cleaned = re.sub(r'[\.\s]', '', cleaned)
-        
+
         try:
             decimal_val = Decimal(cleaned).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
             return str(decimal_val)
-        except:
+        except Exception:
             return "0.00"
 
 
 class DateNormalizer:
     """Normalizator dat."""
-    
+
     FORMATS = [
         '%Y-%m-%d',      # 2025-01-15
         '%d-%m-%Y',      # 15-01-2025
@@ -135,12 +134,12 @@ class DateNormalizer:
         '%d %m %Y',      # 15 01 2025
         '%Y%m%d',        # 20250115
     ]
-    
+
     @staticmethod
     def normalize(date_str: Union[str, date, datetime]) -> str:
         """
         Normalizuje datę do formatu ISO YYYY-MM-DD.
-        
+
         >>> DateNormalizer.normalize("15.01.2025")
         '2025-01-15'
         >>> DateNormalizer.normalize("2025-01-15")
@@ -150,16 +149,16 @@ class DateNormalizer:
             return date_str.strftime('%Y-%m-%d')
         if isinstance(date_str, date):
             return date_str.strftime('%Y-%m-%d')
-        
+
         cleaned = str(date_str).strip()
-        
+
         for fmt in DateNormalizer.FORMATS:
             try:
                 parsed = datetime.strptime(cleaned, fmt)
                 return parsed.strftime('%Y-%m-%d')
             except ValueError:
                 continue
-        
+
         # Fallback - spróbuj wyciągnąć cyfry
         digits = re.findall(r'\d+', cleaned)
         if len(digits) >= 3:
@@ -168,18 +167,18 @@ class DateNormalizer:
                 return f"{digits[0]}-{digits[1].zfill(2)}-{digits[2].zfill(2)}"
             elif len(digits[2]) == 4:  # Rok ostatni
                 return f"{digits[2]}-{digits[1].zfill(2)}-{digits[0].zfill(2)}"
-        
+
         return cleaned  # Zwróć oryginał jeśli nie można sparsować
 
 
 class InvoiceNumberNormalizer:
     """Normalizator numerów faktur."""
-    
+
     @staticmethod
     def normalize(number: str) -> str:
         """
         Normalizuje numer faktury.
-        
+
         >>> InvoiceNumberNormalizer.normalize("fv/2025/00142")
         'FV/2025/00142'
         >>> InvoiceNumberNormalizer.normalize("FV 2025 142")
@@ -187,7 +186,7 @@ class InvoiceNumberNormalizer:
         """
         if not number:
             return ""
-        
+
         # Uppercase
         normalized = number.upper().strip()
         # Zamień różne separatory na /
@@ -196,25 +195,25 @@ class InvoiceNumberNormalizer:
         normalized = re.sub(r'/+', '/', normalized)
         # Usuń / na początku i końcu
         normalized = normalized.strip('/')
-        
+
         return normalized
 
 
 class DocumentIDGenerator:
     """
     Generator deterministycznych identyfikatorów dokumentów.
-    
+
     Generuje zawsze ten sam ID dla tych samych danych biznesowych,
     niezależnie od formatu źródłowego dokumentu.
     """
-    
+
     def __init__(self, prefix: str = "EXEF"):
         """
         Args:
             prefix: Prefiks identyfikatora (domyślnie EXEF)
         """
         self.prefix = prefix
-    
+
     def generate_invoice_id(
         self,
         seller_nip: str,
@@ -225,9 +224,9 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla faktury VAT.
-        
+
         Pola kanoniczne: NIP sprzedawcy | Numer faktury | Data wystawienia | Kwota brutto
-        
+
         >>> gen = DocumentIDGenerator()
         >>> gen.generate_invoice_id("5213017228", "FV/2025/00142", "2025-01-15", 1230.00)
         'EXEF-FV-A7B3C9D2E1F04856'
@@ -249,7 +248,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_receipt_id(
         self,
         seller_nip: str,
@@ -260,10 +259,10 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla paragonu fiskalnego.
-        
+
         Paragony są trudniejsze - nie mają unikalnego numeru.
         Używamy: NIP sprzedawcy | Data | Kwota | Numer kasy (jeśli dostępny)
-        
+
         >>> gen = DocumentIDGenerator()
         >>> gen.generate_receipt_id("5213017228", "2025-01-15", 45.99)
         'EXEF-PAR-...'
@@ -273,13 +272,13 @@ class DocumentIDGenerator:
             DateNormalizer.normalize(receipt_date),
             AmountNormalizer.normalize(gross_amount),
         ]
-        
+
         # Dodaj numer paragonu lub kasy jeśli dostępny
         if receipt_number:
             parts.append(receipt_number.strip().upper())
         if cash_register_number:
             parts.append(cash_register_number.strip().upper())
-        
+
         canonical = CanonicalData(
             document_type=DocumentType.RECEIPT,
             canonical_string="|".join(parts),
@@ -292,7 +291,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_contract_id(
         self,
         party1_nip: str,
@@ -303,27 +302,27 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla umowy.
-        
+
         Pola kanoniczne: NIP strona 1 | NIP strona 2 (posortowane) | Data | Numer umowy
-        
+
         NIP-y są sortowane alfabetycznie, żeby kolejność stron nie wpływała na ID.
         """
         nips = sorted([
             NIPValidator.normalize(party1_nip),
             NIPValidator.normalize(party2_nip)
         ])
-        
+
         parts = [
             nips[0],
             nips[1],
             DateNormalizer.normalize(contract_date),
         ]
-        
+
         if contract_number:
             parts.append(contract_number.strip().upper())
         if contract_type:
             parts.append(contract_type.strip().upper())
-        
+
         canonical = CanonicalData(
             document_type=DocumentType.CONTRACT,
             canonical_string="|".join(parts),
@@ -336,7 +335,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_bank_statement_id(
         self,
         account_number: str,
@@ -345,20 +344,20 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla wyciągu bankowego.
-        
+
         Pola kanoniczne: Numer konta (26 cyfr) | Data | Numer wyciągu
         """
         # Normalizuj numer konta - tylko cyfry
         account = re.sub(r'[\s\-]', '', account_number)
-        
+
         parts = [
             account,
             DateNormalizer.normalize(statement_date),
         ]
-        
+
         if statement_number:
             parts.append(statement_number.strip())
-        
+
         canonical = CanonicalData(
             document_type=DocumentType.BANK_STATEMENT,
             canonical_string="|".join(parts),
@@ -369,7 +368,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_correction_id(
         self,
         seller_nip: str,
@@ -380,7 +379,7 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla faktury korygującej.
-        
+
         Pola kanoniczne: NIP | Numer korekty | Data | Numer oryginału | Kwota
         """
         canonical = CanonicalData(
@@ -401,7 +400,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_cash_receipt_id(
         self,
         document_number: str,
@@ -412,7 +411,7 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla dokumentu KP (Kasa Przyjmie - dowód wpłaty).
-        
+
         Pola kanoniczne: Numer dokumentu | Data | Kwota | NIP wystawcy
         """
         parts = [
@@ -420,14 +419,14 @@ class DocumentIDGenerator:
             DateNormalizer.normalize(document_date),
             AmountNormalizer.normalize(amount),
         ]
-        
+
         if issuer_nip:
             parts.append(NIPValidator.normalize(issuer_nip))
         if payer_name:
             # Hash nazwy płatnika dla prywatności
             name_hash = hashlib.md5(payer_name.strip().upper().encode()).hexdigest()[:8]
             parts.append(name_hash)
-        
+
         canonical = CanonicalData(
             document_type=DocumentType.CASH_IN,
             canonical_string="|".join(parts),
@@ -440,7 +439,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_cash_disbursement_id(
         self,
         document_number: str,
@@ -451,7 +450,7 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla dokumentu KW (Kasa Wyda - dowód wypłaty).
-        
+
         Pola kanoniczne: Numer dokumentu | Data | Kwota | NIP wystawcy
         """
         parts = [
@@ -459,13 +458,13 @@ class DocumentIDGenerator:
             DateNormalizer.normalize(document_date),
             AmountNormalizer.normalize(amount),
         ]
-        
+
         if issuer_nip:
             parts.append(NIPValidator.normalize(issuer_nip))
         if recipient_name:
             name_hash = hashlib.md5(recipient_name.strip().upper().encode()).hexdigest()[:8]
             parts.append(name_hash)
-        
+
         canonical = CanonicalData(
             document_type=DocumentType.CASH_OUT,
             canonical_string="|".join(parts),
@@ -478,7 +477,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_bill_id(
         self,
         issuer_nip: str,
@@ -488,7 +487,7 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla rachunku (bez VAT).
-        
+
         Pola kanoniczne: NIP wystawcy | Numer | Data | Kwota
         Identyczne jak faktura, ale z innym typem dokumentu.
         """
@@ -508,7 +507,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_debit_note_id(
         self,
         issuer_nip: str,
@@ -519,7 +518,7 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla noty księgowej (obciążeniowej/uznaniowej).
-        
+
         Pola kanoniczne: NIP wystawcy | Numer noty | Data | Kwota
         """
         parts = [
@@ -528,10 +527,10 @@ class DocumentIDGenerator:
             DateNormalizer.normalize(issue_date),
             AmountNormalizer.normalize(amount),
         ]
-        
+
         if recipient_nip:
             parts.append(NIPValidator.normalize(recipient_nip))
-        
+
         canonical = CanonicalData(
             document_type=DocumentType.DEBIT_NOTE,
             canonical_string="|".join(parts),
@@ -544,7 +543,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_delivery_note_id(
         self,
         issuer_nip: str,
@@ -554,7 +553,7 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla dokumentu WZ (Wydanie Zewnętrzne).
-        
+
         Pola kanoniczne: NIP wystawcy | Numer WZ | Data | NIP odbiorcy
         """
         parts = [
@@ -562,10 +561,10 @@ class DocumentIDGenerator:
             document_number.strip().upper(),
             DateNormalizer.normalize(issue_date),
         ]
-        
+
         if recipient_nip:
             parts.append(NIPValidator.normalize(recipient_nip))
-        
+
         canonical = CanonicalData(
             document_type=DocumentType.DELIVERY_NOTE,
             canonical_string="|".join(parts),
@@ -577,7 +576,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_expense_report_id(
         self,
         employee_id: str,
@@ -588,7 +587,7 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla delegacji / rozliczenia kosztów.
-        
+
         Pola kanoniczne: ID pracownika | Data | Kwota | Numer
         """
         parts = [
@@ -596,12 +595,12 @@ class DocumentIDGenerator:
             DateNormalizer.normalize(report_date),
             AmountNormalizer.normalize(total_amount),
         ]
-        
+
         if report_number:
             parts.append(report_number.strip().upper())
         if company_nip:
             parts.append(NIPValidator.normalize(company_nip))
-        
+
         canonical = CanonicalData(
             document_type=DocumentType.EXPENSE_REPORT,
             canonical_string="|".join(parts),
@@ -614,7 +613,7 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def generate_generic_id(
         self,
         document_type: DocumentType,
@@ -624,16 +623,16 @@ class DocumentIDGenerator:
     ) -> str:
         """
         Generuje ID dla dokumentu o nieznanym typie.
-        
+
         Wymaga podania hasha treści (np. z OCR).
         """
         parts = [content_hash[:64]]  # Maksymalnie 64 znaki hasha
-        
+
         if document_date:
             parts.append(DateNormalizer.normalize(document_date))
         if issuer_nip:
             parts.append(NIPValidator.normalize(issuer_nip))
-        
+
         canonical = CanonicalData(
             document_type=document_type,
             canonical_string="|".join(parts),
@@ -644,58 +643,59 @@ class DocumentIDGenerator:
             }
         )
         return self._generate_id(canonical)
-    
+
     def _generate_id(self, canonical: CanonicalData) -> str:
         """
         Generuje finalny identyfikator z danych kanonicznych.
-        
+
         Format: {PREFIX}-{TYPE}-{HASH16}
         Przykład: EXEF-FV-A7B3C9D2E1F04856
         """
         # SHA256 z canonical string
         hash_bytes = hashlib.sha256(canonical.canonical_string.encode('utf-8')).digest()
         hash_hex = hash_bytes.hex()[:16].upper()
-        
+
         return f"{self.prefix}-{canonical.document_type.value}-{hash_hex}"
-    
+
     def verify_id(self, document_id: str, canonical_string: str) -> bool:
         """
         Weryfikuje czy ID odpowiada danym kanonicznym.
-        
+
         >>> gen = DocumentIDGenerator()
         >>> gen.verify_id("EXEF-FV-A7B3C9D2E1F04856", "5213017228|FV/2025/00142|2025-01-15|1230.00")
         True
         """
         hash_bytes = hashlib.sha256(canonical_string.encode('utf-8')).digest()
         expected_hash = hash_bytes.hex()[:16].upper()
-        
+
         parts = document_id.split('-')
         if len(parts) != 3:
             return False
-        
+
         return parts[2] == expected_hash
-    
+
     @staticmethod
     def parse_id(document_id: str) -> dict:
         """
         Parsuje identyfikator dokumentu.
-        
+
         >>> DocumentIDGenerator.parse_id("EXEF-FV-A7B3C9D2E1F04856")
-        {'prefix': 'EXEF', 'type': 'FV', 'hash': 'A7B3C9D2E1F04856', 'document_type': <DocumentType.INVOICE>}
+        {'prefix': 'EXEF', 'type': 'FV', 'hash': 'A7B3C9D2E1F04856',
+         'document_type': <DocumentType.INVOICE>}
         """
         parts = document_id.split('-')
         if len(parts) != 3:
             raise ValueError(f"Invalid document ID format: {document_id}")
-        
+
         prefix, type_code, hash_value = parts
-        
+
         # Znajdź typ dokumentu
         doc_type = None
         for dt in DocumentType:
             if dt.value == type_code:
                 doc_type = dt
                 break
-        
+
         return {
             'prefix': prefix,
             'type': type_code,

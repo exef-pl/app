@@ -3,12 +3,12 @@ Ekstraktory danych z dokumentów.
 """
 
 from .base import (
+    ContractExtractor,
+    DocumentCategory,
     DocumentExtractor,
+    ExtractionResult,
     InvoiceExtractor,
     ReceiptExtractor,
-    ContractExtractor,
-    ExtractionResult,
-    DocumentCategory,
 )
 
 __all__ = [
