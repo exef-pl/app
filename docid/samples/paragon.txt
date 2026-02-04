@@ -1,0 +1,21 @@
+PARAGON FISKALNY NR 001/2025/000123
+Data: 2025-01-15   Godzina: 14:30
+
+Sklep ABC
+NIP: 521-301-72-28
+ul. Handlowa 5, 00-789 Łódź
+Kasa fiskalna: 001
+
+Chleb                     3,50 PLN A
+Mleko                     4,20 PLN A
+Ser                       8,90 PLN A
+Jajka                     6,40 PLN A
+Masło                     7,80 PLN A
+
+-----------------------------------------
+SUMA PTU:                30,80 PLN A
+SUMA VAT:                 7,08 PLN A
+SUMA:                   37,88 PLN
+
+GOTÓWKA:                50,00 PLN
+RESZTA:                 12,12 PLN

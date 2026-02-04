@@ -74,6 +74,40 @@ run-demo:
 run-complete-demo:
 	source venv/bin/activate && python examples/complete_demo.py
 
+# Sample tests
+test-samples:
+	source venv/bin/activate && python test_final_consistency.py
+
+test-samples-mock:
+	source venv/bin/activate && python test_samples_mock_ocr.py
+
+test-samples-improved:
+	source venv/bin/activate && python test_samples_improved.py
+
+# All formats tests
+test-all-formats:
+	source venv/bin/activate && python test_all_formats_consistency.py
+
+test-formats-basic:
+	source venv/bin/activate && python test_all_formats.py
+
+test-complete-formats:
+	source venv/bin/activate && python test_all_complete_formats.py
+
+# Generate samples
+generate-samples:
+	source venv/bin/activate && python generate_samples.py
+
+generate-image-samples:
+	source venv/bin/activate && python generate_image_samples.py
+
+generate-universal-samples:
+	source venv/bin/activate && python generate_universal_samples.py
+
+# Universal document tests
+test-universal:
+	source venv/bin/activate && python test_universal_documents.py
+
 # Package management
 build:
 	source venv/bin/activate && python -m build

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="http://crd.gov.pl/wzor/2023/06/29/12648/">
+  <InvoiceNumber>FV/2025/00142</InvoiceNumber>
+  <IssueDate>2025-01-15</IssueDate>
+  <Seller>
+    <Name>Firma ABC Sp. z o.o.</Name>
+    <NIP>5213017228</NIP>
+    <Address>ul. Przykładowa 1, 00-123 Warszawa</Address>
+  </Seller>
+  <Buyer>
+    <Name>Firma XYZ</Name>
+    <NIP>1234567890</NIP>
+    <Address>ul. Testowa 2, 00-456 Kraków</Address>
+  </Buyer>
+  <InvoiceLines>
+    <InvoiceLine>
+      <ProductName>Usługa programistyczna</ProductName>
+      <Quantity>1</Quantity>
+      <UnitPrice>1230.50</UnitPrice>
+      <VATRate>23</VATRate>
+      <TotalAmount>1230.50</TotalAmount>
+    </InvoiceLine>
+  </InvoiceLines>
+  <TotalAmount>1230.50</TotalAmount>
+  <TotalVATAmount>230.50</TotalAmount>
+  <TotalGrossAmount>1230.50</TotalGrossAmount>
+</Invoice>

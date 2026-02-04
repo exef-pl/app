@@ -1,0 +1,23 @@
+FAKTURA VAT nr FV/2025/00142
+Data wystawienia: 15.01.2025
+
+Sprzedawca:
+Firma ABC Sp. z o.o.
+NIP: 521-301-72-28
+ul. Przykładowa 1, 00-123 Warszawa
+
+Nabywca:
+Firma XYZ
+NIP: 123-456-78-90
+ul. Testowa 2, 00-456 Kraków
+
+SPECYFIKACJA:
+Usługa programistyczna    1 szt.    1230,50 PLN
+
+------------------------------------------------------------
+Podstawa opodatkowania: 1230,50 PLN
+VAT 23%:                 230,50 PLN
+RAZEM BRUTTO:           1230,50 PLN
+
+Forma płatności: przelew
+Termin płatności: 2025-01-22

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Receipt xmlns="http://crd.gov.pl/wzor/2023/06/29/12649/">
+  <ReceiptHeader>
+    <ReceiptNumber>001/2025/000123</ReceiptNumber>
+    <IssueDate>2025-01-15</IssueDate>
+    <IssueTime>14:30:00</IssueTime>
+    <CashRegisterNumber>001</CashRegisterNumber>
+    <POSNumber>POS-001</POSNumber>
+  </ReceiptHeader>
+  
+  <SellerParty>
+    <PartyName>Sklep ABC</PartyName>
+    <TaxIdentification>5213017228</TaxIdentification>
+    <Address>
+      <Street>ul. Handlowa 5</Street>
+      <City>Łódź</City>
+      <PostalCode>00-789</PostalCode>
+      <CountryCode>PL</CountryCode>
+    </Address>
+    <CashRegisterID>1234567890</CashRegisterID>
+  </SellerParty>
+  
+  <ReceiptLines>
+    <ReceiptLine>
+      <LineNumber>1</LineNumber>
+      <ProductName>Chleb</ProductName>
+      <ProductCode>CHL-001</ProductCode>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+      <Quantity>1</Quantity>
+      <UnitPrice>3.50</UnitPrice>
+      <VATRate>A</VATRate>
+      <GrossAmount>3.50</GrossAmount>
+    </ReceiptLine>
+    
+    <ReceiptLine>
+      <LineNumber>2</LineNumber>
+      <ProductName>Mleko</ProductName>
+      <ProductCode>MLK-001</ProductCode>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+      <Quantity>1</Quantity>
+      <UnitPrice>4.20</UnitPrice>
+      <VATRate>A</VATRate>
+      <GrossAmount>4.20</GrossAmount>
+    </ReceiptLine>
+    
+    <ReceiptLine>
+      <LineNumber>3</LineNumber>
+      <ProductName>Ser</ProductName>
+      <ProductCode>SER-001</ProductCode>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+      <Quantity>1</Quantity>
+      <UnitPrice>8.90</UnitPrice>
+      <VATRate>A</VATRate>
+      <GrossAmount>8.90</GrossAmount>
+    </ReceiptLine>
+    
+    <ReceiptLine>
+      <LineNumber>4</LineNumber>
+      <ProductName>Jajka</ProductName>
+      <ProductCode>JAJ-001</ProductCode>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+      <Quantity>1</Quantity>
+      <UnitPrice>6.40</UnitPrice>
+      <VATRate>A</VATRate>
+      <GrossAmount>6.40</GrossAmount>
+    </ReceiptLine>
+    
+    <ReceiptLine>
+      <LineNumber>5</LineNumber>
+      <ProductName>Masło</ProductName>
+      <ProductCode>MAS-001</ProductCode>
+      <UnitOfMeasure>szt.</UnitOfMeasure>
+      <Quantity>1</Quantity>
+      <UnitPrice>7.80</UnitPrice>
+      <VATRate>A</VATRate>
+      <GrossAmount>7.80</GrossAmount>
+    </ReceiptLine>
+  </ReceiptLines>
+  
+  <ReceiptSummary>
+    <TotalNetAmount>30.80</TotalNetAmount>
+    <TotalVATAmount>7.08</TotalVATAmount>
+    <TotalGrossAmount>37.88</TotalGrossAmount>
+    <PaymentMethods>
+      <PaymentMethod>
+        <Type>gotówka</Type>
+        <Amount>50.00</Amount>
+      </PaymentMethod>
+    </PaymentMethods>
+    <ChangeAmount>12.12</ChangeAmount>
+  </ReceiptSummary>
+  
+  <FiscalData>
+    <FiscalPrintNumber>12345</FiscalPrintNumber>
+    <FiscalMemorySerialNumber>FMS-1234567890</FiscalMemorySerialNumber>
+    <UniqueToken>ABC123DEF456</UniqueToken>
+  </FiscalData>
+</Receipt>

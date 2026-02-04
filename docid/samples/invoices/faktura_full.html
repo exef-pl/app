@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faktura VAT FV/2025/00142</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; }
+        .invoice-info { margin: 20px 0; }
+        .parties { display: flex; justify-content: space-between; margin: 20px 0; }
+        .party { width: 45%; }
+        .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .table th { background-color: #f2f2f2; }
+        .summary { text-align: right; margin: 20px 0; }
+        .footer { margin-top: 40px; border-top: 1px solid #ccc; padding-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>FAKTURA VAT</h1>
+        <h2>Numer: FV/2025/00142</h2>
+        <p>Data wystawienia: 2025-01-15</p>
+        <p>Termin płatności: 2025-01-22</p>
+    </div>
+
+    <div class="parties">
+        <div class="party">
+            <h3>Sprzedawca</h3>
+            <p><strong>Firma ABC Sp. z o.o.</strong></p>
+            <p>ul. Przykładowa 1</p>
+            <p>00-123 Warszawa</p>
+            <p>NIP: 521-301-72-28</p>
+            <p>tel: +48 22 123 45 67</p>
+            <p>email: biuro@firmaabc.pl</p>
+        </div>
+        
+        <div class="party">
+            <h3>Nabywca</h3>
+            <p><strong>Firma XYZ</strong></p>
+            <p>ul. Testowa 2</p>
+            <p>00-456 Kraków</p>
+            <p>NIP: 123-456-78-90</p>
+        </div>
+    </div>
+
+    <div class="invoice-info">
+        <h3>Specyfikacja</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Lp.</th>
+                    <th>Nazwa usługi</th>
+                    <th>Ilość</th>
+                    <th>Cena jedn.</th>
+                    <th>Wartość netto</th>
+                    <th>VAT</th>
+                    <th>Wartość brutto</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Usługa programistyczna - tworzenie aplikacji webowej</td>
+                    <td>1 szt.</td>
+                    <td>1230,50 PLN</td>
+                    <td>1230,50 PLN</td>
+                    <td>23%</td>
+                    <td>1230,50 PLN</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="summary">
+        <h3>Podsumowanie</h3>
+        <p>Podstawa opodatkowania: 1230,50 PLN</p>
+        <p>Kwota VAT 23%: 283,02 PLN</p>
+        <p><strong>Razem brutto: 1230,50 PLN</strong></p>
+        <p>Słownie: jeden tysiąc dwieście trzydzieści złotych 50/100</p>
+    </div>
+
+    <div class="footer">
+        <h3>Forma płatności</h3>
+        <p>Przelew na rachunek bankowy:</p>
+        <p>PL 12 3456 7890 1234 5678 9012 3456</p>
+        <p>Termin płatności: 2025-01-22</p>
+        
+        <p style="margin-top: 30px;">Zapłacone w terminie 14 dni</p>
+        
+        <div style="margin-top: 40px;">
+            <p>.....................................................</p>
+            <p>Podpis sprzedawcy</p>
+        </div>
+    </div>
+</body>
+</html>
