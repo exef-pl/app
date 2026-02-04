@@ -18,6 +18,12 @@ services:
       - PROJECT_NAME=${PROJECT_NAME}
       - DEBUG=${DEBUG}
       - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_USE_TLS=${SMTP_USE_TLS}
+      - FROM_EMAIL=${FROM_EMAIL}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -37,8 +43,7 @@ services:
       - ./frontend/.env:/app/.env:ro
       - /app/node_modules
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     restart: unless-stopped
     environment:
       - VITE_API_URL=${VITE_API_URL}
@@ -46,3 +51,14 @@ services:
       - VITE_APP_NAME=${VITE_APP_NAME}
       - VITE_APP_VERSION=${VITE_APP_VERSION}
       - VITE_APP_DESCRIPTION=${VITE_APP_DESCRIPTION}
+
+  # Test SMTP Server
+  smtp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.smtp
+    ports:
+      - "1025:1025"
+    volumes:
+      - ./test_emails:/app/test_emails
+    restart: unless-stopped

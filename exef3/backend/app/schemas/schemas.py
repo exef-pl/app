@@ -51,6 +51,17 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     identity_id: str
 
+# Magic Link Authentication
+class MagicLinkRequest(BaseModel):
+    email: EmailStr
+
+class MagicLinkResponse(BaseModel):
+    message: str
+    email: str
+
+class MagicLinkLogin(BaseModel):
+    token: str
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # IDENTITY (Tożsamość)
 # ═══════════════════════════════════════════════════════════════════════════════

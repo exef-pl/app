@@ -14,14 +14,18 @@ help:
 	@echo "  make logs         - Show logs from all services"
 	@echo "  make logs-backend - Show logs from backend only"
 	@echo "  make logs-frontend- Show logs from frontend only"
+	@echo "  make logs-smtp    - Show logs from SMTP server only"
 	@echo "  make clean        - Remove containers, images, and volumes"
 	@echo "  make test         - Run API tests"
+	@echo "  make test-magic   - Test magic link authentication"
 	@echo "  make lint         - Run linting (backend only)"
 	@echo "  make format       - Format code (backend only)"
 	@echo "  make shell        - Open shell in backend container"
 	@echo "  make db-init      - Initialize database"
 	@echo "  make db-reset     - Reset database (WARNING: deletes all data)"
 	@echo "  make build        - Build containers without starting"
+	@echo "  make smtp-server  - Start test SMTP server only"
+	@echo "  make email-client - Run email client to view received emails"
 
 # Install dependencies
 install:
@@ -40,6 +44,7 @@ up:
 	@echo "Backend: http://localhost:$(shell grep HOST_PORT .env | cut -d'=' -f2)"
 	@echo "Frontend: http://localhost:$(shell grep FRONTEND_HOST_PORT .env | cut -d'=' -f2)"
 	@echo "API Docs: http://localhost:$(shell grep HOST_PORT .env | cut -d'=' -f2)/docs"
+	@echo "SMTP Server: localhost:1025"
 
 down:
 	@echo "Stopping EXEF3 services..."
@@ -58,6 +63,9 @@ logs-backend:
 logs-frontend:
 	docker-compose logs -f frontend
 
+logs-smtp:
+	docker-compose logs -f smtp-server
+
 clean:
 	@echo "Cleaning up..."
 	docker-compose down -v --rmi all --remove-orphans
@@ -73,6 +81,16 @@ shell:
 
 test:
 	python3 test_api.py
+
+test-magic:
+	@echo "Testing magic link authentication..."
+	@echo "1. Requesting magic link for test@example.com..."
+	curl -s -X POST http://localhost:$(shell grep HOST_PORT .env | cut -d'=' -f2)/api/v1/auth/magic-link/request \
+		-H "Content-Type: application/json" \
+		-d '{"email":"test@example.com"}' | jq .
+	@echo ""
+	@echo "2. Check the email client for the magic link!"
+	@echo "3. Run 'make email-client' to view received emails"
 
 lint:
 	cd backend && python -m flake8 app/ --max-line-length=100 --ignore=E203,W503 || true
@@ -94,6 +112,15 @@ db-reset:
 	docker-compose up -d
 	sleep 5
 	make db-init
+
+# Email commands
+smtp-server:
+	@echo "Starting test SMTP server..."
+	python3 test_smtp_server.py
+
+email-client:
+	@echo "Starting email client..."
+	python3 test_email_client.py
 
 # Development shortcuts
 dev: install up
@@ -117,3 +144,4 @@ check-ports:
 	@echo "Checking ports..."
 	@netstat -tulpn | grep :$(shell grep HOST_PORT .env | cut -d'=' -f2) || echo "Backend port $(shell grep HOST_PORT .env | cut -d'=' -f2) is free"
 	@netstat -tulpn | grep :$(shell grep FRONTEND_HOST_PORT .env | cut -d'=' -f2) || echo "Frontend port $(shell grep FRONTEND_HOST_PORT .env | cut -d'=' -f2) is free"
+	@netstat -tulpn | grep :1025 || echo "SMTP port 1025 is free"

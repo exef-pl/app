@@ -1,7 +1,7 @@
 """Konfiguracja aplikacji EXEF."""
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-from typing import List
+from typing import List, Optional
 
 class Settings(BaseSettings):
     # App
@@ -21,8 +21,17 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3003", "http://127.0.0.1:3003"]
     
+    # Email
+    SMTP_HOST: str = "localhost"
+    SMTP_PORT: int = 1025
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_USE_TLS: bool = False
+    FROM_EMAIL: str = "noreply@exef3.local"
+    
     class Config:
         env_file = ".env"
+        extra = "ignore"  # Allow extra fields from .env
 
 @lru_cache()
 def get_settings() -> Settings:

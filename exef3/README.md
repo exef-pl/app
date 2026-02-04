@@ -158,4 +158,3 @@ exef/
 
 ## 📝 Licencja
 
-MIT

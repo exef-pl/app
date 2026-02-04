@@ -5,6 +5,7 @@ from typing import Generator
 
 from app.core.config import settings
 from app.models.models import Base
+from app.models.magic_link import MagicLink
 
 engine = create_engine(
     settings.DATABASE_URL,
@@ -16,6 +17,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def init_db():
     """Inicjalizacja bazy danych - tworzenie tabel."""
     Base.metadata.create_all(bind=engine)
+    MagicLink.metadata.create_all(bind=engine)
 
 def get_db() -> Generator[Session, None, None]:
     """Dependency dla sesji bazy danych."""

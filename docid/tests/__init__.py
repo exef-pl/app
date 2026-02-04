@@ -1,0 +1,3 @@
+"""
+Testy dla pakietu docid.
+"""
