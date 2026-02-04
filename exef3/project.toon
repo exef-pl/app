@@ -1,0 +1,111 @@
+# exef3 | 20f 3100L | python:17/javascript:3
+# Keys: M=modules, D=details, i=imports, c=classes, f=functions, m=methods
+M[20]:
+  __init__.py,0
+  backend/__init__.py,0
+  frontend/vite.config.js,9
+  frontend/src/App.jsx,1205
+  frontend/src/main.jsx,8
+  backend/app/__init__.py,0
+  backend/app/main.py,39
+  backend/app/schemas/schemas.py,286
+  backend/app/schemas/__init__.py,0
+  backend/app/core/config.py,16
+  backend/app/core/security.py,40
+  backend/app/core/__init__.py,0
+  backend/app/core/database.py,21
+  backend/app/models/__init__.py,0
+  backend/app/models/models.py,211
+  backend/app/api/projects.py,223
+  backend/app/api/auth.py,63
+  backend/app/api/__init__.py,0
+  backend/app/api/tasks.py,247
+  backend/app/api/entities.py,154
+D:
+  frontend/src/App.jsx:
+    i: react
+    e: InfoRow,InputField,AuthPanel,RightPanel,App
+    App()->None
+    AuthPanel()->None
+    RightPanel()->None
+    InputField()->None
+    InfoRow()->None
+  backend/app/main.py:
+    i: app.api.{auth,entities,projects,tasks},app.core.config.settings,app.core.database.init_db,contextlib.asynccontextmanager,fastapi.FastAPI,fastapi.middleware.cors.CORSMiddleware
+    e: lifespan,root,health
+    lifespan(app:FastAPI)->None
+    root()->None
+    health()->None
+  backend/app/schemas/schemas.py:
+    i: datetime,datetime.date,enum.Enum,pydantic.{BaseModel,EmailStr,Field},typing.{Any,List,Optional}
+    e: EntityType,ProjectType,TaskStatus,DocumentStatus,AuthorizationRole,Token,TokenData,IdentityCreate
+    EntityType: 
+    ProjectType: 
+    TaskStatus: 
+    DocumentStatus: 
+    AuthorizationRole: 
+  backend/app/core/config.py:
+    i: functools.lru_cache,pydantic_settings.BaseSettings
+    e: Settings,get_settings
+    Settings: 
+    get_settings()->Settings
+  backend/app/core/security.py:
+    i: datetime,datetime.timedelta,fastapi.{Depends,HTTPException,status},fastapi.security.OAuth2PasswordBearer,jose.{JWTError,jwt},passlib.context.CryptContext,typing.Optional
+    e: verify_password,get_password_hash,create_access_token,decode_token,get_current_identity_id
+    verify_password(plain_password:str;hashed_password:str)->bool
+    get_password_hash(password:str)->str
+    create_access_token(data:dict;expires_delta:Optional[timedelta]=None)->str
+    decode_token(token:str)->Optional[dict]
+    get_current_identity_id(token:str=Depends(oauth2_scheme))->str
+  backend/app/core/database.py:
+    i: app.core.config.settings,app.models.models.Base,sqlalchemy.create_engine,sqlalchemy.orm.{Session,sessionmaker},typing.Generator
+    e: init_db,get_db
+    init_db()->None
+    get_db()->Generator[Session, None, None]
+  backend/app/models/models.py:
+    i: datetime,datetime.date,sqlalchemy,typing.{List,Optional}
+    e: EntityType,ProjectType,TaskStatus,DocumentStatus,AuthorizationRole,Identity,Entity,EntityMember
+    EntityType: 
+    ProjectType: 
+    TaskStatus: 
+    DocumentStatus: 
+    AuthorizationRole: 
+  backend/app/api/projects.py:
+    i: datetime,fastapi.{APIRouter,Depends,HTTPException,Query},sqlalchemy.orm.{Session,joinedload},typing.{List,Optional},uuid.uuid4
+    e: get_user_projects,check_project_access,list_projects,create_project,get_project,update_project,delete_project,create_authorization
+    get_user_projects(db:Session;identity_id:str)->List[Project]
+    check_project_access(db:Session;project_id:str;identity_id:str;require_edit:bool=False)->None
+    list_projects(entity_id:Optional[str]=Query(None);identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    create_project(data:ProjectCreate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    get_project(project_id:str;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    update_project(project_id:str;data:ProjectUpdate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    delete_project(project_id:str;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    create_authorization(project_id:str;data:ProjectAuthorizationCreate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+  backend/app/api/auth.py:
+    i: app.core.database.get_db,app.core.security.verify_password,datetime.timedelta,fastapi.{APIRouter,Depends,HTTPException,status},fastapi.security.OAuth2PasswordRequestForm,sqlalchemy.orm.Session,uuid.uuid4
+    e: register,login,get_me,update_me
+    register(data:IdentityCreate;db:Session=Depends(get_db))->None
+    login(form_data:OAuth2PasswordRequestForm=Depends();db:Session=Depends(get_db))->None
+    get_me(identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    update_me(data:IdentityUpdate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+  backend/app/api/tasks.py:
+    i: datetime,fastapi.{APIRouter,Depends,HTTPException,Query},sqlalchemy.orm.{Session,joinedload},typing.{List,Optional},uuid.uuid4
+    e: check_task_access,create_task,get_task,update_task,delete_task,list_documents,create_document,get_document
+    check_task_access(db:Session;task_id:str;identity_id:str;require_edit:bool=False)->None
+    create_task(data:TaskCreate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    get_task(task_id:str;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    update_task(task_id:str;data:TaskUpdate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    delete_task(task_id:str;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    list_documents(task_id:str;status:Optional[str]=Query(None);identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    create_document(data:DocumentCreate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    get_document(document_id:str;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+  backend/app/api/entities.py:
+    i: app.core.database.get_db,app.core.security.get_current_identity_id,app.models.models.Entity,fastapi.{APIRouter,Depends,HTTPException},sqlalchemy.orm.{Session,joinedload},typing.List,uuid.uuid4
+    e: list_entities,create_entity,get_entity,update_entity,delete_entity,add_member,remove_member
+    list_entities(identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    create_entity(data:EntityCreate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    get_entity(entity_id:str;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    update_entity(entity_id:str;data:EntityUpdate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    delete_entity(entity_id:str;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    add_member(entity_id:str;data:EntityMemberCreate;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None
+    remove_member(entity_id:str;member_id:str;identity_id:str=Depends(get_current_identity_id);db:Session=Depends(get_db))->None

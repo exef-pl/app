@@ -87,7 +87,8 @@ class Identity(Base):
     # Relacje
     owned_entities = relationship("Entity", back_populates="owner", foreign_keys="Entity.owner_id")
     entity_memberships = relationship("EntityMember", back_populates="identity")
-    project_authorizations = relationship("ProjectAuthorization", back_populates="identity")
+    project_authorizations = relationship("ProjectAuthorization", back_populates="identity", foreign_keys="ProjectAuthorization.identity_id")
+    granted_authorizations = relationship("ProjectAuthorization", foreign_keys="ProjectAuthorization.granted_by_id")
     
     @property
     def full_name(self) -> str:
@@ -221,6 +222,7 @@ class ProjectAuthorization(Base):
     # Relacje
     project = relationship("Project", back_populates="authorizations")
     identity = relationship("Identity", back_populates="project_authorizations", foreign_keys=[identity_id])
+    granted_by = relationship("Identity", foreign_keys=[granted_by_id])
     
     __table_args__ = (UniqueConstraint('project_id', 'identity_id'),)
 
@@ -300,7 +302,7 @@ class Document(Base):
     
     # Relacje
     task = relationship("Task", back_populates="documents")
-    metadata = relationship("DocumentMetadata", back_populates="document", uselist=False, cascade="all, delete-orphan")
+    document_metadata = relationship("DocumentMetadata", back_populates="document", uselist=False, cascade="all, delete-orphan")
     parent_relations = relationship("DocumentRelation", foreign_keys="DocumentRelation.child_id", back_populates="child")
     child_relations = relationship("DocumentRelation", foreign_keys="DocumentRelation.parent_id", back_populates="parent")
 
@@ -323,7 +325,7 @@ class DocumentMetadata(Base):
     version = Column(Integer, default=1)
     
     # Relacje
-    document = relationship("Document", back_populates="metadata")
+    document = relationship("Document", back_populates="document_metadata")
 
 class DocumentRelation(Base):
     """Relacja między dokumentami - np. umowa -> faktury."""
