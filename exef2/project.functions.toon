@@ -1,18 +1,31 @@
 project: exef2
-generated: "2026-02-02T17:09:32.743662"
-modules[17]{path,lang,items}:
+generated: "2026-02-04T09:18:18.582771"
+modules[30]{path,lang,items}:
+  fix_missing_await.py,python,1
+  fix_double_await.py,python,1
+  fix_signature_tests.py,python,1
+  fix_tests.py,python,1
+  fix_async_tests.py,python,1
+  fix_all_tests.py,python,1
   backend/config.py,python,1
   backend/migrations.py,python,6
-  backend/main.py,python,51
+  backend/main.py,python,55
   frontend/router.js,javascript,7
   desktop/preload.js,javascript,0
   desktop/sync.js,javascript,10
   desktop/database.js,javascript,21
   desktop/main.js,javascript,3
+  tests/test_all_views_gui.py,python,22
+  tests/test_complete_e2e.py,python,16
+  tests/simple_gui_test.py,python,12
+  tests/test_signature.py,python,14
   tests/test_e2e.py,python,59
+  tests/mock_services.py,python,17
+  frontend/components/signature-manager.js,javascript,1
   frontend/components/document-manager.js,javascript,1
   frontend/components/profile-manager.js,javascript,1
   backend/adapters/export.py,python,15
+  backend/adapters/signature.py,python,16
   backend/adapters/ksef.py,python,10
   backend/adapters/email.py,python,12
   backend/adapters/__init__.py,python,11
@@ -20,6 +33,24 @@ modules[17]{path,lang,items}:
   backend/adapters/ocr.py,python,16
 
 function_details:
+  fix_missing_await.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      fix_missing_await,function,() -> None,6-36,false,31,8,Fix missing await in UI test methods
+  fix_double_await.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      fix_double_await,function,(filepath) -> None,6-20,false,15,1,Fix double await issues
+  fix_signature_tests.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      fix_signature_tests,function,() -> None,6-41,false,36,10,Fix UI test methods in test_signature.py
+  fix_tests.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      fix_test_file,function,(filepath) -> None,7-39,false,33,2,Fix sync/async issues in a test file
+  fix_async_tests.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      fix_test_file,function,() -> None,6-60,false,55,3,fix test file
+  fix_all_tests.py:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      fix_all_test_methods,function,() -> None,6-51,false,46,6,Fix all test methods to be async
   backend/config.py:
     functions[1]{name,kind,sig,loc,async,lines,cc,does}:
       get_settings,function,() -> Settings,43-44,false,2,1,retrieves settings
@@ -32,67 +63,71 @@ function_details:
       status,function,() -> None,218-232,false,15,3,Show migration status
       create_migration,function,"(name:str) -> None",235-247,false,13,1,Generate new migration template
   backend/main.py:
-    functions[51]{name,kind,sig,loc,async,lines,cc,does}:
-      db,function,() -> None,61-64,false,4,1,db
-      init_db,function,() -> None,66-81,false,16,2,creates db
-      adapter_pull,function,"(ep:dict) -> list[dict]",103-117,true,15,6,adapter pull
-      adapter_push,function,"(ep:dict, docs:list[dict]) -> dict",119-143,true,25,7,adapter push
-      lifespan,function,"(app:FastAPI) -> None",147-149,true,3,1,lifespan
-      list_profiles,function,() -> None,156-158,false,3,2,list profiles
-      create_profile,function,"(p:Profile) -> None",161-167,true,7,2,creates profile
-      get_profile,function,"(id:str) -> None",170-174,false,5,2,retrieves profile
-      update_profile,function,"(id:str, updates:dict) -> None",177-185,true,9,2,updates profile
-      delete_profile,function,"(id:str) -> None",188-195,false,8,2,deletes profile
-      list_delegates,function,"(profile_id:str) -> None",199-202,false,4,2,list delegates
-      create_delegate,function,"(profile_id:str, d:ProfileDelegate) -> None",205-215,true,11,3,creates delegate
-      get_delegate,function,"(profile_id:str, id:str) -> None",218-222,false,5,2,retrieves delegate
-      update_delegate,function,"(profile_id:str, id:str, updates:dict) -> None",225-234,true,10,2,updates delegate
-      delete_delegate,function,"(profile_id:str, id:str) -> None",237-241,true,5,1,deletes delegate
-      list_endpoints,function,"(profile_id:str, direction:str=None) -> None",245-249,false,5,5,list endpoints
-      create_endpoint,function,"(profile_id:str, ep:Endpoint) -> None",252-258,true,7,2,creates endpoint
-      delete_endpoint,function,"(profile_id:str, id:str) -> None",261-265,true,5,1,deletes endpoint
-      list_documents,function,"(profile_id:str, status:str=None, type:str=None, limit:int=100) -> None",269-278,false,10,8,list documents
-      create_document,function,"(profile_id:str, doc:Document) -> None",281-288,true,8,2,creates document
-      update_document,function,"(profile_id:str, id:str, updates:dict) -> None",291-299,true,9,2,updates document
-      delete_document,function,"(profile_id:str, id:str) -> None",302-306,true,5,1,deletes document
-      pull_from_endpoint,function,"(profile_id:str, endpoint_id:str) -> None",310-338,true,29,5,pull from endpoint
-      push_to_endpoint,function,"(profile_id:str, endpoint_id:str, document_ids:list[str]) -> None",341-365,true,25,7,sends to endpoint
-      webhook_receive,function,"(profile_id:str, endpoint_id:str, payload:dict) -> None",369-379,true,11,1,webhook receive
-      get_profile_stats,function,"(profile_id:str) -> None",383-397,false,15,13,retrieves profile stats
-      get_global_stats,function,() -> None,400-405,false,6,1,retrieves global stats
-      websocket_endpoint,function,"(ws:WebSocket, profile_id:str='default') -> None",409-414,true,6,3,websocket endpoint
-      legacy_list_endpoints,function,"(direction:str=None) -> None",418-419,false,2,1,legacy list endpoints
-      legacy_create_endpoint,function,"(ep:Endpoint) -> None",422-424,true,3,1,legacy create endpoint
-      legacy_delete_endpoint,function,"(id:str) -> None",427-428,true,2,1,legacy delete endpoint
-      legacy_list_documents,function,"(status:str=None, type:str=None) -> None",431-432,false,2,1,legacy list documents
-      legacy_create_document,function,"(doc:Document) -> None",435-437,true,3,1,legacy create document
-      legacy_update_document,function,"(id:str, updates:dict) -> None",440-441,true,2,1,legacy update document
-      legacy_delete_document,function,"(id:str) -> None",444-445,true,2,1,legacy delete document
-      legacy_pull,function,"(endpoint_id:str) -> None",448-449,true,2,1,legacy pull
-      legacy_push,function,"(endpoint_id:str, document_ids:list[str]) -> None",452-453,true,2,1,legacy push
-      legacy_websocket,function,"(ws:WebSocket) -> None",456-457,true,2,1,legacy websocket
-      list_categories,function,() -> None,461-464,false,4,1,List all available expense categories
-      suggest_category,function,"(profile_id:str, id:str) -> None",467-474,true,8,2,Get category suggestion for document
-      categorize_document,function,"(profile_id:str, id:str, body:dict) -> None",477-495,true,19,5,Apply category to document and save to history
-      list_export_formats,function,() -> None,499-509,false,11,1,List available export formats
-      export_documents,function,"(profile_id:str, format:str, body:dict=None) -> None",512-561,true,50,9,Export documents to specified format
-      process_document_ocr,function,"(profile_id:str, id:str, body:dict=None) -> None",565-594,true,30,6,Process document with OCR to extract invoice data
-      upload_file,function,"(profile_id:str, file:UploadFile=File(...)) -> None",601-653,true,53,5,Upload file and create document with OCR processing
-      list_adapters,function,() -> None,657-660,false,4,1,List available adapters
-      health,function,() -> None,664-665,false,2,1,health
-      Hub.__init__,method,() -> None,85-85,false,1,1,creates
-      Hub.connect,method,"(ws:WebSocket, profile_id:str='default') -> None",87-89,true,3,1,registers
-      Hub.disconnect,method,"(ws:WebSocket, profile_id:str='default') -> None",91-93,false,3,3,disconnect
-      Hub.broadcast,method,"(msg:dict, profile_id:str='default') -> None",95-98,true,4,3,broadcast
+    functions[55]{name,kind,sig,loc,async,lines,cc,does}:
+      db,function,() -> None,68-71,false,4,1,db
+      init_db,function,() -> None,73-88,false,16,2,creates db
+      adapter_pull,function,"(ep:dict) -> list[dict]",110-124,true,15,6,adapter pull
+      adapter_push,function,"(ep:dict, docs:list[dict]) -> dict",126-150,true,25,7,adapter push
+      lifespan,function,"(app:FastAPI) -> None",154-156,true,3,1,lifespan
+      list_profiles,function,() -> None,163-165,false,3,2,list profiles
+      create_profile,function,"(p:Profile) -> None",168-174,true,7,2,creates profile
+      get_profile,function,"(id:str) -> None",177-181,false,5,2,retrieves profile
+      update_profile,function,"(id:str, updates:dict) -> None",184-192,true,9,2,updates profile
+      delete_profile,function,"(id:str) -> None",195-202,false,8,2,deletes profile
+      list_delegates,function,"(profile_id:str) -> None",206-209,false,4,2,list delegates
+      create_delegate,function,"(profile_id:str, d:ProfileDelegate) -> None",212-222,true,11,3,creates delegate
+      get_delegate,function,"(profile_id:str, id:str) -> None",225-229,false,5,2,retrieves delegate
+      update_delegate,function,"(profile_id:str, id:str, updates:dict) -> None",232-241,true,10,2,updates delegate
+      delete_delegate,function,"(profile_id:str, id:str) -> None",244-248,true,5,1,deletes delegate
+      get_certificates,function,"(profile_id:str) -> None",252-263,true,12,2,Pobierz dostępne certyfikaty podpisu
+      sign_documents,function,"(profile_id:str, request:SignatureRequest) -> None",266-334,true,69,13,Podpisz dokumenty elektronicznie
+      verify_signature,function,"(profile_id:str, request:dict) -> None",337-378,true,42,6,Weryfikuj podpis dokumentu
+      add_timestamp,function,"(profile_id:str, request:dict) -> None",381-423,true,43,6,Dodaj znacznik czasu do dokumentu
+      list_endpoints,function,"(profile_id:str, direction:str=None) -> None",427-431,false,5,5,list endpoints
+      create_endpoint,function,"(profile_id:str, ep:Endpoint) -> None",434-440,true,7,2,creates endpoint
+      delete_endpoint,function,"(profile_id:str, id:str) -> None",443-447,true,5,1,deletes endpoint
+      list_documents,function,"(profile_id:str, status:str=None, type:str=None, limit:int=100) -> None",451-460,false,10,8,list documents
+      create_document,function,"(profile_id:str, doc:Document) -> None",463-470,true,8,2,creates document
+      update_document,function,"(profile_id:str, id:str, updates:dict) -> None",473-481,true,9,2,updates document
+      delete_document,function,"(profile_id:str, id:str) -> None",484-488,true,5,1,deletes document
+      pull_from_endpoint,function,"(profile_id:str, endpoint_id:str) -> None",492-520,true,29,5,pull from endpoint
+      push_to_endpoint,function,"(profile_id:str, endpoint_id:str, document_ids:list[str]) -> None",523-547,true,25,7,sends to endpoint
+      webhook_receive,function,"(profile_id:str, endpoint_id:str, payload:dict) -> None",551-561,true,11,1,webhook receive
+      get_profile_stats,function,"(profile_id:str) -> None",565-579,false,15,13,retrieves profile stats
+      get_global_stats,function,() -> None,582-587,false,6,1,retrieves global stats
+      websocket_endpoint,function,"(ws:WebSocket, profile_id:str='default') -> None",591-596,true,6,3,websocket endpoint
+      legacy_list_endpoints,function,"(direction:str=None) -> None",600-601,false,2,1,legacy list endpoints
+      legacy_create_endpoint,function,"(ep:Endpoint) -> None",604-606,true,3,1,legacy create endpoint
+      legacy_delete_endpoint,function,"(id:str) -> None",609-610,true,2,1,legacy delete endpoint
+      legacy_list_documents,function,"(status:str=None, type:str=None) -> None",613-614,false,2,1,legacy list documents
+      legacy_create_document,function,"(doc:Document) -> None",617-619,true,3,1,legacy create document
+      legacy_update_document,function,"(id:str, updates:dict) -> None",622-623,true,2,1,legacy update document
+      legacy_delete_document,function,"(id:str) -> None",626-627,true,2,1,legacy delete document
+      legacy_pull,function,"(endpoint_id:str) -> None",630-631,true,2,1,legacy pull
+      legacy_push,function,"(endpoint_id:str, document_ids:list[str]) -> None",634-635,true,2,1,legacy push
+      legacy_websocket,function,"(ws:WebSocket) -> None",638-639,true,2,1,legacy websocket
+      list_categories,function,() -> None,643-646,false,4,1,List all available expense categories
+      suggest_category,function,"(profile_id:str, id:str) -> None",649-656,true,8,2,Get category suggestion for document
+      categorize_document,function,"(profile_id:str, id:str, body:dict) -> None",659-677,true,19,5,Apply category to document and save to history
+      list_export_formats,function,() -> None,681-691,false,11,1,List available export formats
+      export_documents,function,"(profile_id:str, format:str, body:dict=None) -> None",694-743,true,50,9,Export documents to specified format
+      process_document_ocr,function,"(profile_id:str, id:str, body:dict=None) -> None",747-776,true,30,6,Process document with OCR to extract invoice data
+      upload_file,function,"(profile_id:str, file:UploadFile=File(...)) -> None",783-835,true,53,5,Upload file and create document with OCR processing
+      list_adapters,function,() -> None,839-842,false,4,1,List available adapters
+      health,function,() -> None,846-847,false,2,1,health
+      Hub.__init__,method,() -> None,92-92,false,1,1,creates
+      Hub.connect,method,"(ws:WebSocket, profile_id:str='default') -> None",94-96,true,3,1,registers
+      Hub.disconnect,method,"(ws:WebSocket, profile_id:str='default') -> None",98-100,false,3,3,disconnect
+      Hub.broadcast,method,"(msg:dict, profile_id:str='default') -> None",102-105,true,4,3,broadcast
   frontend/router.js:
     functions[7]{name,kind,sig,loc,async,lines,cc,does}:
       Router.constructor,method,() -> None,3-8,false,6,1,constructor
       Router.init,method,() -> None,10-13,false,4,1,creates
       Router.register,method,"(path, component) -> None",15-17,false,3,1,registers
       Router.navigate,method,(path) -> None,19-31,false,13,1,navigate
-      Router.handleRoute,method,() -> None,33-58,false,26,1,handles route
-      Router.matchPath,method,"(routePath, actualPath) -> None",60-74,false,15,1,filters path
-      Router.render,method,() -> None,76-83,false,8,1,formats
+      Router.handleRoute,method,() -> None,33-56,false,24,1,handles route
+      Router.matchPath,method,"(routePath, actualPath) -> None",58-72,false,15,1,filters path
+      Router.render,method,() -> None,74-81,false,8,1,formats
   desktop/sync.js:
     functions[10]{name,kind,sig,loc,async,lines,cc,does}:
       setServerUrl,function,(url) -> None,10-12,false,3,1,updates server url
@@ -133,6 +168,78 @@ function_details:
       createWindow,function,() -> None,17-57,false,41,1,creates window
       createMenu,function,() -> None,59-156,false,98,1,creates menu
       showAbout,function,() -> None,158-166,false,9,1,show about
+  tests/test_all_views_gui.py:
+    functions[22]{name,kind,sig,loc,async,lines,cc,does}:
+      TestAllViewsGUI.setup_test_data,method,() -> None,14-30,true,17,1,Create test data for tests
+      TestAllViewsGUI.setup_page,method,"(page:Page) -> None",32-37,true,6,1,Setup page for tests
+      TestAllViewsGUI.test_profiles_view_loads,method,"(page:Page) -> None",39-66,true,28,1,Profiles view loads and displays correctly
+      TestAllViewsGUI.test_documents_view_loads,method,"(page:Page) -> None",68-91,true,24,1,Documents view loads and displays correctly
+      TestAllViewsGUI.test_create_view_loads,method,"(page:Page) -> None",93-101,true,9,1,Create document view loads
+      TestAllViewsGUI.test_describe_view_loads,method,"(page:Page) -> None",103-111,true,9,1,Describe view loads
+      TestAllViewsGUI.test_sign_view_loads,method,"(page:Page) -> None",113-121,true,9,1,Sign view loads
+      TestAllViewsGUI.test_upload_view_loads,method,"(page:Page) -> None",123-130,true,8,1,Upload view loads
+      TestAllViewsGUI.test_import_view_loads,method,"(page:Page) -> None",132-139,true,8,1,Import view loads
+      TestAllViewsGUI.test_export_view_loads,method,"(page:Page) -> None",141-148,true,8,1,Export view loads
+      TestAllViewsGUI.test_export_file_view_loads,method,"(page:Page) -> None",150-157,true,8,1,Export file view loads
+      TestAllViewsGUI.test_navigation_between_views,method,"(page:Page) -> None",159-176,true,18,2,Test smooth navigation between different views
+      TestAllViewsGUI.test_sidebar_navigation,method,"(page:Page) -> None",178-186,true,9,1,Test sidebar navigation is functional
+      TestAllViewsGUI.test_profile_selector_functionality,method,"(page:Page) -> None",188-206,true,19,1,Test profile selector dropdown works
+      TestAllViewsGUI.test_responsive_layout,method,"(page:Page) -> None",208-223,true,16,1,Test layout is responsive
+      TestAllViewsGUI.test_url_parameters,method,"(page:Page) -> None",225-239,true,15,1,Test URL parameters work correctly
+      TestAllViewsGUI.test_badges_and_counts,method,"(page:Page) -> None",241-252,true,12,1,Test badges and counts display correctly
+      TestViewSpecificFeatures.test_profiles_crud_operations,method,"(page:Page) -> None",258-295,true,38,4,Test CRUD operations in profiles view
+      TestViewSpecificFeatures.test_documents_filters,method,"(page:Page) -> None",297-322,true,26,1,Test document filtering functionality
+      TestViewSpecificFeatures.test_bulk_actions,method,"(page:Page) -> None",324-337,true,14,1,Test bulk actions in documents view
+      TestErrorHandling.test_404_handling,method,"(page:Page) -> None",343-351,true,9,1,Test 404 error handling
+      TestErrorHandling.test_network_error_handling,method,"(page:Page) -> None",353-375,true,23,2,Test handling of network errors
+  tests/test_complete_e2e.py:
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      TestCompleteWorkflow.setup_test_environment,method,() -> None,25-62,true,38,4,Setup test environment with mock data
+      TestCompleteWorkflow.cleanup_test_environment,method,() -> None,64-67,true,4,1,Cleanup test data
+      TestCompleteWorkflow.setup,method,() -> None,70-74,true,5,1,Setup and cleanup for each test
+      TestCompleteWorkflow.test_complete_document_workflow,method,"(page:Page) -> None",76-141,true,66,1,"Test complete document workflow: create -> describe -> sign -> export"
+      TestCompleteWorkflow.test_profile_delegation_workflow,method,"(page:Page) -> None",143-187,true,45,1,Test profile delegation management
+      TestCompleteWorkflow.test_signature_provider_switching,method,"(page:Page) -> None",189-214,true,26,2,Test switching between signature providers
+      TestCompleteWorkflow.test_bulk_document_operations,method,"(page:Page) -> None",216-247,true,32,2,Test bulk operations on documents
+      TestCompleteWorkflow.test_document_filters_and_search,method,"(page:Page) -> None",249-275,true,27,1,Test document filtering and search
+      TestCompleteWorkflow.test_profile_switching,method,"(page:Page) -> None",277-303,true,27,1,Test switching between profiles
+      TestCompleteWorkflow.test_error_handling,method,"(page:Page) -> None",305-333,true,29,1,Test error handling in various scenarios
+      TestMockServicesIntegration.test_mock_ksef_integration,method,() -> None,339-367,true,29,1,Test KSeF mock service integration
+      TestMockServicesIntegration.test_mock_email_integration,method,() -> None,369-382,true,14,1,Test email mock service integration
+      TestMockServicesIntegration.test_mock_ocr_integration,method,() -> None,384-399,true,16,1,Test OCR mock service integration
+      TestMockServicesIntegration.test_mock_signature_integration,method,() -> None,401-417,true,17,1,Test signature mock service integration
+      TestPerformance.test_bulk_document_creation,method,() -> None,424-457,true,34,3,Test creating many documents
+      TestPerformance.test_concurrent_signature_operations,method,() -> None,459-502,true,44,4,Test concurrent signing operations
+  tests/simple_gui_test.py:
+    functions[12]{name,kind,sig,loc,async,lines,cc,does}:
+      run_test,function,(test_func) -> None,13-44,true,32,2,Run a single test with setup
+      test_profiles_view,function,(page) -> None,46-51,true,6,1,Test profiles view
+      test_documents_view,function,(page) -> None,53-57,true,5,1,Test documents view
+      test_sign_view,function,(page) -> None,59-63,true,5,1,Test signature view
+      test_create_view,function,(page) -> None,65-79,true,15,1,Test create view
+      test_import_view,function,(page) -> None,81-94,true,14,1,Test import view
+      test_export_view,function,(page) -> None,96-108,true,13,1,Test export view
+      test_exportfile_view,function,(page) -> None,110-122,true,13,1,Test exportfile view
+      test_doc_view,function,(page) -> None,124-149,true,26,1,Test document detail view
+      test_upload_view,function,(page) -> None,151-163,true,13,1,Test upload view
+      test_describe_view,function,(page) -> None,165-177,true,13,1,Test describe view
+      main,function,() -> None,179-195,true,17,2,Run all tests
+  tests/test_signature.py:
+    functions[14]{name,kind,sig,loc,async,lines,cc,does}:
+      TestSignatureAPI.setup_profile,method,() -> None,14-36,true,23,1,Create test profile and cleanup after
+      TestSignatureAPI.test_get_certificates,method,() -> None,38-46,true,9,1,Should return available certificates
+      TestSignatureAPI.test_sign_single_document,method,() -> None,48-64,true,17,1,Should sign a single document
+      TestSignatureAPI.test_sign_multiple_documents,method,() -> None,66-89,true,24,1,Should sign multiple documents
+      TestSignatureAPI.test_sign_with_seal,method,() -> None,91-103,true,13,1,Should sign with qualified seal
+      TestSignatureAPI.test_sign_nonexistent_document,method,() -> None,105-113,true,9,1,Should fail for non-existent document
+      TestSignatureAPI.test_verify_signature,method,() -> None,115-134,true,20,1,Should verify document signature
+      TestSignatureAPI.test_verify_unsigned_document,method,() -> None,136-144,true,9,1,Should return error for unsigned document
+      TestSignatureAPI.test_add_timestamp,method,() -> None,146-156,true,11,1,Should add timestamp to document
+      TestSignatureAPI.test_document_status_after_signing,method,() -> None,158-174,true,17,1,Document status should change to 'signed' after signing
+      TestSignatureUI.test_navigate_to_signature_view,method,"(page:Page) -> None",180-190,true,11,1,Should navigate to signature view
+      TestSignatureUI.test_signature_provider_selection,method,"(page:Page) -> None",192-201,true,10,1,Should select signature provider
+      TestSignatureUI.test_signature_configuration,method,"(page:Page) -> None",203-220,true,18,1,Should configure signature parameters
+      TestSignatureUI.test_sign_documents_flow,method,"(page:Page) -> None",222-245,true,24,1,Should complete document signing flow
   tests/test_e2e.py:
     functions[59]{name,kind,sig,loc,async,lines,cc,does}:
       browser_context_args,function,() -> None,1125-1126,false,2,1,browser context args
@@ -194,12 +301,34 @@ function_details:
       TestURLRouting.test_browser_back_works,method,"(page:Page) -> None",1045-1064,false,20,1,Browser back button restores previous view
       TestURLRouting.test_document_detail_view,method,"(page:Page) -> None",1066-1093,false,28,1,Can navigate to document detail via click on row
       TestFileUpload.test_upload_file,method,() -> None,1099-1121,false,23,1,Can upload file and process with OCR
+  tests/mock_services.py:
+    functions[17]{name,kind,sig,loc,async,lines,cc,does}:
+      ksef_oauth_token,function,() -> None,68-74,true,7,1,Mock KSeF OAuth token endpoint
+      ksef_upload_invoice,function,"(request:Request) -> None",77-100,true,24,1,Mock KSeF invoice upload
+      ksef_get_invoice,function,"(invoice_id:str) -> None",103-108,true,6,2,Mock KSeF get invoice
+      ksef_query_invoices,function,"(request:Request) -> None",111-125,true,15,2,Mock KSeF query invoices
+      imap_folders,function,() -> None,132-136,true,5,1,Mock IMAP folders
+      imap_messages,function,"(folder:str='INBOX') -> None",139-164,true,26,4,Mock IMAP messages
+      imap_message,function,"(message_id:str) -> None",167-182,true,16,5,Mock IMAP message details
+      imap_attachment,function,"(message_id:str, attachment_name:str) -> None",185-194,true,10,1,Mock IMAP attachment download
+      ocr_extract,function,"(request:Request) -> None",201-251,true,51,2,Mock OCR extraction
+      signature_oauth_token,function,() -> None,258-264,true,7,1,Mock signature provider OAuth
+      signature_certificates,function,() -> None,267-271,true,5,1,Mock certificates list
+      signature_signing_init,function,"(request:Request) -> None",274-290,true,17,1,Mock signing session init
+      signature_signing_status,function,"(session_id:str) -> None",293-328,true,36,3,Mock signing status check
+      signature_verify,function,"(request:Request) -> None",331-354,true,24,1,Mock signature verification
+      root,function,() -> None,361-373,true,13,1,Mock services status
+      reset_mock_data,function,() -> None,376-389,true,14,1,Reset all mock data
+      get_status,function,() -> None,392-410,true,19,1,Get current mock data status
+  frontend/components/signature-manager.js:
+    functions[1]{name,kind,sig,loc,async,lines,cc,does}:
+      SignatureManager,function,() -> None,2-161,false,160,1,signature manager
   frontend/components/document-manager.js:
     functions[1]{name,kind,sig,loc,async,lines,cc,does}:
-      DocumentManager,function,() -> None,2-174,false,173,1,document manager
+      DocumentManager,function,() -> None,2-188,false,187,1,document manager
   frontend/components/profile-manager.js:
     functions[1]{name,kind,sig,loc,async,lines,cc,does}:
-      ProfileManager,function,() -> None,2-228,false,227,1,profile manager
+      ProfileManager,function,() -> None,2-236,false,235,1,profile manager
   backend/adapters/export.py:
     functions[15]{name,kind,sig,loc,async,lines,cc,does}:
       WFirmaAdapter.__init__,method,"(config:dict) -> None",80-84,false,5,1,creates
@@ -217,6 +346,24 @@ function_details:
       SymfoniaAdapter._push,method,"(documents:list[dict]) -> AdapterResult",368-390,true,23,2,sends
       EnovaAdapter._pull,method,() -> AdapterResult,401-402,true,2,1,pull
       EnovaAdapter._push,method,"(documents:list[dict]) -> AdapterResult",404-430,true,27,2,sends
+  backend/adapters/signature.py:
+    functions[16]{name,kind,sig,loc,async,lines,cc,does}:
+      get_signature_adapter,function,() -> None,283-288,false,6,2,Pobierz instancję adaptera podpisu
+      SignatureProvider.__init__,method,"(config:dict) -> None",52-54,false,3,1,creates
+      SignatureProvider.sign,method,"(document:bytes, sig_type:SignatureType, sig_format:SignatureFormat, sig_level:SignatureLevel=SignatureLevel.T) -> dict",57-65,true,9,1,Podpisz dokument
+      SignatureProvider.verify,method,"(signed_document:bytes) -> dict",68-70,true,3,1,Weryfikuj podpis
+      SignatureProvider.get_certificates,method,"() -> list[dict]",73-75,true,3,1,Pobierz dostępne certyfikaty
+      SignatureProvider.timestamp,method,"(document:bytes) -> dict",77-79,true,3,1,Dodaj znacznik czasu (TSA)
+      MockSignatureProvider.__init__,method,"(config:dict) -> None",89-91,false,3,1,creates
+      MockSignatureProvider.sign,method,"(document:bytes, sig_type:SignatureType, sig_format:SignatureFormat, sig_level:SignatureLevel=SignatureLevel.T) -> dict",93-133,true,41,1,Symuluj podpis dokumentu
+      MockSignatureProvider.verify,method,"(signed_document:bytes) -> dict",135-155,true,21,1,Symuluj weryfikację podpisu
+      MockSignatureProvider.get_certificates,method,"() -> list[dict]",157-168,true,12,1,Zwróć mock certyfikaty
+      MockSignatureProvider.timestamp,method,"(document:bytes) -> dict",170-178,true,9,1,Dodaj mock znacznik czasu
+      SignatureAdapter.__init__,method,"(config:dict=None) -> None",200-206,false,7,3,creates
+      SignatureAdapter.sign_documents,method,"(documents:List[Dict[str,Any]], sig_type:SignatureType=SignatureType.QES, sig_format:SignatureFormat=SignatureFormat.PADES, sig_level:SignatureLevel=SignatureLevel.T) -> Dict[str, Any]",208-263,true,56,7,Podpisz wiele dokumentów
+      SignatureAdapter.verify_signature,method,"(signed_document:bytes) -> dict",265-267,true,3,1,Weryfikuj podpis dokumentu
+      SignatureAdapter.get_certificates,method,"() -> List[Dict[str, Any]]",269-271,true,3,1,Pobierz dostępne certyfikaty
+      SignatureAdapter.add_timestamp,method,"(document:bytes) -> dict",273-277,true,5,2,Dodaj znacznik czasu
   backend/adapters/ksef.py:
     functions[10]{name,kind,sig,loc,async,lines,cc,does}:
       KSeFAdapter.__init__,method,"(config:dict) -> None",41-48,false,8,1,creates

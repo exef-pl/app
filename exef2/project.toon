@@ -1,24 +1,61 @@
-# exef2 | 17f 5222L | python:10/javascript:7
+# exef2 | 30f 7890L | python:22/javascript:8
 # Keys: M=modules, D=details, i=imports, c=classes, f=functions, m=methods
-M[17]:
+M[30]:
+  fix_missing_await.py,25
+  fix_double_await.py,13
+  fix_signature_tests.py,29
+  fix_tests.py,29
+  fix_async_tests.py,43
+  fix_all_tests.py,39
   backend/config.py,29
   backend/migrations.py,235
-  backend/main.py,536
-  frontend/router.js,67
+  backend/main.py,673
+  frontend/router.js,65
   desktop/preload.js,34
   desktop/sync.js,195
   desktop/database.js,254
   desktop/main.js,260
+  tests/test_all_views_gui.py,238
+  tests/test_complete_e2e.py,344
+  tests/simple_gui_test.py,147
+  tests/test_signature.py,186
   tests/test_e2e.py,730
-  frontend/components/document-manager.js,151
-  frontend/components/profile-manager.js,193
+  tests/mock_services.py,341
+  frontend/components/signature-manager.js,140
+  frontend/components/document-manager.js,162
+  frontend/components/profile-manager.js,200
   backend/adapters/export.py,349
+  backend/adapters/signature.py,221
   backend/adapters/ksef.py,231
   backend/adapters/email.py,185
   backend/adapters/__init__.py,77
   backend/adapters/categorize.py,220
   backend/adapters/ocr.py,282
 D:
+  fix_missing_await.py:
+    i: re
+    e: fix_missing_await
+    fix_missing_await()->None
+  fix_double_await.py:
+    i: re
+    e: fix_double_await
+    fix_double_await(filepath)->None
+  fix_signature_tests.py:
+    i: re
+    e: fix_signature_tests
+    fix_signature_tests()->None
+  fix_tests.py:
+    i: re,sys
+    e: fix_test_file
+    fix_test_file(filepath)->None
+  fix_async_tests.py:
+    i: re
+    e: fix_test_file
+    fix_test_file()->None
+  fix_all_tests.py:
+    i: re
+    e: fix_all_test_methods
+    fix_all_test_methods()->None
   backend/config.py:
     i: functools.lru_cache,pydantic_settings.BaseSettings,typing.Optional
     e: Settings,get_settings
@@ -35,12 +72,12 @@ D:
     create_migration(name:str)->None
   backend/main.py:
     i: fastapi,fastapi.middleware.cors.CORSMiddleware,fastapi.staticfiles.StaticFiles,pydantic.BaseModel,typing.Optional
-    e: DB_PATH,VERSION,Profile,Endpoint,Document,ProfileDelegate,db,init_db
+    e: DB_PATH,VERSION,Profile,Endpoint,Document,ProfileDelegate,SignatureRequest,db
     Profile: 
     Endpoint: 
     Document: 
     ProfileDelegate: 
-    Hub: __init__(0),connect(2),disconnect(2),broadcast(2)
+    SignatureRequest: 
     db()->None
     init_db()->None
     adapter_pull(ep:dict)->list[dict]
@@ -53,7 +90,7 @@ D:
     e: Router
     Router: constructor(0),init(0),register(2),navigate(1),handleRoute(0)
   desktop/sync.js:
-    e: setStatusCallback,processSyncQueue,startAutoSync,stopAutoSync,notifyStatus,forceSync,setServerUrl,pullFromServer
+    e: checkOnline,setStatusCallback,notifyStatus,pullFromServer,stopAutoSync,startAutoSync,forceSync,processSyncQueue
     setServerUrl(url)->None
     setStatusCallback(callback)->None
     notifyStatus(status)->None
@@ -63,7 +100,7 @@ D:
     pullFromServer(profileId)->None
     startAutoSync()->None
   desktop/database.js:
-    e: getStats,initialize,createDocument,createEndpoint,markSyncItemFailed,getDocuments,getDocument,updateProfile
+    e: getPendingSyncItems,updateProfile,createProfile,getDocuments,initialize,getStats,deleteProfile,close
     getDbPath()->None
     initialize()->None
     close()->None
@@ -73,10 +110,38 @@ D:
     updateProfile(id;updates)->None
     deleteProfile(id)->None
   desktop/main.js:
-    e: createMenu,createWindow,showAbout
+    e: createWindow,createMenu,showAbout
     createWindow()->None
     createMenu()->None
     showAbout()->None
+  tests/test_all_views_gui.py:
+    i: pytest,httpx,time,playwright.sync_api.{Page,expect}
+    e: API_URL,APP_URL,TestAllViewsGUI,TestViewSpecificFeatures,TestErrorHandling
+    TestAllViewsGUI: setup_test_data(0),setup_page(1),test_profiles_view_loads(1),test_documents_view_loads(1),test_create_view_loads(1)  # Comprehensive GUI tests for all appli...
+    TestViewSpecificFeatures: test_profiles_crud_operations(1),test_documents_filters(1),test_bulk_actions(1)  # Test specific features in each view
+    TestErrorHandling: test_404_handling(1),test_network_error_handling(1)  # Test error handling in various views
+  tests/test_complete_e2e.py:
+    i: asyncio,httpx,json,time,datetime,pytest,playwright.async_api.{Page,expect}
+    e: API_URL,APP_URL,MOCK_URL,TestCompleteWorkflow,TestMockServicesIntegration,TestPerformance
+    TestCompleteWorkflow: setup_test_environment(0),cleanup_test_environment(0),setup(0),test_complete_document_workflow(1),test_profile_delegation_workflow(1)  # Complete E2E workflow tests
+    TestMockServicesIntegration: test_mock_ksef_integration(0),test_mock_email_integration(0),test_mock_ocr_integration(0),test_mock_signature_integration(0)  # Test integration with mock services
+    TestPerformance: test_bulk_document_creation(0),test_concurrent_signature_operations(0)  # Performance and load tests
+  tests/simple_gui_test.py:
+    i: pytest,asyncio,httpx,time,playwright.async_api.async_playwright
+    e: API_URL,APP_URL,run_test,test_profiles_view,test_documents_view,test_sign_view,test_create_view,test_import_view
+    run_test(test_func)->None
+    test_profiles_view(page)->None
+    test_documents_view(page)->None
+    test_sign_view(page)->None
+    test_create_view(page)->None
+    test_import_view(page)->None
+    test_export_view(page)->None
+    test_exportfile_view(page)->None
+  tests/test_signature.py:
+    i: pytest,httpx,time,playwright.async_api.{Page,expect}
+    e: API_URL,APP_URL,TestSignatureAPI,TestSignatureUI
+    TestSignatureAPI: setup_profile(0),test_get_certificates(0),test_sign_single_document(0),test_sign_multiple_documents(0),test_sign_with_seal(0)  # Tests for electronic signature API
+    TestSignatureUI: test_navigate_to_signature_view(1),test_signature_provider_selection(1),test_signature_configuration(1),test_sign_documents_flow(1)  # UI tests for signature functionality
   tests/test_e2e.py:
     i: pytest,httpx,time,uuid,playwright.sync_api.{Page,expect}
     e: API_URL,APP_URL,TestProfileAPI,TestProfileDelegatesAPI,TestLegacyAPI,TestUI,TestIntegration,TestProfileUI
@@ -86,6 +151,20 @@ D:
     TestUI: test_page_loads(1),test_navigation(1),test_create_document_ui(1),test_add_import_endpoint_ui(1),test_document_status_workflow_ui(1)
     TestIntegration: test_full_import_export_flow(0),test_webhook_integration(0)
     browser_context_args()->None
+  tests/mock_services.py:
+    i: asyncio,base64,hashlib,json,time,datetime,datetime.timedelta,pathlib.Path,typing.{Any,Dict}
+    e: MOCK_PORT,MOCK_HOST,ksef_oauth_token,ksef_upload_invoice,ksef_get_invoice,ksef_query_invoices,imap_folders,imap_messages
+    ksef_oauth_token()->None
+    ksef_upload_invoice(request:Request)->None
+    ksef_get_invoice(invoice_id:str)->None
+    ksef_query_invoices(request:Request)->None
+    imap_folders()->None
+    imap_messages(folder:str='INBOX')->None
+    imap_message(message_id:str)->None
+    imap_attachment(message_id:str;attachment_name:str)->None
+  frontend/components/signature-manager.js:
+    e: SignatureManager
+    SignatureManager()->None
   frontend/components/document-manager.js:
     e: DocumentManager
     DocumentManager()->None
@@ -100,6 +179,15 @@ D:
     ComarchAdapter: _pull(0),_push(1)  # Comarch Optima XML export adapter
     SymfoniaAdapter: _pull(0),_push(1)  # Symfonia export adapter
     EnovaAdapter: _pull(0),_push(1)  # enova365 export adapter
+  backend/adapters/signature.py:
+    i: asyncio,base64,hashlib,json,datetime,abc.abstractmethod,enum.Enum,pathlib.Path,typing.{Dict,Optional}
+    e: SignatureType,SignatureFormat,SignatureLevel,SignatureProvider,MockSignatureProvider,SignatureAdapter,get_signature_adapter
+    SignatureType:   # Typy podpisu elektronicznego
+    SignatureFormat:   # Formaty podpisu
+    SignatureLevel:   # Poziomy podpisu (zgodne z eIDAS)
+    SignatureProvider: __init__(1),sign(4),verify(1),get_certificates(0),timestamp(1)  # Bazowa klasa dla dostawców podpisu
+    MockSignatureProvider: __init__(1),sign(4),verify(1),get_certificates(0),timestamp(1)  # Mock provider do testów - symuluje po...
+    get_signature_adapter()->None
   backend/adapters/ksef.py:
     i: httpx,base64,hashlib,datetime,BaseAdapter,AdapterResult,register_adapter,os,datetime.timedelta,typing.Optional
     e: KSEF_URLS,KSeFAdapter,KSeFMockAdapter
