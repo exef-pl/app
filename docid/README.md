@@ -1,6 +1,6 @@
 # EXEF Document ID Generator
 
-Deterministyczny generator identyfikatorów dokumentów z OCR. Generuje **zawsze ten sam ID** dla tego samego dokumentu, niezależnie od formatu źródłowego (skan, PDF, KSeF XML).
+Deterministyczny generator identyfikatorów dokumentów z OCR. Generuje **zawsze ten sam ID** dla tego samego dokumentu, niezależnie od formatu źródłowego (skan, PDF, KSeF XML, obrazy).
 
 ## 🎯 Problem
 
@@ -23,6 +23,22 @@ get_document_id("faktura_ksef.xml")     # EXEF-FV-A7B3C9D2E1F04856
 ```
 
 ## 📦 Instalacja
+
+### Lokalna instalacja (rekomendowana)
+
+```bash
+# Klonuj repozytorium
+git clone https://github.com/softreck/exef-pl.git
+cd exef-pl/app/docid
+
+# Utwórz środowisko wirtualne
+python3 -m venv venv
+source venv/bin/activate  # Linux/Mac
+# lub venv\Scripts\activate  # Windows
+
+# Zainstaluj projekt
+make install
+```
 
 ### Z PaddleOCR (zalecane dla CPU i5+)
 
@@ -48,192 +64,381 @@ pip install docid[all]
 
 ## 🚀 Szybki start
 
-### Python API
+### Generator ID dla dokumentów biznesowych
 
 ```python
-from exef_docid import (
-    process_document,
-    get_document_id,
-    verify_document_id,
-    DocumentPipeline,
-)
+from exef_docid import generate_invoice_id, generate_receipt_id, generate_contract_id
 
-# Prosty przypadek - tylko ID
-doc_id = get_document_id("faktura.pdf")
-print(doc_id)  # EXEF-FV-A7B3C9D2E1F04856
-
-# Pełne przetwarzanie
-result = process_document("faktura.pdf")
-print(result.document_id)                    # EXEF-FV-A7B3C9D2E1F04856
-print(result.extraction.issuer_nip)          # 5213017228
-print(result.extraction.invoice_number)      # FV/2025/00142
-print(result.extraction.gross_amount)        # 1230.50
-print(result.ocr_confidence)                 # 0.95
-
-# Weryfikacja - czy skan to ta sama faktura?
-is_same = verify_document_id("skan.jpg", "EXEF-FV-A7B3C9D2E1F04856")
-
-# Batch processing
-pipeline = DocumentPipeline()
-results = pipeline.process_batch(["dok1.pdf", "dok2.jpg", "dok3.pdf"])
-for r in results:
-    if not r.is_duplicate:
-        print(f"{r.source_file}: {r.document_id}")
-```
-
-### CLI
-
-```bash
-# Przetwórz plik
-docid process faktura.pdf
-
-# Przetwórz wiele plików
-docid process *.pdf --output results.json
-
-# Przetwórz cały katalog
-docid batch ./dokumenty/ --output batch_results.json
-
-# Weryfikacja
-docid verify skan.jpg EXEF-FV-A7B3C9D2E1F04856
-
-# Tylko OCR (bez generowania ID)
-docid ocr skan.jpg --verbose
-
-# Wygeneruj ID bez OCR (z podanych danych)
-docid generate-id \
-    --type invoice \
-    --nip 5213017228 \
-    --number "FV/2025/00142" \
-    --date 2025-01-15 \
-    --amount 1230.50
-```
-
-## 📄 Obsługiwane typy dokumentów
-
-| Typ | Kod | Pola kanoniczne |
-|-----|-----|-----------------|
-| Faktura VAT | `FV` | NIP sprzedawcy \| Numer \| Data \| Kwota brutto |
-| Paragon | `PAR` | NIP sprzedawcy \| Data \| Kwota \| Nr kasy |
-| Umowa | `UMO` | NIP strona 1 \| NIP strona 2 (sorted) \| Data \| Numer |
-| Faktura korygująca | `KOR` | NIP \| Nr korekty \| Data \| Nr oryginału \| Kwota |
-| Wyciąg bankowy | `WB` | Nr konta \| Data \| Nr wyciągu |
-| Inny dokument | `DOC` | Hash treści \| Data |
-
-## 🔧 Jak działa?
-
-### 1. OCR (jeśli potrzebny)
-
-Dla skanów i obrazów - ekstrakcja tekstu z PaddleOCR lub Tesseract.
-
-### 2. Ekstrakcja danych
-
-Automatyczne rozpoznanie typu dokumentu i wyciągnięcie kluczowych pól:
-- NIP-y (z walidacją checksum)
-- Kwoty (brutto, netto, VAT)
-- Daty (różne formaty)
-- Numery dokumentów
-
-### 3. Normalizacja
-
-Standaryzacja danych przed hashowaniem:
-
-```python
-NIP: "521-301-72-28" → "5213017228"
-Kwota: "1 230,50 zł" → "1230.50"
-Data: "15.01.2025" → "2025-01-15"
-Numer: "fv/2025/142" → "FV/2025/142"
-```
-
-### 4. Generowanie ID
-
-```
-canonical = "5213017228|FV/2025/00142|2025-01-15|1230.50"
-hash = SHA256(canonical)[:16]
-document_id = f"EXEF-FV-{hash}"  # EXEF-FV-A7B3C9D2E1F04856
-```
-
-## 🔒 Format identyfikatora
-
-```
-EXEF-FV-A7B3C9D2E1F04856
-│    │  └── 16 znaków hex (64 bity entropii)
-│    └── Typ dokumentu (FV, PAR, UMO, KOR, WB, DOC)
-└── Prefiks systemu (konfigurowalny)
-```
-
-## ⚡ Wydajność (CPU i5)
-
-| Silnik | Czas/stronę | RAM | Jakość polskiego |
-|--------|-------------|-----|------------------|
-| PaddleOCR | ~2s | ~1GB | ⭐⭐⭐⭐⭐ |
-| Tesseract | ~0.5s | ~200MB | ⭐⭐⭐⭐ |
-
-**Rekomendacja:** PaddleOCR dla najlepszej jakości, Tesseract gdy priorytetem jest szybkość.
-
-## 🔌 Generowanie ID bez OCR
-
-Jeśli masz już dane (np. z KSeF XML), możesz generować ID bezpośrednio:
-
-```python
-from exef_docid import generate_invoice_id, generate_receipt_id
-
-# Faktura
-doc_id = generate_invoice_id(
+# Faktura VAT
+invoice_id = generate_invoice_id(
     seller_nip="5213017228",
-    invoice_number="FV/2025/00142",
+    invoice_number="FV/2025/00142", 
     issue_date="2025-01-15",
-    gross_amount=1230.50,
+    gross_amount=1230.50
 )
+print(invoice_id)  # EXEF-FV-F0BE35240C77B2DB
 
-# Paragon
-doc_id = generate_receipt_id(
+# Paragon fiskalny
+receipt_id = generate_receipt_id(
     seller_nip="5213017228",
     receipt_date="2025-01-15",
-    gross_amount=45.99,
-    cash_register_number="001",
+    gross_amount=37.88,
+    cash_register_number="001"
 )
+print(receipt_id)  # EXEF-PAR-8142B3FC69D7778C
+
+# Umowa
+contract_id = generate_contract_id(
+    party1_nip="5213017228",
+    party2_nip="1234567890", 
+    contract_date="2025-01-15",
+    contract_number="001/2025"
+)
+print(contract_id)  # EXEF-UMO-C54CB968D1342642
+```
+
+### Uniwersalny generator ID (dowolne dokumenty)
+
+```python
+from exef_docid import generate_universal_document_id
+
+# Dowolny dokument
+doc_id = generate_universal_document_id("dokument.pdf")
+print(doc_id)  # UNIV-PDF-A6BECE56B7FE21DC
+
+# Zdjęcie lub skan
+doc_id = generate_universal_document_id("skan.jpg")
+print(doc_id)  # UNIV-IMG-4225A473A725978D
+
+# Dokument z grafiką/wektorami
+doc_id = generate_universal_document_id("grafika.png")
+print(doc_id)  # UNIV-IMG-E2E2131A335F0918
+```
+
+### Pełne przetwarzanie z OCR
+
+```python
+from exef_docid import process_document, get_document_id
+
+# Pełne przetwarzanie z ekstrakcją danych
+result = process_document("faktura.pdf")
+print(result.document_id)           # EXEF-FV-F0BE35240C77B2DB
+print(result.extraction.issuer_nip) # 5213017228
+print(result.extraction.invoice_number) # FV/2025/00142
+
+# Tylko wygeneruj ID
+doc_id = get_document_id("paragon.jpg")
+print(doc_id)  # EXEF-PAR-8142B3FC69D7778C
+
+# Weryfikacja ID
+is_valid = verify_document_id("skan.png", "EXEF-FV-F0BE35240C77B2DB")
+print(is_valid)  # True/False
+```
+
+## 🛠️ Makefile - Wszystkie komendy
+
+### Instalacja
+```bash
+make install          # Instalacja projektu
+make install-all      # Instalacja z wszystkimi zależnościami OCR
+make build            # Budowanie paczki
+make upload           # Publikacja na PyPI
+```
+
+### Testy
+```bash
+make test             # Uruchom wszystkie testy
+make test-samples     # Test próbek (determinizm)
+make test-all-formats # Test wszystkich formatów
+make test-complete-formats # Test PDF, PNG, JPG, HTML, TXT, XML
+make test-universal   # Test dokumentów uniwersalnych
+```
+
+### Generowanie próbek
+```bash
+make generate-samples         # Generuj 10 przykładowych ID
+make generate-image-samples   # Generuj PDF, PNG, JPG próbki
+make generate-universal-samples # Generuj PDF z grafiką, zdjęcia, wektory
+```
+
+### Jakość kodu
+```bash
+make lint            # Sprawdź kod (ruff)
+make format          # Formatuj kod (black)
+make type-check      # Sprawdź typy (mypy)
+make check           # Wszystkie sprawdzenia
+make clean           # Wyczyść pliki tymczasowe
+```
+
+### Demo
+```bash
+make run-demo        # Uruchom podstawowe demo
+make run-complete-demo # Uruchom pełne demo
+```
+
+## 📚 Przykłady użycia
+
+### 1. Przetwarzanie faktur
+
+```python
+from exef_docid import process_document
+
+# Przetwarzanie faktury PDF
+result = process_document("faktura.pdf")
+print(f"ID: {result.document_id}")
+print(f"NIP: {result.extraction.issuer_nip}")
+print(f"Kwota: {result.extraction.gross_amount}")
+
+# Przetwarzanie skanu JPG
+result = process_document("skan_faktury.jpg")
+print(f"ID: {result.document_id}")
+```
+
+### 2. Porównywanie dokumentów
+
+```python
+from exef_docid import compare_universal_documents
+
+# Porównaj dwa dokumenty
+comparison = compare_universal_documents("dokument1.pdf", "dokument2.png")
+print(f"Identyczne ID: {comparison['identical_ids']}")
+print(f"Ten sam typ: {comparison['same_type']}")
+print(f"Ten sam rozmiar: {comparison['same_size']}")
+```
+
+### 3. Weryfikacja ID
+
+```python
+from exef_docid import verify_document_id, verify_universal_document_id
+
+# Weryfikacja ID dokumentu biznesowego
+is_valid = verify_document_id("faktura.pdf", "EXEF-FV-F0BE35240C77B2DB")
+
+# Weryfikacja uniwersalnego ID
+is_valid = verify_universal_document_id("dowolny_plik.jpg", "UNIV-IMG-4225A473A725978D")
+```
+
+### 4. Praca z kolekcją dokumentów
+
+```python
+from pathlib import Path
+from exef_docid import generate_universal_document_id
+
+# Przetwarzaj wszystkie pliki w folderze
+documents_dir = Path("dokumenty")
+for file_path in documents_dir.glob("*"):
+    if file_path.is_file():
+        doc_id = generate_universal_document_id(file_path)
+        print(f"{file_path.name}: {doc_id}")
+```
+
+## 🔍 Formaty plików i przetwarzanie
+
+### Obsługiwane formaty
+
+| Format | Opis | Przetwarzanie | ID Generator |
+|--------|------|---------------|--------------|
+| **PDF** | Dokumenty PDF | ✅ Pełne | Uniwersalny |
+| **PNG** | Obrazy bezstratne | ✅ OCR + Wizualne | Oba |
+| **JPG/JPEG** | Obrazy stratne | ✅ OCR + Wizualne | Oba |
+| **XML** | Struktura danych | ✅ Tekst | Biznesowy |
+| **HTML** | Strony WWW | ✅ Tekst | Biznesowy |
+| **TXT** | Czysty tekst | ✅ Tekst | Biznesowy |
+
+### 📝 PNG i JPG - Przetwarzanie przez OCR
+
+**TAK!** Formaty PNG i JPG są w pełni przetwarzane przez OCR:
+
+```python
+from exef_docid import process_document
+
+# Przetwarzanie skanu PNG z OCR
+result = process_document("skan_faktury.png")
+print(result.document_id)  # EXEF-FV-F0BE35240C77B2DB
+print(result.extraction.issuer_nip)  # 5213017228
+
+# Przetwarzanie zdjęcia JPG z OCR
+result = process_document("zdjecie_paragonu.jpg")
+print(result.document_id)  # EXEF-PAR-8142B3FC69D7778C
+```
+
+#### Co jest ekstrahowane z PNG/JPG:
+
+1. **OCR (PaddleOCR/Tesseract)**:
+   - Tekst z dokumentów
+   - NIP, numery faktur
+   - Kwoty, daty
+   - Struktura dokumentu
+
+2. **Analiza wizualna (Uniwersalny generator)**:
+   - Hash wizualny (resize 64x64)
+   - Histogram kolorów
+   - Wymiary obrazu
+   - Metadane pliku
+
+### Przykłady dla różnych formatów
+
+```python
+# Ten sam dokument w różnych formatach - ten sam ID biznesowy
+generate_invoice_id(...)  # -> EXEF-FV-F0BE35240C77B2DB
+
+# Przetwarzanie przez OCR daje ten sam wynik
+process_document("faktura.pdf")    # -> EXEF-FV-F0BE35240C77B2DB
+process_document("faktura.png")    # -> EXEF-FV-F0BE35240C77B2DB
+process_document("faktura.jpg")    # -> EXEF-FV-F0BE35240C77B2DB
+process_document("faktura.xml")    # -> EXEF-FV-F0BE35240C77B2DB
+
+# Różne ID uniwersalne dla różnych formatów
+generate_universal_document_id("faktura.pdf")  # -> UNIV-PDF-...
+generate_universal_document_id("faktura.png")  # -> UNIV-IMG-...
+generate_universal_document_id("faktura.jpg")  # -> UNIV-IMG-...
 ```
 
 ## 🧪 Testowanie
 
+### Uruchomienie testów
+
 ```bash
-# Instalacja dev dependencies
-pip install -e ".[dev]"
+# Wszystkie testy
+make test
 
-# Uruchom testy
-pytest
+# Testy deterministyczności
+make test-samples
 
-# Z coverage
-pytest --cov=exef_docid
+# Testy formatów
+make test-complete-formats
+
+# Testy uniwersalne
+make test-universal
 ```
 
-## 📋 Wymagania systemowe
+### Struktura testów
 
-- Python 3.9+
-- Dla PDF: `poppler-utils` (`apt install poppler-utils`)
-- Dla Tesseract: `tesseract-ocr tesseract-ocr-pol`
+```
+tests/
+├── test_document_id.py      # Testy generatora ID
+├── test_extractors.py       # Testy ekstrakcji danych
+└── conftest.py             # Konfiguracja testów
+```
 
-## 🤝 Integracja z EXEF
+### Przykładowe wyniki testów
 
-Ten pakiet jest częścią systemu [EXEF](https://github.com/softreck/exef) - Document Flow Engine dla polskich firm.
+```
+================================================================================
+TEST WSZYSTKICH FORMATÓW - PDF, PNG, JPG, HTML, TXT, XML
+================================================================================
+
+FOLDER: FAKTURY (invoices/)
+  📄 faktura_full.pdf          (.pdf ) [   2242B] -> EXEF-FV-F0BE35240C77B2DB
+  📄 faktura_full.xml          (.xml ) [   2077B] -> EXEF-FV-F0BE35240C77B2DB
+  📄 faktura_full.html         (.html) [   3334B] -> EXEF-FV-F0BE35240C77B2DB
+  📄 faktura_full.jpg          (.jpg ) [  28182B] -> EXEF-FV-F0BE35240C77B2DB
+  📄 faktura_full.png          (.png ) [  32325B] -> EXEF-FV-F0BE35240C77B2DB
+  📄 faktura_full.txt          (.txt ) [   2839B] -> EXEF-FV-F0BE35240C77B2DB
+
+  📊 Podsumowanie folderu invoices:
+     Plików przetworzonych: 6
+     Unikalnych ID: 1
+     Wszystkie identyczne: True
+     ✅ ID: EXEF-FV-F0BE35240C77B2DB
+```
+
+## 📁 Struktura projektu
+
+```
+docid/
+├── exef_docid/              # Główny pakiet
+│   ├── __init__.py         # Eksporty API
+│   ├── document_id.py      # Generator ID biznesowy
+│   ├── document_id_universal.py # Generator ID uniwersalny
+│   ├── extractors.py       # Ekstraktory danych
+│   ├── ocr_processor.py    # Przetwarzanie OCR
+│   └── pipeline.py         # Główny pipeline
+├── samples/                # Przykładowe dokumenty
+│   ├── invoices/          # Faktury (6 formatów)
+│   ├── receipts/          # Paragony (6 formatów)
+│   ├── contracts/         # Umowy (6 formatów)
+│   └── universal/         # Dokumenty uniwersalne
+├── tests/                 # Testy jednostkowe
+├── examples/              # Przykłady użycia
+├── Makefile              # Komendy projektu
+├── pyproject.toml        # Konfiguracja projektu
+└── README.md             # Dokumentacja
+```
+
+## 🔧 Konfiguracja
+
+### Silniki OCR
 
 ```python
-# W systemie EXEF
-from exef_docid import DocumentPipeline
+from exef_docid import OCREngine, get_pipeline
 
-pipeline = DocumentPipeline(id_prefix="EXEF")
-result = pipeline.process(uploaded_file)
+# Użyj PaddleOCR (domyślnie)
+pipeline = get_pipeline(ocr_engine=OCREngine.PADDLE)
 
-# Zapisz w bazie
-document = Document(
-    exef_id=result.document_id,
-    ksef_id=None,  # Uzupełni się po wysłaniu do KSeF
-    seller_nip=result.extraction.issuer_nip,
-    invoice_number=result.extraction.invoice_number,
-    ...
-)
+# Użyj Tesseract
+pipeline = get_pipeline(ocr_engine=OCREngine.TESSERACT)
 ```
 
-## 📜 Licencja
+### Custom prefix
 
-MIT License - używaj swobodnie w projektach komercyjnych i open source.
+```python
+from exef_docid import UniversalDocumentIDGenerator
+
+generator = UniversalDocumentIDGenerator(prefix="MOJA")
+doc_id = generator.generate_universal_id("plik.pdf")
+# Wynik: MOJA-PDF-A6BECE56B7FE21DC
+```
+
+## 📈 Wydajność
+
+### Czas przetwarzania
+
+| Format | Rozmiar | Czas | Metoda |
+|--------|--------|------|--------|
+| PDF (tekst) | 10KB | ~50ms | Bez OCR |
+| PDF (skan) | 1MB | ~500ms | OCR |
+| PNG (600x400) | 50KB | ~200ms | OCR |
+| JPG (1200x800) | 200KB | ~300ms | OCR |
+
+### Optymalizacja
+
+```python
+# Wyłącz OCR dla czystych PDF
+result = process_document("czysty_pdf.pdf", use_ocr=False)
+
+# Użyj cache dla wielokrotnego przetwarzania
+pipeline = get_pipeline()
+pipeline.enable_cache = True
+```
+
+## 🤝 Współpraca
+
+1. Fork repozytorium
+2. Utwórz branch (`git checkout -b feature/NowaFunkcja`)
+3. Commit zmiany (`git commit -am 'Dodaj nową funkcję'`)
+4. Push do brancha (`git push origin feature/NowaFunkcja`)
+5. Otwórz Pull Request
+
+## 📄 Licencja
+
+MIT License - zobacz [LICENSE](LICENSE) dla szczegółów.
+
+## 🆘 Wsparcie
+
+- 📧 Email: info@softreck.dev
+- 🐛 Issues: [GitHub Issues](https://github.com/softreck/exef-pl/issues)
+- 📖 Dokumentacja: [GitHub Wiki](https://github.com/softreck/exef-pl/wiki)
+
+## 🗺️ Roadmap
+
+- [ ] Obsługa dodatkowych formatów (DOCX, XLSX)
+- [ ] Integracja z bazami danych
+- [ ] API REST
+- [ ] Interfejs webowy
+- [ ] Przetwarzanie wsadowe
+- [ ] Chmura (AWS, Azure, GCP)
+
+---
+
+**EXEF Document ID Generator** - Deterministyczne identyfikatory dla każdego dokumentu! 🚀

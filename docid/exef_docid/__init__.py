@@ -61,6 +61,16 @@ from .ocr_processor import (
     TesseractOCRProcessor,
     preprocess_image_for_ocr,
 )
+
+# Universal Document ID Generator
+from .document_id_universal import (
+    UniversalDocumentIDGenerator,
+    UniversalDocumentFeatures,
+    DocumentType as UniversalDocumentType,
+    generate_universal_document_id,
+    verify_universal_document_id,
+    compare_universal_documents,
+)
 from .pipeline import (
     DocumentPipeline,
     ProcessedDocument,
@@ -108,4 +118,12 @@ __all__ = [
     'DocumentExtractor',
     'ExtractionResult',
     'DocumentCategory',
+
+    # Universal Document ID Generator
+    'UniversalDocumentIDGenerator',
+    'UniversalDocumentFeatures',
+    'UniversalDocumentType',
+    'generate_universal_document_id',
+    'verify_universal_document_id',
+    'compare_universal_documents',
 ]
