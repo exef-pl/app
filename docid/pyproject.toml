@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docid"
-version = "0.1.0"
+version = "0.1.1"
 description = "Deterministyczny generator identyfikatorów dokumentów z OCR"
 readme = "README.md"
 license = {text = "MIT"}
@@ -60,6 +60,7 @@ dev = [
 
 [project.scripts]
 docid = "exef_docid.cli:main"
+docid-universal = "exef_docid.cli_universal:main"
 
 [project.urls]
 Homepage = "https://github.com/softreck/docid"
