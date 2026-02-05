@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "docid"
-version = "0.1.2"
+version = "0.1.3"
 description = "Deterministyczny generator identyfikatorów dokumentów z OCR"
 readme = "README.md"
 license = {text = "MIT"}
@@ -35,6 +35,8 @@ dependencies = [
     "lxml>=4.6.0",
     "beautifulsoup4>=4.9.0",
     "pymupdf>=1.23.0",
+    "paddleocr>=2.6.0",
+    "paddlepaddle>=2.4.0",
 ]
 
 [project.optional-dependencies]

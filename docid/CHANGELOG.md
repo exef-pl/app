@@ -1,3 +1,15 @@
+## [0.1.3] - 2026-02-05
+
+### Summary
+
+docs(docs): code relationship mapping
+
+### Other
+
+- update docid/exef_docid/ocr_processor.py
+- update docid/pyproject.toml
+
+
 ## [0.1.2] - 2026-02-04
 
 ### Summary

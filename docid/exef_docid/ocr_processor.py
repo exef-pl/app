@@ -189,8 +189,8 @@ class PaddleOCRProcessor(BaseOCRProcessor):
             try:
                 from paddleocr import PaddleOCR
 
-                # Dla polskiego używamy latin (lepsze wyniki niż multilingual)
-                lang = 'latin' if self.lang == 'pl' else self.lang
+                # Dla polskiego używamy en (obsługuje dobrze znaki łacińskie w tym polskie)
+                lang = 'en' if self.lang == 'pl' else self.lang
 
                 self._ocr = PaddleOCR(
                     use_angle_cls=True,
