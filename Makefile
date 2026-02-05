@@ -1,6 +1,6 @@
 # Makefile for managing KSeF project repositories and analysis
 
-.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-cli exef-test-e2e exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test exef-test-storage-up exef-test-storage-down exef-test-storage exef-test-storage-full exef-test-email-up exef-test-email-down exef-test-email exef-test-email-full exef-test-mocks-up exef-test-mocks-down exef-test-devices-up exef-test-devices-down exef-test-devices exef-test-devices-full exef2-build exef2-up exef2-down exef2-test exef2-test-api exef2-test-gui exef2-test-all exef2-logs exef2-clean
+.PHONY: init-submodules update-submodules generate-indexes clean help submodules indexes analyze-all exef-web-docker exef-web-up exef-local-build exef-local-bin exef-local-packages exef-desktop-build exef-desktop-test exef-all push install exef-install exef-dev exef-local-dev exef-test exef-test-api exef-test-cli exef-test-e2e exef-test-gui exef-lint exef-clean exef-cli exef-cli-build exef-cli-install all build-all test test-all test-e2e python-test all-with-submodules ksef-master-build ksef-master-test ksef-client-js-build ksef-client-js-test polish-invoicingback-build polish-invoicingback-test exef-test-storage-up exef-test-storage-down exef-test-storage exef-test-storage-full exef-test-email-up exef-test-email-down exef-test-email exef-test-email-full exef-test-mocks-up exef-test-mocks-down exef-test-devices-up exef-test-devices-down exef-test-devices exef-test-devices-full exef2-build exef2-up exef2-down exef2-test exef2-test-api exef2-test-gui exef2-test-all exef2-logs exef2-clean publish
 
 INCLUDE_SUBMODULES ?= 0
 
@@ -73,6 +73,7 @@ help:
 	@echo ""
 	@echo "  Release:"
 	@echo "  push               - Bump version + generate docs/v/<tag>/ + tag + push"
+	@echo "  publish            - Build and publish docid package to PyPI"
 	@echo "  clean              - Remove all generated index files"
 	@echo "  help               - Show this help message"
 
@@ -381,6 +382,15 @@ exef-test-devices-full: exef-test-devices-up exef-test-devices exef-test-devices
 # Release automation: bump version, generate docs/v/<tag>/, commit, tag and push
 push:
 	@node scripts/release.cjs
+
+# Build and publish docid package to PyPI
+publish:
+	@echo "Generating patch dump of changes..."
+	cd docid && git diff HEAD~1 > dist/changes.patch 2>/dev/null || git diff > dist/changes.patch 2>/dev/null || echo "No git changes to dump"
+	@echo "Building and publishing docid package to PyPI..."
+	cd docid && ./venv/bin/python -m build
+	cd docid && ./venv/bin/python -m twine upload dist/*
+	@echo "Package published successfully!"
 
 # EXEF2 (New Architecture) targets
 exef2-build:

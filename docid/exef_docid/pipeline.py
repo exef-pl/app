@@ -102,7 +102,7 @@ class DocumentPipeline:
 
     def __init__(
         self,
-        ocr_engine: OCREngine = OCREngine.PADDLE,
+        ocr_engine: OCREngine = OCREngine.TESSERACT,
         id_prefix: str = "EXEF",
         lang: str = "pl",
         use_gpu: bool = False,
@@ -390,7 +390,7 @@ class DocumentPipeline:
 _default_pipeline: Optional[DocumentPipeline] = None
 
 
-def get_pipeline(ocr_engine: OCREngine = OCREngine.PADDLE) -> DocumentPipeline:
+def get_pipeline(ocr_engine: OCREngine = OCREngine.TESSERACT) -> DocumentPipeline:
     """Zwraca domyślny pipeline (lazy init)."""
     global _default_pipeline
     if _default_pipeline is None or _default_pipeline.ocr.preferred_engine != ocr_engine:
@@ -398,7 +398,7 @@ def get_pipeline(ocr_engine: OCREngine = OCREngine.PADDLE) -> DocumentPipeline:
     return _default_pipeline
 
 
-def process_document(file_path: Union[str, Path], ocr_engine: OCREngine = OCREngine.PADDLE, use_ocr: bool = True) -> ProcessedDocument:
+def process_document(file_path: Union[str, Path], ocr_engine: OCREngine = OCREngine.TESSERACT, use_ocr: bool = True) -> ProcessedDocument:
     """
     Przetwarza dokument i zwraca wynik z ID.
 

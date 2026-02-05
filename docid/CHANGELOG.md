@@ -1,3 +1,16 @@
+## [0.1.4] - 2026-02-05
+
+### Summary
+
+feat(build): deep code analysis engine with 2 supporting modules
+
+### Other
+
+- build: update Makefile
+- update docid/exef_docid/ocr_processor.py
+- update docid/exef_docid/pipeline.py
+
+
 ## [0.1.3] - 2026-02-05
 
 ### Summary

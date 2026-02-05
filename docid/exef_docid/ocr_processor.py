@@ -195,13 +195,8 @@ class PaddleOCRProcessor(BaseOCRProcessor):
                 self._ocr = PaddleOCR(
                     use_angle_cls=True,
                     lang=lang,
-                    use_gpu=self.use_gpu,
-                    show_log=False,
                     det_model_dir=self._det_model_dir,
                     rec_model_dir=self._rec_model_dir,
-                    # Optymalizacje CPU
-                    enable_mkldnn=True,
-                    cpu_threads=4,
                 )
             except ImportError:
                 raise ImportError(
@@ -217,7 +212,7 @@ class PaddleOCRProcessor(BaseOCRProcessor):
         self._init_ocr()
 
         image_path = str(image_path)
-        result = self._ocr.ocr(image_path, cls=True)
+        result = self._ocr.ocr(image_path)
 
         lines = []
         full_text_parts = []
@@ -440,8 +435,8 @@ class OCRProcessor:
 
     def __init__(
         self,
-        preferred_engine: OCREngine = OCREngine.PADDLE,
-        fallback_engine: OCREngine = OCREngine.TESSERACT,
+        preferred_engine: OCREngine = OCREngine.TESSERACT,
+        fallback_engine: OCREngine = OCREngine.PADDLE,
         lang: str = 'pl',
         use_gpu: bool = False,
     ):
