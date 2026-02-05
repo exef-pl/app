@@ -1,5 +1,5 @@
 """
-EXEF Document ID Generator
+DOC Document ID Generator
 
 Deterministyczny generator identyfikatorów dokumentów z OCR.
 Generuje zawsze ten sam ID dla tego samego dokumentu,
@@ -10,14 +10,14 @@ Przykład użycia:
 
     # Pełne przetwarzanie
     result = process_document("faktura.pdf")
-    print(result.document_id)      # EXEF-FV-A7B3C9D2E1F04856
+    print(result.document_id)      # DOC-FV-A7B3C9D2E1F04856
     print(result.extraction.issuer_nip)  # 5213017228
 
     # Tylko ID
     doc_id = get_document_id("paragon.jpg")
 
     # Weryfikacja
-    is_same = verify_document_id("skan.png", "EXEF-FV-A7B3C9D2E1F04856")
+    is_same = verify_document_id("skan.png", "DOC-FV-A7B3C9D2E1F04856")
 
 Wymagania:
     pip install paddleocr paddlepaddle pdf2image pillow

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI dla EXEF Document ID Generator.
+CLI dla DOC Document ID Generator.
 
 Użycie:
     # Przetwórz pojedynczy plik
@@ -13,7 +13,7 @@ Użycie:
     docid batch ./dokumenty/ --output results.json
 
     # Weryfikacja ID
-    docid verify faktura.pdf EXEF-FV-A7B3C9D2E1F04856
+    docid verify faktura.pdf DOC-FV-A7B3C9D2E1F04856
 
     # Tylko OCR (bez generowania ID)
     docid ocr skan.jpg
@@ -267,7 +267,7 @@ def cmd_generate_id(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='EXEF Document ID Generator - deterministyczne ID dokumentów z OCR',
+        description='DOC Document ID Generator - deterministyczne ID dokumentów z OCR',
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument('--version', action='version', version='docid 0.1.0')
@@ -279,7 +279,7 @@ def main():
     common.add_argument('--engine', choices=['paddle', 'tesseract'], default='paddle',
                        help='Silnik OCR (domyślnie: paddle)')
     common.add_argument('--lang', default='pl', help='Język dokumentów')
-    common.add_argument('--prefix', default='EXEF', help='Prefiks ID')
+    common.add_argument('--prefix', default='DOC', help='Prefiks ID')
     common.add_argument('--gpu', action='store_true', help='Użyj GPU')
     common.add_argument('-v', '--verbose', action='store_true', help='Więcej szczegółów')
 
@@ -324,7 +324,7 @@ def main():
     p_gen.add_argument('--number', help='Numer dokumentu')
     p_gen.add_argument('--date', help='Data (YYYY-MM-DD)')
     p_gen.add_argument('--amount', help='Kwota brutto')
-    p_gen.add_argument('--prefix', default='EXEF', help='Prefiks ID')
+    p_gen.add_argument('--prefix', default='DOC', help='Prefiks ID')
     p_gen.set_defaults(func=cmd_generate_id)
 
     args = parser.parse_args()

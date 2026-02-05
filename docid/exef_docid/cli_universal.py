@@ -431,7 +431,7 @@ def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
         prog='docid',
-        description='EXEF Document ID Generator - CLI'
+        description='DOC Document ID Generator - CLI'
     )
     
     parser.add_argument('--version', action='version', version='%(prog)s 0.1.0')

@@ -97,20 +97,20 @@ class DocumentPipeline:
     Przykład użycia:
         pipeline = DocumentPipeline()
         result = pipeline.process("faktura.pdf")
-        print(result.document_id)  # EXEF-FV-A7B3C9D2E1F04856
+        print(result.document_id)  # DOC-FV-A7B3C9D2E1F04856
     """
 
     def __init__(
         self,
         ocr_engine: OCREngine = OCREngine.TESSERACT,
-        id_prefix: str = "EXEF",
+        id_prefix: str = "DOC",
         lang: str = "pl",
         use_gpu: bool = False,
     ):
         """
         Args:
             ocr_engine: Silnik OCR (PADDLE lub TESSERACT)
-            id_prefix: Prefiks identyfikatorów (domyślnie EXEF)
+            id_prefix: Prefiks identyfikatorów (domyślnie DOC)
             lang: Język dokumentów (pl, en)
             use_gpu: Czy używać GPU (domyślnie False dla CPU)
         """
@@ -416,7 +416,7 @@ def get_document_id(file_path: Union[str, Path]) -> str:
 
     Przykład:
         doc_id = get_document_id("faktura.pdf")
-        print(doc_id)  # EXEF-FV-A7B3C9D2E1F04856
+        print(doc_id)  # DOC-FV-A7B3C9D2E1F04856
     """
     return get_pipeline().process(file_path).document_id
 
@@ -426,6 +426,6 @@ def verify_document_id(file_path: Union[str, Path], expected_id: str) -> bool:
     Weryfikuje czy dokument ma oczekiwany ID.
 
     Przykład:
-        is_valid = verify_document_id("skan.jpg", "EXEF-FV-A7B3C9D2E1F04856")
+        is_valid = verify_document_id("skan.jpg", "DOC-FV-A7B3C9D2E1F04856")
     """
     return get_pipeline().verify_document(file_path, expected_id)

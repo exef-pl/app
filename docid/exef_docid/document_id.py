@@ -14,8 +14,8 @@ from decimal import ROUND_HALF_UP, Decimal
 from enum import Enum
 from typing import Optional, Union
 
-# Namespace UUID dla EXEF (RFC 4122 UUID v5)
-EXEF_NAMESPACE = uuid.UUID('a1b2c3d4-e5f6-7890-abcd-ef1234567890')
+# Namespace UUID dla DOC (RFC 4122 UUID v5)
+DOC_NAMESPACE = uuid.UUID('a1b2c3d4-e5f6-7890-abcd-ef1234567890')
 
 
 class DocumentType(Enum):
@@ -207,10 +207,10 @@ class DocumentIDGenerator:
     niezależnie od formatu źródłowego dokumentu.
     """
 
-    def __init__(self, prefix: str = "EXEF"):
+    def __init__(self, prefix: str = "DOC"):
         """
         Args:
-            prefix: Prefiks identyfikatora (domyślnie EXEF)
+            prefix: Prefiks identyfikatora (domyślnie DOC)
         """
         self.prefix = prefix
 
@@ -229,7 +229,7 @@ class DocumentIDGenerator:
 
         >>> gen = DocumentIDGenerator()
         >>> gen.generate_invoice_id("5213017228", "FV/2025/00142", "2025-01-15", 1230.00)
-        'EXEF-FV-A7B3C9D2E1F04856'
+        'DOC-FV-A7B3C9D2E1F04856'
         """
         canonical = CanonicalData(
             document_type=DocumentType.INVOICE,
@@ -265,7 +265,7 @@ class DocumentIDGenerator:
 
         >>> gen = DocumentIDGenerator()
         >>> gen.generate_receipt_id("5213017228", "2025-01-15", 45.99)
-        'EXEF-PAR-...'
+        'DOC-PAR-...'
         """
         parts = [
             NIPValidator.normalize(seller_nip),
@@ -649,7 +649,7 @@ class DocumentIDGenerator:
         Generuje finalny identyfikator z danych kanonicznych.
 
         Format: {PREFIX}-{TYPE}-{HASH16}
-        Przykład: EXEF-FV-A7B3C9D2E1F04856
+        Przykład: DOC-FV-A7B3C9D2E1F04856
         """
         # SHA256 z canonical string
         hash_bytes = hashlib.sha256(canonical.canonical_string.encode('utf-8')).digest()
@@ -662,7 +662,7 @@ class DocumentIDGenerator:
         Weryfikuje czy ID odpowiada danym kanonicznym.
 
         >>> gen = DocumentIDGenerator()
-        >>> gen.verify_id("EXEF-FV-A7B3C9D2E1F04856", "5213017228|FV/2025/00142|2025-01-15|1230.00")
+        >>> gen.verify_id("DOC-FV-A7B3C9D2E1F04856", "5213017228|FV/2025/00142|2025-01-15|1230.00")
         True
         """
         hash_bytes = hashlib.sha256(canonical_string.encode('utf-8')).digest()
@@ -679,8 +679,8 @@ class DocumentIDGenerator:
         """
         Parsuje identyfikator dokumentu.
 
-        >>> DocumentIDGenerator.parse_id("EXEF-FV-A7B3C9D2E1F04856")
-        {'prefix': 'EXEF', 'type': 'FV', 'hash': 'A7B3C9D2E1F04856',
+        >>> DocumentIDGenerator.parse_id("DOC-FV-A7B3C9D2E1F04856")
+        {'prefix': 'DOC', 'type': 'FV', 'hash': 'A7B3C9D2E1F04856',
          'document_type': <DocumentType.INVOICE>}
         """
         parts = document_id.split('-')
