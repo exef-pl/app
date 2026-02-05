@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EXEF Document ID Generator - Kompletna demonstracja
+DOC Document ID Generator - Kompletna demonstracja
 
 Ten skrypt pokazuje wszystkie możliwości pakietu:
 1. Generowanie deterministycznych ID dla różnych typów dokumentów
@@ -18,7 +18,7 @@ import json
 from datetime import date
 
 # Import pakietu
-from exef_docid import (
+from docid import (
     AmountNormalizer,
     DateNormalizer,
     # Główny generator
@@ -309,11 +309,11 @@ def demo_id_parsing():
     print_header("PARSOWANIE IDENTYFIKATORÓW")
 
     ids = [
-        "EXEF-FV-A7B3C9D2E1F04856",
-        "EXEF-PAR-D5F3AF3409E0E9FF",
-        "EXEF-UMO-4B0C3F5FD6D34939",
-        "EXEF-KP-1234567890ABCDEF",
-        "EXEF-KOR-FEDCBA0987654321",
+        "DOC-FV-A7B3C9D2E1F04856",
+        "DOC-PAR-D5F3AF3409E0E9FF",
+        "DOC-UMO-4B0C3F5FD6D34939",
+        "DOC-KP-1234567890ABCDEF",
+        "DOC-KOR-FEDCBA0987654321",
     ]
 
     for doc_id in ids:
@@ -363,7 +363,7 @@ def demo_custom_prefix():
 
     print_subheader("Ta sama faktura, różne systemy:")
 
-    for prefix in ["EXEF", "KSEF", "ACME", "INT"]:
+    for prefix in ["DOC", "KSEF", "ACME", "INT"]:
         gen = DocumentIDGenerator(prefix=prefix)
         doc_id = gen.generate_invoice_id(
             seller_nip="5213017228",
@@ -379,7 +379,7 @@ def demo_ocr():
     print_header("PRZETWARZANIE OCR")
 
     try:
-        from exef_docid import (
+        from docid import (
             DocumentPipeline,
             OCREngine,
             OCRProcessor,
@@ -399,11 +399,11 @@ def demo_ocr():
 
         print_subheader("Przykład użycia (z plikiem):")
         print("""
-    from exef_docid import process_document, get_document_id
+    from docid import process_document, get_document_id
 
     # Pełne przetwarzanie
     result = process_document("faktura.pdf")
-    print(result.document_id)           # EXEF-FV-A7B3C9D2E1F04856
+    print(result.document_id)           # DOC-FV-A7B3C9D2E1F04856
     print(result.extraction.issuer_nip) # 5213017228
     print(result.ocr_confidence)        # 0.95
 
@@ -411,7 +411,7 @@ def demo_ocr():
     doc_id = get_document_id("paragon.jpg")
 
     # Weryfikacja
-    is_same = verify_document_id("skan.png", "EXEF-FV-A7B3C9D2E1F04856")
+    is_same = verify_document_id("skan.png", "DOC-FV-A7B3C9D2E1F04856")
         """)
 
     except ImportError as e:
@@ -471,7 +471,7 @@ def main():
     """Główna funkcja demonstracyjna."""
     print("\n" + "#" * 70)
     print("#" + " " * 68 + "#")
-    print("#" + "  EXEF Document ID Generator - Kompletna demonstracja".center(66) + "#")
+    print("#" + "  DOC Document ID Generator - Kompletna demonstracja".center(66) + "#")
     print("#" + "  Deterministyczne identyfikatory dokumentów".center(66) + "#")
     print("#" + " " * 68 + "#")
     print("#" * 70)
@@ -498,7 +498,7 @@ def main():
   ✓ CLI do przetwarzania plików
 
   Użycie w kodzie:
-    from exef_docid import generate_invoice_id, process_document
+    from docid import generate_invoice_id, process_document
 
   Użycie CLI:
     docid process faktura.pdf

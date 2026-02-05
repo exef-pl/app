@@ -23,7 +23,7 @@ versioning:
   - VERSION
   - pyproject.toml:version
   - setup.py:version
-  - exef_docid/__init__.py:__version__
+  - docid/__init__.py:__version__
   bump_rules:
     patch: 10
     minor: 50

@@ -26,7 +26,7 @@ def run_command(name, cmd, expect_success=True):
             capture_output=True,
             text=True,
             timeout=30,
-            cwd="/home/tom/github/exef-pl/app/docid"
+            cwd="/home/tom/github/doc-pl/app/docid"
         )
         
         passed = (result.returncode == 0) if expect_success else (result.returncode != 0)
@@ -72,7 +72,7 @@ def test_basic_commands():
         "--amount", "1230.50"
     ]
     if run_command("Generate Business ID", cmd):
-        result = subprocess.run(["bash", "-c", " ".join(cmd)], capture_output=True, text=True, cwd="/home/tom/github/exef-pl/app/docid")
+        result = subprocess.run(["bash", "-c", " ".join(cmd)], capture_output=True, text=True, cwd="/home/tom/github/doc-pl/app/docid")
         business_id = result.stdout.strip()
     else:
         business_id = "ERROR"
@@ -80,7 +80,7 @@ def test_basic_commands():
     # Test generate universal ID
     cmd = base_cmd + ["universal", "samples/invoices/faktura_full.pdf"]
     if run_command("Generate Universal ID (PDF)", cmd):
-        result = subprocess.run(["bash", "-c", " ".join(cmd)], capture_output=True, text=True, cwd="/home/tom/github/exef-pl/app/docid")
+        result = subprocess.run(["bash", "-c", " ".join(cmd)], capture_output=True, text=True, cwd="/home/tom/github/doc-pl/app/docid")
         universal_id = result.stdout.strip()
     else:
         universal_id = "ERROR"
@@ -97,7 +97,7 @@ def test_basic_commands():
     if business_id != "ERROR":
         # Get actual ID from process to handle potential extraction nuances
         cmd = base_cmd + ["process", "samples/invoices/faktura_full.txt", "--ocr", "tesseract", "--format", "json"]
-        proc_result = subprocess.run(["bash", "-c", " ".join(cmd)], capture_output=True, text=True, cwd="/home/tom/github/exef-pl/app/docid")
+        proc_result = subprocess.run(["bash", "-c", " ".join(cmd)], capture_output=True, text=True, cwd="/home/tom/github/doc-pl/app/docid")
         if proc_result.returncode == 0:
             extracted_id = json.loads(proc_result.stdout)["document_id"]
             run_command("Verify Business ID", base_cmd + ["verify", "samples/invoices/faktura_full.txt", extracted_id])

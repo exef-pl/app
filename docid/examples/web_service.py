@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EXEF Document ID Web Service
+DOC Document ID Web Service
 REST API dla generowania i weryfikacji ID dokumentów
 """
 
@@ -15,7 +15,7 @@ from typing import Optional, List, Dict, Any
 import json
 import logging
 
-from exef_docid import (
+from docid import (
     process_document,
     generate_universal_document_id,
     verify_universal_document_id,
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="EXEF Document ID API",
+    title="DOC Document ID API",
     description="REST API dla generowania deterministycznych ID dokumentów",
     version="1.0.0"
 )
@@ -53,7 +53,7 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 async def root():
     """Root endpoint"""
     return {
-        "service": "EXEF Document ID API",
+        "service": "DOC Document ID API",
         "version": "1.0.0",
         "endpoints": {
             "generate_business": "/generate/business",
@@ -341,7 +341,7 @@ async def batch_process_endpoint(
 async def analyze_file_endpoint(file: UploadFile = File(...)):
     """Analizuj cechy pliku"""
     try:
-        from exef_docid.document_id_universal import UniversalDocumentIDGenerator
+        from docid.document_id_universal import UniversalDocumentIDGenerator
         
         # Save uploaded file
         with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename).suffix) as tmp:
@@ -433,13 +433,13 @@ async def quality_test_endpoint(
                     # Process with specific OCR engine
                     if engine == "none":
                         # Test without OCR
-                        from exef_docid.document_id_universal import generate_universal_document_id
+                        from docid.document_id_universal import generate_universal_document_id
                         doc_id = generate_universal_document_id(tmp_path)
                         confidence = 1.0
                     else:
                         # Process with OCR
-                        from exef_docid.ocr_processor import OCREngine
-                        from exef_docid.pipeline import process_document
+                        from docid.ocr_processor import OCREngine
+                        from docid.pipeline import process_document
                         
                         result = process_document(
                             tmp_path,
@@ -495,7 +495,7 @@ async def quality_test_endpoint(
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "service": "EXEF Document ID API"}
+    return {"status": "healthy", "service": "DOC Document ID API"}
 
 if __name__ == "__main__":
     uvicorn.run(

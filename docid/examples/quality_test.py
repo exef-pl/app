@@ -17,13 +17,13 @@ import argparse
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from exef_docid import (
+from docid import (
     process_document,
     generate_universal_document_id,
     verify_universal_document_id
 )
-from exef_docid.ocr_processor import OCREngine
-from exef_docid.document_id_universal import UniversalDocumentIDGenerator
+from docid.ocr_processor import OCREngine
+from docid.document_id_universal import UniversalDocumentIDGenerator
 
 
 class QualityTester:

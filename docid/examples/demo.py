@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Przykład użycia EXEF Document ID Generator.
+Przykład użycia DOC Document ID Generator.
 
 Ten skrypt demonstruje wszystkie główne funkcjonalności pakietu.
 """
 
-from exef_docid import (
+from docid import (
     AmountNormalizer,
     DateNormalizer,
     # Główne API
@@ -121,7 +121,7 @@ def demo_document_types():
     print("4. Różne typy dokumentów")
     print("=" * 60)
 
-    generator = DocumentIDGenerator(prefix="EXEF")
+    generator = DocumentIDGenerator(prefix="DOC")
 
     # Faktura korygująca
     correction_id = generator.generate_correction_id(
@@ -162,7 +162,7 @@ def demo_custom_prefix():
     print("=" * 60)
 
     # Dla różnych systemów
-    for prefix in ["EXEF", "KSEF", "ACME", "TEST"]:
+    for prefix in ["DOC", "KSEF", "ACME", "TEST"]:
         gen = DocumentIDGenerator(prefix=prefix)
         doc_id = gen.generate_invoice_id(
             seller_nip="5213017228",
@@ -179,7 +179,7 @@ def demo_parsing():
     print("6. Parsowanie identyfikatora")
     print("=" * 60)
 
-    doc_id = "EXEF-FV-A7B3C9D2E1F04856"
+    doc_id = "DOC-FV-A7B3C9D2E1F04856"
     parsed = DocumentIDGenerator.parse_id(doc_id)
 
     print(f"ID: {doc_id}")
@@ -217,7 +217,7 @@ def demo_contract_order_independence():
 def main():
     """Uruchom wszystkie demonstracje."""
     print("\n" + "#" * 60)
-    print("# EXEF Document ID Generator - Demonstracja")
+    print("# DOC Document ID Generator - Demonstracja")
     print("#" * 60)
 
     demo_basic_usage()
@@ -232,7 +232,7 @@ def main():
     print("Demonstracja zakończona!")
     print("=" * 60)
     print("\nAby przetworzyć rzeczywiste dokumenty z OCR:")
-    print("  from exef_docid import process_document, get_document_id")
+    print("  from docid import process_document, get_document_id")
     print("  result = process_document('faktura.pdf')")
     print("  print(result.document_id)")
 

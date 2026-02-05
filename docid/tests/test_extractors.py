@@ -4,14 +4,14 @@ Testy dla ekstraktorów danych z dokumentów.
 
 import pytest
 
-from exef_docid.extractors import (
+from docid.extractors import (
     ContractExtractor,
     DocumentCategory,
     DocumentExtractor,
     InvoiceExtractor,
     ReceiptExtractor,
 )
-from exef_docid.ocr_processor import DocumentOCRResult, OCREngine, OCRResult
+from docid.ocr_processor import DocumentOCRResult, OCREngine, OCRResult
 
 
 def create_mock_ocr_result(
@@ -271,7 +271,7 @@ class TestNIPDetection:
     """Testy wykrywania NIP w tekście."""
 
     def test_detect_nip_with_dashes(self):
-        from exef_docid.ocr_processor import BaseOCRProcessor
+        from docid.ocr_processor import BaseOCRProcessor
 
         class TestProcessor(BaseOCRProcessor):
             def process_image(self, path): pass
@@ -283,7 +283,7 @@ class TestNIPDetection:
         assert "5213017228" in nips
 
     def test_detect_nip_without_dashes(self):
-        from exef_docid.ocr_processor import BaseOCRProcessor
+        from docid.ocr_processor import BaseOCRProcessor
 
         class TestProcessor(BaseOCRProcessor):
             def process_image(self, path): pass
@@ -295,7 +295,7 @@ class TestNIPDetection:
         assert "5213017228" in nips
 
     def test_detect_multiple_nips(self):
-        from exef_docid.ocr_processor import BaseOCRProcessor
+        from docid.ocr_processor import BaseOCRProcessor
 
         class TestProcessor(BaseOCRProcessor):
             def process_image(self, path): pass
@@ -316,7 +316,7 @@ class TestAmountDetection:
     """Testy wykrywania kwot."""
 
     def test_detect_amount_with_currency(self):
-        from exef_docid.ocr_processor import BaseOCRProcessor
+        from docid.ocr_processor import BaseOCRProcessor
 
         class TestProcessor(BaseOCRProcessor):
             def process_image(self, path): pass
@@ -328,7 +328,7 @@ class TestAmountDetection:
         assert "1230.50" in amounts
 
     def test_detect_amount_brutto(self):
-        from exef_docid.ocr_processor import BaseOCRProcessor
+        from docid.ocr_processor import BaseOCRProcessor
 
         class TestProcessor(BaseOCRProcessor):
             def process_image(self, path): pass

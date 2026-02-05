@@ -5,7 +5,7 @@ Testowanie czy ID są zawsze takie same dla różnych formatów tego samego doku
 
 import os
 from pathlib import Path
-from exef_docid import get_document_id, process_document
+from docid import get_document_id, process_document
 
 def main():
     print("=" * 70)

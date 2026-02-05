@@ -4,7 +4,7 @@ Test wszystkich formatów plików włączając PDF, PNG, JPG
 """
 
 from pathlib import Path
-from exef_docid import (
+from docid import (
     generate_invoice_id, 
     generate_receipt_id, 
     generate_contract_id

@@ -6,7 +6,7 @@ Generuje zawsze ten sam ID dla tego samego dokumentu,
 niezależnie od formatu źródłowego (skan, PDF, KSeF XML).
 
 Przykład użycia:
-    from exef_docid import process_document, get_document_id
+    from docid import process_document, get_document_id
 
     # Pełne przetwarzanie
     result = process_document("faktura.pdf")
@@ -27,7 +27,7 @@ Wymagania:
     pip install pytesseract pdf2image pillow
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.6"
 __author__ = "Softreck"
 
 # Główne API

@@ -1,12 +1,12 @@
-# EXEF Document ID Generator Makefile
+# DOC Document ID Generator Makefile
 
 SHELL := /bin/bash
 
-.PHONY: help install install-dev install-all test test-coverage lint format clean run-demo run-complete-demo build upload
+.PHONY: help install install-dev install-all test test-coverage lint format clean run-demo run-complete-demo build upload publish
 
 # Default target
 help:
-	@echo "EXEF Document ID Generator - Available commands:"
+	@echo "DOC Document ID Generator - Available commands:"
 	@echo ""
 	@echo "  install          Install basic dependencies"
 	@echo "  install-dev      Install with dev dependencies"
@@ -20,6 +20,7 @@ help:
 	@echo "  run-complete-demo Run complete demo"
 	@echo "  build            Build package"
 	@echo "  upload           Upload to PyPI (requires twine)"
+	@echo "  publish          Alias for 'upload' - build and publish to PyPI"
 	@echo ""
 	@echo "Quick start:"
 	@echo "  make install-dev"
@@ -44,16 +45,16 @@ test:
 	source venv/bin/activate && pytest
 
 test-coverage:
-	source venv/bin/activate && pytest --cov=exef_docid --cov-report=html --cov-report=term
+	source venv/bin/activate && pytest --cov=docid --cov-report=html --cov-report=term
 
 # Code quality
 lint:
-	source venv/bin/activate && ruff check exef_docid tests examples
-	source venv/bin/activate && mypy exef_docid
+	source venv/bin/activate && ruff check docid tests examples
+	source venv/bin/activate && mypy docid
 
 format:
-	source venv/bin/activate && black exef_docid tests examples
-	source venv/bin/activate && ruff format exef_docid tests examples
+	source venv/bin/activate && black docid tests examples
+	source venv/bin/activate && ruff format docid tests examples
 
 # Cleanup
 clean:
@@ -121,10 +122,14 @@ test-quality:
 
 # Package management
 build:
-	source venv/bin/activate && python -m build
+	source venv/bin/activate && ./venv/bin/python -m build
 
 upload: build
-	source venv/bin/activate && python -m twine upload dist/*
+	source venv/bin/activate && ./venv/bin/python -m twine upload dist/*
+
+# Alias for upload
+publish: upload
+	@echo "Package published successfully!"
 
 # Development helpers
 check: lint test

@@ -4,7 +4,7 @@ Testy dla generatora identyfikatorów dokumentów.
 
 import pytest
 
-from exef_docid.document_id import (
+from docid.document_id import (
     AmountNormalizer,
     DateNormalizer,
     DocumentIDGenerator,
@@ -109,7 +109,7 @@ class TestDocumentIDGenerator:
 
     @pytest.fixture
     def generator(self):
-        return DocumentIDGenerator(prefix="EXEF")
+        return DocumentIDGenerator(prefix="DOC")
 
     def test_generate_invoice_id_deterministic(self, generator):
         """Ten sam input = ten sam output."""
@@ -152,10 +152,10 @@ class TestDocumentIDGenerator:
             gross_amount=1230.50,
         )
 
-        assert doc_id.startswith("EXEF-FV-")
+        assert doc_id.startswith("DOC-FV-")
         parts = doc_id.split("-")
         assert len(parts) == 3
-        assert parts[0] == "EXEF"
+        assert parts[0] == "DOC"
         assert parts[1] == "FV"
         assert len(parts[2]) == 16
         assert all(c in "0123456789ABCDEF" for c in parts[2])
@@ -168,7 +168,7 @@ class TestDocumentIDGenerator:
             gross_amount=45.99,
         )
 
-        assert doc_id.startswith("EXEF-PAR-")
+        assert doc_id.startswith("DOC-PAR-")
 
     def test_generate_receipt_id_with_extras(self, generator):
         """Paragon z numerem kasy daje inny ID."""
@@ -232,10 +232,10 @@ class TestDocumentIDGenerator:
 
     def test_parse_id(self, generator):
         """Test parsowania ID."""
-        doc_id = "EXEF-FV-A7B3C9D2E1F04856"
+        doc_id = "DOC-FV-A7B3C9D2E1F04856"
         parsed = DocumentIDGenerator.parse_id(doc_id)
 
-        assert parsed['prefix'] == "EXEF"
+        assert parsed['prefix'] == "DOC"
         assert parsed['type'] == "FV"
         assert parsed['hash'] == "A7B3C9D2E1F04856"
         assert parsed['document_type'] == DocumentType.INVOICE
@@ -263,7 +263,7 @@ class TestDocumentTypes:
             gross_amount=-100.00,
         )
 
-        assert doc_id.startswith("EXEF-KOR-")
+        assert doc_id.startswith("DOC-KOR-")
 
     def test_bank_statement(self, generator):
         """Wyciąg bankowy."""
@@ -273,7 +273,7 @@ class TestDocumentTypes:
             statement_number="001/2025",
         )
 
-        assert doc_id.startswith("EXEF-WB-")
+        assert doc_id.startswith("DOC-WB-")
 
     def test_generic_document(self, generator):
         """Dokument generyczny."""
@@ -287,4 +287,4 @@ class TestDocumentTypes:
             document_date="2025-01-15",
         )
 
-        assert doc_id.startswith("EXEF-DOC-")
+        assert doc_id.startswith("DOC-DOC-")

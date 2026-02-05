@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Setup dla EXEF Document ID Generator."""
+"""Setup dla DOC Document ID Generator."""
 
 from setuptools import setup, find_packages
 from pathlib import Path
@@ -57,7 +57,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "docid=exef_docid.cli:main",
+            "docid=docid.cli:main",
         ],
     },
     include_package_data=True,

@@ -4,7 +4,7 @@ Test uniwersalnych dokumentów - PDF z grafiką, zdjęcia, wektory
 """
 
 from pathlib import Path
-from exef_docid.document_id_universal import (
+from docid.document_id_universal import (
     UniversalDocumentIDGenerator,
     generate_universal_document_id,
     verify_universal_document_id,

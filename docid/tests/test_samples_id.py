@@ -10,9 +10,9 @@ from pathlib import Path
 
 import pytest
 
-from exef_docid.document_id import DocumentIDGenerator, DocumentType
-from exef_docid.pipeline import DocumentPipeline, process_document
-from exef_docid.ocr_processor import OCREngine
+from docid.document_id import DocumentIDGenerator, DocumentType
+from docid.pipeline import DocumentPipeline, process_document
+from docid.ocr_processor import OCREngine
 
 
 SAMPLES_DIR = Path(__file__).parent.parent / "samples"
@@ -55,7 +55,7 @@ class TestSampleIDGeneration:
                 })
                 # Sprawdź czy ID zostało wygenerowane
                 assert result.document_id, f"Brak ID dla {file_path}"
-                assert result.document_id.startswith("EXEF-FV"), f"Nieprawidłowy prefix ID dla faktury: {result.document_id}"
+                assert result.document_id.startswith("DOC-FV"), f"Nieprawidłowy prefix ID dla faktury: {result.document_id}"
             except Exception as e:
                 pytest.fail(f"Błąd przetwarzania {file_path}: {e}")
         

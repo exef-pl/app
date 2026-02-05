@@ -1,4 +1,4 @@
-# EXEF Document ID Generator
+# DOC Document ID Generator
 
 Deterministyczny generator identyfikatorów dokumentów z OCR. Generuje **zawsze ten sam ID** dla tego samego dokumentu, niezależnie od formatu źródłowego (skan, PDF, KSeF XML, obrazy).
 
@@ -14,12 +14,12 @@ Jak uzyskać **ten sam identyfikator** dla wszystkich trzech?
 ## ✨ Rozwiązanie
 
 ```python
-from exef_docid import get_document_id
+from docid import get_document_id
 
 # Wszystkie trzy zwrócą TEN SAM ID!
-get_document_id("faktura_skan.jpg")    # EXEF-FV-A7B3C9D2E1F04856
-get_document_id("faktura.pdf")          # EXEF-FV-A7B3C9D2E1F04856
-get_document_id("faktura_ksef.xml")     # EXEF-FV-A7B3C9D2E1F04856
+get_document_id("faktura_skan.jpg")    # DOC-FV-A7B3C9D2E1F04856
+get_document_id("faktura.pdf")          # DOC-FV-A7B3C9D2E1F04856
+get_document_id("faktura_ksef.xml")     # DOC-FV-A7B3C9D2E1F04856
 ```
 
 ## 📦 Instalacja
@@ -28,8 +28,8 @@ get_document_id("faktura_ksef.xml")     # EXEF-FV-A7B3C9D2E1F04856
 
 ```bash
 # Klonuj repozytorium
-git clone https://github.com/softreck/exef-pl.git
-cd exef-pl/app/docid
+git clone https://github.com/softreck/doc-pl.git
+cd doc-pl/app/docid
 
 # Utwórz środowisko wirtualne
 python3 -m venv venv
@@ -67,7 +67,7 @@ pip install docid[all]
 ### Generator ID dla dokumentów biznesowych
 
 ```python
-from exef_docid import generate_invoice_id, generate_receipt_id, generate_contract_id
+from docid import generate_invoice_id, generate_receipt_id, generate_contract_id
 
 # Faktura VAT
 invoice_id = generate_invoice_id(
@@ -76,7 +76,7 @@ invoice_id = generate_invoice_id(
     issue_date="2025-01-15",
     gross_amount=1230.50
 )
-print(invoice_id)  # EXEF-FV-F0BE35240C77B2DB
+print(invoice_id)  # DOC-FV-F0BE35240C77B2DB
 
 # Paragon fiskalny
 receipt_id = generate_receipt_id(
@@ -85,7 +85,7 @@ receipt_id = generate_receipt_id(
     gross_amount=37.88,
     cash_register_number="001"
 )
-print(receipt_id)  # EXEF-PAR-8142B3FC69D7778C
+print(receipt_id)  # DOC-PAR-8142B3FC69D7778C
 
 # Umowa
 contract_id = generate_contract_id(
@@ -94,13 +94,13 @@ contract_id = generate_contract_id(
     contract_date="2025-01-15",
     contract_number="001/2025"
 )
-print(contract_id)  # EXEF-UMO-C54CB968D1342642
+print(contract_id)  # DOC-UMO-C54CB968D1342642
 ```
 
 ### Uniwersalny generator ID (dowolne dokumenty)
 
 ```python
-from exef_docid import generate_universal_document_id
+from docid import generate_universal_document_id
 
 # Dowolny dokument
 doc_id = generate_universal_document_id("dokument.pdf")
@@ -118,20 +118,20 @@ print(doc_id)  # UNIV-IMG-E2E2131A335F0918
 ### Pełne przetwarzanie z OCR
 
 ```python
-from exef_docid import process_document, get_document_id
+from docid import process_document, get_document_id
 
 # Pełne przetwarzanie z ekstrakcją danych
 result = process_document("faktura.pdf")
-print(result.document_id)           # EXEF-FV-F0BE35240C77B2DB
+print(result.document_id)           # DOC-FV-F0BE35240C77B2DB
 print(result.extraction.issuer_nip) # 5213017228
 print(result.extraction.invoice_number) # FV/2025/00142
 
 # Tylko wygeneruj ID
 doc_id = get_document_id("paragon.jpg")
-print(doc_id)  # EXEF-PAR-8142B3FC69D7778C
+print(doc_id)  # DOC-PAR-8142B3FC69D7778C
 
 # Weryfikacja ID
-is_valid = verify_document_id("skan.png", "EXEF-FV-F0BE35240C77B2DB")
+is_valid = verify_document_id("skan.png", "DOC-FV-F0BE35240C77B2DB")
 print(is_valid)  # True/False
 ```
 
@@ -193,7 +193,7 @@ curl -X POST -F "file=@faktura.pdf" http://localhost:8000/process
 
 **2. Weryfikacja ID:**
 ```bash
-curl -X POST -F "file=@skan.jpg" -F "document_id=EXEF-FV-F0BE35240C77B2DB" http://localhost:8000/verify
+curl -X POST -F "file=@skan.jpg" -F "document_id=DOC-FV-F0BE35240C77B2DB" http://localhost:8000/verify
 ```
 
 **3. Porównywanie plików:**
@@ -246,7 +246,7 @@ make run-web          # Uruchom serwer API
 ### 1. Przetwarzanie faktur
 
 ```python
-from exef_docid import process_document
+from docid import process_document
 
 # Przetwarzanie faktury PDF
 result = process_document("faktura.pdf")
@@ -262,7 +262,7 @@ print(f"ID: {result.document_id}")
 ### 2. Porównywanie dokumentów
 
 ```python
-from exef_docid import compare_universal_documents
+from docid import compare_universal_documents
 
 # Porównaj dwa dokumenty
 comparison = compare_universal_documents("dokument1.pdf", "dokument2.png")
@@ -274,10 +274,10 @@ print(f"Ten sam rozmiar: {comparison['same_size']}")
 ### 3. Weryfikacja ID
 
 ```python
-from exef_docid import verify_document_id, verify_universal_document_id
+from docid import verify_document_id, verify_universal_document_id
 
 # Weryfikacja ID dokumentu biznesowego
-is_valid = verify_document_id("faktura.pdf", "EXEF-FV-F0BE35240C77B2DB")
+is_valid = verify_document_id("faktura.pdf", "DOC-FV-F0BE35240C77B2DB")
 
 # Weryfikacja uniwersalnego ID
 is_valid = verify_universal_document_id("dowolny_plik.jpg", "UNIV-IMG-4225A473A725978D")
@@ -287,7 +287,7 @@ is_valid = verify_universal_document_id("dowolny_plik.jpg", "UNIV-IMG-4225A473A7
 
 ```python
 from pathlib import Path
-from exef_docid import generate_universal_document_id
+from docid import generate_universal_document_id
 
 # Przetwarzaj wszystkie pliki w folderze
 documents_dir = Path("dokumenty")
@@ -315,16 +315,16 @@ for file_path in documents_dir.glob("*"):
 **TAK!** Formaty PNG i JPG są w pełni przetwarzane przez OCR:
 
 ```python
-from exef_docid import process_document
+from docid import process_document
 
 # Przetwarzanie skanu PNG z OCR
 result = process_document("skan_faktury.png")
-print(result.document_id)  # EXEF-FV-F0BE35240C77B2DB
+print(result.document_id)  # DOC-FV-F0BE35240C77B2DB
 print(result.extraction.issuer_nip)  # 5213017228
 
 # Przetwarzanie zdjęcia JPG z OCR
 result = process_document("zdjecie_paragonu.jpg")
-print(result.document_id)  # EXEF-PAR-8142B3FC69D7778C
+print(result.document_id)  # DOC-PAR-8142B3FC69D7778C
 ```
 
 #### Co jest ekstrahowane z PNG/JPG:
@@ -345,13 +345,13 @@ print(result.document_id)  # EXEF-PAR-8142B3FC69D7778C
 
 ```python
 # Ten sam dokument w różnych formatach - ten sam ID biznesowy
-generate_invoice_id(...)  # -> EXEF-FV-F0BE35240C77B2DB
+generate_invoice_id(...)  # -> DOC-FV-F0BE35240C77B2DB
 
 # Przetwarzanie przez OCR daje ten sam wynik
-process_document("faktura.pdf")    # -> EXEF-FV-F0BE35240C77B2DB
-process_document("faktura.png")    # -> EXEF-FV-F0BE35240C77B2DB
-process_document("faktura.jpg")    # -> EXEF-FV-F0BE35240C77B2DB
-process_document("faktura.xml")    # -> EXEF-FV-F0BE35240C77B2DB
+process_document("faktura.pdf")    # -> DOC-FV-F0BE35240C77B2DB
+process_document("faktura.png")    # -> DOC-FV-F0BE35240C77B2DB
+process_document("faktura.jpg")    # -> DOC-FV-F0BE35240C77B2DB
+process_document("faktura.xml")    # -> DOC-FV-F0BE35240C77B2DB
 
 # Różne ID uniwersalne dla różnych formatów
 generate_universal_document_id("faktura.pdf")  # -> UNIV-PDF-...
@@ -394,25 +394,25 @@ TEST WSZYSTKICH FORMATÓW - PDF, PNG, JPG, HTML, TXT, XML
 ================================================================================
 
 FOLDER: FAKTURY (invoices/)
-  📄 faktura_full.pdf          (.pdf ) [   2242B] -> EXEF-FV-F0BE35240C77B2DB
-  📄 faktura_full.xml          (.xml ) [   2077B] -> EXEF-FV-F0BE35240C77B2DB
-  📄 faktura_full.html         (.html) [   3334B] -> EXEF-FV-F0BE35240C77B2DB
-  📄 faktura_full.jpg          (.jpg ) [  28182B] -> EXEF-FV-F0BE35240C77B2DB
-  📄 faktura_full.png          (.png ) [  32325B] -> EXEF-FV-F0BE35240C77B2DB
-  📄 faktura_full.txt          (.txt ) [   2839B] -> EXEF-FV-F0BE35240C77B2DB
+  📄 faktura_full.pdf          (.pdf ) [   2242B] -> DOC-FV-F0BE35240C77B2DB
+  📄 faktura_full.xml          (.xml ) [   2077B] -> DOC-FV-F0BE35240C77B2DB
+  📄 faktura_full.html         (.html) [   3334B] -> DOC-FV-F0BE35240C77B2DB
+  📄 faktura_full.jpg          (.jpg ) [  28182B] -> DOC-FV-F0BE35240C77B2DB
+  📄 faktura_full.png          (.png ) [  32325B] -> DOC-FV-F0BE35240C77B2DB
+  📄 faktura_full.txt          (.txt ) [   2839B] -> DOC-FV-F0BE35240C77B2DB
 
   📊 Podsumowanie folderu invoices:
      Plików przetworzonych: 6
      Unikalnych ID: 1
      Wszystkie identyczne: True
-     ✅ ID: EXEF-FV-F0BE35240C77B2DB
+     ✅ ID: DOC-FV-F0BE35240C77B2DB
 ```
 
 ## 📁 Struktura projektu
 
 ```
 docid/
-├── exef_docid/              # Główny pakiet
+├── docid/              # Główny pakiet
 │   ├── __init__.py         # Eksporty API
 │   ├── document_id.py      # Generator ID biznesowy
 │   ├── document_id_universal.py # Generator ID uniwersalny
@@ -436,7 +436,7 @@ docid/
 ### Silniki OCR
 
 ```python
-from exef_docid import OCREngine, get_pipeline
+from docid import OCREngine, get_pipeline
 
 # Użyj PaddleOCR (domyślnie)
 pipeline = get_pipeline(ocr_engine=OCREngine.PADDLE)
@@ -448,7 +448,7 @@ pipeline = get_pipeline(ocr_engine=OCREngine.TESSERACT)
 ### Custom prefix
 
 ```python
-from exef_docid import UniversalDocumentIDGenerator
+from docid import UniversalDocumentIDGenerator
 
 generator = UniversalDocumentIDGenerator(prefix="MOJA")
 doc_id = generator.generate_universal_id("plik.pdf")
@@ -492,8 +492,8 @@ MIT License - zobacz [LICENSE](LICENSE) dla szczegółów.
 ## 🆘 Wsparcie
 
 - 📧 Email: info@softreck.dev
-- 🐛 Issues: [GitHub Issues](https://github.com/softreck/exef-pl/issues)
-- 📖 Dokumentacja: [GitHub Wiki](https://github.com/softreck/exef-pl/wiki)
+- 🐛 Issues: [GitHub Issues](https://github.com/softreck/doc-pl/issues)
+- 📖 Dokumentacja: [GitHub Wiki](https://github.com/softreck/doc-pl/wiki)
 
 ## 🗺️ Roadmap
 
@@ -506,4 +506,4 @@ MIT License - zobacz [LICENSE](LICENSE) dla szczegółów.
 
 ---
 
-**EXEF Document ID Generator** - Deterministyczne identyfikatory dla każdego dokumentu! 🚀
+**DOC Document ID Generator** - Deterministyczne identyfikatory dla każdego dokumentu! 🚀
