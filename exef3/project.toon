@@ -1,7 +1,7 @@
-# exef3 | 25f 3802L | python:22/javascript:3
+# exef3 | 25f 3809L | python:22/javascript:3
 # Keys: M=modules, D=details, i=imports, c=classes, f=functions, m=methods
 M[25]:
-  test_smtp_server.py,79
+  test_smtp_server.py,76
   test_api.py,64
   __init__.py,0
   test_email_client.py,177
@@ -13,7 +13,7 @@ M[25]:
   backend/app/main.py,39
   backend/app/schemas/schemas.py,293
   backend/app/schemas/__init__.py,0
-  backend/app/core/config.py,20
+  backend/app/core/config.py,27
   backend/app/core/email.py,112
   backend/app/core/security.py,40
   backend/app/core/__init__.py,0
@@ -28,9 +28,9 @@ M[25]:
   backend/app/api/entities.py,154
 D:
   test_smtp_server.py:
-    i: asyncio,asyncore,smtpd,threading,time,datetime,os,json
-    e: TestSMTPServer,run_smtp_server
-    TestSMTPServer: __init__(2),process_message(4),_extract_subject(1),_extract_magic_link(1)  # Test SMTP server that saves emails to...
+    i: asyncio,json,os,re,time,datetime,aiosmtpd.controller.Controller,email.message.EmailMessage
+    e: TestSMTPHandler,run_smtp_server
+    TestSMTPHandler: __init__(1),handle_DATA(3),_extract_subject(1),_extract_magic_link(1)  # Test SMTP handler that saves emails t...
     run_smtp_server()->None
   test_api.py:
     i: requests,json
@@ -43,7 +43,7 @@ D:
     main()->None
   frontend/src/App.jsx:
     i: react
-    e: AuthPanel,RightPanel,App,InfoRow,InputField
+    e: AuthPanel,App,InfoRow,RightPanel,InputField
     App()->None
     AuthPanel()->None
     RightPanel()->None
@@ -64,7 +64,7 @@ D:
     DocumentStatus: 
     AuthorizationRole: 
   backend/app/core/config.py:
-    i: functools.lru_cache,pydantic_settings.BaseSettings,typing.List
+    i: functools.lru_cache,pydantic_settings.BaseSettings,typing.{List,Optional}
     e: Settings,get_settings
     Settings: 
     get_settings()->Settings

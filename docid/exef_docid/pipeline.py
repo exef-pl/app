@@ -28,6 +28,7 @@ from .ocr_processor import (
     DocumentOCRResult,
     OCREngine,
     OCRProcessor,
+    OCRResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -130,7 +131,7 @@ class DocumentPipeline:
         force_type: Optional[DocumentType] = None,
     ) -> ProcessedDocument:
         """
-        Przetwarza pojedynczy plik (obraz lub PDF).
+        Przetwarza pojedynczy plik (obraz, PDF, XML, HTML lub TXT).
 
         Args:
             file_path: Ścieżka do pliku
@@ -142,30 +143,62 @@ class DocumentPipeline:
         file_path = Path(file_path)
         logger.info(f"Processing: {file_path}")
 
-        # 1. OCR
-        ocr_result = self.ocr.process(file_path)
+        suffix = file_path.suffix.lower()
+        
+        # 1. Pozyskanie tekstu (z OCR lub bezpośrednio z pliku)
+        if suffix in ['.pdf', '.png', '.jpg', '.jpeg', '.bmp', '.tiff']:
+            ocr_result = self.ocr.process(file_path)
 
-        # Dla PDF bierz pierwszą stronę (lub połącz)
-        if isinstance(ocr_result, list):
-            if len(ocr_result) == 0:
-                raise ValueError(f"No pages found in PDF: {file_path}")
-            # Połącz tekst ze wszystkich stron
-            combined_text = "\n\n".join(r.full_text for r in ocr_result)
-            combined_lines = []
-            for r in ocr_result:
-                combined_lines.extend(r.lines)
+            # Dla PDF bierz pierwszą stronę (lub połącz)
+            if isinstance(ocr_result, list):
+                if len(ocr_result) == 0:
+                    raise ValueError(f"No pages found in PDF: {file_path}")
+                # Połącz tekst ze wszystkich stron
+                combined_text = "\n\n".join(r.full_text for r in ocr_result)
+                combined_lines = []
+                for r in ocr_result:
+                    combined_lines.extend(r.lines)
 
-            ocr_result = DocumentOCRResult(
-                full_text=combined_text,
-                lines=combined_lines,
-                average_confidence=sum(r.average_confidence for r in ocr_result) / len(ocr_result),
-                engine_used=ocr_result[0].engine_used,
-                source_file=str(file_path),
-                detected_nips=list(set(sum((r.detected_nips for r in ocr_result), []))),
-                detected_amounts=list(set(sum((r.detected_amounts for r in ocr_result), []))),
-                detected_dates=list(set(sum((r.detected_dates for r in ocr_result), []))),
-                detected_invoice_numbers=list(set(sum((r.detected_invoice_numbers for r in ocr_result), []))),
-            )
+                ocr_result = DocumentOCRResult(
+                    full_text=combined_text,
+                    lines=combined_lines,
+                    average_confidence=sum(r.average_confidence for r in ocr_result) / len(ocr_result),
+                    engine_used=ocr_result[0].engine_used,
+                    source_file=str(file_path),
+                    detected_nips=list(set(sum((r.detected_nips for r in ocr_result), []))),
+                    detected_amounts=list(set(sum((r.detected_amounts for r in ocr_result), []))),
+                    detected_dates=list(set(sum((r.detected_dates for r in ocr_result), []))),
+                    detected_invoice_numbers=list(set(sum((r.detected_invoice_numbers for r in ocr_result), []))),
+                )
+        elif suffix in ['.xml', '.html', '.htm', '.txt']:
+            # Czytaj bezpośrednio z pliku
+            try:
+                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                # Usuń tagi HTML/XML dla lepszej ekstrakcji jeśli potrzeba, 
+                # ale DocumentExtractor powinien sobie poradzić z regexami.
+                
+                # Tworzymy mock OCR result
+                ocr_result = DocumentOCRResult(
+                    full_text=content,
+                    lines=[OCRResult(text=content, confidence=1.0)],
+                    average_confidence=1.0,
+                    engine_used=OCREngine.TESSERACT, # Placeholder
+                    source_file=str(file_path)
+                )
+                # Wyciągnij strukturyzowane dane (metoda z BaseOCRProcessor)
+                structured = self.ocr._init_processor().extract_structured_data(content)
+                ocr_result.detected_nips = structured['nips']
+                ocr_result.detected_amounts = structured['amounts']
+                ocr_result.detected_dates = structured['dates']
+                ocr_result.detected_invoice_numbers = structured['invoice_numbers']
+                
+            except Exception as e:
+                logger.error(f"Error reading text file {file_path}: {e}")
+                raise
+        else:
+            raise ValueError(f"Unsupported file format: {suffix}")
 
         # 2. Ekstrakcja danych
         extraction = self.extractor.extract(ocr_result)
@@ -357,15 +390,15 @@ class DocumentPipeline:
 _default_pipeline: Optional[DocumentPipeline] = None
 
 
-def get_pipeline() -> DocumentPipeline:
+def get_pipeline(ocr_engine: OCREngine = OCREngine.PADDLE) -> DocumentPipeline:
     """Zwraca domyślny pipeline (lazy init)."""
     global _default_pipeline
-    if _default_pipeline is None:
-        _default_pipeline = DocumentPipeline()
+    if _default_pipeline is None or _default_pipeline.ocr.preferred_engine != ocr_engine:
+        _default_pipeline = DocumentPipeline(ocr_engine=ocr_engine)
     return _default_pipeline
 
 
-def process_document(file_path: Union[str, Path]) -> ProcessedDocument:
+def process_document(file_path: Union[str, Path], ocr_engine: OCREngine = OCREngine.PADDLE, use_ocr: bool = True) -> ProcessedDocument:
     """
     Przetwarza dokument i zwraca wynik z ID.
 
@@ -373,7 +406,8 @@ def process_document(file_path: Union[str, Path]) -> ProcessedDocument:
         result = process_document("faktura.pdf")
         print(result.document_id)
     """
-    return get_pipeline().process(file_path)
+    # use_ocr is handled inside DocumentPipeline.process based on file extension
+    return get_pipeline(ocr_engine=ocr_engine).process(file_path)
 
 
 def get_document_id(file_path: Union[str, Path]) -> str:

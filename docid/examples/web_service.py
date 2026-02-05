@@ -175,21 +175,22 @@ async def process_document_endpoint(
             if result.extraction:
                 response["extraction"] = {
                     "issuer_nip": result.extraction.issuer_nip,
-                    "recipient_nip": result.extraction.recipient_nip,
+                    "buyer_nip": result.extraction.buyer_nip,
                     "invoice_number": result.extraction.invoice_number,
-                    "issue_date": result.extraction.issue_date,
+                    "document_date": result.extraction.document_date,
                     "gross_amount": result.extraction.gross_amount,
                     "net_amount": result.extraction.net_amount,
                     "vat_amount": result.extraction.vat_amount,
+                    "receipt_number": result.extraction.receipt_number,
                     "cash_register_number": result.extraction.cash_register_number,
                     "contract_number": result.extraction.contract_number,
-                    "party1_nip": result.extraction.party1_nip,
                     "party2_nip": result.extraction.party2_nip,
-                    "contract_date": result.extraction.contract_date
+                    "contract_type": result.extraction.contract_type
                 }
             
+            ocr_text = result.ocr_result.full_text if result.ocr_result else ""
             if format == "verbose":
-                response["ocr_text"] = result.ocr_text[:1000] + "..." if result.ocr_text and len(result.ocr_text) > 1000 else result.ocr_text
+                response["ocr_text"] = ocr_text[:1000] + "..." if len(ocr_text) > 1000 else ocr_text
             
             return response
             

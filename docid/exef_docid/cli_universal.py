@@ -72,44 +72,45 @@ def cmd_process_document(args):
     """Process document with full OCR and extraction"""
     try:
         # Choose OCR engine
-        ocr_engine = None
-        if args.ocr == 'paddle':
-            ocr_engine = OCREngine.PADDLE
-        elif args.ocr == 'tesseract':
+        ocr_engine = OCREngine.PADDLE
+        if args.ocr == 'tesseract':
             ocr_engine = OCREngine.TESSERACT
         
+        # Create pipeline with specific settings
+        pipeline = DocumentPipeline(ocr_engine=ocr_engine)
+        
         # Process document
-        result = process_document(
-            args.file,
-            ocr_engine=ocr_engine,
-            use_ocr=not args.no_ocr
-        )
+        result = pipeline.process(args.file)
         
         # Output format
         if args.format == 'json':
+            ocr_text = result.ocr_result.full_text if result.ocr_result else ""
             output = {
                 'document_id': result.document_id,
                 'document_type': result.document_type.value if result.document_type else None,
                 'confidence': result.ocr_confidence,
                 'extraction': None,
-                'ocr_text': result.ocr_text[:500] + '...' if result.ocr_text and len(result.ocr_text) > 500 else result.ocr_text
+                'ocr_text': ocr_text[:500] + '...' if ocr_text and len(ocr_text) > 500 else ocr_text
             }
             
             if result.extraction:
                 output['extraction'] = {
                     'issuer_nip': result.extraction.issuer_nip,
-                    'recipient_nip': result.extraction.recipient_nip,
+                    'buyer_nip': result.extraction.buyer_nip,
                     'invoice_number': result.extraction.invoice_number,
-                    'issue_date': result.extraction.issue_date,
+                    'issue_date': result.extraction.document_date,
                     'gross_amount': result.extraction.gross_amount,
                     'net_amount': result.extraction.net_amount,
                     'vat_amount': result.extraction.vat_amount,
                     'cash_register_number': result.extraction.cash_register_number,
                     'contract_number': result.extraction.contract_number,
-                    'party1_nip': result.extraction.party1_nip,
+                    'party1_nip': result.extraction.issuer_nip,
                     'party2_nip': result.extraction.party2_nip,
-                    'contract_date': result.extraction.contract_date
+                    'contract_date': result.extraction.document_date
                 }
+            
+            ocr_text = result.ocr_result.full_text if result.ocr_result else ""
+            output['ocr_text'] = ocr_text[:500] + '...' if ocr_text and len(ocr_text) > 500 else ocr_text
             
             print(json.dumps(output, indent=2, ensure_ascii=False))
         else:
@@ -119,28 +120,31 @@ def cmd_process_document(args):
             if result.document_type:
                 print(f"📋 Typ: {result.document_type.value}")
             print(f"🎯 Pewność OCR: {result.ocr_confidence:.2%}")
+            if args.verbose:
+                print(f"🔗 Canonical: {result.canonical_string}")
             
             if result.extraction:
                 print("\n📊 Wyekstrahowane dane:")
                 if result.extraction.issuer_nip:
                     print(f"  NIP sprzedawcy: {result.extraction.issuer_nip}")
-                if result.extraction.recipient_nip:
-                    print(f"  NIP nabywcy: {result.extraction.recipient_nip}")
+                if result.extraction.buyer_nip:
+                    print(f"  NIP nabywcy: {result.extraction.buyer_nip}")
                 if result.extraction.invoice_number:
                     print(f"  Numer faktury: {result.extraction.invoice_number}")
-                if result.extraction.issue_date:
-                    print(f"  Data: {result.extraction.issue_date}")
+                if result.extraction.document_date:
+                    print(f"  Data: {result.extraction.document_date}")
                 if result.extraction.gross_amount:
                     print(f"  Kwota brutto: {result.extraction.gross_amount}")
                 if result.extraction.cash_register_number:
                     print(f"  Kasa fiskalna: {result.extraction.cash_register_number}")
                 if result.extraction.contract_number:
                     print(f"  Numer umowy: {result.extraction.contract_number}")
-                if result.extraction.party1_nip and result.extraction.party2_nip:
-                    print(f"  Strony umowy: {result.extraction.party1_nip} ↔ {result.extraction.party2_nip}")
+                if result.extraction.issuer_nip and result.extraction.party2_nip:
+                    print(f"  Strony umowy: {result.extraction.issuer_nip} ↔ {result.extraction.party2_nip}")
             
-            if args.verbose and result.ocr_text:
-                print(f"\n📝 Tekst OCR:\n{result.ocr_text}")
+            ocr_text = result.ocr_result.full_text if result.ocr_result else ""
+            if args.verbose and ocr_text:
+                print(f"\n📝 Tekst OCR:\n{ocr_text}")
         
         return 0
     except Exception as e:
@@ -155,7 +159,8 @@ def cmd_verify_id(args):
             is_valid = verify_universal_document_id(args.file, args.id)
         else:
             # Use pipeline to verify business ID
-            result = process_document(args.file, use_ocr=not args.no_ocr)
+            pipeline = get_pipeline()
+            result = pipeline.process(args.file)
             is_valid = result.document_id == args.id
         
         print(f"✅ Poprawny" if is_valid else "❌ Niepoprawny")
@@ -166,9 +171,21 @@ def cmd_verify_id(args):
 
 
 def cmd_compare_documents(args):
-    """Compare two documents"""
+    """Compare two documents (Universal and Business)"""
     try:
+        # 1. Universal comparison
         comparison = compare_universal_documents(args.file1, args.file2)
+        
+        # 2. Business ID comparison (using pipeline)
+        pipeline = get_pipeline()
+        res1 = pipeline.process(args.file1)
+        res2 = pipeline.process(args.file2)
+        
+        comparison['business_id1'] = res1.document_id
+        comparison['business_id2'] = res2.document_id
+        comparison['canonical1'] = res1.canonical_string
+        comparison['canonical2'] = res2.canonical_string
+        comparison['identical_business_ids'] = res1.document_id == res2.document_id
         
         if args.format == 'json':
             print(json.dumps(comparison, indent=2, ensure_ascii=False))
@@ -176,11 +193,38 @@ def cmd_compare_documents(args):
             print(f"📄 Porównanie dokumentów:")
             print(f"  Plik 1: {args.file1}")
             print(f"  Plik 2: {args.file2}")
-            print(f"\n📊 Wyniki:")
-            print(f"  Identyczne ID: {'✅' if comparison['identical_ids'] else '❌'}")
+            
+            print(f"\n✨ WYNIK: {'✅ DOKUMENTY IDENTYCZNE' if comparison['identical_business_ids'] else '❌ DOKUMENTY RÓŻNE'}")
+            
+            print(f"\n🏢 Identyfikatory Biznesowe (OCR - spójne między formatami):")
+            print(f"  Identyczne: {'✅' if comparison['identical_business_ids'] else '❌'}")
+            print(f"  ID1: {res1.document_id}")
+            print(f"  ID2: {res2.document_id}")
+            
+            if not comparison['identical_business_ids']:
+                print(f"\n🔍 Analiza różnic (Dane kanoniczne):")
+                c1 = res1.canonical_string.split('|')
+                c2 = res2.canonical_string.split('|')
+                labels = ["NIP", "Numer", "Data", "Kwota", "Dodatkowe"]
+                
+                for i in range(max(len(c1), len(c2))):
+                    val1 = c1[i] if i < len(c1) else "BRAK"
+                    val2 = c2[i] if i < len(c2) else "BRAK"
+                    label = labels[i] if i < len(labels) else f"Pole {i+1}"
+                    
+                    status = "✅" if val1 == val2 else "❌"
+                    print(f"  {status} {label:10}: {val1} vs {val2}")
+            
+            if res1.document_type:
+                print(f"\n📋 Typ: {res1.document_type.value}")
+
+            print(f"\n🌍 Identyfikatory Uniwersalne (Cechy pliku - czułe na format):")
+            print(f"  Identyczne: {'✅' if comparison['identical_ids'] else '❌'}")
             print(f"  ID1: {comparison['id1']}")
             print(f"  ID2: {comparison['id2']}")
-            print(f"  Ten sam typ: {'✅' if comparison['same_type'] else '❌'}")
+            
+            print(f"\n📊 Szczegóły techniczne:")
+            print(f"  Ten sam typ pliku: {'✅' if comparison['same_type'] else '❌'}")
             print(f"  Ten sam rozmiar: {'✅' if comparison['same_size'] else '❌'}")
             print(f"  Ten sam hash treści: {'✅' if comparison['same_content_hash'] else '❌'}")
             if comparison.get('same_visual_hash') is not None:
@@ -198,10 +242,8 @@ def cmd_batch_process(args):
     """Process multiple documents"""
     try:
         # Choose OCR engine
-        ocr_engine = None
-        if args.ocr == 'paddle':
-            ocr_engine = OCREngine.PADDLE
-        elif args.ocr == 'tesseract':
+        ocr_engine = OCREngine.PADDLE
+        if args.ocr == 'tesseract':
             ocr_engine = OCREngine.TESSERACT
         
         # Get files
@@ -219,14 +261,14 @@ def cmd_batch_process(args):
         print(f"📁 Przetwarzanie {len(files)} plików z {args.directory}")
         
         # Process files
-        pipeline = get_pipeline(ocr_engine=ocr_engine)
+        pipeline = DocumentPipeline(ocr_engine=ocr_engine)
         results = []
         
         for i, file_path in enumerate(files, 1):
             try:
                 print(f"\n[{i}/{len(files)}] 📄 {file_path.name}", end="")
                 
-                result = pipeline.process_file(str(file_path), use_ocr=not args.no_ocr)
+                result = pipeline.process(str(file_path))
                 results.append(result)
                 
                 print(f" → {result.document_id}")
@@ -350,7 +392,12 @@ def cmd_test_determinism(args):
             if args.universal:
                 doc_id = generate_universal_document_id(args.file)
             else:
-                result = process_document(args.file, use_ocr=not args.no_ocr)
+                # Use pipeline with specified OCR engine
+                ocr_engine = OCREngine.PADDLE
+                if args.ocr == 'tesseract':
+                    ocr_engine = OCREngine.TESSERACT
+                
+                result = process_document(args.file, ocr_engine=ocr_engine)
                 doc_id = result.document_id
             
             ids.append(doc_id)
@@ -411,8 +458,7 @@ def main():
     parser_proc = subparsers.add_parser('process', help='Przetwarzaj dokument z OCR')
     parser_proc.add_argument('file', help='Ścieżka do pliku')
     parser_proc.add_argument('--format', choices=['text', 'json'], default='text', help='Format wyjściowy')
-    parser_proc.add_argument('--ocr', choices=['paddle', 'tesseract'], default='paddle', help='Silnik OCR')
-    parser_proc.add_argument('--no-ocr', action='store_true', help='Wyłącz OCR')
+    parser_proc.add_argument('--ocr', choices=['paddle', 'tesseract', 'auto'], default='auto', help='Silnik OCR (domyślnie auto)')
     parser_proc.add_argument('-v', '--verbose', action='store_true', help='Szczegółowe informacje')
     parser_proc.set_defaults(func=cmd_process_document)
     
@@ -434,8 +480,7 @@ def main():
     parser_batch = subparsers.add_parser('batch', help='Przetwarzaj wsadowe dokumenty')
     parser_batch.add_argument('directory', help='Folder z dokumentami')
     parser_batch.add_argument('--output', '-o', help='Plik wyjściowy (JSON)')
-    parser_batch.add_argument('--ocr', choices=['paddle', 'tesseract'], default='paddle', help='Silnik OCR')
-    parser_batch.add_argument('--no-ocr', action='store_true', help='Wyłącz OCR')
+    parser_batch.add_argument('--ocr', choices=['paddle', 'tesseract', 'auto'], default='auto', help='Silnik OCR (domyślnie auto)')
     parser_batch.add_argument('--recursive', '-r', action='store_true', help='Przetwarzaj rekurencyjnie')
     parser_batch.add_argument('--duplicates', '-d', action='store_true', help='Pokaż duplikaty')
     parser_batch.add_argument('--continue-on-error', action='store_true', help='Kontynuuj przy błędach')
@@ -453,7 +498,7 @@ def main():
     parser_test.add_argument('file', help='Ścieżka do pliku')
     parser_test.add_argument('--iterations', '-n', type=int, default=10, help='Liczba iteracji')
     parser_test.add_argument('--universal', action='store_true', help='Uniwersalne ID')
-    parser_test.add_argument('--no-ocr', action='store_true', help='Wyłącz OCR')
+    parser_test.add_argument('--ocr', choices=['paddle', 'tesseract', 'auto'], default='auto', help='Silnik OCR (domyślnie auto)')
     parser_test.add_argument('-v', '--verbose', action='store_true', help='Pokaż wszystkie iteracje')
     parser_test.set_defaults(func=cmd_test_determinism)
     

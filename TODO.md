@@ -57,3 +57,41 @@ PRO:
 - multikonta, różne NIP
 - gmail/ms/AciveDirectory
 - 
+
+
+
+
+wysyłka hasła na e-mail -> SMS
+
+Export:
+Szablon kosztowe - jak księgowania dla ksiąg rachunkowych,
+KPiR - rejestr VAT zakupu  i sprzedaży
+import do KPiR
+do rejestru zakupow
+i sprzedaży
+
+
+Symfonia
+Optima 
+Subjekt
+wfirma
+
+nowa firma
+czy za rok będą
+
+
+Serwer na baza per podmiot
+backup na obu serwerach: klienta i naszym
+
+
+Dokumentacja:
+
+Synchronizacja
+Wersja 
+Zdefiniowanie nowego importu, exportu
+jak robić importy, eksporty 
+
+Musimy mieć w programie dokumentacje przy eksporcie
+help online pod url... zobacz szczegóły - video online
+
+docs.exef.pl/

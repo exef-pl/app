@@ -59,6 +59,42 @@ class UniversalDocumentIDGenerator:
     def __init__(self, prefix: str = "UNIV"):
         self.prefix = prefix
     
+    def _calculate_visual_hash(self, img: Any) -> Optional[str]:
+        """
+        Calculate robust visual hash for image consistency across formats.
+        Uses perceptual-like approach: grayscale -> resize -> normalize.
+        """
+        if not PIL_AVAILABLE:
+            return None
+        
+        try:
+            from PIL import Image, ImageOps
+            # 1. Convert to grayscale
+            if img.mode != 'L':
+                img = img.convert('L')
+            
+            # 2. Pad to square to handle different aspect ratios consistently
+            width, height = img.size
+            max_side = max(width, height)
+            img = ImageOps.pad(img, (max_side, max_side), color=255) # White padding for grayscale
+            
+            # 3. Resize to small fixed size (32x32)
+            img_small = img.resize((32, 32), Image.Resampling.LANCZOS)
+            
+            # 4. Get pixel data and calculate average
+            pixels = list(img_small.getdata())
+            avg = sum(pixels) / len(pixels)
+            
+            # 5. Generate bit string
+            bits = "".join(['1' if p >= avg else '0' for p in pixels])
+            
+            # 6. Convert bits to hex
+            hex_hash = hex(int(bits, 2))[2:].zfill(len(bits)//4)
+            return hashlib.sha256(hex_hash.encode()).hexdigest()[:16]
+        except Exception as e:
+            logger.debug(f"Visual hash calculation failed: {e}")
+            return None
+
     def extract_pdf_features(self, file_path: Union[str, Path]) -> UniversalDocumentFeatures:
         """Extract features from PDF documents"""
         if not PYMUPDF_AVAILABLE:
@@ -114,9 +150,10 @@ class UniversalDocumentIDGenerator:
             visual_hash = None
             try:
                 first_page = doc[0]
-                pix = first_page.get_pixmap(matrix=fitz.Matrix(0.5, 0.5))  # Lower resolution for hash
-                img_data = pix.tobytes("png")
-                visual_hash = hashlib.sha256(img_data).hexdigest()[:16]
+                # Render at fixed resolution (e.g. 72 DPI)
+                pix = first_page.get_pixmap(matrix=fitz.Matrix(1.0, 1.0))
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                visual_hash = self._calculate_visual_hash(img)
             except:
                 pass
             
@@ -156,9 +193,7 @@ class UniversalDocumentIDGenerator:
             mode = img.mode
             
             # Visual hash
-            # Resize to standard size for consistent hashing
-            img_resized = img.resize((64, 64), Image.Resampling.LANCZOS)
-            visual_hash = hashlib.sha256(img_resized.tobytes()).hexdigest()[:16]
+            visual_hash = self._calculate_visual_hash(img)
             
             # Color histogram hash
             histogram = img.histogram()

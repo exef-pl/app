@@ -1,5 +1,5 @@
 project: exef3
-generated: "2026-02-04T15:51:57.137303"
+generated: "2026-02-04T19:34:40.556559"
 modules[25]{path,lang,items}:
   test_smtp_server.py,python,5
   test_api.py,python,1
@@ -30,11 +30,11 @@ modules[25]{path,lang,items}:
 function_details:
   test_smtp_server.py:
     functions[5]{name,kind,sig,loc,async,lines,cc,does}:
-      run_smtp_server,function,() -> None,76-89,false,14,1,Run the SMTP server in a separate thread.
-      TestSMTPServer.__init__,method,"(host='localhost', port=1025) -> None",14-19,false,6,1,creates
-      TestSMTPServer.process_message,method,"(peer, mailfrom, rcpttos, data) -> None",21-49,false,29,3,Process incoming email and save to file.
-      TestSMTPServer._extract_subject,method,(email_text) -> None,51-57,false,7,3,Extract subject from email text.
-      TestSMTPServer._extract_magic_link,method,(email_text) -> None,59-74,false,16,3,Extract magic link from email text.
+      run_smtp_server,function,() -> None,78-99,false,22,3,Run the SMTP server.
+      TestSMTPHandler.__init__,method,(email_dir='./test_emails') -> None,14-18,false,5,1,creates
+      TestSMTPHandler.handle_DATA,method,"(server, session, envelope) -> None",20-53,true,34,4,Handle incoming email data.
+      TestSMTPHandler._extract_subject,method,(email_text) -> None,55-61,false,7,3,Extract subject from email text.
+      TestSMTPHandler._extract_magic_link,method,(email_text) -> None,63-76,false,14,3,Extract magic link from email text.
   test_api.py:
     functions[1]{name,kind,sig,loc,async,lines,cc,does}:
       test_api,function,() -> None,9-79,false,71,4,checks api
@@ -63,7 +63,7 @@ function_details:
       health,function,() -> None,47-48,false,2,1,health
   backend/app/core/config.py:
     functions[1]{name,kind,sig,loc,async,lines,cc,does}:
-      get_settings,function,() -> Settings,28-29,false,2,1,retrieves settings
+      get_settings,function,() -> Settings,37-38,false,2,1,retrieves settings
   backend/app/core/email.py:
     functions[3]{name,kind,sig,loc,async,lines,cc,does}:
       EmailService.__init__,method,() -> None,16-22,false,7,1,creates

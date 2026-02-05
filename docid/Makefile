@@ -108,6 +108,17 @@ generate-universal-samples:
 test-universal:
 	source venv/bin/activate && python test_universal_documents.py
 
+test-cli:
+	source venv/bin/activate && python test_cli.py
+
+# Web Service
+run-web:
+	source venv/bin/activate && python examples/web_service.py
+
+# Quality Tests
+test-quality:
+	source venv/bin/activate && python examples/quality_test.py $(FILE) --all
+
 # Package management
 build:
 	source venv/bin/activate && python -m build

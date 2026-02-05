@@ -135,45 +135,110 @@ is_valid = verify_document_id("skan.png", "EXEF-FV-F0BE35240C77B2DB")
 print(is_valid)  # True/False
 ```
 
+## 🖥️ Interfejs CLI (docid-universal)
+
+Projekt dostarcza potężne narzędzie CLI `docid-universal`, które udostępnia wszystkie funkcjonalności pakietu.
+
+### Podstawowe komendy
+
+```bash
+# Generowanie ID dla faktury (dane ręczne)
+docid-universal generate invoice --nip 5213017228 --number FV/2025/00142 --date 2025-01-15 --amount 1230.50
+
+# Generowanie uniwersalnego ID dla pliku
+docid-universal universal dokument.pdf
+
+# Przetwarzanie dokumentu z OCR i ekstrakcją danych
+docid-universal process samples/invoices/faktura_full.jpg --format json
+
+# Analiza cech pliku (rozmiar, hashe, metadane)
+docid-universal analyze samples/invoices/faktura_full.png
+
+# Porównanie dwóch dokumentów
+docid-universal compare samples/invoices/faktura_full.jpg samples/invoices/faktura_full.pdf
+```
+
+### Przetwarzanie wsadowe (Batch)
+
+Możesz przetworzyć cały folder dokumentów i automatycznie wykryć duplikaty:
+
+```bash
+docid-universal batch ./scany --recursive --duplicates --output wyniki.json
+```
+
+### Testowanie determinizmu
+
+Sprawdź, czy generator zwraca zawsze ten sam ID dla tego samego pliku:
+
+```bash
+docid-universal test faktura.pdf --iterations 10
+```
+
+## 🌐 Usługa Web (REST API)
+
+Możesz łatwo uruchomić `docid` jako usługę webową (wymaga `fastapi` i `uvicorn`):
+
+### Uruchomienie serwera
+```bash
+make run-web
+# Serwer wystartuje na http://localhost:8000
+```
+
+### Przykłady CURL
+
+**1. Generowanie ID z pliku:**
+```bash
+curl -X POST -F "file=@faktura.pdf" http://localhost:8000/process
+```
+
+**2. Weryfikacja ID:**
+```bash
+curl -X POST -F "file=@skan.jpg" -F "document_id=EXEF-FV-F0BE35240C77B2DB" http://localhost:8000/verify
+```
+
+**3. Porównywanie plików:**
+```bash
+curl -X POST -F "file1=@plik1.pdf" -F "file2=@plik2.png" http://localhost:8000/compare
+```
+
+## 🧪 Testy Jakości i OCR
+
+Pakiet zawiera zaawansowane narzędzia do testowania odporności ID na zniekształcenia obrazu (szumy, kompresja stratna).
+
+### Test odporności na szumy
+```bash
+# Testuje determinizm ID przy dodawaniu szumu, rozmycia i zmianie jasności
+python examples/quality_test.py samples/invoices/faktura_full.png --noise --iterations 5
+```
+
+### Test formatów stratnych (JPG vs PNG)
+```bash
+# Sprawdza czy ID pozostaje spójne mimo kompresji stratnej
+python examples/quality_test.py samples/invoices/faktura_full.png --formats
+```
+
+### Uruchomienie przez Makefile
+```bash
+make test-quality FILE=samples/invoices/faktura_full.png
+```
+
 ## 🛠️ Makefile - Wszystkie komendy
 
-### Instalacja
+### Instalacja i Budowanie
 ```bash
 make install          # Instalacja projektu
 make install-all      # Instalacja z wszystkimi zależnościami OCR
-make build            # Budowanie paczki
-make upload           # Publikacja na PyPI
+make build            # Budowanie paczki (wymaga 'build')
+make upload           # Publikacja na PyPI (wymaga 'twine')
 ```
 
-### Testy
+### Testy i Narzędzia
 ```bash
 make test             # Uruchom wszystkie testy
-make test-samples     # Test próbek (determinizm)
-make test-all-formats # Test wszystkich formatów
-make test-complete-formats # Test PDF, PNG, JPG, HTML, TXT, XML
+make test-cli         # Test interfejsu CLI
 make test-universal   # Test dokumentów uniwersalnych
-```
-
-### Generowanie próbek
-```bash
-make generate-samples         # Generuj 10 przykładowych ID
-make generate-image-samples   # Generuj PDF, PNG, JPG próbki
-make generate-universal-samples # Generuj PDF z grafiką, zdjęcia, wektory
-```
-
-### Jakość kodu
-```bash
-make lint            # Sprawdź kod (ruff)
-make format          # Formatuj kod (black)
-make type-check      # Sprawdź typy (mypy)
-make check           # Wszystkie sprawdzenia
-make clean           # Wyczyść pliki tymczasowe
-```
-
-### Demo
-```bash
-make run-demo        # Uruchom podstawowe demo
-make run-complete-demo # Uruchom pełne demo
+make test-quality FILE=plik.png # Test jakości OCR
+make run-web          # Uruchom serwer API
 ```
 
 ## 📚 Przykłady użycia

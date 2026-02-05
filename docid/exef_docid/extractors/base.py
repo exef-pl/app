@@ -105,11 +105,11 @@ class BaseExtractor(ABC):
         if not date_str:
             return ""
 
-        # Różne formaty
+        # Różne formaty - sprawdzamy od najdłuższych z granicami słów
         patterns = [
-            (r'(\d{4})[/\-\.](\d{2})[/\-\.](\d{2})', r'\1-\2-\3'),  # YYYY-MM-DD
-            (r'(\d{2})[/\-\.](\d{2})[/\-\.](\d{4})', r'\3-\2-\1'),  # DD-MM-YYYY
-            (r'(\d{2})[/\-\.](\d{2})[/\-\.](\d{2})', lambda m: f'20{m.group(3)}-{m.group(2)}-{m.group(1)}'),  # DD-MM-YY
+            (r'\b(\d{4})[/\-\.](\d{2})[/\-\.](\d{2})\b', r'\1-\2-\3'),  # YYYY-MM-DD
+            (r'\b(\d{2})[/\-\.](\d{2})[/\-\.](\d{4})\b', r'\3-\2-\1'),  # DD-MM-YYYY
+            (r'\b(\d{2})[/\-\.](\d{2})[/\-\.](\d{2})\b', lambda m: f'20{m.group(3)}-{m.group(2)}-{m.group(1)}'),  # DD-MM-YY
         ]
 
         for pattern, replacement in patterns:
@@ -188,14 +188,15 @@ class InvoiceExtractor(BaseExtractor):
 
     def _find_invoice_number(self, text: str, detected: List[str]) -> Optional[str]:
         """Znajduje numer faktury."""
-        # Szukaj w kontekście
+        # Szukaj w kontekście - wymaga przynajmniej jednej cyfry
+        # Używamy (?i) dla case-insensitive i upewniamy się, że słowa kluczowe nie zjadają prefiksów
         patterns = [
-            r'(?:faktura|fv|rachunek)\s*(?:vat)?\s*(?:nr|numer)?[:\s]*([A-Z0-9\/\-]+)',
-            r'(?:nr|numer)\s*(?:faktury|fv)?[:\s]*([A-Z0-9\/\-]+)',
+            r'(?i)\b(?:faktura|fv|rachunek|dokumentu)\b\s*(?:vat)?\s*(?:nr|numer)?[:\s]+([A-Z0-9\/\-]*\d+[A-Z0-9\/\-]*)',
+            r'(?i)\b(?:nr|numer)\b\s*(?:faktury|fv|dokumentu)?[:\s]+([A-Z0-9\/\-]*\d+[A-Z0-9\/\-]*)',
         ]
 
         for pattern in patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
+            match = re.search(pattern, text)
             if match:
                 return match.group(1).strip().upper()
 
@@ -204,14 +205,15 @@ class InvoiceExtractor(BaseExtractor):
 
     def _find_issue_date(self, text: str, detected: List[str]) -> Optional[str]:
         """Znajduje datę wystawienia."""
+        # Szukaj w kontekście - wspiera YYYY-MM-DD i DD-MM-YYYY
         patterns = [
-            r'data\s*wystawienia[:\s]*(\d{2}[.\-/]\d{2}[.\-/]\d{4})',
-            r'wystawion[ao]\s*(?:dnia)?[:\s]*(\d{2}[.\-/]\d{2}[.\-/]\d{4})',
-            r'data[:\s]*(\d{2}[.\-/]\d{2}[.\-/]\d{4})',
+            r'(?i)data\s*wystawienia[:\s]*(\d{2,4}[.\-/]\d{2}[.\-/]\d{2,4})',
+            r'(?i)wystawion[ao]\s*(?:dnia)?[:\s]*(\d{2,4}[.\-/]\d{2}[.\-/]\d{2,4})',
+            r'(?i)data[:\s]*(\d{2,4}[.\-/]\d{2}[.\-/]\d{2,4})',
         ]
 
         for pattern in patterns:
-            match = re.search(pattern, text, re.IGNORECASE)
+            match = re.search(pattern, text)
             if match:
                 return self._normalize_date(match.group(1))
 

@@ -128,9 +128,9 @@ class BaseOCRProcessor(ABC):
     def _find_dates(self, text: str) -> List[str]:
         """Znajduje daty w tekście."""
         patterns = [
-            r'(\d{2}[-\.\/]\d{2}[-\.\/]\d{4})',  # DD-MM-YYYY
-            r'(\d{4}[-\.\/]\d{2}[-\.\/]\d{2})',  # YYYY-MM-DD
-            r'(\d{2}[-\.\/]\d{2}[-\.\/]\d{2})',  # DD-MM-YY
+            r'\b(\d{2}[-\.\/]\d{2}[-\.\/]\d{4})\b',  # DD-MM-YYYY
+            r'\b(\d{4}[-\.\/]\d{2}[-\.\/]\d{2})\b',  # YYYY-MM-DD
+            r'\b(\d{2}[-\.\/]\d{2}[-\.\/]\d{2})\b',  # DD-MM-YY
         ]
 
         results = []
@@ -458,51 +458,56 @@ class OCRProcessor:
         if self._processor is not None:
             return self._processor
 
-        # Próbuj preferowany silnik
-        try:
-            if self.preferred_engine == OCREngine.PADDLE:
-                self._processor = PaddleOCRProcessor(
-                    lang=self.lang,
-                    use_gpu=self.use_gpu,
-                )
-                self._active_engine = OCREngine.PADDLE
-                logger.info("Using PaddleOCR engine")
-                return self._processor
-            elif self.preferred_engine == OCREngine.TESSERACT:
-                self._processor = TesseractOCRProcessor(
-                    lang='pol+eng' if self.lang == 'pl' else self.lang,
-                )
-                self._active_engine = OCREngine.TESSERACT
-                logger.info("Using Tesseract engine")
-                return self._processor
-        except ImportError as e:
-            logger.warning(f"Preferred engine {self.preferred_engine} not available: {e}")
+        # Lista silników do wypróbowania w kolejności
+        engines_to_try = []
+        
+        # 1. Dodaj preferowany silnik
+        engines_to_try.append(self.preferred_engine)
+        
+        # 2. Dodaj fallback jeśli inny
+        if self.fallback_engine != self.preferred_engine:
+            engines_to_try.append(self.fallback_engine)
+            
+        # 3. Dodaj pozostałe jako ostatnia deska ratunku
+        for eng in OCREngine:
+            if eng not in engines_to_try:
+                engines_to_try.append(eng)
 
-        # Fallback
-        try:
-            if self.fallback_engine == OCREngine.TESSERACT:
-                self._processor = TesseractOCRProcessor(
-                    lang='pol+eng' if self.lang == 'pl' else self.lang,
-                )
-                self._active_engine = OCREngine.TESSERACT
-                logger.info("Falling back to Tesseract engine")
-                return self._processor
-            elif self.fallback_engine == OCREngine.PADDLE:
-                self._processor = PaddleOCRProcessor(
-                    lang=self.lang,
-                    use_gpu=self.use_gpu,
-                )
-                self._active_engine = OCREngine.PADDLE
-                logger.info("Falling back to PaddleOCR engine")
-                return self._processor
-        except ImportError:
-            raise ImportError(
-                "No OCR engine available. Install PaddleOCR or Tesseract.\n"
-                "PaddleOCR: pip install paddleocr paddlepaddle\n"
-                "Tesseract: apt install tesseract-ocr tesseract-ocr-pol && pip install pytesseract"
-            )
+        last_error = None
+        for engine in engines_to_try:
+            try:
+                if engine == OCREngine.PADDLE:
+                    # Sprawdź czy paddle jest zainstalowany bez importowania wszystkiego
+                    import importlib.util
+                    if importlib.util.find_spec("paddleocr") is None:
+                        raise ImportError("paddleocr not installed")
+                    
+                    self._processor = PaddleOCRProcessor(
+                        lang=self.lang,
+                        use_gpu=self.use_gpu,
+                    )
+                    self._active_engine = OCREngine.PADDLE
+                    logger.info("Using PaddleOCR engine")
+                    return self._processor
+                
+                elif engine == OCREngine.TESSERACT:
+                    self._processor = TesseractOCRProcessor(
+                        lang='pol+eng' if self.lang == 'pl' else self.lang,
+                    )
+                    self._active_engine = OCREngine.TESSERACT
+                    logger.info("Using Tesseract engine")
+                    return self._processor
+            except (ImportError, Exception) as e:
+                logger.warning(f"Engine {engine} not available: {e}")
+                last_error = e
+                continue
 
-        raise RuntimeError("No OCR engine could be initialized")
+        raise ImportError(
+            f"No OCR engine available. Last error: {last_error}. "
+            "Install PaddleOCR or Tesseract.\n"
+            "PaddleOCR: pip install paddleocr paddlepaddle\n"
+            "Tesseract: apt install tesseract-ocr tesseract-ocr-pol && pip install pytesseract"
+        )
 
     @property
     def active_engine(self) -> Optional[OCREngine]:
