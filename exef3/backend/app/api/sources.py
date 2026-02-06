@@ -1,4 +1,5 @@
 """API endpoints - źródła danych (import/export) per projekt."""
+import logging
 from uuid import uuid4
 from typing import List, Optional
 from datetime import datetime
@@ -8,6 +9,8 @@ from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
+
+log = logging.getLogger("exef.sources")
 from app.core.docid import generate_doc_id
 from app.models.models import (
     DataSource, ImportRun, ExportRun, Document, DocumentMetadata, DocumentStatus,
@@ -210,7 +213,12 @@ def create_source(
     db.add(source)
     db.commit()
     db.refresh(source)
-    return _source_to_response(source)
+    resp = _source_to_response(source)
+    log.info("CREATE source: id=%s name='%s' type=%s direction=%s project=%s config_keys=%s → Pydantic: %s",
+             source.id[:8], source.name, data.source_type, data.direction, project_id[:8],
+             list((data.config or {}).keys()),
+             resp.model_dump(include={'id','name','source_type','direction','is_active'}))
+    return resp
 
 
 @router.patch("/sources/{source_id}", response_model=DataSourceResponse)
@@ -226,11 +234,13 @@ def update_source(
         raise HTTPException(status_code=404, detail="Źródło nie znalezione")
     _check_project_access(db, source.project_id, identity_id, require_edit=True)
 
+    updated_fields = list(data.model_dump(exclude_unset=True).keys())
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(source, key, value)
 
     db.commit()
     db.refresh(source)
+    log.info("UPDATE source: id=%s fields=%s by=%s", source_id[:8], updated_fields, identity_id[:8])
     return _source_to_response(source)
 
 
@@ -246,6 +256,8 @@ def delete_source(
         raise HTTPException(status_code=404, detail="Źródło nie znalezione")
     _check_project_access(db, source.project_id, identity_id, require_edit=True)
 
+    log.warning("DELETE source: id=%s name='%s' type=%s project=%s by=%s",
+                source_id[:8], source.name, source.source_type, source.project_id[:8], identity_id[:8])
     db.delete(source)
     db.commit()
     return {"status": "deleted"}
@@ -301,12 +313,20 @@ def test_source_connection(
     _check_project_access(db, source.project_id, identity_id)
 
     source_type = source.source_type.value if hasattr(source.source_type, 'value') else str(source.source_type)
+    direction = source.direction.value if hasattr(source.direction, 'value') else str(source.direction)
     config = source.config or {}
 
-    if source_type == "email":
-        return _test_email_connection(config)
-    elif source_type == "ksef":
-        return _test_ksef_connection(config)
+    # Use real adapter for test_connection
+    from app.adapters import get_import_adapter, get_export_adapter
+    AdapterClass = get_import_adapter(source_type) if direction == "import" else get_export_adapter(source_type)
+    log.info("TEST_CONNECTION: source=%s name='%s' type=%s direction=%s adapter=%s config_keys=%s",
+             source_id[:8], source.name, source_type, direction,
+             AdapterClass.__name__ if AdapterClass else "None", list(config.keys()))
+    if AdapterClass:
+        adapter = AdapterClass(config=config, source_name=source.name)
+        result = adapter.test_connection()
+        log.info("TEST_CONNECTION result: source=%s ok=%s message='%s'", source_id[:8], result.get("ok"), result.get("message", "")[:80])
+        return result
     else:
         return {"ok": True, "message": f"Źródło typu '{source_type}' nie wymaga testu połączenia."}
 
@@ -441,17 +461,49 @@ def trigger_import(
         triggered_by_id=identity_id,
     )
 
-    # Mock import — generate sample documents based on source type
-    import random
-    mock_docs = _generate_mock_import(source, task)
+    # Use real adapter to fetch documents
+    from app.adapters import get_import_adapter
+    source_type_str = source.source_type.value if hasattr(source.source_type, 'value') else str(source.source_type)
+    AdapterClass = get_import_adapter(source_type_str)
+
+    log.info("IMPORT START: source=%s name='%s' type=%s adapter=%s task=%s period=%s..%s config_keys=%s by=%s",
+             source.id[:8], source.name, source_type_str,
+             AdapterClass.__name__ if AdapterClass else "MOCK_FALLBACK",
+             task.id[:8], task.period_start, task.period_end,
+             list((source.config or {}).keys()), identity_id[:8])
+
+    if AdapterClass:
+        adapter = AdapterClass(config=source.config or {}, source_name=source.name)
+        import_results = adapter.fetch(
+            period_start=task.period_start,
+            period_end=task.period_end,
+        )
+        log.info("IMPORT FETCH: adapter=%s returned %d results", AdapterClass.__name__, len(import_results))
+    else:
+        # Fallback to mock for unknown source types
+        log.warning("IMPORT FALLBACK: no adapter for type='%s', using mock generator", source_type_str)
+        import_results = []
+        for d in _generate_mock_import(source, task):
+            from app.adapters.base import ImportResult
+            import_results.append(ImportResult(**{k: v for k, v in d.items() if k != 'status'}))
 
     created_count = 0
-    for doc_data in mock_docs:
+    for result in import_results:
+        doc_dict = result.to_dict() if hasattr(result, 'to_dict') else result
+        # Remove non-Document fields
+        description = doc_dict.pop('description', None)
+        category = doc_dict.pop('category', None)
+        original_filename = doc_dict.pop('original_filename', None)
+        status_val = doc_dict.pop('status', None)
+
         doc = Document(
             id=str(uuid4()),
             task_id=task.id,
-            **doc_data,
+            status=DocumentStatus.NEW,
+            **doc_dict,
         )
+        if original_filename:
+            doc.file_path = original_filename
         doc.doc_id = generate_doc_id(
             contractor_nip=doc.contractor_nip,
             number=doc.number,
@@ -460,6 +512,22 @@ def trigger_import(
             doc_type=doc.doc_type or 'invoice',
         )
         db.add(doc)
+        log.debug("IMPORT DOC: id=%s number='%s' contractor='%s' gross=%s date=%s source_id=%s doc_id=%s",
+                  doc.id[:8], doc.number, doc.contractor_name, doc.amount_gross, doc.document_date, doc.source_id, doc.doc_id)
+
+        # Always create metadata row so tags/category are available in UI
+        meta = DocumentMetadata(
+            id=str(uuid4()),
+            document_id=doc.id,
+            description=description,
+            category=category,
+            tags=[],
+            edited_by_id=identity_id,
+            edited_at=datetime.utcnow(),
+        )
+        db.add(meta)
+        log.debug("IMPORT META: doc=%s category='%s' description='%s'", doc.id[:8], category, (description or "")[:50])
+
         created_count += 1
 
     # Update task stats
@@ -471,7 +539,7 @@ def trigger_import(
 
     # Update run
     run.status = "success"
-    run.docs_found = len(mock_docs)
+    run.docs_found = len(import_results)
     run.docs_imported = created_count
     run.finished_at = datetime.utcnow()
     db.add(run)
@@ -483,6 +551,8 @@ def trigger_import(
 
     db.commit()
     db.refresh(run)
+    log.info("IMPORT DONE: source=%s task=%s found=%d imported=%d run=%s status=%s",
+             source.id[:8], task.id[:8], run.docs_found, run.docs_imported, run.id[:8], run.status)
     return run
 
 
@@ -706,12 +776,30 @@ def trigger_export(
             "docs_exported": 0,
         }
 
-    # Generate export content (mock)
-    format_info = EXPORT_FORMAT_INFO.get(
-        source.source_type.value if hasattr(source.source_type, 'value') else str(source.source_type),
-        {"name": "CSV", "format": "csv"}
-    )
-    output_content, output_filename = _generate_mock_export(source, docs, task)
+    # Generate export content using real adapter
+    from app.adapters import get_export_adapter
+    source_type_str = source.source_type.value if hasattr(source.source_type, 'value') else str(source.source_type)
+    ExportAdapterClass = get_export_adapter(source_type_str)
+
+    log.info("EXPORT START: source=%s name='%s' type=%s adapter=%s task=%s docs_count=%d config_keys=%s by=%s",
+             source.id[:8], source.name, source_type_str,
+             ExportAdapterClass.__name__ if ExportAdapterClass else "MOCK_FALLBACK",
+             task.id[:8], len(docs), list((source.config or {}).keys()), identity_id[:8])
+
+    if ExportAdapterClass:
+        adapter = ExportAdapterClass(config=source.config or {}, source_name=source.name)
+        export_result = adapter.export(docs, task_name=task.name)
+        output_content = export_result.content
+        output_filename = export_result.filename
+        output_format = export_result.format
+        log.info("EXPORT GENERATED: adapter=%s filename='%s' format=%s content_size=%d bytes",
+                 ExportAdapterClass.__name__, output_filename, output_format, len(output_content))
+    else:
+        # Fallback to mock
+        log.warning("EXPORT FALLBACK: no adapter for type='%s', using mock generator", source_type_str)
+        format_info = EXPORT_FORMAT_INFO.get(source_type_str, {"name": "CSV", "format": "csv"})
+        output_content, output_filename = _generate_mock_export(source, docs, task)
+        output_format = format_info["format"]
 
     # Mark documents as exported
     exported_count = 0
@@ -734,7 +822,7 @@ def trigger_export(
         task_id=task.id,
         status="success",
         docs_exported=exported_count,
-        output_format=format_info["format"],
+        output_format=output_format,
         output_filename=output_filename,
         output_content=output_content,
         finished_at=datetime.utcnow(),
@@ -749,6 +837,8 @@ def trigger_export(
 
     db.commit()
     db.refresh(run)
+    log.info("EXPORT DONE: source=%s task=%s exported=%d filename='%s' format=%s run=%s",
+             source.id[:8], task.id[:8], exported_count, output_filename, output_format, run.id[:8])
     return run
 
 
@@ -788,16 +878,27 @@ def download_export(
     identity_id: str = Depends(get_current_identity_id),
     db: Session = Depends(get_db),
 ):
-    """Pobiera plik eksportu."""
+    """Pobiera plik eksportu jako plik do pobrania."""
+    from fastapi.responses import Response
+
     run = db.query(ExportRun).filter(ExportRun.id == run_id).first()
     if not run:
         raise HTTPException(status_code=404, detail="Eksport nie znaleziony")
     _check_project_access(db, run.source.project_id, identity_id)
-    return {
-        "filename": run.output_filename,
-        "format": run.output_format,
-        "content": run.output_content,
-    }
+
+    if not run.output_content:
+        raise HTTPException(status_code=404, detail="Brak treści eksportu")
+
+    content_type = "text/xml; charset=utf-8" if run.output_format == "xml" else "text/csv; charset=utf-8"
+    filename = run.output_filename or f"export.{run.output_format or 'csv'}"
+
+    return Response(
+        content=run.output_content,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

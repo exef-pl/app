@@ -1,4 +1,5 @@
 """API endpoints - podmioty (entities)."""
+import logging
 from uuid import uuid4
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException
@@ -11,6 +12,8 @@ from app.schemas.schemas import (
     EntityCreate, EntityUpdate, EntityResponse, EntityDetail,
     EntityMemberCreate, EntityMemberResponse
 )
+
+log = logging.getLogger("exef.entities")
 
 router = APIRouter(prefix="/entities", tags=["entities"])
 
@@ -36,6 +39,7 @@ def list_entities(
     if not include_archived:
         result = [e for e in result if not e.is_archived]
     
+    log.info("LIST entities: user=%s total=%d (include_archived=%s)", identity_id[:8], len(result), include_archived)
     return result
 
 @router.post("", response_model=EntityResponse)
@@ -66,6 +70,9 @@ def create_entity(data: EntityCreate, identity_id: str = Depends(get_current_ide
     
     db.commit()
     db.refresh(entity)
+    log.info("CREATE entity: id=%s name='%s' type=%s nip=%s owner=%s → Pydantic validated: %s",
+             entity.id[:8], entity.name, entity.type, entity.nip, identity_id[:8],
+             EntityResponse.model_validate(entity, from_attributes=True).model_dump(include={'id','name','type','nip'}))
     return entity
 
 @router.get("/{entity_id}", response_model=EntityDetail)
@@ -115,6 +122,7 @@ def update_entity(entity_id: str, data: EntityUpdate, identity_id: str = Depends
     
     db.commit()
     db.refresh(entity)
+    log.info("UPDATE entity: id=%s fields=%s by=%s", entity_id[:8], list(data.model_dump(exclude_unset=True).keys()), identity_id[:8])
     return entity
 
 @router.delete("/{entity_id}")
@@ -127,6 +135,7 @@ def delete_entity(entity_id: str, identity_id: str = Depends(get_current_identit
     if entity.owner_id != identity_id:
         raise HTTPException(status_code=403, detail="Tylko właściciel może usunąć podmiot")
     
+    log.warning("DELETE entity: id=%s name='%s' by=%s", entity_id[:8], entity.name, identity_id[:8])
     db.delete(entity)
     db.commit()
     return {"status": "deleted"}
@@ -144,6 +153,7 @@ def archive_entity(entity_id: str, identity_id: str = Depends(get_current_identi
     entity.is_archived = not entity.is_archived
     db.commit()
     db.refresh(entity)
+    log.info("ARCHIVE entity: id=%s name='%s' is_archived=%s by=%s", entity_id[:8], entity.name, entity.is_archived, identity_id[:8])
     return entity
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -1,3 +1,28 @@
+## [1.0.7] - 2026-02-06
+
+### Summary
+
+feat(docs): deep code analysis engine with 5 supporting modules
+
+### Docs
+
+- docs: update README
+
+### Other
+
+- update exef3/backend/app/adapters/export_comarch.py
+- update exef3/backend/app/adapters/export_csv.py
+- update exef3/backend/app/adapters/export_enova.py
+- update exef3/backend/app/adapters/export_jpk.py
+- update exef3/backend/app/adapters/export_symfonia.py
+- update exef3/backend/app/adapters/export_wfirma.py
+- update exef3/backend/app/adapters/import_bank.py
+- update exef3/backend/app/adapters/import_csv.py
+- update exef3/backend/app/adapters/import_manual.py
+- update exef3/backend/app/api/entities.py
+- ... and 14 more
+
+
 ## [1.0.6] - 2026-02-06
 
 ### Summary

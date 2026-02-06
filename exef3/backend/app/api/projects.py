@@ -1,4 +1,5 @@
 """API endpoints - projekty."""
+import logging
 from uuid import uuid4
 from typing import List, Optional
 from datetime import datetime
@@ -8,6 +9,8 @@ from sqlalchemy import func
 
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
+
+log = logging.getLogger("exef.projects")
 from app.models.models import (
     Project, Entity, EntityMember, Task, Document,
     ProjectAuthorization, Identity, AuthorizationRole
@@ -144,6 +147,9 @@ def create_project(data: ProjectCreate, identity_id: str = Depends(get_current_i
     db.add(project)
     db.commit()
     db.refresh(project)
+    log.info("CREATE project: id=%s name='%s' type=%s entity=%s by=%s → Pydantic: %s",
+             project.id[:8], project.name, project.type, data.entity_id[:8], identity_id[:8],
+             ProjectResponse.model_validate(project, from_attributes=True).model_dump(include={'id','name','type','year'}))
     return project
 
 @router.get("/{project_id}", response_model=ProjectDetail)
@@ -185,6 +191,7 @@ def update_project(project_id: str, data: ProjectUpdate, identity_id: str = Depe
     
     db.commit()
     db.refresh(project)
+    log.info("UPDATE project: id=%s fields=%s by=%s", project_id[:8], list(data.model_dump(exclude_unset=True).keys()), identity_id[:8])
     return project
 
 @router.delete("/{project_id}")
@@ -192,6 +199,7 @@ def delete_project(project_id: str, identity_id: str = Depends(get_current_ident
     """Usuwa projekt."""
     project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True)
     
+    log.warning("DELETE project: id=%s name='%s' by=%s", project_id[:8], project.name, identity_id[:8])
     db.delete(project)
     db.commit()
     return {"status": "deleted"}

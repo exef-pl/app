@@ -62,3 +62,19 @@ services:
     volumes:
       - ./test_emails:/app/test_emails
     restart: unless-stopped
+
+  # Test IMAP Server (dovecot with seeded test emails)
+  test-imap:
+    build:
+      context: docker/test-imap
+    ports:
+      - "1143:143"
+    restart: unless-stopped
+
+  # Mock KSeF API Server
+  mock-ksef:
+    build:
+      context: docker/mock-ksef
+    ports:
+      - "8180:8080"
+    restart: unless-stopped

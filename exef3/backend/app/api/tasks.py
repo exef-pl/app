@@ -1,4 +1,5 @@
 """API endpoints - zadania i dokumenty."""
+import logging
 from uuid import uuid4
 from typing import List, Optional
 from datetime import datetime
@@ -8,6 +9,8 @@ from sqlalchemy import func
 
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
+
+log = logging.getLogger("exef.tasks")
 from app.core.docid import generate_doc_id
 from app.models.models import (
     Task, Document, DocumentMetadata, DocumentRelation,
@@ -85,6 +88,9 @@ def create_task(data: TaskCreate, identity_id: str = Depends(get_current_identit
     db.add(task)
     db.commit()
     db.refresh(task)
+    log.info("CREATE task: id=%s name='%s' project=%s by=%s → Pydantic: %s",
+             task.id[:8], task.name, data.project_id[:8], identity_id[:8],
+             TaskResponse.model_validate(task, from_attributes=True).model_dump(include={'id','name','status','period_start','period_end'}))
     return task
 
 @router.get("/tasks/{task_id}", response_model=TaskResponse)
@@ -110,6 +116,7 @@ def delete_task(task_id: str, identity_id: str = Depends(get_current_identity_id
     """Usuwa zadanie."""
     task, project, role = check_task_access(db, task_id, identity_id, require_edit=True)
     
+    log.warning("DELETE task: id=%s name='%s' project=%s by=%s", task_id[:8], task.name, project.id[:8], identity_id[:8])
     db.delete(task)
     db.commit()
     return {"status": "deleted"}
@@ -188,11 +195,25 @@ def create_document(data: DocumentCreate, identity_id: str = Depends(get_current
     )
     db.add(document)
     
+    # Always create metadata row so tags/category are available in UI
+    meta = DocumentMetadata(
+        id=str(uuid4()),
+        document_id=document.id,
+        tags=[],
+        edited_by_id=identity_id,
+        edited_at=datetime.utcnow(),
+    )
+    db.add(meta)
+    
     # Aktualizuj statystyki zadania
     task.docs_total += 1
     
     db.commit()
     db.refresh(document)
+    log.info("CREATE document: id=%s number='%s' contractor='%s' gross=%s date=%s task=%s doc_id=%s by=%s \u2192 Pydantic: %s",
+             document.id[:8], document.number, document.contractor_name, document.amount_gross,
+             document.document_date, data.task_id[:8], document.doc_id, identity_id[:8],
+             DocumentResponse.model_validate(document, from_attributes=True).model_dump(include={'id','number','status','doc_type'}))
     return document
 
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
@@ -249,6 +270,9 @@ def update_document_metadata(
     
     db.commit()
     db.refresh(document)
+    log.info("UPDATE metadata: doc=%s fields=%s version=%d status=%s by=%s",
+             document_id[:8], list(data.model_dump(exclude_unset=True).keys()),
+             metadata.version, document.status, identity_id[:8])
     return document
 
 @router.post("/documents/{document_id}/approve", response_model=DocumentResponse)

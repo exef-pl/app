@@ -1,4 +1,5 @@
 """EXEF - Document Flow Engine API."""
+import logging
 import traceback
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -7,6 +8,18 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import init_db
+
+# ── Logging config ──
+logging.basicConfig(
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
+    format="%(asctime)s %(levelname)-5s [%(name)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+# Suppress noisy libs
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+logging.getLogger("multipart.multipart").setLevel(logging.WARNING)
+logging.getLogger("passlib").setLevel(logging.WARNING)
 from app.api import auth, entities, projects, tasks, firm, templates, sources
 
 @asynccontextmanager

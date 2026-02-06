@@ -1,4 +1,5 @@
 """API endpoints - szablony projektów i tworzenie projektów z szablonów."""
+import logging
 from uuid import uuid4
 from typing import List, Optional
 from datetime import date, timedelta
@@ -10,9 +11,12 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
 from app.core.config import settings
+
+log = logging.getLogger("exef.templates")
 from app.models.models import (
     ProjectTemplate, Project, Task, Entity, EntityMember, EntityDatabase,
-    ProjectType, TaskRecurrence, TaskStatus, AuthorizationRole,
+    DataSource, ProjectType, TaskRecurrence, TaskStatus, AuthorizationRole,
+    SourceDirection, SourceType,
 )
 
 router = APIRouter(tags=["templates"])
@@ -155,8 +159,27 @@ def create_project_from_template(
     for task in tasks:
         db.add(task)
 
+    # Auto-create default DataSources with Docker test configs
+    default_sources = _generate_default_sources(project)
+    for src in default_sources:
+        db.add(src)
+
     db.commit()
     db.refresh(project)
+
+    log.info("CREATE PROJECT FROM TEMPLATE: project=%s name='%s' type=%s year=%d template='%s' by=%s",
+             project.id[:8], project.name, project.type.value if hasattr(project.type, 'value') else project.type,
+             year, template.name, identity_id[:8])
+    log.info("  TASKS created: %d", len(tasks))
+    for t in tasks:
+        log.info("    TASK: id=%s name='%s' period=%s..%s deadline=%s",
+                 t.id[:8], t.name, t.period_start, t.period_end, t.deadline)
+    log.info("  SOURCES created: %d", len(default_sources))
+    for s in default_sources:
+        direction_val = s.direction.value if hasattr(s.direction, 'value') else str(s.direction)
+        stype_val = s.source_type.value if hasattr(s.source_type, 'value') else str(s.source_type)
+        log.info("    SOURCE: id=%s name='%s' type=%s direction=%s config_keys=%s → DB saved",
+                 s.id[:8], s.name, stype_val, direction_val, list((s.config or {}).keys()))
 
     return {
         "ok": True,
@@ -166,6 +189,7 @@ def create_project_from_template(
             "type": project.type.value,
             "year": project.year,
             "tasks_created": len(tasks),
+            "sources_created": len(default_sources),
         },
     }
 
@@ -337,3 +361,68 @@ def _generate_tasks(template: ProjectTemplate, project: Project, year: int,
         ))
 
     return tasks
+
+
+def _generate_default_sources(project: Project) -> list:
+    """Create default DataSources for a new project with Docker test configs."""
+    sources = [
+        # Import sources
+        DataSource(
+            id=str(uuid4()),
+            project_id=project.id,
+            direction=SourceDirection.IMPORT,
+            source_type=SourceType.EMAIL,
+            name="Email (test IMAP)",
+            icon="📧",
+            config={
+                "host": "test-imap",
+                "port": 143,
+                "username": "testuser",
+                "password": "testpass",
+                "folder": "INBOX",
+                "days_back": 30,
+            },
+        ),
+        DataSource(
+            id=str(uuid4()),
+            project_id=project.id,
+            direction=SourceDirection.IMPORT,
+            source_type=SourceType.KSEF,
+            name="KSeF (mock)",
+            icon="🏛️",
+            config={
+                "nip": "5213003700",
+                "token": "test-token",
+                "environment": "mock",
+            },
+        ),
+        # Export sources
+        DataSource(
+            id=str(uuid4()),
+            project_id=project.id,
+            direction=SourceDirection.EXPORT,
+            source_type=SourceType.WFIRMA,
+            name="wFirma (CSV)",
+            icon="📊",
+            config={"encoding": "utf-8-sig", "date_format": "%Y-%m-%d"},
+        ),
+        DataSource(
+            id=str(uuid4()),
+            project_id=project.id,
+            direction=SourceDirection.EXPORT,
+            source_type=SourceType.JPK_PKPIR,
+            name="JPK_PKPIR (XML)",
+            icon="📋",
+            config={"nip": "5213003700", "company_name": "Testowa Firma Sp. z o.o."},
+        ),
+        DataSource(
+            id=str(uuid4()),
+            project_id=project.id,
+            direction=SourceDirection.EXPORT,
+            source_type=SourceType.CSV,
+            name="CSV ogólny",
+            icon="📄",
+            config={"delimiter": ";", "encoding": "utf-8-sig"},
+        ),
+    ]
+    return sources
