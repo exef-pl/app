@@ -732,6 +732,44 @@ async function runAccountsScannerImport(scannerId) {
   return data;
 }
 
+async function fetchAccountsList() {
+  const res = await fetch(`${url}/accounts`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error || `accounts_fetch_failed_${res.status}`);
+  return data;
+}
+
+async function addAccount(type, body) {
+  const res = await fetch(`${url}/accounts/${encodeURIComponent(type)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error || `add_account_failed_${res.status}`);
+  return data;
+}
+
+async function deleteAccount(type, id) {
+  const res = await fetch(`${url}/accounts/${encodeURIComponent(type)}/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error || `delete_account_failed_${res.status}`);
+  return data;
+}
+
+async function syncAccount(type, id, body) {
+  const res = await fetch(`${url}/accounts/${encodeURIComponent(type)}/${encodeURIComponent(id)}/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {}),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error || `sync_account_failed_${res.status}`);
+  return data;
+}
+
 function renderSourcesStatusHtml(status) {
   const ksefAccounts = Array.isArray(status?.ksef?.accounts) ? status.ksef.accounts : [];
   const storageConns = Array.isArray(status?.storage?.connections) ? status.storage.connections : [];
@@ -766,12 +804,19 @@ function renderSourcesStatusHtml(status) {
     return t == null ? `${p}` : `${p} / ${t}`;
   };
 
+  const actionBtns = (type, id, extras) => {
+    const syncBtn = `<button type="button" class="acct-sync-btn" data-acct-type="${escapeHtml(type)}" data-acct-id="${escapeHtml(id)}">Synchronizuj</button>`;
+    const delBtn = `<button type="button" class="acct-del-btn danger" data-acct-type="${escapeHtml(type)}" data-acct-id="${escapeHtml(id)}">Usuń</button>`;
+    return `<div class="form-actions" style="margin-top:10px; flex-wrap:wrap;">${syncBtn}${extras || ''}${delBtn}</div>`;
+  };
+
   return `
     <div style="display:flex; gap:16px; flex-wrap:wrap;">
       <div style="flex:1; min-width: 300px;">
         <div style="font-weight:600; margin-bottom:8px;">Storage</div>
         <div class="subtle" style="margin-bottom:8px;">Lokalne foldery</div>
-        ${localFolders.length ? localFolders.map((f) => {
+        ${localFolders.length ? localFolders.map((f, i) => {
+          const folderId = `local-folder-${i}`;
           return `
             <div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
               <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
@@ -779,11 +824,19 @@ function renderSourcesStatusHtml(status) {
                 <div>${renderOk(f.ok, f.error)}</div>
               </div>
               <div class="subtle" style="margin-top:6px;">Do pobrania: <b>${escapeHtml(renderPending(f.pending, f.total))}</b></div>
+              ${actionBtns('local-folders', folderId)}
             </div>
           `;
         }).join('') : '<div class="empty" style="padding: 12px;">Brak folderów</div>'}
+        <div style="margin-top:8px; padding:10px; border:1px dashed var(--border); border-radius:10px;">
+          <div class="subtle" style="margin-bottom:6px;">Dodaj folder:</div>
+          <div style="display:flex; gap:8px;">
+            <input id="addLocalFolderPath" type="text" placeholder="/sciezka/do/faktur" style="flex:1;" />
+            <button type="button" id="addLocalFolderBtn" class="primary">Dodaj</button>
+          </div>
+        </div>
 
-        <div class="subtle" style="margin:10px 0 8px;">Połączenia zdalne</div>
+        <div class="subtle" style="margin:14px 0 8px;">Połączenia zdalne</div>
         ${storageConns.length ? storageConns.map((c) => {
           return `
             <div style="border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
@@ -793,9 +846,27 @@ function renderSourcesStatusHtml(status) {
               </div>
               <div class="subtle" style="margin-top:6px;">Typ: <code>${escapeHtml(String(c.type || ''))}</code></div>
               <div class="subtle" style="margin-top:6px;">Do pobrania: <b>${escapeHtml(renderPending(c.pending, c.total))}</b></div>
+              ${actionBtns('storage', String(c.id || ''))}
             </div>
           `;
         }).join('') : '<div class="empty" style="padding: 12px;">Brak połączeń</div>'}
+        <div style="margin-top:8px; padding:10px; border:1px dashed var(--border); border-radius:10px;">
+          <div class="subtle" style="margin-bottom:6px;">Dodaj połączenie:</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <select id="addStorageType" style="min-width:120px;">
+              <option value="dropbox">Dropbox</option>
+              <option value="gdrive">Google Drive</option>
+              <option value="onedrive">OneDrive</option>
+              <option value="nextcloud">Nextcloud</option>
+            </select>
+            <input id="addStorageName" type="text" placeholder="Nazwa" style="flex:1; min-width:120px;" />
+            <input id="addStorageApiUrl" type="text" placeholder="API URL" style="flex:2; min-width:160px;" />
+          </div>
+          <div style="display:flex; gap:8px; margin-top:6px; flex-wrap:wrap;">
+            <input id="addStorageToken" type="password" placeholder="Access token" style="flex:1; min-width:160px;" />
+            <button type="button" id="addStorageBtn" class="primary">Dodaj</button>
+          </div>
+        </div>
       </div>
 
       <div style="flex:1; min-width: 300px;">
@@ -811,6 +882,7 @@ function renderSourcesStatusHtml(status) {
               <div class="subtle" style="margin-top:6px;">Do pobrania: <b>${escapeHtml(renderPending(a.pending, a.total))}</b></div>
               ${a.apiUrl ? `<div class="subtle" style="margin-top:6px;">API: <code>${escapeHtml(String(a.apiUrl))}</code></div>` : ''}
               ${a.imapHost ? `<div class="subtle" style="margin-top:6px;">IMAP: <code>${escapeHtml(String(a.imapHost))}</code></div>` : ''}
+              ${actionBtns('email', String(a.id || ''))}
             </div>
           `;
         }).join('') : '<div class="empty" style="padding: 12px;">Brak kont</div>'}
@@ -824,6 +896,7 @@ function renderSourcesStatusHtml(status) {
                 <div>${a.hasToken ? '<span class="status status-approved">token</span>' : '<span class="status status-pending">brak token</span>'}</div>
               </div>
               ${row('NIP', a.nip)}
+              ${actionBtns('ksef', String(a.id || ''))}
             </div>
           `;
         }).join('') : '<div class="empty" style="padding: 12px;">Brak kont</div>'}
@@ -843,6 +916,7 @@ function renderSourcesStatusHtml(status) {
               <div class="subtle" style="margin-top:6px;">Do pobrania: <b>${escapeHtml(String(s.pending ?? 0))}</b></div>
               <div class="form-actions" style="margin-top: 10px; flex-wrap: wrap;">
                 <button type="button" data-scanner-import="${escapeHtml(String(s.id || ''))}">Pobierz ze skanera</button>
+                <button type="button" class="acct-del-btn danger" data-acct-type="scanners" data-acct-id="${escapeHtml(String(s.id || ''))}">Usuń</button>
               </div>
             </div>
           `;
@@ -857,6 +931,9 @@ function renderSourcesStatusHtml(status) {
                 <div>${renderOk(p.ok, p.error)}</div>
               </div>
               <div class="subtle" style="margin-top:6px;">Status: <code>${escapeHtml(String(p.status || ''))}</code></div>
+              <div class="form-actions" style="margin-top: 10px; flex-wrap: wrap;">
+                <button type="button" class="acct-del-btn danger" data-acct-type="printers" data-acct-id="${escapeHtml(String(p.id || ''))}">Usuń</button>
+              </div>
             </div>
           `;
         }).join('') : '<div class="empty" style="padding: 12px;">Brak drukarek</div>'}

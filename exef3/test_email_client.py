@@ -74,6 +74,40 @@ class EmailClient:
         
         return None
     
+    def extract_one_time_code(self, email_data: Dict) -> Optional[str]:
+        """Extract one-time code from email."""
+        raw = email_data.get('raw', '')
+        
+        # Look for one-time code patterns (8 characters, uppercase)
+        patterns = [
+            r'Kod jednorazowy:?\s*([A-Z0-9_]{8})',
+            r'kod:?\s*([A-Z0-9_]{8})',
+            r'code:?\s*([A-Z0-9_]{8})',
+            r'<div[^>]*class="code"[^>]*>([A-Z0-9_]{8})</div>',
+            r'([A-Z0-9_]{8})\s*(?=jest ważny)',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, raw, re.IGNORECASE)
+            if match:
+                return match.group(1)
+        
+        return None
+    
+    def get_latest_code_from_database(self) -> Optional[str]:
+        """Get latest one-time code directly from database."""
+        try:
+            import sqlite3
+            conn = sqlite3.connect('/home/tom/github/exef-pl/app/exef3/data/exef.db')
+            cursor = conn.cursor()
+            cursor.execute('SELECT one_time_code FROM magic_links WHERE is_used = 0 ORDER BY created_at DESC LIMIT 1')
+            result = cursor.fetchone()
+            conn.close()
+            return result[0] if result else None
+        except Exception as e:
+            print(f"❌ Error accessing database: {e}")
+            return None
+    
     def open_magic_link(self, email_data: Dict) -> bool:
         """Open magic link in browser."""
         magic_link = self.extract_magic_link(email_data)
@@ -97,6 +131,10 @@ class EmailClient:
         if magic_link:
             print(f"🔗 Magic Link: {magic_link}")
         
+        one_time_code = self.extract_one_time_code(email_data)
+        if one_time_code:
+            print(f"🔑 One-Time Code: {one_time_code}")
+        
         print("-"*60)
         print("📄 Content:")
         print(email_data.get('raw', 'No content'))
@@ -110,6 +148,7 @@ class EmailClient:
         print("  l - List emails")
         print("  n - Show latest email")
         print("  o - Open magic link from latest email")
+        print("  c - Show latest one-time code from database")
         print("  q - Quit")
         print("  h - Help")
         
@@ -153,11 +192,19 @@ class EmailClient:
                         self.open_magic_link(latest)
                     else:
                         print("📭 No emails found")
+                elif command == 'c':
+                    code = self.get_latest_code_from_database()
+                    if code:
+                        print(f"\n🔑 Latest one-time code: {code}")
+                        print("Use this code in the frontend to login!")
+                    else:
+                        print("📭 No codes found in database")
                 elif command == 'h':
                     print("\n⌨️  Commands:")
                     print("  l - List emails")
                     print("  n - Show latest email")
                     print("  o - Open magic link from latest email")
+                    print("  c - Show latest one-time code from database")
                     print("  q - Quit")
                     print("  h - Help")
                 else:
@@ -178,6 +225,7 @@ def main():
     parser.add_argument('--list', action='store_true', help='List emails and exit')
     parser.add_argument('--latest', action='store_true', help='Show latest email and exit')
     parser.add_argument('--open-latest', action='store_true', help='Open magic link from latest email')
+    parser.add_argument('--code', action='store_true', help='Show latest one-time code from database and exit')
     
     args = parser.parse_args()
     
@@ -203,6 +251,13 @@ def main():
             client.open_magic_link(latest)
         else:
             print("📭 No emails found")
+    elif args.code:
+        code = client.get_latest_code_from_database()
+        if code:
+            print(f"🔑 Latest one-time code: {code}")
+            print("Use this code in the frontend to login!")
+        else:
+            print("📭 No codes found in database")
     else:
         client.watch_emails()
 

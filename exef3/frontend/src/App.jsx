@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 // UX: Bez modali - wszystko w prawej kolumnie
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const API_URL = 'http://localhost:8000/api/v1';
+const API_URL = 'http://localhost:8003/api/v1';
 
 // Kolory i style
 const COLORS = {
@@ -818,19 +818,54 @@ export default function App() {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function AuthPanel({ onLogin, onRegister, loading, error, onClearError }) {
-  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [nip, setNip] = useState('');
+  const [code, setCode] = useState('');
+  const [message, setMessage] = useState('');
+  const [isCodeSent, setIsCodeSent] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (mode === 'login') {
-      onLogin(email, password);
+    setMessage('');
+    
+    if (!isCodeSent) {
+      // Request magic link
+      try {
+        const response = await fetch(`${API_URL}/auth/magic-link/request`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        
+        if (response.ok) {
+          setIsCodeSent(true);
+          setMessage('Link logowania został wysłany na adres email. Sprawdź swoją skrzynkę.');
+        } else {
+          const error = await response.json();
+          setMessage('Wystąpił błąd. Spróbuj ponownie.');
+        }
+      } catch (err) {
+        setMessage('Wystąpił błąd połączenia. Spróbuj ponownie.');
+      }
     } else {
-      onRegister({ email, password, first_name: firstName, last_name: lastName, nip: nip || null });
+      // Login with code
+      try {
+        const response = await fetch(`${API_URL}/auth/magic-link/login-code`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, code }),
+        });
+        
+        if (response.ok) {
+          const tokenData = await response.json();
+          localStorage.setItem('token', tokenData.access_token);
+          window.location.reload();
+        } else {
+          const error = await response.json();
+          setMessage('Nieprawidłowy kod. Spróbuj ponownie.');
+        }
+      } catch (err) {
+        setMessage('Wystąpił błąd połączenia. Spróbuj ponownie.');
+      }
     }
   };
 
@@ -856,102 +891,19 @@ function AuthPanel({ onLogin, onRegister, loading, error, onClearError }) {
         <div style={{ color: COLORS.textMuted, fontSize: '13px' }}>
           Document Flow Engine
         </div>
-      </div>
-
-      <div style={{ display: 'flex', marginBottom: '20px', gap: '8px' }}>
-        <button
-          onClick={() => setMode('login')}
-          style={{
-            flex: 1,
-            padding: '10px',
-            background: mode === 'login' ? COLORS.bgTertiary : 'transparent',
-            border: `1px solid ${mode === 'login' ? COLORS.border : 'transparent'}`,
-            borderRadius: '8px',
-            color: mode === 'login' ? COLORS.text : COLORS.textMuted,
-            cursor: 'pointer',
-            fontSize: '13px',
-          }}
-        >
-          Logowanie
-        </button>
-        <button
-          onClick={() => setMode('register')}
-          style={{
-            flex: 1,
-            padding: '10px',
-            background: mode === 'register' ? COLORS.bgTertiary : 'transparent',
-            border: `1px solid ${mode === 'register' ? COLORS.border : 'transparent'}`,
-            borderRadius: '8px',
-            color: mode === 'register' ? COLORS.text : COLORS.textMuted,
-            cursor: 'pointer',
-            fontSize: '13px',
-          }}
-        >
-          Rejestracja
-        </button>
+        <div style={{ color: COLORS.text, fontSize: '14px', marginTop: '12px' }}>
+          {!isCodeSent ? 'Wpisz email, aby otrzymać link logowania' : 'Wpisz kod z emaila'}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        {mode === 'register' && (
-          <>
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
-              <input
-                type="text"
-                placeholder="Imię"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: COLORS.bgTertiary,
-                  border: `1px solid ${COLORS.border}`,
-                  borderRadius: '8px',
-                  color: COLORS.text,
-                  fontSize: '14px',
-                }}
-              />
-              <input
-                type="text"
-                placeholder="Nazwisko"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  background: COLORS.bgTertiary,
-                  border: `1px solid ${COLORS.border}`,
-                  borderRadius: '8px',
-                  color: COLORS.text,
-                  fontSize: '14px',
-                }}
-              />
-            </div>
-            <input
-              type="text"
-              placeholder="NIP (opcjonalnie)"
-              value={nip}
-              onChange={(e) => setNip(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                marginBottom: '12px',
-                background: COLORS.bgTertiary,
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: '8px',
-                color: COLORS.text,
-                fontSize: '14px',
-                boxSizing: 'border-box',
-              }}
-            />
-          </>
-        )}
-        
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={isCodeSent}
           style={{
             width: '100%',
             padding: '12px',
@@ -962,28 +914,49 @@ function AuthPanel({ onLogin, onRegister, loading, error, onClearError }) {
             color: COLORS.text,
             fontSize: '14px',
             boxSizing: 'border-box',
+            opacity: isCodeSent ? 0.6 : 1,
           }}
         />
         
-        <input
-          type="password"
-          placeholder="Hasło"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-          style={{
-            width: '100%',
+        {isCodeSent && (
+          <input
+            type="text"
+            placeholder="Kod jednorazowy"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            required
+            maxLength={8}
+            style={{
+              width: '100%',
+              padding: '12px',
+              marginBottom: '20px',
+              background: COLORS.bgTertiary,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: '8px',
+              color: COLORS.text,
+              fontSize: '14px',
+              fontWeight: 'bold',
+              letterSpacing: '2px',
+              textAlign: 'center',
+              boxSizing: 'border-box',
+            }}
+          />
+        )}
+
+        {message && (
+          <div style={{
             padding: '12px',
-            marginBottom: '20px',
-            background: COLORS.bgTertiary,
-            border: `1px solid ${COLORS.border}`,
+            marginBottom: '16px',
+            background: isCodeSent ? `${COLORS.success}20` : `${COLORS.warning}20`,
+            border: `1px solid ${isCodeSent ? COLORS.success : COLORS.warning}40`,
             borderRadius: '8px',
-            color: COLORS.text,
-            fontSize: '14px',
-            boxSizing: 'border-box',
-          }}
-        />
+            color: isCodeSent ? COLORS.success : COLORS.warning,
+            fontSize: '13px',
+            textAlign: 'center',
+          }}>
+            {message}
+          </div>
+        )}
 
         {error && (
           <div style={{
@@ -1001,7 +974,7 @@ function AuthPanel({ onLogin, onRegister, loading, error, onClearError }) {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (!email && !isCodeSent) || (isCodeSent && !code)}
           style={{
             width: '100%',
             padding: '14px',
@@ -1011,12 +984,24 @@ function AuthPanel({ onLogin, onRegister, loading, error, onClearError }) {
             color: '#fff',
             fontSize: '14px',
             fontWeight: '600',
-            cursor: loading ? 'wait' : 'pointer',
-            opacity: loading ? 0.7 : 1,
+            cursor: (loading || (!email && !isCodeSent) || (isCodeSent && !code)) ? 'wait' : 'pointer',
+            opacity: (loading || (!email && !isCodeSent) || (isCodeSent && !code)) ? 0.7 : 1,
           }}
         >
-          {loading ? '...' : mode === 'login' ? 'Zaloguj' : 'Zarejestruj'}
+          {loading ? '...' : !isCodeSent ? 'Wyślij link logowania' : 'Zaloguj'}
         </button>
+        
+        {isCodeSent && (
+          <div style={{ 
+            marginTop: '16px', 
+            textAlign: 'center',
+            fontSize: '12px',
+            color: COLORS.textMuted 
+          }}>
+            Sprawdź email i wpisz kod jednorazowy.<br/>
+            Możesz też kliknąć link w emailu.
+          </div>
+        )}
       </form>
     </div>
   );

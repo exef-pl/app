@@ -29,6 +29,75 @@ System zarządzania dokumentami księgowymi dla polskich firm.
 └────────────────────────────────────────────────────────────────┘
 ```
 
+## 🧪 Logowanie testowe
+
+Aplikacja wspiera logowanie przez **magic link** (link bezhasłowy).
+
+### Testowe dane logowania
+
+| Email | Hasło |
+|-------|-------|
+| `test@example.com` | `Test123` |
+| `test2@example.com` | `Test123` |
+
+### Pobieranie magic linku
+
+Po poproszeniu o link logowania, email z magic linkiem trafia do lokalnego serwera testowego.
+
+**Opcja 1 - Interaktywny klient email:**
+
+```bash
+make email-client
+```
+
+Komendy w kliencie:
+- `l` - lista wszystkich emaili
+- `n` - pokaż najnowszy email
+- `o` - otwórz magic link z najnowszego emaila w przeglądarce
+- `c` - pokaż najnowszy kod jednorazowy z bazy danych
+- `q` - wyjście
+- `h` - pomoc
+
+**Opcja 2 - CLI (jednorazowe polecenie):**
+
+```bash
+# Pokaż najnowszy email
+python3 test_email_client.py --latest
+
+# Otwórz magic link w przeglądarce
+python3 test_email_client.py --open-latest
+
+# Lista wszystkich emaili
+python3 test_email_client.py --list
+
+# Pokaż najnowszy kod jednorazowy z bazy danych
+python3 test_email_client.py --code
+```
+
+**Opcja 3 - Bezpośrednio z plików:**
+
+Emaile są zapisywane jako pliki JSON w katalogu `./test_emails/`. Magic link znajduje się w polu `magic_link` lub można go wyciągnąć z treści emaila.
+
+```bash
+# Zobacz wszystkie zapisane emaile
+ls -la ./test_emails/
+
+# Przykład wyciągnięcia magic linku
+cat ./test_emails/*.json | grep "magic_link"
+```
+
+**Opcja 4 - Bezpośrednio z bazy danych:**
+
+Jeśli serwer SMTP nie działa, możesz uzyskać kod jednorazowy bezpośrednio z bazy danych:
+
+```bash
+# Pokaż najnowszy kod jednorazowy
+python3 test_email_client.py --code
+
+# Lub bezpośrednio z bazy danych
+sqlite3 data/exef.db "SELECT one_time_code FROM magic_links WHERE is_used = 0 ORDER BY created_at DESC LIMIT 1;"
+```
+
 ## 🚀 Uruchomienie
 
 ### Docker (zalecane)

@@ -116,6 +116,25 @@ class StorageSync extends EventEmitter {
     return []
   }
 
+  async syncLocalFolder(singlePath) {
+    const watchPath = String(singlePath || '').trim()
+    if (!watchPath || !fs.existsSync(watchPath)) {
+      return []
+    }
+    const savedPaths = this.watchPaths
+    this.watchPaths = [watchPath]
+    try {
+      return await this._syncLocalFolder()
+    } finally {
+      this.watchPaths = savedPaths
+    }
+  }
+
+  async syncConnection(conn) {
+    if (!conn) return []
+    return this._syncConnection(conn)
+  }
+
   _getSortedConnections(connections) {
     const items = Array.isArray(connections) ? connections : []
     const enabled = items.filter((c) => c && (c.enabled !== false))

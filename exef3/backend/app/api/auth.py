@@ -1,4 +1,5 @@
 """API endpoints - autentykacja."""
+import logging
 from datetime import timedelta, datetime
 from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, Request
@@ -96,37 +97,48 @@ async def request_magic_link(data: MagicLinkRequest, request: Request, db: Sessi
             email=email
         )
     
-    # Generate magic link token
+    # Generate magic link token and one-time code upfront
     token = secrets.token_urlsafe(32)
+    one_time_code = secrets.token_urlsafe(6)[:8].upper()
     expires_at = datetime.utcnow() + timedelta(minutes=15)
+    
+    # Build magic link URL
+    base_url = f"{request.url.scheme}://{request.url.netloc}"
+    magic_link_url = f"{base_url}{settings.API_V1_STR}/auth/magic-link?token={token}"
     
     # Save magic link to database
     magic_link = MagicLink(
         id=str(uuid4()),
         email=email,
         token=token,
+        one_time_code=one_time_code,
         expires_at=expires_at
     )
     db.add(magic_link)
     db.commit()
     
-    # Build magic link URL
-    base_url = f"{request.url.scheme}://{request.url.netloc}"
-    magic_link_url = f"{base_url}{settings.API_V1_STR}/auth/magic-link?token={token}"
+    # Send ONE email with both the link and the code
+    logger = logging.getLogger(__name__)
+    email_sent, _ = await email_service.send_magic_link(email, magic_link_url, one_time_code=one_time_code)
     
-    # Send email
-    email_sent = await email_service.send_magic_link(email, magic_link_url)
-    
-    if email_sent:
-        return MagicLinkResponse(
-            message="Link logowania został wysłany na adres email",
-            email=email
-        )
-    else:
+    if not email_sent:
+        # In dev mode, log the code so login is still possible without SMTP
+        if settings.DEBUG:
+            logger.warning(f"[DEV] SMTP unavailable. Magic link code for {email}: {one_time_code}")
+            logger.warning(f"[DEV] Magic link URL: {magic_link_url}")
+            return MagicLinkResponse(
+                message=f"SMTP niedostępny (tryb dev). Kod logowania: {one_time_code}",
+                email=email
+            )
         raise HTTPException(
             status_code=500,
             detail="Błąd podczas wysyłania emaila"
         )
+    
+    return MagicLinkResponse(
+        message="Link logowania został wysłany na adres email",
+        email=email
+    )
 
 @router.post("/magic-link/login", response_model=Token)
 def login_with_magic_link(data: MagicLinkLogin, db: Session = Depends(get_db)):
@@ -153,6 +165,48 @@ def login_with_magic_link(data: MagicLinkLogin, db: Session = Depends(get_db)):
     
     # Find user
     identity = db.query(Identity).filter(Identity.email == magic_link.email).first()
+    if not identity:
+        raise HTTPException(
+            status_code=404,
+            detail="Konto nie zostało znalezione"
+        )
+    
+    # Mark magic link as used
+    magic_link.is_used = True
+    magic_link.used_at = datetime.utcnow()
+    db.commit()
+    
+    # Create access token
+    access_token = create_access_token(data={"sub": identity.id})
+    return Token(access_token=access_token)
+
+@router.post("/magic-link/login-code", response_model=Token)
+def login_with_code(data: dict, db: Session = Depends(get_db)):
+    """Login using one-time code."""
+    email = data.get("email")
+    code = data.get("code")
+    
+    if not email or not code:
+        raise HTTPException(
+            status_code=400,
+            detail="Email i kod są wymagane"
+        )
+    
+    # Find valid magic link with this email and code
+    magic_link = db.query(MagicLink).filter(
+        MagicLink.email == email,
+        MagicLink.one_time_code == code.upper(),
+        MagicLink.is_used == False
+    ).first()
+    
+    if not magic_link or magic_link.is_expired():
+        raise HTTPException(
+            status_code=400,
+            detail="Nieprawidłowy lub wygasły kod"
+        )
+    
+    # Find user
+    identity = db.query(Identity).filter(Identity.email == email).first()
     if not identity:
         raise HTTPException(
             status_code=404,

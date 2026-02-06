@@ -6,7 +6,7 @@ import re
 import time
 from datetime import datetime
 from email.message import EmailMessage
-from aiosmtpd.controller import Controller
+from aiosmtpd.smtp import SMTP as SMTPServer
 
 class TestSMTPHandler:
     """Test SMTP handler that saves emails to files."""
@@ -75,28 +75,27 @@ class TestSMTPHandler:
         
         return match.group(0) if match else None
 
-def run_smtp_server():
+async def run_smtp_server():
     """Run the SMTP server."""
     handler = TestSMTPHandler()
-    controller = Controller(handler, hostname='localhost', port=1025)
     
     print("🚀 Starting EXEF3 Test SMTP Server")
-    print("📧 Server: localhost:1025")
+    print("📧 Server: 0.0.0.0:1025")
     print("📁 Emails will be saved to ./test_emails/")
     print("🛑 Press Ctrl+C to stop")
     
+    server = await asyncio.get_event_loop().create_server(
+        lambda: SMTPServer(handler), host='0.0.0.0', port=1025
+    )
+    print(f"✅ SMTP server started on 0.0.0.0:1025")
+    
     try:
-        controller.start()
-        print(f"✅ SMTP server started on {controller.hostname}:{controller.port}")
-        
-        # Keep the server running
-        while True:
-            await asyncio.sleep(1)
-            
+        await server.serve_forever()
     except KeyboardInterrupt:
         print("\n🛑 Shutting down SMTP server...")
     finally:
-        controller.stop()
+        server.close()
+        await server.wait_closed()
 
 if __name__ == "__main__":
     asyncio.run(run_smtp_server())

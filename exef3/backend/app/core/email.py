@@ -1,6 +1,7 @@
 """Email service interface for EXEF3."""
 import smtplib
 import ssl
+import secrets
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
@@ -21,9 +22,13 @@ class EmailService:
         self.use_tls = getattr(settings, 'SMTP_USE_TLS', False)
         self.from_email = getattr(settings, 'FROM_EMAIL', 'noreply@exef3.local')
     
-    async def send_magic_link(self, email: str, magic_link: str) -> bool:
-        """Send magic link email for login."""
+    async def send_magic_link(self, email: str, magic_link: str, one_time_code: str = None) -> tuple[bool, str]:
+        """Send magic link email for login. Returns (success, one_time_code)."""
         try:
+            # Generate one-time code if not provided
+            if not one_time_code:
+                one_time_code = secrets.token_urlsafe(6)[:8].upper()
+            
             subject = "EXEF3 - Link logowania"
             
             html_content = f"""
@@ -40,6 +45,9 @@ class EmailService:
                     .button {{ display: inline-block; background: #3b82f6; color: white; 
                               padding: 12px 24px; text-decoration: none; border-radius: 6px; 
                               margin: 20px 0; }}
+                    .code {{ background: #f3f4f6; border: 2px solid #3b82f6; border-radius: 8px; 
+                            padding: 16px; text-align: center; font-size: 24px; font-weight: bold; 
+                            letter-spacing: 2px; color: #3b82f6; margin: 20px 0; }}
                     .footer {{ padding: 20px; text-align: center; color: #666; font-size: 14px; }}
                 </style>
             </head>
@@ -52,12 +60,20 @@ class EmailService:
                     <div class="content">
                         <h2>Link logowania</h2>
                         <p>Witaj! Otrzymujesz ten email, ponieważ poproszono o link logowania do EXEF3.</p>
-                        <p>Kliknij poniższy przycisk, aby zalogować się do systemu:</p>
+                        <p><strong>Masz dwie opcje logowania:</strong></p>
+                        
+                        <h3>Opcja 1: Kliknij przycisk</h3>
                         <div style="text-align: center;">
                             <a href="{magic_link}" class="button">Zaloguj się</a>
                         </div>
+                        
+                        <h3>Opcja 2: Użyj kodu jednorazowego</h3>
+                        <p>Wpisz ten kod w formularzu logowania:</p>
+                        <div class="code">{one_time_code}</div>
+                        
+                        <p>Link i kod są ważne przez 15 minut.</p>
                         <p>Jeśli nie prosiłeś o ten link, zignoruj tę wiadomość.</p>
-                        <p>Link jest ważny przez 15 minut.</p>
+                        
                         <p>Alternatywnie, skopiuj i wklej ten link do przeglądarki:</p>
                         <p style="word-break: break-all; background: #e5e7eb; padding: 10px; border-radius: 4px;">
                             {magic_link}
@@ -77,27 +93,36 @@ EXEF3 - Link logowania
 
 Witaj! Otrzymujesz ten email, ponieważ poproszono o link logowania do EXEF3.
 
-Kliknij poniższy link, aby zalogować się do systemu:
+MASZ DWIE OPCJE LOGOWANIA:
+
+1. Kliknij poniższy link, aby zalogować się do systemu:
 {magic_link}
 
+2. Użyj kodu jednorazowego: {one_time_code}
+
+Wpisz ten kod w formularzu logowania.
+
+Link i kod są ważne przez 15 minut.
 Jeśli nie prosiłeś o ten link, zignoruj tę wiadomość.
-Link jest ważny przez 15 minut.
 
 © 2024 EXEF3 - Document Flow Engine
             """
             
-            return await self._send_email(
+            # Send email and return result
+            success = await self._send_email(
                 to_email=email,
                 subject=subject,
                 text_content=text_content,
                 html_content=html_content
             )
             
+            return success, one_time_code
+            
         except Exception as e:
             logger.error(f"Failed to send magic link to {email}: {e}")
-            return False
+            return False, None
     
-    async def _send_email(self, to_email: str, subject: str, text_content: str, html_content: str) -> bool:
+    async def _send_email(self, to_email: str, subject: str, text_content: str, html_content: str, one_time_code: str = None) -> bool:
         """Send email using SMTP."""
         try:
             message = MIMEMultipart("alternative")
@@ -129,6 +154,9 @@ Link jest ważny przez 15 minut.
             logger.info(f"Email sent successfully to {to_email}")
             return True
             
+        except ConnectionRefusedError as e:
+            logger.warning(f"SMTP server unavailable ({self.smtp_host}:{self.smtp_port}): {e}")
+            return False
         except Exception as e:
             logger.error(f"Failed to send email: {e}")
             return False

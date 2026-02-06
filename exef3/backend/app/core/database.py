@@ -16,8 +16,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
     """Inicjalizacja bazy danych - tworzenie tabel."""
+    # MagicLink is imported above to ensure it registers with Base.metadata
     Base.metadata.create_all(bind=engine)
-    MagicLink.metadata.create_all(bind=engine)
 
 def get_db() -> Generator[Session, None, None]:
     """Dependency dla sesji bazy danych."""

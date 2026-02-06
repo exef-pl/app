@@ -121,14 +121,25 @@ test-quality:
 	source venv/bin/activate && python examples/quality_test.py $(FILE) --all
 
 # Package management
+bump:
+	@current_version=$$(cat VERSION); \
+	major=$$(echo $$current_version | cut -d. -f1); \
+	minor=$$(echo $$current_version | cut -d. -f2); \
+	patch=$$(echo $$current_version | cut -d. -f3); \
+	new_patch=$$((patch + 1)); \
+	new_version="$${major}.$${minor}.$${new_patch}"; \
+	echo "$$new_version" > VERSION; \
+	sed -i "s/version = \"$$current_version\"/version = \"$$new_version\"/" pyproject.toml; \
+	echo "Version bumped: $$current_version -> $$new_version"
+
 build:
 	source venv/bin/activate && ./venv/bin/python -m build
 
 upload: build
 	source venv/bin/activate && ./venv/bin/python -m twine upload dist/*
 
-# Alias for upload
-publish: upload
+# Publish: bump version, clean, build and upload
+publish: bump clean build upload
 	@echo "Package published successfully!"
 
 # Development helpers

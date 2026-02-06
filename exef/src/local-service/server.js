@@ -1567,29 +1567,43 @@ app.get('/sources/status', async (_req, res) => {
       if (!conn || conn.enabled === false) {
         continue
       }
-      const list = await listStorageCandidates(conn)
-      const files = Array.isArray(list.files) ? list.files : []
-      let newCount = 0
-      if (inbox && typeof inbox.getInvoiceBySourceKey === 'function') {
-        for (const f of files) {
-          if (!f?.sourceKey) continue
-          const existing = await inbox.getInvoiceBySourceKey(f.sourceKey)
-          if (!existing) {
-            newCount++
+      try {
+        const list = await listStorageCandidates(conn)
+        const files = Array.isArray(list.files) ? list.files : []
+        let newCount = 0
+        if (inbox && typeof inbox.getInvoiceBySourceKey === 'function') {
+          for (const f of files) {
+            if (!f?.sourceKey) continue
+            const existing = await inbox.getInvoiceBySourceKey(f.sourceKey)
+            if (!existing) {
+              newCount++
+            }
           }
         }
+        result.storage.connections.push({
+          id: conn.id || null,
+          name: conn.name || null,
+          type: conn.type || null,
+          enabled: conn.enabled !== false,
+          apiUrl: conn.apiUrl || conn.webdavUrl || null,
+          total: files.length,
+          pending: inbox ? newCount : null,
+          ok: list.ok !== false,
+          error: list.ok === false ? list.error : null,
+        })
+      } catch (connErr) {
+        result.storage.connections.push({
+          id: conn.id || null,
+          name: conn.name || null,
+          type: conn.type || null,
+          enabled: conn.enabled !== false,
+          apiUrl: conn.apiUrl || conn.webdavUrl || null,
+          total: 0,
+          pending: null,
+          ok: false,
+          error: connErr?.message || 'connection_failed',
+        })
       }
-      result.storage.connections.push({
-        id: conn.id || null,
-        name: conn.name || null,
-        type: conn.type || null,
-        enabled: conn.enabled !== false,
-        apiUrl: conn.apiUrl || conn.webdavUrl || null,
-        total: files.length,
-        pending: inbox ? newCount : null,
-        ok: list.ok !== false,
-        error: list.ok === false ? list.error : null,
-      })
     }
 
     const scanners = Array.isArray(settings?.channels?.devices?.scanners)
@@ -1646,28 +1660,41 @@ app.get('/sources/status', async (_req, res) => {
 
     for (const acc of (Array.isArray(settings?.channels?.email?.accounts) ? settings.channels.email.accounts : [])) {
       if (!acc || acc.enabled === false) continue
-      const listed = await listEmailCandidates(acc)
-      const attachments = Array.isArray(listed.attachments) ? listed.attachments : []
-      let newCount = 0
-      if (inbox && typeof inbox.getInvoiceBySourceKey === 'function') {
-        for (const att of attachments) {
-          if (!att?.sourceKey) continue
-          const existing = await inbox.getInvoiceBySourceKey(att.sourceKey)
-          if (!existing) {
-            newCount++
+      try {
+        const listed = await listEmailCandidates(acc)
+        const attachments = Array.isArray(listed.attachments) ? listed.attachments : []
+        let newCount = 0
+        if (inbox && typeof inbox.getInvoiceBySourceKey === 'function') {
+          for (const att of attachments) {
+            if (!att?.sourceKey) continue
+            const existing = await inbox.getInvoiceBySourceKey(att.sourceKey)
+            if (!existing) {
+              newCount++
+            }
           }
         }
+        result.email.accounts = result.email.accounts.map((a) => {
+          if (!a || a.id !== acc.id) return a
+          return {
+            ...a,
+            total: attachments.length,
+            pending: inbox ? newCount : null,
+            ok: listed.ok !== false,
+            error: listed.ok === false ? listed.error : null,
+          }
+        })
+      } catch (emailErr) {
+        result.email.accounts = result.email.accounts.map((a) => {
+          if (!a || a.id !== acc.id) return a
+          return {
+            ...a,
+            total: 0,
+            pending: null,
+            ok: false,
+            error: emailErr?.message || 'connection_failed',
+          }
+        })
       }
-      result.email.accounts = result.email.accounts.map((a) => {
-        if (!a || a.id !== acc.id) return a
-        return {
-          ...a,
-          total: attachments.length,
-          pending: inbox ? newCount : null,
-          ok: listed.ok !== false,
-          error: listed.ok === false ? listed.error : null,
-        }
-      })
     }
 
     res.json(result)
@@ -4128,6 +4155,379 @@ app.post('/inbox/invoices/:id/print', async (req, res) => {
       copies, duplex, colorMode, paperSize,
     })
     res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+// ============================================
+// Accounts CRUD API
+// ============================================
+
+const ACCOUNT_TYPES = ['ksef', 'email', 'storage', 'local-folders', 'scanners', 'printers']
+
+function accountTypeToSettingsPath(type) {
+  switch (type) {
+    case 'ksef': return { key: 'ksef', field: 'accounts' }
+    case 'email': return { key: 'email', field: 'accounts' }
+    case 'storage': return { key: 'remoteStorage', field: 'connections' }
+    case 'scanners': return { key: 'devices', field: 'scanners' }
+    case 'printers': return { key: 'devices', field: 'printers' }
+    default: return null
+  }
+}
+
+function getAccountsList(currentSettings, type) {
+  if (type === 'local-folders') {
+    const paths = currentSettings?.channels?.localFolders?.paths || []
+    return paths.map((p, i) => ({ id: `local-folder-${i}`, type: 'local-folder', path: p, enabled: true }))
+  }
+  const mapping = accountTypeToSettingsPath(type)
+  if (!mapping) return []
+  const section = currentSettings?.channels?.[mapping.key]
+  return Array.isArray(section?.[mapping.field]) ? section[mapping.field] : []
+}
+
+function setAccountsList(currentSettings, type, list) {
+  const next = { ...currentSettings, channels: { ...(currentSettings.channels || {}) } }
+  if (type === 'local-folders') {
+    next.channels.localFolders = { ...(next.channels.localFolders || {}), paths: list.map((a) => a.path || a.id) }
+    return next
+  }
+  const mapping = accountTypeToSettingsPath(type)
+  if (!mapping) return next
+  next.channels[mapping.key] = { ...(next.channels[mapping.key] || {}), [mapping.field]: list }
+  return next
+}
+
+app.get('/accounts', async (_req, res) => {
+  try {
+    const current = await getSettingsFromBackend()
+    const result = {}
+    for (const type of ACCOUNT_TYPES) {
+      result[type] = getAccountsList(current, type)
+    }
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.get('/accounts/:type', async (req, res) => {
+  try {
+    const type = req.params.type
+    if (!ACCOUNT_TYPES.includes(type)) {
+      return res.status(400).json({ error: `invalid_account_type: ${type}`, valid: ACCOUNT_TYPES })
+    }
+    const current = await getSettingsFromBackend()
+    const accounts = getAccountsList(current, type)
+    res.json({ type, accounts })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/accounts/:type', async (req, res) => {
+  try {
+    const type = req.params.type
+    if (!ACCOUNT_TYPES.includes(type)) {
+      return res.status(400).json({ error: `invalid_account_type: ${type}`, valid: ACCOUNT_TYPES })
+    }
+    const body = req.body || {}
+    const current = await getSettingsFromBackend()
+    const existing = getAccountsList(current, type)
+
+    if (type === 'local-folders') {
+      const newPath = String(body.path || '').trim()
+      if (!newPath) {
+        return res.status(400).json({ error: 'path_required' })
+      }
+      if (existing.some((a) => a.path === newPath)) {
+        return res.status(409).json({ error: 'path_already_exists' })
+      }
+      const nextList = [...existing, { id: `local-folder-${existing.length}`, type: 'local-folder', path: newPath, enabled: true }]
+      const nextSettings = setAccountsList(current, type, nextList)
+      await setSettingsToBackend(nextSettings)
+      settings = nextSettings
+      workflow.configureStorage({
+        watchPaths: nextSettings.channels.localFolders.paths,
+        connections: nextSettings?.channels?.remoteStorage?.connections || [],
+      })
+      return res.status(201).json({ ok: true, account: nextList[nextList.length - 1] })
+    }
+
+    const id = body.id || `${type}-${Date.now()}`
+    if (existing.some((a) => a && a.id === id)) {
+      return res.status(409).json({ error: 'account_id_already_exists', id })
+    }
+
+    const newAccount = { ...body, id, enabled: body.enabled !== false, createdAt: new Date().toISOString() }
+    const nextList = [...existing, newAccount]
+    const nextSettings = setAccountsList(current, type, nextList)
+
+    // Set active account if this is the first one
+    if (type === 'ksef' && nextList.length === 1) {
+      nextSettings.channels.ksef = { ...(nextSettings.channels.ksef || {}), activeAccountId: id }
+    }
+    if (type === 'email' && nextList.length === 1) {
+      nextSettings.channels.email = { ...(nextSettings.channels.email || {}), activeAccountId: id }
+    }
+
+    await setSettingsToBackend(nextSettings)
+    settings = nextSettings
+
+    // Reconfigure workflow
+    if (type === 'storage') {
+      workflow.configureStorage({
+        watchPaths: nextSettings.channels?.localFolders?.paths || [],
+        connections: nextSettings.channels?.remoteStorage?.connections || [],
+      })
+    } else if (type === 'ksef') {
+      applyKsefFromSettings(nextSettings)
+    } else if (type === 'email') {
+      applyEmailFromSettings(nextSettings)
+    } else if (type === 'scanners' || type === 'printers') {
+      applyDevicesFromSettings(nextSettings)
+    }
+
+    res.status(201).json({ ok: true, account: newAccount })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.put('/accounts/:type/:id', async (req, res) => {
+  try {
+    const type = req.params.type
+    const id = req.params.id
+    if (!ACCOUNT_TYPES.includes(type)) {
+      return res.status(400).json({ error: `invalid_account_type: ${type}`, valid: ACCOUNT_TYPES })
+    }
+
+    const body = req.body || {}
+    const current = await getSettingsFromBackend()
+    const existing = getAccountsList(current, type)
+
+    if (type === 'local-folders') {
+      const idx = existing.findIndex((a) => a.id === id || a.path === id)
+      if (idx < 0) {
+        return res.status(404).json({ error: 'folder_not_found' })
+      }
+      const updated = { ...existing[idx], ...(body.path ? { path: body.path } : {}), enabled: body.enabled !== false }
+      const nextList = existing.slice()
+      nextList[idx] = updated
+      const nextSettings = setAccountsList(current, type, nextList)
+      await setSettingsToBackend(nextSettings)
+      settings = nextSettings
+      workflow.configureStorage({
+        watchPaths: nextSettings.channels.localFolders.paths,
+        connections: nextSettings?.channels?.remoteStorage?.connections || [],
+      })
+      return res.json({ ok: true, account: updated })
+    }
+
+    const idx = existing.findIndex((a) => a && a.id === id)
+    if (idx < 0) {
+      return res.status(404).json({ error: 'account_not_found', id })
+    }
+
+    const updated = { ...existing[idx], ...body, id, updatedAt: new Date().toISOString() }
+    const nextList = existing.slice()
+    nextList[idx] = updated
+    const nextSettings = setAccountsList(current, type, nextList)
+    await setSettingsToBackend(nextSettings)
+    settings = nextSettings
+
+    if (type === 'storage') {
+      workflow.configureStorage({
+        watchPaths: nextSettings.channels?.localFolders?.paths || [],
+        connections: nextSettings.channels?.remoteStorage?.connections || [],
+      })
+    } else if (type === 'ksef') {
+      applyKsefFromSettings(nextSettings)
+    } else if (type === 'email') {
+      applyEmailFromSettings(nextSettings)
+    } else if (type === 'scanners' || type === 'printers') {
+      applyDevicesFromSettings(nextSettings)
+    }
+
+    res.json({ ok: true, account: updated })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.delete('/accounts/:type/:id', async (req, res) => {
+  try {
+    const type = req.params.type
+    const id = req.params.id
+    if (!ACCOUNT_TYPES.includes(type)) {
+      return res.status(400).json({ error: `invalid_account_type: ${type}`, valid: ACCOUNT_TYPES })
+    }
+
+    const current = await getSettingsFromBackend()
+    const existing = getAccountsList(current, type)
+
+    if (type === 'local-folders') {
+      const idx = existing.findIndex((a) => a.id === id || a.path === id)
+      if (idx < 0) {
+        return res.status(404).json({ error: 'folder_not_found' })
+      }
+      const nextList = existing.filter((_, i) => i !== idx)
+      const nextSettings = setAccountsList(current, type, nextList)
+      await setSettingsToBackend(nextSettings)
+      settings = nextSettings
+      workflow.configureStorage({
+        watchPaths: nextSettings.channels.localFolders.paths,
+        connections: nextSettings?.channels?.remoteStorage?.connections || [],
+      })
+      return res.json({ ok: true, deleted: id })
+    }
+
+    const idx = existing.findIndex((a) => a && a.id === id)
+    if (idx < 0) {
+      return res.status(404).json({ error: 'account_not_found', id })
+    }
+
+    const nextList = existing.filter((_, i) => i !== idx)
+    const nextSettings = setAccountsList(current, type, nextList)
+
+    // Clear active account if we deleted it
+    if (type === 'ksef' && nextSettings.channels?.ksef?.activeAccountId === id) {
+      nextSettings.channels.ksef.activeAccountId = nextList[0]?.id || null
+    }
+    if (type === 'email' && nextSettings.channels?.email?.activeAccountId === id) {
+      nextSettings.channels.email.activeAccountId = nextList[0]?.id || null
+    }
+
+    await setSettingsToBackend(nextSettings)
+    settings = nextSettings
+
+    if (type === 'storage') {
+      workflow.configureStorage({
+        watchPaths: nextSettings.channels?.localFolders?.paths || [],
+        connections: nextSettings.channels?.remoteStorage?.connections || [],
+      })
+    } else if (type === 'ksef') {
+      applyKsefFromSettings(nextSettings)
+    } else if (type === 'email') {
+      applyEmailFromSettings(nextSettings)
+    } else if (type === 'scanners' || type === 'printers') {
+      applyDevicesFromSettings(nextSettings)
+    }
+
+    res.json({ ok: true, deleted: id })
+  } catch (err) {
+    res.status(500).json({ error: err?.message ?? 'unknown_error' })
+  }
+})
+
+app.post('/accounts/:type/:id/sync', async (req, res) => {
+  try {
+    const type = req.params.type
+    const id = req.params.id
+    if (!ACCOUNT_TYPES.includes(type)) {
+      return res.status(400).json({ error: `invalid_account_type: ${type}`, valid: ACCOUNT_TYPES })
+    }
+
+    const current = await getSettingsFromBackend()
+    const existing = getAccountsList(current, type)
+
+    if (type === 'local-folders') {
+      const folder = existing.find((a) => a.id === id || a.path === id)
+      if (!folder) {
+        return res.status(404).json({ error: 'folder_not_found' })
+      }
+      const start = Date.now()
+      const invoices = await workflow.storageSync.syncLocalFolder(folder.path)
+      return res.json({ ok: true, count: Array.isArray(invoices) ? invoices.length : 0, ms: Date.now() - start })
+    }
+
+    if (type === 'storage') {
+      const conn = existing.find((a) => a && a.id === id)
+      if (!conn) {
+        return res.status(404).json({ error: 'connection_not_found', id })
+      }
+      const start = Date.now()
+      const invoices = await workflow.storageSync.syncConnection(conn)
+      return res.json({ ok: true, count: Array.isArray(invoices) ? invoices.length : 0, ms: Date.now() - start })
+    }
+
+    if (type === 'email') {
+      const acc = existing.find((a) => a && a.id === id)
+      if (!acc) {
+        return res.status(404).json({ error: 'account_not_found', id })
+      }
+      const start = Date.now()
+      const invoices = await workflow.emailWatcher.pollAccount(acc)
+      return res.json({ ok: true, count: Array.isArray(invoices) ? invoices.length : 0, ms: Date.now() - start })
+    }
+
+    if (type === 'ksef') {
+      const acc = existing.find((a) => a && a.id === id)
+      if (!acc) {
+        return res.status(404).json({ error: 'account_not_found', id })
+      }
+      const token = acc.accessToken || null
+      if (!token) {
+        return res.status(400).json({ error: 'ksef_no_access_token' })
+      }
+      const start = Date.now()
+      const since = req.body?.since || null
+      const until = req.body?.until || null
+      const invoices = await ksef.pollNewInvoices({ accessToken: token, since, until })
+      let added = 0
+      for (const invData of invoices) {
+        const ksefKey = invData?.ksefReferenceNumber || invData?.ksefId || null
+        if (!ksefKey) continue
+        try {
+          const downloaded = await ksef.downloadInvoice({ accessToken: token, ksefReferenceNumber: String(ksefKey), format: 'xml' })
+          const xmlText = downloaded?.format === 'xml' ? downloaded.data : null
+          if (!xmlText || !String(xmlText).trim()) continue
+          await workflow.inbox.addInvoice('ksef', String(xmlText), {
+            ...invData,
+            sourceKey: `ksef:${String(ksefKey)}`,
+            fileName: `ksef_${String(ksefKey)}.xml`,
+            fileType: downloaded?.contentType || 'application/xml',
+            fileSize: Buffer.byteLength(String(xmlText), 'utf8'),
+          })
+          added++
+        } catch (_e) { continue }
+      }
+      return res.json({ ok: true, polled: invoices.length, added, ms: Date.now() - start })
+    }
+
+    if (type === 'scanners') {
+      const scanner = existing.find((a) => a && a.id === id)
+      if (!scanner) {
+        return res.status(404).json({ error: 'scanner_not_found', id })
+      }
+      const start = Date.now()
+      const docs = await workflow.deviceSync.listScannerDocuments(id)
+      let added = 0
+      for (const doc of (Array.isArray(docs) ? docs : [])) {
+        const docId = doc?.id ? String(doc.id) : null
+        if (!docId) continue
+        const sk = `scanner:${id}:${docId}`
+        const existing = await workflow.inbox.getInvoiceBySourceKey(sk)
+        if (existing) continue
+        try {
+          const downloaded = await workflow.deviceSync.downloadScannerDocument(id, docId)
+          if (downloaded?.content) {
+            await workflow.inbox.addInvoice('scanner', downloaded.content, {
+              sourceKey: sk,
+              fileName: downloaded.fileName || `scan_${docId}.pdf`,
+              fileType: downloaded.contentType || 'application/pdf',
+              fileSize: downloaded.content?.length || 0,
+            })
+            added++
+          }
+        } catch (_e) { continue }
+      }
+      return res.json({ ok: true, total: Array.isArray(docs) ? docs.length : 0, added, ms: Date.now() - start })
+    }
+
+    res.status(400).json({ error: `sync_not_supported_for_type: ${type}` })
   } catch (err) {
     res.status(500).json({ error: err?.message ?? 'unknown_error' })
   }
