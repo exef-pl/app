@@ -8,6 +8,7 @@ from sqlalchemy import func
 
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
+from app.core.docid import generate_doc_id
 from app.models.models import (
     Task, Document, DocumentMetadata, DocumentRelation,
     Project, EntityMember, ProjectAuthorization, AuthorizationRole,
@@ -145,6 +146,14 @@ def create_document(data: DocumentCreate, identity_id: str = Depends(get_current
     document = Document(
         id=str(uuid4()),
         **data.model_dump()
+    )
+    # Generate deterministic document ID
+    document.doc_id = generate_doc_id(
+        contractor_nip=document.contractor_nip,
+        number=document.number,
+        document_date=document.document_date,
+        amount_gross=document.amount_gross,
+        doc_type=document.doc_type or 'invoice',
     )
     db.add(document)
     

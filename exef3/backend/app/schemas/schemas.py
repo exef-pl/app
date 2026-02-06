@@ -185,6 +185,7 @@ class ProjectCreate(BaseModel):
     icon: Optional[str] = "📊"
     color: Optional[str] = "#3b82f6"
     categories: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
 
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
@@ -194,6 +195,7 @@ class ProjectUpdate(BaseModel):
     icon: Optional[str] = None
     color: Optional[str] = None
     categories: Optional[List[str]] = None
+    tags: Optional[List[str]] = None
 
 class ProjectAuthorizationCreate(BaseModel):
     identity_id: str
@@ -230,6 +232,7 @@ class ProjectResponse(BaseModel):
     icon: Optional[str]
     color: Optional[str]
     categories: Optional[List[str]]
+    tags: Optional[List[str]]
     is_active: bool
     created_at: datetime
     
@@ -268,6 +271,16 @@ class TaskUpdate(BaseModel):
     icon: Optional[str] = None
     status: Optional[TaskStatus] = None
     deadline: Optional[date] = None
+    assigned_to_id: Optional[str] = None
+
+class AssigneeInfo(BaseModel):
+    id: str
+    email: str
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
 
 class TaskResponse(BaseModel):
     id: str
@@ -282,6 +295,8 @@ class TaskResponse(BaseModel):
     import_status: Optional[str] = "not_started"
     describe_status: Optional[str] = "not_started"
     export_status: Optional[str] = "not_started"
+    assigned_to_id: Optional[str] = None
+    assigned_to: Optional[AssigneeInfo] = None
     docs_total: int
     docs_described: int
     docs_approved: int
@@ -339,6 +354,7 @@ class DocumentResponse(BaseModel):
     amount_gross: Optional[float]
     currency: str
     document_date: Optional[date]
+    doc_id: Optional[str] = None
     source: Optional[str]
     status: DocumentStatus
     created_at: datetime

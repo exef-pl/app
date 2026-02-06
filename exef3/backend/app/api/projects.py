@@ -285,5 +285,49 @@ def delete_authorization(
 def list_tasks(project_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Lista zadań w projekcie."""
     project, _, _ = check_project_access(db, project_id, identity_id)
-    tasks = db.query(Task).filter(Task.project_id == project_id).order_by(Task.period_start.desc()).all()
+    tasks = db.query(Task).options(
+        joinedload(Task.assigned_to)
+    ).filter(Task.project_id == project_id).order_by(Task.period_start.desc()).all()
     return tasks
+
+
+@router.get("/{project_id}/members")
+def list_project_members(project_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
+    """Lista osób z dostępem do projektu (członkowie podmiotu + autoryzowani)."""
+    project, _, _ = check_project_access(db, project_id, identity_id)
+
+    members = []
+
+    # Entity members
+    entity_members = db.query(EntityMember).options(
+        joinedload(EntityMember.identity)
+    ).filter(EntityMember.entity_id == project.entity_id).all()
+    for em in entity_members:
+        ident = em.identity
+        members.append({
+            "id": ident.id,
+            "email": ident.email,
+            "first_name": ident.first_name,
+            "last_name": ident.last_name,
+            "role": em.role.value if em.role else "viewer",
+            "source": "entity_member",
+        })
+
+    # Project authorizations
+    auths = db.query(ProjectAuthorization).options(
+        joinedload(ProjectAuthorization.identity)
+    ).filter(ProjectAuthorization.project_id == project_id).all()
+    seen_ids = {m["id"] for m in members}
+    for a in auths:
+        if a.identity_id not in seen_ids:
+            ident = a.identity
+            members.append({
+                "id": ident.id,
+                "email": ident.email,
+                "first_name": ident.first_name,
+                "last_name": ident.last_name,
+                "role": a.role.value if a.role else "viewer",
+                "source": "authorization",
+            })
+
+    return members

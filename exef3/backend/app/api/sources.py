@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
+from app.core.docid import generate_doc_id
 from app.models.models import (
     DataSource, ImportRun, ExportRun, Document, DocumentMetadata, DocumentStatus,
     Task, TaskStatus, Project, EntityMember, ProjectAuthorization,
@@ -320,6 +321,13 @@ def trigger_import(
             id=str(uuid4()),
             task_id=task.id,
             **doc_data,
+        )
+        doc.doc_id = generate_doc_id(
+            contractor_nip=doc.contractor_nip,
+            number=doc.number,
+            document_date=doc.document_date,
+            amount_gross=doc.amount_gross,
+            doc_type=doc.doc_type or 'invoice',
         )
         db.add(doc)
         created_count += 1

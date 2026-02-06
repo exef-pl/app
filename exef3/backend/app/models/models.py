@@ -271,6 +271,7 @@ class Project(Base):
     color = Column(String(20), default="#3b82f6")
     settings = Column(JSON, default=dict)
     categories = Column(JSON, default=list)  # Lista kategorii kosztów
+    tags = Column(JSON, default=list)  # Predefiniowane tagi dla dokumentów
     
     # Status
     is_active = Column(Boolean, default=True)
@@ -346,6 +347,9 @@ class Task(Base):
     describe_status = Column(Enum(PhaseStatus), default=PhaseStatus.NOT_STARTED)
     export_status = Column(Enum(PhaseStatus), default=PhaseStatus.NOT_STARTED)
     
+    # Przypisanie
+    assigned_to_id = Column(String(36), ForeignKey("identities.id"), nullable=True)
+    
     # Statystyki (cache)
     docs_total = Column(Integer, default=0)
     docs_described = Column(Integer, default=0)
@@ -357,6 +361,7 @@ class Task(Base):
     
     # Relacje
     project = relationship("Project", back_populates="tasks")
+    assigned_to = relationship("Identity", foreign_keys=[assigned_to_id])
     documents = relationship("Document", back_populates="task", cascade="all, delete-orphan")
     import_runs = relationship("ImportRun", back_populates="task", cascade="all, delete-orphan")
     export_runs = relationship("ExportRun", back_populates="task", cascade="all, delete-orphan")
@@ -384,6 +389,9 @@ class Document(Base):
     amount_gross = Column(Float)
     currency = Column(String(3), default="PLN")
     document_date = Column(Date)
+    
+    # Deterministic document ID (docid library compatible)
+    doc_id = Column(String(30), index=True)  # e.g. DOC-FV-A7B3C9D2E1F04856
     
     # Źródło importu
     source = Column(String(50))  # ksef, email, scanner, manual
