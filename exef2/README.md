@@ -31,7 +31,7 @@ Minimalistyczna aplikacja do zarządzania dokumentami z komunikacją endpoint-to
 # Start
 make up
 
-# Otwórz http://localhost:3000
+# Otwórz http://localhost:8002
 
 # Testy
 make test
@@ -96,26 +96,26 @@ created → described → signed → exported
 
 ### Utwórz dokument
 ```bash
-curl -X POST http://localhost:3000/api/documents \
+curl -X POST http://localhost:8002/api/documents \
   -H "Content-Type: application/json" \
   -d '{"type":"invoice","number":"FV/2026/01/001","contractor":"ACME","amount":1000}'
 ```
 
 ### Dodaj endpoint importu
 ```bash
-curl -X POST http://localhost:3000/api/endpoints \
+curl -X POST http://localhost:8002/api/endpoints \
   -H "Content-Type: application/json" \
   -d '{"type":"ksef","direction":"import","name":"KSeF Zakupy"}'
 ```
 
 ### Pobierz dokumenty z endpointu
 ```bash
-curl -X POST http://localhost:3000/api/flow/pull/{endpoint_id}
+curl -X POST http://localhost:8002/api/flow/pull/{endpoint_id}
 ```
 
 ### Webhook - odbierz dokument
 ```bash
-curl -X POST http://localhost:3000/api/webhook/receive/{endpoint_id} \
+curl -X POST http://localhost:8002/api/webhook/receive/{endpoint_id} \
   -H "Content-Type: application/json" \
   -d '{"type":"invoice","number":"EXT-001","contractor":"External","amount":500}'
 ```

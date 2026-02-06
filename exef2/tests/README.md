@@ -165,7 +165,7 @@ To add new mock endpoints:
 ## Troubleshooting
 
 ### Common Issues
-1. **Port conflicts**: Ensure ports 3000, 8000, 8888 are free
+1. **Port conflicts**: Ensure ports 8002, 8000, 8888 are free
 2. **Docker not running**: Start Docker daemon
 3. **Test timeouts**: Increase timeout in test configuration
 4. **Mock service failures**: Check mock service logs

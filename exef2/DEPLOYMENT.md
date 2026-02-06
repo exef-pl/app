@@ -4,7 +4,7 @@
 
 | Environment | Purpose | URL | Branch |
 |-------------|---------|-----|--------|
-| Local | Development | http://localhost:3000 | feature/* |
+| Local | Development | http://localhost:8002 | feature/* |
 | Staging | Testing | https://staging.exef.app | develop |
 | Production | Live | https://exef.app | main + tags |
 
@@ -23,7 +23,7 @@ cp .env.example .env
 # Start
 make up
 
-# Open http://localhost:3000
+# Open http://localhost:8002
 ```
 
 ---
@@ -85,7 +85,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:80"
+      - "8002:80"
 ```
 
 ### Kubernetes (Production)

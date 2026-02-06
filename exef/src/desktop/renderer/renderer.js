@@ -1341,6 +1341,105 @@ async function renderAccountsPage() {
             }
           });
         });
+
+        // Per-account sync buttons
+        sourcesStatus.querySelectorAll('.acct-sync-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const acctType = btn.getAttribute('data-acct-type');
+            const acctId = btn.getAttribute('data-acct-id');
+            if (!acctType || !acctId) return;
+            try {
+              btn.disabled = true;
+              btn.textContent = 'Synchronizuję…';
+              if (sourcesResult) sourcesResult.textContent = `Synchronizuję ${acctType}/${acctId}…`;
+              const out = await syncAccount(acctType, acctId);
+              await refresh();
+              await refreshSources();
+              const count = out?.count ?? out?.added ?? 0;
+              if (sourcesResult) sourcesResult.textContent = `${acctType}/${acctId}: pobrano ${count}`;
+              showNotification(`Sync ${acctType}: pobrano ${count}`, 'success');
+            } catch (e) {
+              if (sourcesResult) sourcesResult.textContent = `Błąd sync: ${e.message}`;
+              showNotification(`Sync: ${e.message}`, 'error');
+            }
+          });
+        });
+
+        // Per-account delete buttons
+        sourcesStatus.querySelectorAll('.acct-del-btn').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            const acctType = btn.getAttribute('data-acct-type');
+            const acctId = btn.getAttribute('data-acct-id');
+            if (!acctType || !acctId) return;
+            if (!confirm(`Czy na pewno usunąć ${acctType}/${acctId}?`)) return;
+            try {
+              await deleteAccount(acctType, acctId);
+              await loadSettings();
+              await refreshSources();
+              showNotification(`Usunięto: ${acctType}/${acctId}`, 'success');
+            } catch (e) {
+              showNotification(`Błąd usuwania: ${e.message}`, 'error');
+            }
+          });
+        });
+
+        // Add local folder
+        const addFolderBtn = sourcesStatus.querySelector('#addLocalFolderBtn') || document.getElementById('addLocalFolderBtn');
+        if (addFolderBtn) {
+          addFolderBtn.addEventListener('click', async () => {
+            const input = document.getElementById('addLocalFolderPath');
+            const folderPath = String(input?.value || '').trim();
+            if (!folderPath) {
+              showNotification('Podaj ścieżkę do folderu', 'error');
+              return;
+            }
+            try {
+              await addAccount('local-folders', { path: folderPath });
+              if (input) input.value = '';
+              await loadSettings();
+              await refreshSources();
+              showNotification(`Dodano folder: ${folderPath}`, 'success');
+            } catch (e) {
+              showNotification(`Błąd dodawania folderu: ${e.message}`, 'error');
+            }
+          });
+        }
+
+        // Add storage connection
+        const addStorageBtn = sourcesStatus.querySelector('#addStorageBtn') || document.getElementById('addStorageBtn');
+        if (addStorageBtn) {
+          addStorageBtn.addEventListener('click', async () => {
+            const typeEl = document.getElementById('addStorageType');
+            const nameEl = document.getElementById('addStorageName');
+            const apiUrlEl = document.getElementById('addStorageApiUrl');
+            const tokenEl = document.getElementById('addStorageToken');
+            const connType = typeEl?.value || 'dropbox';
+            const connName = String(nameEl?.value || '').trim();
+            const connApiUrl = String(apiUrlEl?.value || '').trim();
+            const connToken = String(tokenEl?.value || '').trim();
+            if (!connName || !connApiUrl) {
+              showNotification('Podaj nazwę i API URL', 'error');
+              return;
+            }
+            try {
+              await addAccount('storage', {
+                type: connType,
+                name: connName,
+                apiUrl: connApiUrl,
+                accessToken: connToken || undefined,
+                enabled: true,
+              });
+              if (nameEl) nameEl.value = '';
+              if (apiUrlEl) apiUrlEl.value = '';
+              if (tokenEl) tokenEl.value = '';
+              await loadSettings();
+              await refreshSources();
+              showNotification(`Dodano połączenie: ${connName}`, 'success');
+            } catch (e) {
+              showNotification(`Błąd dodawania połączenia: ${e.message}`, 'error');
+            }
+          });
+        }
       }
     } catch (e) {
       if (sourcesResult) {

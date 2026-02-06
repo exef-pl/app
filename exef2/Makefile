@@ -7,7 +7,7 @@
 # Start application
 up:
 	docker-compose up -d --build
-	@echo "App running at http://localhost:3000"
+	@echo "App running at http://localhost:8002"
 
 # Stop application
 down:
@@ -118,11 +118,11 @@ deploy-prod:
 
 # Health check
 health:
-	@curl -s http://localhost:3000/health | python -m json.tool
+	@curl -s http://localhost:8002/health | python -m json.tool
 
 # Stats
 stats:
-	@curl -s http://localhost:3000/api/stats | python -m json.tool
+	@curl -s http://localhost:8002/api/stats | python -m json.tool
 
 # Clean everything
 clean:

@@ -1027,6 +1027,172 @@ async function testExportFilesHierarchy() {
   }
 }
 
+async function testAccountsCrud() {
+  console.log('\n[TEST] Accounts CRUD API')
+
+  // GET /accounts – list all
+  const listRes = await fetch(`${BASE_URL}/accounts`)
+  const listJson = await listRes.json().catch(() => ({}))
+  if (!listRes.ok) {
+    console.log('  GET /accounts failed:', listRes.status)
+    return false
+  }
+  console.log('  Account types:', Object.keys(listJson).join(', '))
+
+  // POST /accounts/local-folders – add folder
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'exef-acct-test-'))
+  const fixturePath = path.join(__dirname, 'fixtures', 'sample-invoice.xml')
+  if (fs.existsSync(fixturePath)) {
+    fs.copyFileSync(fixturePath, path.join(tmpDir, 'acct-test.xml'))
+  }
+
+  try {
+    const addFolderRes = await fetch(`${BASE_URL}/accounts/local-folders`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: tmpDir }),
+    })
+    const addFolderJson = await addFolderRes.json().catch(() => ({}))
+    if (!addFolderRes.ok || !addFolderJson.ok) {
+      console.log('  POST /accounts/local-folders failed:', JSON.stringify(addFolderJson))
+      return false
+    }
+    const folderId = addFolderJson.account?.id
+    console.log('  Added local folder:', folderId, tmpDir)
+
+    // POST /accounts/local-folders/:id/sync – sync the folder
+    const syncRes = await fetch(`${BASE_URL}/accounts/local-folders/${encodeURIComponent(folderId)}/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    })
+    const syncJson = await syncRes.json().catch(() => ({}))
+    if (!syncRes.ok) {
+      console.log('  Sync local folder failed:', JSON.stringify(syncJson))
+      return false
+    }
+    console.log('  Synced local folder: count=' + (syncJson.count || 0))
+
+    // GET /accounts/local-folders – verify folder is listed
+    const listFoldersRes = await fetch(`${BASE_URL}/accounts/local-folders`)
+    const listFoldersJson = await listFoldersRes.json().catch(() => ({}))
+    const folders = Array.isArray(listFoldersJson.accounts) ? listFoldersJson.accounts : []
+    const found = folders.find((f) => f.path === tmpDir)
+    if (!found) {
+      console.log('  Folder not found in list')
+      return false
+    }
+
+    // POST /accounts/storage – add a storage connection
+    const addStorageRes = await fetch(`${BASE_URL}/accounts/storage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'test-conn', type: 'dropbox', name: 'Test Connection', apiUrl: 'http://localhost:9999', enabled: true }),
+    })
+    const addStorageJson = await addStorageRes.json().catch(() => ({}))
+    if (!addStorageRes.ok || !addStorageJson.ok) {
+      console.log('  POST /accounts/storage failed:', JSON.stringify(addStorageJson))
+      return false
+    }
+    console.log('  Added storage connection: test-conn')
+
+    // PUT /accounts/storage/test-conn – update connection
+    const updateRes = await fetch(`${BASE_URL}/accounts/storage/test-conn`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Updated Connection' }),
+    })
+    const updateJson = await updateRes.json().catch(() => ({}))
+    if (!updateRes.ok || !updateJson.ok) {
+      console.log('  PUT /accounts/storage/test-conn failed:', JSON.stringify(updateJson))
+      return false
+    }
+    if (updateJson.account?.name !== 'Updated Connection') {
+      console.log('  Name not updated:', updateJson.account?.name)
+      return false
+    }
+    console.log('  Updated storage connection name OK')
+
+    // DELETE /accounts/storage/test-conn
+    const delStorageRes = await fetch(`${BASE_URL}/accounts/storage/test-conn`, { method: 'DELETE' })
+    const delStorageJson = await delStorageRes.json().catch(() => ({}))
+    if (!delStorageRes.ok || !delStorageJson.ok) {
+      console.log('  DELETE /accounts/storage/test-conn failed:', JSON.stringify(delStorageJson))
+      return false
+    }
+    console.log('  Deleted storage connection OK')
+
+    // DELETE /accounts/local-folders/:id – clean up
+    const delFolderRes = await fetch(`${BASE_URL}/accounts/local-folders/${encodeURIComponent(folderId)}`, { method: 'DELETE' })
+    const delFolderJson = await delFolderRes.json().catch(() => ({}))
+    if (!delFolderRes.ok || !delFolderJson.ok) {
+      console.log('  DELETE local folder failed:', JSON.stringify(delFolderJson))
+      return false
+    }
+    console.log('  Deleted local folder OK')
+
+    // Verify deletion
+    const listAfterRes = await fetch(`${BASE_URL}/accounts/local-folders`)
+    const listAfterJson = await listAfterRes.json().catch(() => ({}))
+    const foldersAfter = Array.isArray(listAfterJson.accounts) ? listAfterJson.accounts : []
+    if (foldersAfter.find((f) => f.path === tmpDir)) {
+      console.log('  Folder still exists after delete')
+      return false
+    }
+
+    // Duplicate prevention
+    const addDup1 = await fetch(`${BASE_URL}/accounts/storage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'dup-test', type: 'dropbox', name: 'Dup', apiUrl: 'http://localhost:9999' }),
+    })
+    if (!addDup1.ok) {
+      console.log('  First add for dup test failed')
+      return false
+    }
+    const addDup2 = await fetch(`${BASE_URL}/accounts/storage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'dup-test', type: 'dropbox', name: 'Dup2', apiUrl: 'http://localhost:9999' }),
+    })
+    if (addDup2.ok) {
+      console.log('  Duplicate ID was accepted (should be 409)')
+      return false
+    }
+    if (addDup2.status !== 409) {
+      console.log('  Expected 409 for dup, got', addDup2.status)
+      return false
+    }
+    console.log('  Duplicate prevention OK (409)')
+
+    // Clean up dup-test
+    await fetch(`${BASE_URL}/accounts/storage/dup-test`, { method: 'DELETE' })
+
+    return true
+  } finally {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true })
+    } catch (_e) {}
+  }
+}
+
+async function testSourcesStatusResilience() {
+  console.log('\n[TEST] GET /sources/status (resilience)')
+  const res = await fetch(`${BASE_URL}/sources/status`)
+  const json = await res.json().catch(() => ({}))
+  console.log('  Status:', res.status)
+  if (!res.ok) {
+    console.log('  Error:', JSON.stringify(json))
+    return false
+  }
+  // Should return 200 even if remote services are offline
+  const conns = Array.isArray(json?.storage?.connections) ? json.storage.connections : []
+  console.log('  Storage connections:', conns.length)
+  console.log('  KSeF accounts:', Array.isArray(json?.ksef?.accounts) ? json.ksef.accounts.length : 0)
+  console.log('  Email accounts:', Array.isArray(json?.email?.accounts) ? json.email.accounts.length : 0)
+  return true
+}
+
 async function runAllTests() {
   console.log('='.repeat(60))
   console.log('EXEF Inbox API Tests')
@@ -1066,6 +1232,8 @@ async function runAllTests() {
     results.push({ name: 'export files hierarchy', ok: await testExportFilesHierarchy() })
     results.push({ name: 'export files filtering', ok: await testExportFilesFiltering() })
     results.push({ name: 'export documents zip', ok: await testExportDocumentsZip() })
+    results.push({ name: 'sources status resilience', ok: await testSourcesStatusResilience() })
+    results.push({ name: 'accounts CRUD', ok: await testAccountsCrud() })
   } catch (e) {
     console.error('\n[ERROR]', e.message)
   }

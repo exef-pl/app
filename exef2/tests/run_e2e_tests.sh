@@ -65,7 +65,7 @@ done
 # Wait for frontend
 echo -e "${YELLOW}⏳ Waiting for frontend to be ready...${NC}"
 for i in {1..30}; do
-    if curl -f http://localhost:3000 > /dev/null 2>&1; then
+    if curl -f http://localhost:8002 > /dev/null 2>&1; then
         echo -e "${GREEN}✅ Frontend is ready!${NC}"
         break
     fi
