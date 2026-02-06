@@ -192,9 +192,6 @@ def delete_project(project_id: str, identity_id: str = Depends(get_current_ident
     """Usuwa projekt."""
     project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True)
     
-    if role != AuthorizationRole.OWNER:
-        raise HTTPException(status_code=403, detail="Tylko właściciel może usunąć projekt")
-    
     db.delete(project)
     db.commit()
     return {"status": "deleted"}

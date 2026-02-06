@@ -42,4 +42,8 @@ export const PROJECT_TYPES = {
   vat_ue: { label: 'VAT-UE', icon: '🇪🇺' },
   projekt_klienta: { label: 'Projekt klienta', icon: '🏢' },
   rd_ipbox: { label: 'R&D / IP Box', icon: '🔬' },
+  kpir: { label: 'KPiR', icon: '📒' },
+  wplaty: { label: 'Wpłaty / Bank', icon: '🏦' },
+  dowody_platnosci: { label: 'Dowody płatności', icon: '💳' },
+  druki_przesylki: { label: 'Druki / Przesyłki', icon: '📦' },
 };

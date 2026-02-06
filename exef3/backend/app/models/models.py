@@ -41,6 +41,10 @@ class ProjectType(str, enum.Enum):
     VAT_UE = "vat_ue"
     PROJEKT_KLIENTA = "projekt_klienta"
     RD_IPBOX = "rd_ipbox"
+    KPIR = "kpir"
+    WPLATY = "wplaty"
+    DOWODY_PLATNOSCI = "dowody_platnosci"
+    DRUKI_PRZESYLKI = "druki_przesylki"
 
 class TaskStatus(str, enum.Enum):
     PENDING = "pending"
@@ -76,6 +80,12 @@ class SourceType(str, enum.Enum):
     ENOVA = "enova"
     CSV = "csv"
     MANUAL = "manual"
+    BANK = "bank"
+    BANK_ING = "bank_ing"
+    BANK_MBANK = "bank_mbank"
+    BANK_PKO = "bank_pko"
+    BANK_SANTANDER = "bank_santander"
+    BANK_PEKAO = "bank_pekao"
 
 class PhaseStatus(str, enum.Enum):
     NOT_STARTED = "not_started"

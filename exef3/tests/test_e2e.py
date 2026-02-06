@@ -412,8 +412,8 @@ class TestFlow:
         ).json()
         assert len(docs) > 0
 
-    def test_export_no_described_docs_returns_400(self, api_url, jan_auth, flow_context):
-        """Export should return 400 when no described/approved documents exist."""
+    def test_export_no_described_docs_returns_message(self, api_url, jan_auth, flow_context):
+        """Export should return 200 with ok=false when no described/approved documents exist."""
         if not flow_context["export_source_id"]:
             pytest.skip("No export source")
 
@@ -431,8 +431,75 @@ class TestFlow:
             "source_id": flow_context["export_source_id"],
             "task_id": flow_context["task_id"],
         })
-        assert r.status_code == 400
-        assert "Brak dokumentów" in r.json().get("detail", "")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["ok"] is False
+        assert body["docs_exported"] == 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CSV UPLOAD
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestCsvUpload:
+    @pytest.fixture
+    def upload_context(self, api_url, jan_auth):
+        """Get a task for CSV upload testing."""
+        entities = requests.get(f"{api_url}/entities", headers=jan_auth).json()
+        if not entities:
+            pytest.skip("No entities")
+        entity_id = entities[0]["id"]
+        projects = requests.get(f"{api_url}/projects?entity_id={entity_id}", headers=jan_auth).json()
+        if not projects:
+            pytest.skip("No projects")
+        tasks = requests.get(f"{api_url}/projects/{projects[0]['id']}/tasks", headers=jan_auth).json()
+        if not tasks:
+            pytest.skip("No tasks")
+        return {"task_id": tasks[0]["id"]}
+
+    def test_csv_upload_creates_documents(self, api_url, jan_auth, upload_context):
+        """Upload a CSV file and verify documents are created."""
+        csv_content = (
+            "numer;kontrahent;nip;brutto;data;kategoria\n"
+            "FV/2026/001;Test Sp. z o.o.;1234567890;1230.00;2026-01-15;IT\n"
+            "FV/2026/002;Demo SA;9876543210;456.78;2026-01-20;Biuro\n"
+        )
+        files = {"file": ("test.csv", csv_content.encode("utf-8"), "text/csv")}
+        r = requests.post(
+            f"{api_url}/flow/upload-csv?task_id={upload_context['task_id']}",
+            headers={"Authorization": jan_auth["Authorization"]},
+            files=files,
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["ok"] is True
+        assert data["imported"] == 2
+        assert data["filename"] == "test.csv"
+
+    def test_csv_upload_empty_file(self, api_url, jan_auth, upload_context):
+        """Upload an empty CSV — should import 0 documents."""
+        csv_content = "numer;kontrahent;brutto\n"
+        files = {"file": ("empty.csv", csv_content.encode("utf-8"), "text/csv")}
+        r = requests.post(
+            f"{api_url}/flow/upload-csv?task_id={upload_context['task_id']}",
+            headers={"Authorization": jan_auth["Authorization"]},
+            files=files,
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["ok"] is True
+        assert data["imported"] == 0
+
+    def test_csv_upload_no_task(self, api_url, jan_auth):
+        """Upload CSV with invalid task_id should return 404."""
+        csv_content = "numer;kontrahent;brutto\nFV/001;Test;100\n"
+        files = {"file": ("test.csv", csv_content.encode("utf-8"), "text/csv")}
+        r = requests.post(
+            f"{api_url}/flow/upload-csv?task_id=nonexistent-id",
+            headers={"Authorization": jan_auth["Authorization"]},
+            files=files,
+        )
+        assert r.status_code == 404
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -453,6 +520,164 @@ class TestTemplates:
         t = templates[0]
         for field in ("id", "name", "project_type", "task_recurrence"):
             assert field in t, f"Missing field: {field}"
+
+    def test_all_project_types_have_templates(self, api_url, auth):
+        """Ensure each project type has at least one system template."""
+        templates = requests.get(f"{api_url}/project-templates", headers=auth).json()
+        template_types = {t["project_type"] for t in templates}
+        expected_types = {
+            "ksiegowosc", "jpk", "zus", "vat_ue", "rd_ipbox",
+            "kpir", "wplaty", "dowody_platnosci", "druki_przesylki",
+        }
+        for pt in expected_types:
+            assert pt in template_types, f"Missing template for project type: {pt}"
+
+    def test_dowody_platnosci_template(self, api_url, auth):
+        """Verify dowody_platnosci template details."""
+        templates = requests.get(f"{api_url}/project-templates", headers=auth).json()
+        dp = [t for t in templates if t["project_type"] == "dowody_platnosci"]
+        assert len(dp) >= 1, "No dowody_platnosci template found"
+        t = dp[0]
+        assert "płatności" in t["name"].lower() or "dowody" in t["name"].lower()
+        assert t["task_recurrence"] == "monthly"
+
+    def test_druki_przesylki_template(self, api_url, auth):
+        """Verify druki_przesylki template details."""
+        templates = requests.get(f"{api_url}/project-templates", headers=auth).json()
+        dp = [t for t in templates if t["project_type"] == "druki_przesylki"]
+        assert len(dp) >= 1, "No druki_przesylki template found"
+        t = dp[0]
+        assert "przesyłek" in t["name"].lower() or "druki" in t["name"].lower()
+        assert t["task_recurrence"] == "monthly"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PROJECT CREATION FROM TEMPLATE (new project types)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestProjectCreation:
+    @pytest.fixture
+    def entity_id(self, api_url, jan_auth):
+        entities = requests.get(f"{api_url}/entities", headers=jan_auth).json()
+        if not entities:
+            pytest.skip("No entities")
+        return entities[0]["id"]
+
+    def test_create_dowody_platnosci_project(self, api_url, jan_auth, entity_id):
+        """Create a project with type dowody_platnosci."""
+        r = requests.post(f"{api_url}/projects", headers=jan_auth, json={
+            "entity_id": entity_id,
+            "name": "E2E Dowody płatności 2026",
+            "type": "dowody_platnosci",
+            "year": 2026,
+            "icon": "💳",
+            "color": "#06b6d4",
+            "categories": ["Przelew", "Gotówka", "Karta"],
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["type"] == "dowody_platnosci"
+        assert data["name"] == "E2E Dowody płatności 2026"
+        assert data["icon"] == "💳"
+
+    def test_create_druki_przesylki_project(self, api_url, jan_auth, entity_id):
+        """Create a project with type druki_przesylki."""
+        r = requests.post(f"{api_url}/projects", headers=jan_auth, json={
+            "entity_id": entity_id,
+            "name": "E2E Przesyłki 2026",
+            "type": "druki_przesylki",
+            "year": 2026,
+            "icon": "📦",
+            "color": "#f97316",
+            "categories": ["InPost", "DPD", "DHL"],
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert data["type"] == "druki_przesylki"
+        assert data["name"] == "E2E Przesyłki 2026"
+
+    def test_create_project_from_template(self, api_url, jan_auth, entity_id):
+        """Create a project using a template (dowody_platnosci)."""
+        templates = requests.get(f"{api_url}/project-templates", headers=jan_auth).json()
+        dp_templates = [t for t in templates if t["project_type"] == "dowody_platnosci"]
+        if not dp_templates:
+            pytest.skip("No dowody_platnosci template")
+        template = dp_templates[0]
+
+        r = requests.post(
+            f"{api_url}/projects/from-template",
+            headers=jan_auth,
+            json={"entity_id": entity_id, "template_id": template["id"], "year": 2026},
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["ok"] is True
+        assert data["project"]["type"] == "dowody_platnosci"
+        assert data["project"]["tasks_created"] > 0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPORT GRACEFUL HANDLING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class TestExportGraceful:
+    @pytest.fixture
+    def export_context(self, api_url, jan_auth):
+        """Get a project with export source for testing."""
+        entities = requests.get(f"{api_url}/entities", headers=jan_auth).json()
+        if not entities:
+            pytest.skip("No entities")
+        entity_id = entities[0]["id"]
+        projects = requests.get(f"{api_url}/projects?entity_id={entity_id}", headers=jan_auth).json()
+
+        for p in projects:
+            sources = requests.get(f"{api_url}/projects/{p['id']}/sources", headers=jan_auth).json()
+            export_sources = [s for s in sources if s["direction"] == "export"]
+            if export_sources:
+                tasks = requests.get(f"{api_url}/projects/{p['id']}/tasks", headers=jan_auth).json()
+                if tasks:
+                    return {
+                        "task_id": tasks[0]["id"],
+                        "export_source_id": export_sources[0]["id"],
+                    }
+        pytest.skip("No project with export source and tasks found")
+
+    def test_export_empty_returns_200_with_message(self, api_url, jan_auth, export_context):
+        """Export with no described docs should return 200, not 400."""
+        # Ensure no described docs by checking first
+        docs = requests.get(
+            f"{api_url}/tasks/{export_context['task_id']}/documents",
+            headers=jan_auth,
+        ).json()
+        described = [d for d in docs if d["status"] in ("described", "approved")]
+        if described:
+            pytest.skip("Task has described docs")
+
+        r = requests.post(f"{api_url}/flow/export", headers=jan_auth, json={
+            "source_id": export_context["export_source_id"],
+            "task_id": export_context["task_id"],
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert body["ok"] is False
+        assert body["docs_exported"] == 0
+        assert "message" in body
+
+    def test_export_invalid_source_returns_404(self, api_url, jan_auth, export_context):
+        """Export with non-existent source should return 404."""
+        r = requests.post(f"{api_url}/flow/export", headers=jan_auth, json={
+            "source_id": "nonexistent-source-id",
+            "task_id": export_context["task_id"],
+        })
+        assert r.status_code == 404
+
+    def test_export_invalid_task_returns_404(self, api_url, jan_auth, export_context):
+        """Export with non-existent task should return 404."""
+        r = requests.post(f"{api_url}/flow/export", headers=jan_auth, json={
+            "source_id": export_context["export_source_id"],
+            "task_id": "nonexistent-task-id",
+        })
+        assert r.status_code == 404
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

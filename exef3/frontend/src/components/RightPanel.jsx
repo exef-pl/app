@@ -9,6 +9,7 @@ export default function RightPanel({
   loading, activeEntity, activeProject, activeTask,
   projectId, setTasks, setDocuments,
   api, setSources, setError,
+  setProjects, entityId,
 }) {
   // ALL hooks MUST come before any conditional returns (Rules of Hooks)
   const [formData, setFormData] = useState({});
@@ -26,13 +27,13 @@ export default function RightPanel({
     return <SourceConfigPanel data={data} onClose={onClose} api={api} setSources={setSources} setError={setError} />;
   }
   if (type === 'view-project' && data) {
-    return <ProjectViewPanel data={data} onClose={onClose} navigate={navigate} activeTask={activeTask} />;
+    return <ProjectViewPanel data={data} onClose={onClose} navigate={navigate} activeTask={activeTask} api={api} setError={setError} setProjects={setProjects} entityId={entityId} />;
   }
   if (type === 'view-task' && data) {
     return <TaskViewPanel task={data} onClose={onClose} navigate={navigate} api={api} projectId={projectId} setTasks={setTasks} setError={setError} />;
   }
   if (type === 'view-document' && data) {
-    return <DocumentViewPanel doc={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} projectTags={activeProject?.tags || []} />;
+    return <DocumentViewPanel doc={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} projectTags={[...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])]} />;
   }
 
   const update = (field, value) => {
@@ -610,8 +611,42 @@ function TaskViewPanel({ task, onClose, navigate, api, projectId, setTasks, setE
   );
 }
 
-function ProjectViewPanel({ data, onClose, navigate, activeTask }) {
+function ProjectViewPanel({ data, onClose, navigate, activeTask, api, setError, setProjects, entityId }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
   const projType = PROJECT_TYPES[data.type] || { icon: '📁', label: data.type };
+  const isArchived = data.is_archived;
+
+  const handleArchive = async () => {
+    setBusy(true);
+    try {
+      await api(`/projects/${data.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_archived: !isArchived, is_active: isArchived }),
+      });
+      // Refresh project list then navigate
+      if (setProjects && entityId) {
+        const updated = await api(`/projects?entity_id=${entityId}`);
+        setProjects(updated);
+      }
+      navigate && navigate(`/entity/${data.entity_id}`);
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setBusy(false); }
+  };
+
+  const handleDelete = async () => {
+    setBusy(true);
+    try {
+      await api(`/projects/${data.id}`, { method: 'DELETE' });
+      // Remove from local state then navigate
+      if (setProjects) {
+        setProjects(prev => prev.filter(p => p.id !== data.id));
+      }
+      navigate && navigate(`/entity/${data.entity_id}`);
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setBusy(false); setConfirmDelete(false); }
+  };
+
   return (
     <>
       <div style={{
@@ -630,7 +665,7 @@ function ProjectViewPanel({ data, onClose, navigate, activeTask }) {
           <InfoRow label="Typ" value={`${projType.icon} ${projType.label}`} />
           <InfoRow label="Rok" value={data.year} />
           <InfoRow label="Okres" value={data.period_start && data.period_end ? `${data.period_start} — ${data.period_end}` : '—'} />
-          <InfoRow label="Status" value={data.is_active ? '🟢 Aktywny' : '⚪ Nieaktywny'} />
+          <InfoRow label="Status" value={isArchived ? '📦 Zarchiwizowany' : data.is_active ? '🟢 Aktywny' : '⚪ Nieaktywny'} />
         </div>
         {activeTask && (
           <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
@@ -654,6 +689,86 @@ function ProjectViewPanel({ data, onClose, navigate, activeTask }) {
             display: 'flex', alignItems: 'center', gap: '8px',
           }}>📋 Nowe zadanie</button>
         </div>
+
+        {/* Archive / Delete section */}
+        <div style={{
+          marginTop: '24px', paddingTop: '16px',
+          borderTop: `1px solid ${COLORS.border}`,
+        }}>
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '10px', textTransform: 'uppercase', fontWeight: '600' }}>
+            Zarządzanie projektem
+          </div>
+          <button
+            onClick={handleArchive}
+            disabled={busy}
+            style={{
+              width: '100%', padding: '10px 14px', fontSize: '13px', fontWeight: '500',
+              border: `1px solid ${isArchived ? COLORS.success + '40' : '#f59e0b40'}`,
+              borderRadius: '8px', cursor: busy ? 'wait' : 'pointer',
+              background: isArchived ? `${COLORS.success}10` : '#f59e0b10',
+              color: isArchived ? COLORS.success : '#f59e0b',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              marginBottom: '8px',
+            }}
+          >
+            {isArchived ? '♻️ Przywróć z archiwum' : '📦 Archiwizuj projekt'}
+          </button>
+
+          {!confirmDelete ? (
+            <button
+              onClick={() => setConfirmDelete(true)}
+              disabled={busy}
+              style={{
+                width: '100%', padding: '10px 14px', fontSize: '13px', fontWeight: '500',
+                border: `1px solid #ef444440`,
+                borderRadius: '8px', cursor: busy ? 'wait' : 'pointer',
+                background: '#ef444410',
+                color: '#ef4444',
+                display: 'flex', alignItems: 'center', gap: '8px',
+              }}
+            >
+              🗑️ Usuń projekt
+            </button>
+          ) : (
+            <div style={{
+              padding: '12px', background: '#ef444415',
+              border: '1px solid #ef444440', borderRadius: '8px',
+            }}>
+              <div style={{ fontSize: '12px', color: '#ef4444', fontWeight: '600', marginBottom: '8px' }}>
+                Czy na pewno chcesz usunąć ten projekt?
+              </div>
+              <div style={{ fontSize: '11px', color: COLORS.textMuted, marginBottom: '12px' }}>
+                Zostaną usunięte wszystkie zadania i dokumenty. Tej operacji nie można cofnąć.
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={handleDelete}
+                  disabled={busy}
+                  style={{
+                    flex: 1, padding: '8px', fontSize: '12px', fontWeight: '600',
+                    background: '#ef4444', color: '#fff',
+                    border: 'none', borderRadius: '6px',
+                    cursor: busy ? 'wait' : 'pointer',
+                  }}
+                >
+                  {busy ? '...' : 'Tak, usuń'}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={busy}
+                  style={{
+                    flex: 1, padding: '8px', fontSize: '12px', fontWeight: '500',
+                    background: COLORS.bgTertiary, color: COLORS.textMuted,
+                    border: `1px solid ${COLORS.border}`, borderRadius: '6px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Anuluj
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
@@ -667,12 +782,21 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
   const [newTag, setNewTag] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [duplicates, setDuplicates] = useState([]);
 
   useEffect(() => {
     const m = doc.metadata || {};
     setDescription(m.description || '');
     setCategory(m.category || '');
     setTags(m.tags || []);
+  }, [doc.id]);
+
+  useEffect(() => {
+    if (doc.doc_id) {
+      api(`/documents/${doc.id}/duplicates`).then(setDuplicates).catch(() => setDuplicates([]));
+    } else {
+      setDuplicates([]);
+    }
   }, [doc.id]);
 
   const handleSave = async () => {
@@ -743,6 +867,41 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
           </div>
         </div>
 
+        {/* Doc ID badge */}
+        {doc.doc_id && (
+          <div style={{
+            padding: '8px 12px', background: COLORS.bgTertiary, borderRadius: '8px',
+            marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px',
+          }}>
+            <span style={{ fontSize: '10px', color: COLORS.textMuted }}>🔑 ID:</span>
+            <code style={{
+              fontSize: '10px', fontFamily: 'monospace', color: COLORS.primary,
+              background: `${COLORS.primary}10`, padding: '2px 6px', borderRadius: '4px',
+            }}>{doc.doc_id}</code>
+          </div>
+        )}
+
+        {/* Duplicate warning */}
+        {duplicates.length > 0 && (
+          <div style={{
+            padding: '10px 12px', background: '#f59e0b15', border: '1px solid #f59e0b40',
+            borderRadius: '8px', marginBottom: '16px',
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: '#f59e0b', marginBottom: '6px' }}>
+              ⚠️ Wykryto {duplicates.length} {duplicates.length === 1 ? 'duplikat' : 'duplikaty'}
+            </div>
+            {duplicates.map(d => (
+              <div key={d.id} style={{
+                fontSize: '11px', color: COLORS.textMuted, padding: '3px 0',
+                display: 'flex', justifyContent: 'space-between',
+              }}>
+                <span>{d.number || '—'} • {d.contractor_name || '—'}</span>
+                <span style={{ fontSize: '10px', opacity: 0.7 }}>{d.source || '—'}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Category */}
         <div style={{ marginBottom: '16px' }}>
           <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>Kategoria</label>
@@ -756,6 +915,19 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
               borderRadius: '8px', color: COLORS.text, boxSizing: 'border-box',
             }}
           />
+          {projectTags.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+              {projectTags.map(pt => (
+                <button key={pt} type="button" onClick={() => setCategory(pt)} style={{
+                  padding: '3px 8px', fontSize: '10px', fontWeight: '500',
+                  background: category === pt ? `${COLORS.primary}20` : COLORS.bgTertiary,
+                  color: category === pt ? COLORS.primary : COLORS.textMuted,
+                  border: `1px solid ${category === pt ? COLORS.primary + '40' : COLORS.border}`,
+                  borderRadius: '10px', cursor: 'pointer',
+                }}>{pt}</button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Tags */}
@@ -780,21 +952,23 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
               <span style={{ fontSize: '11px', color: COLORS.textMuted, fontStyle: 'italic' }}>Brak tagów</span>
             )}
           </div>
-          {/* Project preset tags — show unselected ones as clickable suggestions */}
           {projectTags.length > 0 && (() => {
             const available = projectTags.filter(pt => !tags.includes(pt));
             if (available.length === 0) return null;
             return (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
-                {available.map(pt => (
-                  <button key={pt} onClick={() => setTags(prev => [...prev, pt])} style={{
-                    padding: '3px 8px', fontSize: '10px', fontWeight: '500',
-                    background: COLORS.bgTertiary, color: COLORS.textMuted,
-                    border: `1px dashed ${COLORS.border}`, borderRadius: '10px',
-                    cursor: 'pointer',
-                  }}>+ {pt}</button>
-                ))}
-              </div>
+              <>
+                <div style={{ fontSize: '9px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>Dodaj z projektu:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '8px' }}>
+                  {available.map(pt => (
+                    <button key={pt} type="button" onClick={() => setTags(prev => [...prev, pt])} style={{
+                      padding: '3px 8px', fontSize: '10px', fontWeight: '500',
+                      background: COLORS.bgTertiary, color: COLORS.textMuted,
+                      border: `1px dashed ${COLORS.border}`, borderRadius: '10px',
+                      cursor: 'pointer',
+                    }}>+ {pt}</button>
+                  ))}
+                </div>
+              </>
             );
           })()}
           <div style={{ display: 'flex', gap: '6px' }}>

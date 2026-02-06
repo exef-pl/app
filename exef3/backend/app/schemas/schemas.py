@@ -21,6 +21,10 @@ class ProjectType(str, Enum):
     VAT_UE = "vat_ue"
     PROJEKT_KLIENTA = "projekt_klienta"
     RD_IPBOX = "rd_ipbox"
+    KPIR = "kpir"
+    WPLATY = "wplaty"
+    DOWODY_PLATNOSCI = "dowody_platnosci"
+    DRUKI_PRZESYLKI = "druki_przesylki"
 
 class TaskStatus(str, Enum):
     PENDING = "pending"
@@ -196,6 +200,8 @@ class ProjectUpdate(BaseModel):
     color: Optional[str] = None
     categories: Optional[List[str]] = None
     tags: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+    is_archived: Optional[bool] = None
 
 class ProjectAuthorizationCreate(BaseModel):
     identity_id: str
@@ -234,6 +240,7 @@ class ProjectResponse(BaseModel):
     categories: Optional[List[str]]
     tags: Optional[List[str]]
     is_active: bool
+    is_archived: bool = False
     created_at: datetime
     
     class Config:

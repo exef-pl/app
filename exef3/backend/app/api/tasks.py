@@ -138,6 +138,37 @@ def list_documents(
     documents = query.order_by(Document.document_date.desc()).all()
     return documents
 
+@router.get("/documents/{document_id}/duplicates", response_model=List[DocumentResponse])
+def find_duplicates(document_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
+    """Finds documents with the same doc_id (potential duplicates) across the entity."""
+    document = db.query(Document).options(joinedload(Document.document_metadata)).filter(Document.id == document_id).first()
+    if not document:
+        raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
+    
+    check_task_access(db, document.task_id, identity_id)
+    
+    if not document.doc_id:
+        return []
+    
+    # Find all documents with the same doc_id in the same entity
+    task = db.query(Task).filter(Task.id == document.task_id).first()
+    project = db.query(Project).filter(Project.id == task.project_id).first()
+    
+    duplicates = (
+        db.query(Document)
+        .options(joinedload(Document.document_metadata))
+        .join(Task, Document.task_id == Task.id)
+        .join(Project, Task.project_id == Project.id)
+        .filter(
+            Document.doc_id == document.doc_id,
+            Document.id != document.id,
+            Project.entity_id == project.entity_id,
+        )
+        .order_by(Document.created_at.desc())
+        .all()
+    )
+    return duplicates
+
 @router.post("/documents", response_model=DocumentResponse)
 def create_document(data: DocumentCreate, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Tworzy nowy dokument."""

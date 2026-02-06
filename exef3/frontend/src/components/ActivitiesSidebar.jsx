@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { COLORS } from '../constants.js';
+import React, { useState, useRef } from 'react';
+import { COLORS, API_URL } from '../constants.js';
 
-export default function ActivitiesSidebar({ activeTask, documents, setDocuments, sources, taskPath, navigate, api, setError, onSourceSelect }) {
+export default function ActivitiesSidebar({ activeTask, documents, setDocuments, sources, taskPath, navigate, api, setError, onSourceSelect, token }) {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
   const [expanded, setExpanded] = useState(null);
+  const fileInputRef = useRef(null);
 
   const importSources = sources.filter(s => s.direction === 'import');
   const exportSources = sources.filter(s => s.direction === 'export');
@@ -32,14 +35,46 @@ export default function ActivitiesSidebar({ activeTask, documents, setDocuments,
     if (!activeTask) return;
     setExporting(true);
     try {
-      await api('/flow/export', {
+      const result = await api('/flow/export', {
         method: 'POST',
         body: JSON.stringify({ source_id: source.id, task_id: activeTask.id }),
       });
+      if (result.ok === false) {
+        setError(result.message || 'Brak dokumentów do eksportu.');
+      }
       const docs = await api(`/tasks/${activeTask.id}/documents`);
       setDocuments(docs);
-    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    } catch (e) {
+      if (e.sessionExpired) return;
+      setError(e.message);
+    }
     finally { setExporting(false); }
+  };
+
+  const handleCsvUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeTask) return;
+    setUploading(true);
+    setUploadResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_URL}/flow/upload-csv?task_id=${activeTask.id}`, {
+        method: 'POST',
+        headers: { ...(token && { 'Authorization': `Bearer ${token}` }) },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Błąd uploadu' }));
+        throw new Error(err.detail || 'Błąd');
+      }
+      const result = await res.json();
+      setUploadResult(result);
+      const docs = await api(`/tasks/${activeTask.id}/documents`);
+      setDocuments(docs);
+      setTimeout(() => setUploadResult(null), 5000);
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
   };
 
   const phaseColor = (s) => {
@@ -138,6 +173,39 @@ export default function ActivitiesSidebar({ activeTask, documents, setDocuments,
             </div>
           </div>
         )}
+        {/* Upload CSV button — always available */}
+        <div style={{ marginTop: '6px', borderTop: `1px solid ${COLORS.border}`, paddingTop: '6px' }}>
+          <div style={{ fontSize: '9px', color: COLORS.textMuted, textTransform: 'uppercase', marginBottom: '3px' }}>Upload pliku:</div>
+          <input ref={fileInputRef} type="file" accept=".csv,.txt,.tsv" onChange={handleCsvUpload}
+            style={{ display: 'none' }} />
+          <button onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            disabled={uploading}
+            style={{
+              width: '100%', padding: '6px 8px', fontSize: '10px',
+              border: `1px dashed ${COLORS.border}`, borderRadius: '6px',
+              background: COLORS.bgSecondary, color: COLORS.text,
+              cursor: uploading ? 'wait' : 'pointer', opacity: uploading ? 0.6 : 1,
+              display: 'flex', alignItems: 'center', gap: '5px', justifyContent: 'center',
+            }}>
+            <span>📄</span>
+            <span>{uploading ? 'Importowanie...' : 'Upload CSV / plik faktur'}</span>
+          </button>
+          {uploadResult && (
+            <div style={{
+              marginTop: '4px', padding: '4px 8px', borderRadius: '4px', fontSize: '10px',
+              background: uploadResult.errors?.length ? `${COLORS.warning}20` : `${COLORS.success}20`,
+              color: uploadResult.errors?.length ? COLORS.warning : COLORS.success,
+            }}>
+              ✓ Zaimportowano {uploadResult.imported} dokumentów
+              {uploadResult.errors?.length > 0 && (
+                <div style={{ marginTop: '2px', color: COLORS.warning }}>
+                  ⚠ {uploadResult.errors.length} błędów
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {importSources.length === 0 && (
           <div style={{ fontSize: '10px', color: COLORS.textMuted, textAlign: 'center', padding: '4px 0' }}>Brak skonfigurowanych źródeł</div>
         )}
@@ -176,19 +244,24 @@ export default function ActivitiesSidebar({ activeTask, documents, setDocuments,
           <div>
             <div style={{ fontSize: '9px', color: COLORS.textMuted, textTransform: 'uppercase', marginBottom: '3px' }}>Eksportuj do:</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              {exportSources.map(src => (
-                <button key={src.id} onClick={(e) => { e.stopPropagation(); handleExport(src); }} disabled={exporting}
+              {exportSources.map(src => {
+                const noDocsReady = docsDescribed.length === 0;
+                const isDisabled = exporting || noDocsReady;
+                return (
+                <button key={src.id} onClick={(e) => { e.stopPropagation(); handleExport(src); }} disabled={isDisabled}
+                  title={noDocsReady ? 'Brak opisanych dokumentów do eksportu' : `Eksportuj do ${src.name}`}
                   style={{
                     padding: '5px 8px', fontSize: '10px',
                     border: `1px solid ${COLORS.border}`, borderRadius: '6px',
-                    background: COLORS.bgSecondary, color: COLORS.text,
-                    cursor: exporting ? 'wait' : 'pointer', opacity: exporting ? 0.6 : 1,
+                    background: COLORS.bgSecondary, color: isDisabled ? COLORS.textMuted : COLORS.text,
+                    cursor: isDisabled ? 'not-allowed' : 'pointer', opacity: isDisabled ? 0.5 : 1,
                     display: 'flex', alignItems: 'center', gap: '5px', textAlign: 'left',
                   }}>
                   <span>{src.icon}</span>
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{src.name}</span>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

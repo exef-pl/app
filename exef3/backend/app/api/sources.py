@@ -2,7 +2,7 @@
 from uuid import uuid4
 from typing import List, Optional
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -264,7 +264,14 @@ def list_source_types():
             {"type": "ksef", "name": "KSeF", "icon": "🏛️", "config_fields": ["nip", "token", "environment"]},
             {"type": "upload", "name": "Upload plików", "icon": "📤", "config_fields": []},
             {"type": "webhook", "name": "Webhook", "icon": "🔗", "config_fields": ["url"]},
+            {"type": "csv", "name": "Import CSV (faktury)", "icon": "📄", "config_fields": ["delimiter", "encoding"]},
             {"type": "manual", "name": "Ręczne dodawanie", "icon": "✏️", "config_fields": []},
+            {"type": "bank", "name": "Raport bankowy (ogólny)", "icon": "🏦", "config_fields": []},
+            {"type": "bank_ing", "name": "ING Bank Śląski", "icon": "🟠", "config_fields": []},
+            {"type": "bank_mbank", "name": "mBank", "icon": "🔴", "config_fields": []},
+            {"type": "bank_pko", "name": "PKO BP", "icon": "🔵", "config_fields": []},
+            {"type": "bank_santander", "name": "Santander", "icon": "🔴", "config_fields": []},
+            {"type": "bank_pekao", "name": "Bank Pekao", "icon": "🟡", "config_fields": []},
         ],
         "export_types": [
             {"type": "wfirma", "name": "wFirma (CSV)", "icon": "📊", "config_fields": ["encoding", "date_format"]},
@@ -356,7 +363,190 @@ def trigger_import(
     return run
 
 
-@router.post("/flow/export", response_model=ExportRunResponse)
+@router.post("/flow/upload-csv")
+def upload_csv(
+    task_id: str = Query(...),
+    file: UploadFile = File(...),
+    identity_id: str = Depends(get_current_identity_id),
+    db: Session = Depends(get_db),
+):
+    """Import documents from an uploaded CSV file.
+    
+    Expected CSV columns (flexible - uses first matching header):
+    - number/numer/nr: invoice number
+    - contractor_name/kontrahent/nazwa: contractor name
+    - contractor_nip/nip: contractor NIP
+    - amount_net/netto: net amount
+    - amount_vat/vat: VAT amount
+    - amount_gross/brutto/kwota: gross amount
+    - document_date/data/date: document date
+    - doc_type/typ: document type (default: invoice)
+    - description/opis: description (saved as metadata)
+    - category/kategoria: category (saved as metadata)
+    """
+    import csv
+    import io
+
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Zadanie nie znalezione")
+    _check_project_access(db, task.project_id, identity_id, require_edit=True)
+
+    # Read CSV content
+    try:
+        content = file.file.read().decode('utf-8-sig')  # Handle BOM
+    except UnicodeDecodeError:
+        file.file.seek(0)
+        content = file.file.read().decode('cp1250')  # Polish Windows encoding fallback
+
+    reader = csv.DictReader(io.StringIO(content), delimiter=_detect_delimiter(content))
+    
+    # Column name mapping (flexible headers)
+    COL_MAP = {
+        'number': ['number', 'numer', 'nr', 'nr_dokumentu', 'numer_faktury', 'invoice_number'],
+        'contractor_name': ['contractor_name', 'kontrahent', 'nazwa', 'nazwa_kontrahenta', 'dostawca', 'odbiorca', 'name'],
+        'contractor_nip': ['contractor_nip', 'nip', 'nip_kontrahenta'],
+        'amount_net': ['amount_net', 'netto', 'kwota_netto', 'net'],
+        'amount_vat': ['amount_vat', 'vat', 'kwota_vat'],
+        'amount_gross': ['amount_gross', 'brutto', 'kwota_brutto', 'kwota', 'gross', 'amount'],
+        'document_date': ['document_date', 'data', 'date', 'data_dokumentu', 'data_faktury', 'data_wystawienia'],
+        'doc_type': ['doc_type', 'typ', 'type', 'typ_dokumentu'],
+        'description': ['description', 'opis'],
+        'category': ['category', 'kategoria'],
+        'currency': ['currency', 'waluta'],
+    }
+
+    created_count = 0
+    errors = []
+
+    for row_idx, row in enumerate(reader, 1):
+        try:
+            mapped = _map_csv_row(row, COL_MAP)
+            if not mapped.get('number') and not mapped.get('amount_gross') and not mapped.get('contractor_name'):
+                continue  # Skip empty rows
+
+            doc = Document(
+                id=str(uuid4()),
+                task_id=task_id,
+                doc_type=mapped.get('doc_type', 'invoice'),
+                number=mapped.get('number'),
+                contractor_name=mapped.get('contractor_name'),
+                contractor_nip=_clean_nip(mapped.get('contractor_nip')),
+                amount_net=_parse_amount(mapped.get('amount_net')),
+                amount_vat=_parse_amount(mapped.get('amount_vat')),
+                amount_gross=_parse_amount(mapped.get('amount_gross')),
+                currency=mapped.get('currency', 'PLN'),
+                document_date=_parse_date(mapped.get('document_date')),
+                source='csv_upload',
+                source_id=f"csv-{file.filename}-row{row_idx}",
+                status=DocumentStatus.NEW,
+            )
+            doc.doc_id = generate_doc_id(
+                contractor_nip=doc.contractor_nip,
+                number=doc.number,
+                document_date=doc.document_date,
+                amount_gross=doc.amount_gross,
+                doc_type=doc.doc_type or 'invoice',
+            )
+            db.add(doc)
+
+            # Add metadata if description or category present
+            desc = mapped.get('description')
+            cat = mapped.get('category')
+            if desc or cat:
+                meta = DocumentMetadata(
+                    id=str(uuid4()),
+                    document_id=doc.id,
+                    description=desc,
+                    category=cat,
+                    tags=[],
+                    edited_by_id=identity_id,
+                    edited_at=datetime.utcnow(),
+                )
+                db.add(meta)
+
+            created_count += 1
+        except Exception as e:
+            errors.append(f"Wiersz {row_idx}: {str(e)}")
+
+    # Update task stats
+    task.docs_total += created_count
+    if task.import_status == PhaseStatus.NOT_STARTED:
+        task.import_status = PhaseStatus.IN_PROGRESS
+    if task.status == TaskStatus.PENDING:
+        task.status = TaskStatus.IN_PROGRESS
+
+    db.commit()
+
+    return {
+        "ok": True,
+        "imported": created_count,
+        "errors": errors[:10],  # Limit error list
+        "filename": file.filename,
+    }
+
+
+def _detect_delimiter(content: str) -> str:
+    """Detect CSV delimiter (semicolon vs comma)."""
+    first_line = content.split('\n')[0] if content else ''
+    if first_line.count(';') > first_line.count(','):
+        return ';'
+    return ','
+
+
+def _map_csv_row(row: dict, col_map: dict) -> dict:
+    """Map CSV row to document fields using flexible column names."""
+    result = {}
+    row_lower = {k.lower().strip(): v for k, v in row.items() if k}
+    for field, aliases in col_map.items():
+        for alias in aliases:
+            if alias in row_lower and row_lower[alias]:
+                result[field] = row_lower[alias].strip()
+                break
+    return result
+
+
+def _clean_nip(nip: str | None) -> str | None:
+    """Clean NIP - remove separators."""
+    if not nip:
+        return None
+    import re
+    cleaned = re.sub(r'[\s\-\.]', '', nip)
+    cleaned = re.sub(r'^PL', '', cleaned, flags=re.IGNORECASE)
+    return cleaned[:10] if cleaned else None
+
+
+def _parse_amount(val: str | None) -> float | None:
+    """Parse Polish amount format (1 234,56 or 1234.56)."""
+    if not val:
+        return None
+    import re
+    cleaned = re.sub(r'[^\d,.\-]', '', val)
+    cleaned = cleaned.replace(',', '.')
+    # Handle case where . is thousands separator: 1.234.56
+    parts = cleaned.split('.')
+    if len(parts) > 2:
+        cleaned = ''.join(parts[:-1]) + '.' + parts[-1]
+    try:
+        return round(float(cleaned), 2)
+    except ValueError:
+        return None
+
+
+def _parse_date(val: str | None):
+    """Parse Polish date formats."""
+    if not val:
+        return None
+    from datetime import datetime as dt
+    for fmt in ['%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y', '%d/%m/%Y', '%Y/%m/%d']:
+        try:
+            return dt.strptime(val.strip(), fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+@router.post("/flow/export")
 def trigger_export(
     data: TriggerExportRequest,
     identity_id: str = Depends(get_current_identity_id),
@@ -387,7 +577,11 @@ def trigger_export(
 
     docs = doc_query.all()
     if not docs:
-        raise HTTPException(status_code=400, detail="Brak dokumentów do eksportu")
+        return {
+            "ok": False,
+            "message": "Brak opisanych dokumentów do eksportu. Najpierw opisz dokumenty.",
+            "docs_exported": 0,
+        }
 
     # Generate export content (mock)
     format_info = EXPORT_FORMAT_INFO.get(

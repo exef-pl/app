@@ -1,7 +1,68 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { COLORS, STATUS_CONFIG } from '../constants.js';
 
+const COL_WIDTHS = ['18%', '22%', '15%', '15%', '18%', '12%'];
+
+const COLUMNS = [
+  { key: 'number', label: 'Numer', align: 'left' },
+  { key: 'contractor', label: 'Kontrahent', align: 'left' },
+  { key: 'amount', label: 'Kwota', align: 'right' },
+  { key: 'category', label: 'Kategoria', align: 'left' },
+  { key: 'status', label: 'Status', align: 'center' },
+  { key: 'source', label: 'Źródło', align: 'center' },
+];
+
+const selectStyle = {
+  padding: '5px 8px', fontSize: '11px', borderRadius: '6px',
+  border: `1px solid ${COLORS.border}`, background: COLORS.bgTertiary,
+  color: COLORS.text, outline: 'none', minWidth: 0,
+};
+
 export default function TaskContentArea({ activeTask, documents, setDocuments, sources, selectedDocument, taskPath, navigate, api, setError, loading, setLoading }) {
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterSource, setFilterSource] = useState('');
+  const [sortCol, setSortCol] = useState('');
+  const [sortDir, setSortDir] = useState('asc');
+
+  const docs = documents || [];
+
+  const filtered = useMemo(() => {
+    let result = docs;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(d =>
+        (d.number || '').toLowerCase().includes(q) ||
+        (d.contractor_name || '').toLowerCase().includes(q) ||
+        (d.contractor_nip || '').includes(q) ||
+        (d.metadata?.category || '').toLowerCase().includes(q)
+      );
+    }
+    if (filterStatus) result = result.filter(d => d.status === filterStatus);
+    if (filterSource) result = result.filter(d => d.source === filterSource);
+    return result;
+  }, [docs, search, filterStatus, filterSource]);
+
+  const sorted = useMemo(() => {
+    if (!sortCol) return filtered;
+    const arr = [...filtered];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    arr.sort((a, b) => {
+      let va, vb;
+      switch (sortCol) {
+        case 'number': va = a.number || ''; vb = b.number || ''; break;
+        case 'contractor': va = a.contractor_name || ''; vb = b.contractor_name || ''; break;
+        case 'amount': va = a.amount_gross ?? 0; vb = b.amount_gross ?? 0; return (va - vb) * dir;
+        case 'category': va = a.metadata?.category || ''; vb = b.metadata?.category || ''; break;
+        case 'status': va = a.status || ''; vb = b.status || ''; break;
+        case 'source': va = a.source || ''; vb = b.source || ''; break;
+        default: return 0;
+      }
+      return va.localeCompare(vb, 'pl') * dir;
+    });
+    return arr;
+  }, [filtered, sortCol, sortDir]);
+
   if (!activeTask) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: COLORS.textMuted }}>
@@ -11,11 +72,30 @@ export default function TaskContentArea({ activeTask, documents, setDocuments, s
     );
   }
 
-  const docsNew = documents.filter(d => d.status === 'new').length;
-  const docsDescribed = documents.filter(d => d.status === 'described' || d.status === 'approved').length;
-  const docsExported = documents.filter(d => d.status === 'exported').length;
-  const docsTotal = documents.length;
-  const notExported = documents.filter(d => d.status !== 'exported').length;
+  const docsNew = docs.filter(d => d.status === 'new').length;
+  const docsDescribed = docs.filter(d => d.status === 'described' || d.status === 'approved').length;
+  const docsExported = docs.filter(d => d.status === 'exported').length;
+  const docsTotal = docs.length;
+  const notExported = docs.filter(d => d.status !== 'exported').length;
+
+  const uniqueSources = [...new Set(docs.map(d => d.source).filter(Boolean))];
+
+  const handleSort = (col) => {
+    if (sortCol === col) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
+  };
+
+  const sortIndicator = (col) => {
+    if (sortCol !== col) return <span style={{ opacity: 0.3 }}>↕</span>;
+    return <span>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  };
+
+  const hasFilters = search || filterStatus || filterSource;
+  const clearFilters = () => { setSearch(''); setFilterStatus(''); setFilterSource(''); };
 
   return (
     <>
@@ -48,35 +128,121 @@ export default function TaskContentArea({ activeTask, documents, setDocuments, s
         )}
       </div>
 
+      {/* Filter bar */}
+      {docsTotal > 0 && (
+        <div style={{
+          padding: '8px 12px', display: 'flex', gap: '8px', alignItems: 'center',
+          borderBottom: `1px solid ${COLORS.border}`, flexShrink: 0, flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: '10px', color: COLORS.textMuted, textTransform: 'uppercase', fontWeight: '500' }}>🔍</span>
+          <input
+            type="text" placeholder="Szukaj (numer, kontrahent, NIP, kategoria)..."
+            value={search} onChange={e => setSearch(e.target.value)}
+            style={{
+              flex: 1, minWidth: '140px', padding: '5px 10px', fontSize: '12px',
+              borderRadius: '6px', border: `1px solid ${COLORS.border}`,
+              background: COLORS.bgTertiary, color: COLORS.text, outline: 'none',
+            }}
+          />
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
+            <option value="">Wszystkie statusy</option>
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+              <option key={k} value={k}>{v.icon} {v.label}</option>
+            ))}
+          </select>
+          {uniqueSources.length > 1 && (
+            <select value={filterSource} onChange={e => setFilterSource(e.target.value)} style={selectStyle}>
+              <option value="">Wszystkie źródła</option>
+              {uniqueSources.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          )}
+          {hasFilters && (
+            <button onClick={clearFilters} style={{
+              padding: '4px 8px', fontSize: '10px', borderRadius: '6px',
+              border: `1px solid ${COLORS.border}`, background: 'transparent',
+              color: COLORS.textMuted, cursor: 'pointer',
+            }} title="Wyczyść filtry">✕</button>
+          )}
+          {hasFilters && (
+            <span style={{ fontSize: '10px', color: COLORS.textMuted }}>
+              {sorted.length} z {docsTotal}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Document list */}
-      <div style={{ flex: 1, overflow: 'auto', padding: '12px' }}>
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: '0 12px' }}>
         {docsTotal > 0 ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <>
+          {/* Fixed header */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', flexShrink: 0 }}>
+            <colgroup>
+              {COL_WIDTHS.map((w, i) => <col key={i} style={{ width: w }} />)}
+            </colgroup>
             <thead>
               <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
-                <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '10px', color: COLORS.textMuted, fontWeight: '500', textTransform: 'uppercase' }}>Numer</th>
-                <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '10px', color: COLORS.textMuted, fontWeight: '500', textTransform: 'uppercase' }}>Kontrahent</th>
-                <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '10px', color: COLORS.textMuted, fontWeight: '500', textTransform: 'uppercase' }}>Kwota</th>
-                <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '10px', color: COLORS.textMuted, fontWeight: '500', textTransform: 'uppercase' }}>Kategoria</th>
-                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '10px', color: COLORS.textMuted, fontWeight: '500', textTransform: 'uppercase' }}>Status</th>
-                <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '10px', color: COLORS.textMuted, fontWeight: '500', textTransform: 'uppercase' }}>Źródło</th>
+                {COLUMNS.map(col => (
+                  <th key={col.key}
+                    onClick={() => handleSort(col.key)}
+                    style={{
+                      padding: '10px 8px', textAlign: col.align, fontSize: '10px',
+                      color: sortCol === col.key ? COLORS.primary : COLORS.textMuted,
+                      fontWeight: '500', textTransform: 'uppercase', cursor: 'pointer',
+                      userSelect: 'none',
+                    }}>
+                    {col.label} {sortIndicator(col.key)}
+                  </th>
+                ))}
               </tr>
             </thead>
+          </table>
+          {/* Scrollable body */}
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+            <colgroup>
+              {COL_WIDTHS.map((w, i) => <col key={i} style={{ width: w }} />)}
+            </colgroup>
             <tbody>
-              {documents.map(doc => {
+              {(() => {
+                if (sorted.length === 0 && hasFilters) {
+                  return (
+                    <tr>
+                      <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: COLORS.textMuted, fontSize: '13px' }}>
+                        Brak dokumentów pasujących do filtrów
+                        <div style={{ marginTop: '8px' }}>
+                          <button onClick={clearFilters} style={{
+                            padding: '4px 12px', fontSize: '11px', borderRadius: '6px',
+                            border: `1px solid ${COLORS.border}`, background: COLORS.bgTertiary,
+                            color: COLORS.text, cursor: 'pointer',
+                          }}>Wyczyść filtry</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                }
+                const idCounts = {};
+                documents.forEach(d => { if (d.doc_id) idCounts[d.doc_id] = (idCounts[d.doc_id] || 0) + 1; });
+                return sorted.map(doc => {
                 const status = STATUS_CONFIG[doc.status];
+                const isDup = doc.doc_id && idCounts[doc.doc_id] > 1;
                 return (
                   <tr key={doc.id} onClick={() => navigate(`${taskPath}/document/${doc.id}`)}
                     style={{
                       borderBottom: `1px solid ${COLORS.border}`, cursor: 'pointer',
-                      background: selectedDocument?.id === doc.id ? COLORS.bgTertiary : 'transparent',
+                      background: selectedDocument?.id === doc.id ? COLORS.bgTertiary : isDup ? '#f59e0b08' : 'transparent',
                     }}>
                     <td style={{ padding: '12px 8px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '500' }}>{doc.number || '—'}</div>
+                      <div style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {isDup && <span title="Potencjalny duplikat" style={{ marginRight: '4px' }}>⚠️</span>}
+                        {doc.number || '—'}
+                      </div>
                       <div style={{ fontSize: '10px', color: COLORS.textMuted }}>{doc.document_date}</div>
                     </td>
                     <td style={{ padding: '12px 8px' }}>
-                      <div style={{ fontSize: '13px' }}>{doc.contractor_name || '—'}</div>
+                      <div style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.contractor_name || '—'}</div>
                       <div style={{ fontSize: '10px', color: COLORS.textMuted }}>
                         {doc.contractor_nip ? `NIP: ${doc.contractor_nip}` : ''}
                       </div>
@@ -109,9 +275,12 @@ export default function TaskContentArea({ activeTask, documents, setDocuments, s
                     </td>
                   </tr>
                 );
-              })}
+              });
+              })()}
             </tbody>
           </table>
+          </div>
+          </>
         ) : (
           <div style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',

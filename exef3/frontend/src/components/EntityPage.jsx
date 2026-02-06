@@ -15,6 +15,8 @@ export default function EntityPage({ panel }) {
   const [tasks, setTasks] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [sources, setSources] = useState([]);
+  const [projectMenu, setProjectMenu] = useState(null); // project id with open menu
+  const [confirmDeleteProject, setConfirmDeleteProject] = useState(null); // project id pending delete confirm
 
   const entity = entities.find(e => e.id === entityId);
   const activeProject = projects.find(p => p.id === projectId) || null;
@@ -35,6 +37,10 @@ export default function EntityPage({ panel }) {
   // Load tasks and sources when project changes
   useEffect(() => {
     if (!projectId || !token) { setTasks([]); setSources([]); return; }
+    // Wait for projects to load, then verify projectId exists (skip stale/deleted)
+    if (!projects.find(p => p.id === projectId)) {
+      setTasks([]); setSources([]); return;
+    }
     api(`/projects/${projectId}/tasks`).then(data => {
       setTasks(data);
       if (!taskId && data.length > 0) {
@@ -42,7 +48,7 @@ export default function EntityPage({ panel }) {
       }
     }).catch(e => { if (!e.sessionExpired) setError(e.message); });
     api(`/projects/${projectId}/sources`).then(setSources).catch(e => { if (!e.sessionExpired) setSources([]); });
-  }, [projectId]);
+  }, [projectId, projects]);
 
   // Load documents when task changes
   useEffect(() => {
@@ -132,6 +138,33 @@ export default function EntityPage({ panel }) {
     finally { setLoading(false); }
   };
 
+  const handleArchiveProject = async (project) => {
+    try {
+      await api(`/projects/${project.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ is_archived: !project.is_archived, is_active: !!project.is_archived }),
+      });
+      const updated = await api(`/projects?entity_id=${entityId}`);
+      setProjects(updated);
+      setProjectMenu(null);
+      if (projectId === project.id) {
+        navigate(entityPath);
+      }
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+  };
+
+  const handleDeleteProject = async (project) => {
+    try {
+      await api(`/projects/${project.id}`, { method: 'DELETE' });
+      setProjects(prev => prev.filter(p => p.id !== project.id));
+      setProjectMenu(null);
+      setConfirmDeleteProject(null);
+      if (projectId === project.id) {
+        navigate(entityPath);
+      }
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+  };
+
   // Determine right panel type and data
   let panelType = null, panelData = null, panelClose = entityPath;
   if (panel === 'edit-entity') { panelType = 'entity'; panelData = entity; panelClose = entityPath; }
@@ -196,43 +229,112 @@ export default function EntityPage({ panel }) {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {projects.map(project => (
-              <Link
-                key={project.id}
-                to={`${entityPath}/project/${project.id}`}
-                style={{
-                  padding: '10px',
-                  background: activeProject?.id === project.id ? COLORS.bgTertiary : 'transparent',
-                  border: activeProject?.id === project.id ? `1px solid ${COLORS.border}` : '1px solid transparent',
-                  borderRadius: '8px', color: COLORS.text, textDecoration: 'none',
-                  display: 'flex', alignItems: 'center', gap: '8px',
-                }}
-              >
-                <span>{PROJECT_TYPES[project.type]?.icon || '📁'}</span>
-                <div style={{ flex: 1, overflow: 'hidden' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
-                      {project.name}
-                    </span>
-                    {activeProject?.id === project.id && (
-                      <span
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`${entityPath}/project/${project.id}/sources`); }}
-                        style={{ fontSize: '12px', color: COLORS.textMuted, cursor: 'pointer', padding: '2px', lineHeight: 1 }}
-                        title="Źródła danych"
-                      >⚙️</span>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {project.year && (
-                      <span style={{ fontSize: '10px', color: COLORS.textMuted }}>{project.year}</span>
-                    )}
-                    {activeProject?.id === project.id && sources.length > 0 && (
-                      <span style={{ fontSize: '9px', color: COLORS.textMuted }}>
-                        📥{sources.filter(s => s.direction === 'import').length} 📤{sources.filter(s => s.direction === 'export').length}
+              <div key={project.id} style={{ position: 'relative' }}>
+                <Link
+                  to={`${entityPath}/project/${project.id}`}
+                  style={{
+                    padding: '10px',
+                    background: activeProject?.id === project.id ? COLORS.bgTertiary : 'transparent',
+                    border: activeProject?.id === project.id ? `1px solid ${COLORS.border}` : '1px solid transparent',
+                    borderRadius: '8px', color: COLORS.text, textDecoration: 'none',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    opacity: project.is_archived ? 0.5 : 1,
+                  }}
+                >
+                  <span>{project.is_archived ? '📦' : (PROJECT_TYPES[project.type]?.icon || '📁')}</span>
+                  <div style={{ flex: 1, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                        {project.name}
                       </span>
+                      <span
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProjectMenu(projectMenu === project.id ? null : project.id); setConfirmDeleteProject(null); }}
+                        style={{ fontSize: '14px', color: COLORS.textMuted, cursor: 'pointer', padding: '2px 4px', lineHeight: 1, borderRadius: '4px' }}
+                        title="Opcje projektu"
+                      >⋯</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {project.year && (
+                        <span style={{ fontSize: '10px', color: COLORS.textMuted }}>{project.year}</span>
+                      )}
+                      {project.is_archived && (
+                        <span style={{ fontSize: '9px', color: '#f59e0b' }}>archiwum</span>
+                      )}
+                      {activeProject?.id === project.id && sources.length > 0 && (
+                        <span style={{ fontSize: '9px', color: COLORS.textMuted }}>
+                          📥{sources.filter(s => s.direction === 'import').length} 📤{sources.filter(s => s.direction === 'export').length}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+
+                {/* Context menu */}
+                {projectMenu === project.id && (
+                  <div style={{
+                    position: 'absolute', right: '4px', top: '38px', zIndex: 100,
+                    background: COLORS.bgSecondary, border: `1px solid ${COLORS.border}`,
+                    borderRadius: '8px', padding: '4px', minWidth: '160px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  }}>
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`${entityPath}/project/${project.id}/sources`); setProjectMenu(null); }}
+                      style={{
+                        width: '100%', padding: '8px 10px', fontSize: '12px', fontWeight: '500',
+                        background: 'transparent', border: 'none', borderRadius: '6px',
+                        color: COLORS.text, cursor: 'pointer', textAlign: 'left',
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = COLORS.bgTertiary}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >⚙️ Źródła danych</button>
+                    <button
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleArchiveProject(project); }}
+                      style={{
+                        width: '100%', padding: '8px 10px', fontSize: '12px', fontWeight: '500',
+                        background: 'transparent', border: 'none', borderRadius: '6px',
+                        color: project.is_archived ? COLORS.success : '#f59e0b', cursor: 'pointer', textAlign: 'left',
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = COLORS.bgTertiary}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >{project.is_archived ? '♻️ Przywróć' : '📦 Archiwizuj'}</button>
+                    {confirmDeleteProject !== project.id ? (
+                      <button
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteProject(project.id); }}
+                        style={{
+                          width: '100%', padding: '8px 10px', fontSize: '12px', fontWeight: '500',
+                          background: 'transparent', border: 'none', borderRadius: '6px',
+                          color: '#ef4444', cursor: 'pointer', textAlign: 'left',
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = COLORS.bgTertiary}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >🗑️ Usuń projekt</button>
+                    ) : (
+                      <div style={{ padding: '6px', background: '#ef444415', borderRadius: '6px', margin: '2px 0' }}>
+                        <div style={{ fontSize: '11px', color: '#ef4444', marginBottom: '6px', fontWeight: '500' }}>Na pewno usunąć?</div>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteProject(project); }}
+                            style={{
+                              flex: 1, padding: '5px', fontSize: '11px', fontWeight: '600',
+                              background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer',
+                            }}
+                          >Tak</button>
+                          <button
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteProject(null); }}
+                            style={{
+                              flex: 1, padding: '5px', fontSize: '11px', fontWeight: '500',
+                              background: COLORS.bgTertiary, color: COLORS.textMuted, border: `1px solid ${COLORS.border}`, borderRadius: '4px', cursor: 'pointer',
+                            }}
+                          >Nie</button>
+                        </div>
+                      </div>
                     )}
                   </div>
-                </div>
-              </Link>
+                )}
+              </div>
             ))}
             {projects.length === 0 && (
               <div style={{ padding: '10px', color: COLORS.textMuted, fontSize: '12px', textAlign: 'center' }}>
@@ -308,6 +410,7 @@ export default function EntityPage({ panel }) {
               api={api}
               setError={setError}
               onSourceSelect={() => projectPath && navigate(`${projectPath}/sources`)}
+              token={token}
             />
           </div>
         )}
@@ -357,6 +460,8 @@ export default function EntityPage({ panel }) {
             api={api}
             setSources={setSources}
             setError={setError}
+            setProjects={setProjects}
+            entityId={entityId}
           />
         </aside>
       )}
