@@ -133,6 +133,7 @@ class EntityUpdate(BaseModel):
     address_postal: Optional[str] = None
     icon: Optional[str] = None
     color: Optional[str] = None
+    is_archived: Optional[bool] = None
 
 class EntityMemberCreate(BaseModel):
     identity_id: str
@@ -165,6 +166,7 @@ class EntityResponse(BaseModel):
     icon: Optional[str]
     color: Optional[str]
     owner_id: str
+    is_archived: bool = False
     created_at: datetime
     
     class Config:

@@ -1,3 +1,28 @@
+## [1.0.6] - 2026-02-06
+
+### Summary
+
+feat(docs): deep code analysis engine with 3 supporting modules
+
+### Docs
+
+- docs: update README
+
+### Other
+
+- update exef3/backend/app/adapters/__init__.py
+- update exef3/backend/app/adapters/base.py
+- update exef3/backend/app/adapters/import_email.py
+- update exef3/backend/app/adapters/import_ksef.py
+- update exef3/backend/app/adapters/registry.py
+- update exef3/backend/app/api/entities.py
+- update exef3/backend/app/models/models.py
+- update exef3/backend/app/schemas/schemas.py
+- update exef3/frontend/src/App.jsx
+- update exef3/frontend/src/components/EntityPage.jsx
+- ... and 3 more
+
+
 ## [1.0.5] - 2026-02-06
 
 ### Summary

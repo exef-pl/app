@@ -163,6 +163,8 @@ class Entity(Base):
     # Właściciel (tożsamość która utworzyła podmiot)
     owner_id = Column(String(36), ForeignKey("identities.id"), nullable=False)
     
+    is_archived = Column(Boolean, default=False, server_default="0")
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

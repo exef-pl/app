@@ -15,7 +15,11 @@ from app.schemas.schemas import (
 router = APIRouter(prefix="/entities", tags=["entities"])
 
 @router.get("", response_model=List[EntityResponse])
-def list_entities(identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
+def list_entities(
+    include_archived: bool = False,
+    identity_id: str = Depends(get_current_identity_id),
+    db: Session = Depends(get_db),
+):
     """Lista podmiotów użytkownika (własnych i jako członek)."""
     # Własne podmioty
     owned = db.query(Entity).filter(Entity.owner_id == identity_id).all()
@@ -27,7 +31,12 @@ def list_entities(identity_id: str = Depends(get_current_identity_id), db: Sessi
     
     # Połącz i usuń duplikaty
     all_entities = {e.id: e for e in owned + member_entities}
-    return list(all_entities.values())
+    result = list(all_entities.values())
+    
+    if not include_archived:
+        result = [e for e in result if not e.is_archived]
+    
+    return result
 
 @router.post("", response_model=EntityResponse)
 def create_entity(data: EntityCreate, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
@@ -121,6 +130,21 @@ def delete_entity(entity_id: str, identity_id: str = Depends(get_current_identit
     db.delete(entity)
     db.commit()
     return {"status": "deleted"}
+
+@router.post("/{entity_id}/archive", response_model=EntityResponse)
+def archive_entity(entity_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
+    """Archiwizuje podmiot (toggle)."""
+    entity = db.query(Entity).filter(Entity.id == entity_id).first()
+    if not entity:
+        raise HTTPException(status_code=404, detail="Podmiot nie znaleziony")
+    
+    if entity.owner_id != identity_id:
+        raise HTTPException(status_code=403, detail="Tylko właściciel może archiwizować podmiot")
+    
+    entity.is_archived = not entity.is_archived
+    db.commit()
+    db.refresh(entity)
+    return entity
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CZŁONKOWIE PODMIOTU

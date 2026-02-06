@@ -87,7 +87,7 @@ function AppShell() {
   const location = useLocation();
 
   const isFirmView = location.pathname.startsWith('/biuro');
-  const isMultiView = location.pathname === '/' || location.pathname === '/entity/new';
+  const isMultiView = location.pathname === '/' || location.pathname.startsWith('/ksiegowosc') || location.pathname === '/entity/new';
 
   return (
     <div style={{
@@ -131,7 +131,7 @@ function AppShell() {
               🏢 Biuro
             </button>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/ksiegowosc')}
               style={{
                 padding: '7px 14px',
                 background: isMultiView ? COLORS.primary : 'transparent',
@@ -199,6 +199,7 @@ function AppShell() {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <Routes>
           <Route path="/biuro" element={<AccountingFirmDashboardPage />} />
+          <Route path="/ksiegowosc" element={<DashboardPage />} />
           <Route path="/" element={<DashboardPage />} />
           <Route path="/entity/new" element={<DashboardPage panel="new-entity" />} />
           <Route path="/entity/:entityId" element={<EntityPage />} />
@@ -208,7 +209,7 @@ function AppShell() {
           <Route path="/entity/:entityId/project/:projectId/edit" element={<EntityPage panel="edit-project" />} />
           <Route path="/entity/:entityId/project/:projectId/sources" element={<EntityPage panel="sources" />} />
           <Route path="/entity/:entityId/project/:projectId/task/new" element={<EntityPage panel="new-task" />} />
-          <Route path="/entity/:entityId/project/:projectId/task/:taskId" element={<EntityPage panel="view-task" />} />
+          <Route path="/entity/:entityId/project/:projectId/task/:taskId" element={<EntityPage panel="activity-import" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/import" element={<EntityPage panel="activity-import" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/describe" element={<EntityPage panel="activity-describe" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/export" element={<EntityPage panel="activity-export" />} />
@@ -243,6 +244,7 @@ function DashboardPage({ panel }) {
     <>
       <MultiEntityView
         entities={entities}
+        setEntities={setEntities}
         api={api}
         onSelectEntity={(entity) => navigate(`/entity/${entity.id}`)}
         onCreateEntity={() => navigate('/entity/new')}
@@ -255,7 +257,7 @@ function DashboardPage({ panel }) {
         }}>
           <RightPanel
             type="entity" data={null}
-            onClose={() => navigate('/')}
+            onClose={() => navigate('/ksiegowosc')}
             onCreateEntity={handleCreateEntity}
             onCreateProject={() => {}} onCreateTask={() => {}}
             onCreateDocument={() => {}} onUpdateDocumentMetadata={() => {}}

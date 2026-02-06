@@ -35,14 +35,8 @@ export default function RightPanel({
   if (type === 'view-document' && data) {
     return <DocumentViewPanel doc={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} projectTags={[...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])]} />;
   }
-  if (type === 'activity-import' && data) {
-    return <ImportPanel data={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} token={token} navigate={navigate} />;
-  }
-  if (type === 'activity-describe' && data) {
-    return <DescribePanel data={data} onClose={onClose} navigate={navigate} />;
-  }
-  if (type === 'activity-export' && data) {
-    return <ExportPanel data={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} navigate={navigate} />;
+  if ((type === 'activity-import' || type === 'activity-describe' || type === 'activity-export' || type === 'new-document') && data) {
+    return <ActivityTabbedPanel activeTab={type} data={data} onClose={onClose} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} token={token} navigate={navigate} onCreateDocument={onCreateDocument} loading={loading} />;
   }
 
   const update = (field, value) => {
@@ -1043,8 +1037,105 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 // ACTIVITY PANELS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function ImportPanel({ data, onClose, api, setDocuments, setError, token, navigate }) {
-  const { task, sources, documents } = data;
+function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setSources, setError, token, navigate, onCreateDocument, loading }) {
+  const TABS = [
+    { id: 'activity-import', label: 'Import', icon: '📥', suffix: '/import' },
+    { id: 'activity-describe', label: 'Opis', icon: '✏️', suffix: '/describe' },
+    { id: 'activity-export', label: 'Eksport', icon: '📤', suffix: '/export' },
+    { id: 'new-document', label: 'Nowy', icon: '➕', suffix: '/document/new' },
+  ];
+
+  const basePath = location.pathname.replace(/\/(import|describe|export|document\/new)$/, '');
+
+  return (
+    <>
+      {/* Tab bar */}
+      <div style={{
+        display: 'flex', alignItems: 'stretch',
+        borderBottom: `1px solid ${COLORS.border}`,
+        background: COLORS.bgSecondary,
+      }}>
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button key={tab.id}
+              onClick={() => navigate(basePath + tab.suffix)}
+              style={{
+                flex: 1, padding: '11px 6px',
+                background: 'transparent', border: 'none',
+                borderBottom: isActive ? `2px solid ${COLORS.primary}` : '2px solid transparent',
+                color: isActive ? COLORS.primary : COLORS.textMuted,
+                cursor: 'pointer', fontSize: '12px', fontWeight: isActive ? '600' : '400',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                transition: 'all 0.15s',
+              }}
+            >
+              <span style={{ fontSize: '13px' }}>{tab.icon}</span>
+              {tab.label}
+            </button>
+          );
+        })}
+        <button onClick={onClose} style={{
+          background: 'transparent', border: 'none', borderBottom: '2px solid transparent',
+          color: COLORS.textMuted, cursor: 'pointer', width: '36px',
+          fontSize: '14px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>×</button>
+      </div>
+      {/* Active panel content */}
+      {activeTab === 'activity-import' && (
+        <ImportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} token={token} navigate={navigate} />
+      )}
+      {activeTab === 'activity-describe' && (
+        <DescribePanel data={data} navigate={navigate} />
+      )}
+      {activeTab === 'activity-export' && (
+        <ExportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} navigate={navigate} />
+      )}
+      {activeTab === 'new-document' && (
+        <NewDocumentPanel onCreateDocument={onCreateDocument} loading={loading} />
+      )}
+    </>
+  );
+}
+
+function NewDocumentPanel({ onCreateDocument, loading }) {
+  const [formData, setFormData] = useState({});
+  const update = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onCreateDocument(formData);
+  };
+
+  return (
+    <>
+      <form onSubmit={handleSubmit} style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+        <InputField label="Numer dokumentu" value={formData.number || ''} onChange={(v) => update('number', v)} />
+        <InputField label="Kontrahent" value={formData.contractor_name || ''} onChange={(v) => update('contractor_name', v)} />
+        <InputField label="NIP kontrahenta" value={formData.contractor_nip || ''} onChange={(v) => update('contractor_nip', v)} />
+        <InputField label="Kwota netto" value={formData.amount_net || ''} onChange={(v) => update('amount_net', parseFloat(v) || null)} type="number" />
+        <InputField label="VAT" value={formData.amount_vat || ''} onChange={(v) => update('amount_vat', parseFloat(v) || null)} type="number" />
+        <InputField label="Kwota brutto" value={formData.amount_gross || ''} onChange={(v) => update('amount_gross', parseFloat(v) || null)} type="number" />
+        <InputField label="Data dokumentu" value={formData.document_date || ''} onChange={(v) => update('document_date', v)} type="date" />
+      </form>
+      <div style={{ padding: '16px', borderTop: `1px solid ${COLORS.border}` }}>
+        <button onClick={handleSubmit} disabled={loading}
+          style={{
+            width: '100%', padding: '12px',
+            background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+            border: 'none', borderRadius: '8px', color: '#fff',
+            fontSize: '14px', fontWeight: '500',
+            cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1,
+          }}>
+          {loading ? '...' : 'Utwórz'}
+        </button>
+      </div>
+    </>
+  );
+}
+
+function ImportPanel({ data, api, setDocuments, setSources, setError, token, navigate }) {
+  const { task, sources, documents, projectId } = data;
   const [importing, setImporting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
@@ -1054,10 +1145,22 @@ function ImportPanel({ data, onClose, api, setDocuments, setError, token, naviga
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [newType, setNewType] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [newConfig, setNewConfig] = useState({});
   const fileInputRef = React.useRef(null);
 
   const importSources = sources.filter(s => s.direction === 'import');
   const docsTotal = documents.length;
+
+  const refreshSources = async () => {
+    if (!projectId || !setSources) return;
+    try {
+      const updated = await api(`/projects/${projectId}/sources`);
+      setSources(updated);
+    } catch (e) {}
+  };
 
   const handleImport = async (source) => {
     setImporting(true);
@@ -1099,6 +1202,7 @@ function ImportPanel({ data, onClose, api, setDocuments, setError, token, naviga
   };
 
   const openEditor = (src) => {
+    setAdding(false);
     setEditingSource(src.id === editingSource ? null : src.id);
     setEditConfig({ ...(src.config || {}) });
     setEditName(src.name);
@@ -1113,6 +1217,17 @@ function ImportPanel({ data, onClose, api, setDocuments, setError, token, naviga
         body: JSON.stringify({ name: editName, config: editConfig }),
       });
       setEditingSource(null);
+      await refreshSources();
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleDeleteSource = async (src) => {
+    setSaving(true);
+    try {
+      await api(`/sources/${src.id}`, { method: 'DELETE' });
+      setEditingSource(null);
+      await refreshSources();
     } catch (e) { if (!e.sessionExpired) setError(e.message); }
     finally { setSaving(false); }
   };
@@ -1128,6 +1243,44 @@ function ImportPanel({ data, onClose, api, setDocuments, setError, token, naviga
     }
     finally { setTesting(false); }
   };
+
+  const handleAddSource = async () => {
+    if (!newType || !newName || !projectId) return;
+    setSaving(true);
+    try {
+      await api(`/projects/${projectId}/sources`, {
+        method: 'POST',
+        body: JSON.stringify({
+          project_id: projectId,
+          direction: 'import',
+          source_type: newType.type,
+          name: newName,
+          config: newConfig,
+        }),
+      });
+      setAdding(false);
+      setNewType(null);
+      setNewName('');
+      setNewConfig({});
+      await refreshSources();
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const IMPORT_TYPES = [
+    { type: 'email', name: 'Email (IMAP)', icon: '📧' },
+    { type: 'ksef', name: 'KSeF', icon: '🏛️' },
+    { type: 'upload', name: 'Upload plików', icon: '📤' },
+    { type: 'webhook', name: 'Webhook', icon: '🔗' },
+    { type: 'csv', name: 'Import CSV', icon: '📄' },
+    { type: 'manual', name: 'Ręczne dodawanie', icon: '✏️' },
+    { type: 'bank', name: 'Raport bankowy', icon: '🏦' },
+    { type: 'bank_ing', name: 'ING Bank Śląski', icon: '🟠' },
+    { type: 'bank_mbank', name: 'mBank', icon: '🔴' },
+    { type: 'bank_pko', name: 'PKO BP', icon: '🔵' },
+    { type: 'bank_santander', name: 'Santander', icon: '🔴' },
+    { type: 'bank_pekao', name: 'Bank Pekao', icon: '🟡' },
+  ];
 
   const EMAIL_FIELDS = [
     { key: 'host', label: 'Serwer IMAP', placeholder: 'imap.example.pl' },
@@ -1155,18 +1308,24 @@ function ImportPanel({ data, onClose, api, setDocuments, setError, token, naviga
     color: COLORS.text, fontSize: '12px', boxSizing: 'border-box',
   };
 
+  const renderConfigFields = (fields, config, setConfig) => fields.map(f => (
+    <div key={f.key} style={{ marginBottom: '10px' }}>
+      <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>{f.label}</label>
+      {f.options ? (
+        <select value={config[f.key] || ''} onChange={(e) => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+          style={inputStyle}>
+          <option value="">—</option>
+          {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      ) : (
+        <input type={f.type || 'text'} value={config[f.key] || ''}
+          onChange={(e) => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+          placeholder={f.placeholder} style={inputStyle} />
+      )}
+    </div>
+  ));
+
   return (
-    <>
-      <div style={{
-        padding: '16px', borderBottom: `1px solid ${COLORS.border}`,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
-        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>📥 Import</h3>
-        <button onClick={onClose} style={{
-          background: COLORS.bgTertiary, border: 'none', borderRadius: '6px',
-          color: COLORS.textMuted, cursor: 'pointer', width: '28px', height: '28px', fontSize: '14px',
-        }}>×</button>
-      </div>
       <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
         <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
           <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
@@ -1175,126 +1334,161 @@ function ImportPanel({ data, onClose, api, setDocuments, setError, token, naviga
           <InfoRow label="Źródła importu" value={`${importSources.length}`} />
         </div>
 
-        {importSources.length > 0 && (
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600' }}>
-              Źródła importu
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {importSources.map(src => {
-                const isEditing = editingSource === src.id;
-                const fields = configFields(src.source_type);
-                return (
-                  <div key={src.id} style={{
-                    border: `1px solid ${isEditing ? COLORS.primary + '60' : COLORS.border}`,
-                    borderRadius: '8px', overflow: 'hidden',
-                    background: isEditing ? `${COLORS.primary}08` : COLORS.bgTertiary,
-                  }}>
-                    {/* Source header row */}
-                    <div style={{
-                      padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px',
-                    }}>
-                      <span style={{ fontSize: '16px' }}>{src.icon}</span>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '13px', fontWeight: '500' }}>{src.name}</div>
-                        <div style={{ fontSize: '10px', color: COLORS.textMuted }}>{src.source_type}</div>
-                      </div>
-                      <button onClick={() => openEditor(src)} style={{
-                        background: 'transparent', border: 'none', cursor: 'pointer',
-                        fontSize: '14px', color: COLORS.textMuted, padding: '2px 4px',
-                      }} title="Konfiguracja">⚙️</button>
-                      <button onClick={() => handleImport(src)} disabled={importing} style={{
-                        background: COLORS.primary, border: 'none', borderRadius: '6px',
-                        color: '#fff', cursor: importing ? 'wait' : 'pointer',
-                        padding: '6px 12px', fontSize: '11px', fontWeight: '500',
-                        opacity: importing ? 0.6 : 1,
-                      }}>
-                        {importing ? '...' : 'Importuj'}
-                      </button>
-                    </div>
-
-                    {/* Editable config fields */}
-                    {isEditing && fields.length > 0 && (
-                      <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${COLORS.border}` }}>
-                        <div style={{ marginTop: '12px', marginBottom: '10px' }}>
-                          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>Nazwa</label>
-                          <input value={editName} onChange={(e) => setEditName(e.target.value)}
-                            style={inputStyle} />
-                        </div>
-                        {fields.map(f => (
-                          <div key={f.key} style={{ marginBottom: '10px' }}>
-                            <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>{f.label}</label>
-                            {f.options ? (
-                              <select value={editConfig[f.key] || ''} onChange={(e) => setEditConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
-                                style={inputStyle}>
-                                {f.options.map(o => <option key={o} value={o}>{o}</option>)}
-                              </select>
-                            ) : (
-                              <input
-                                type={f.type || 'text'}
-                                value={editConfig[f.key] || ''}
-                                onChange={(e) => setEditConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
-                                placeholder={f.placeholder}
-                                style={inputStyle}
-                              />
-                            )}
-                          </div>
-                        ))}
-
-                        {/* Test & Save buttons */}
-                        <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
-                          <button onClick={() => handleTestConnection(src)} disabled={testing}
-                            style={{
-                              flex: 1, padding: '8px', fontSize: '11px', fontWeight: '500',
-                              background: COLORS.bgSecondary, border: `1px solid ${COLORS.border}`,
-                              borderRadius: '6px', color: COLORS.text,
-                              cursor: testing ? 'wait' : 'pointer', opacity: testing ? 0.6 : 1,
-                            }}>
-                            {testing ? 'Testowanie...' : '🔌 Test połączenia'}
-                          </button>
-                          <button onClick={() => handleSaveConfig(src)} disabled={saving}
-                            style={{
-                              flex: 1, padding: '8px', fontSize: '11px', fontWeight: '500',
-                              background: COLORS.primary, border: 'none', borderRadius: '6px',
-                              color: '#fff', cursor: saving ? 'wait' : 'pointer',
-                              opacity: saving ? 0.6 : 1,
-                            }}>
-                            {saving ? '...' : '💾 Zapisz'}
-                          </button>
-                        </div>
-
-                        {/* Test result */}
-                        {testResult && (
-                          <div style={{
-                            marginTop: '8px', padding: '8px 12px', borderRadius: '6px', fontSize: '11px',
-                            background: testResult.ok ? `${COLORS.success}15` : '#ef444415',
-                            border: `1px solid ${testResult.ok ? COLORS.success + '30' : '#ef444430'}`,
-                            color: testResult.ok ? COLORS.success : '#ef4444',
-                            wordBreak: 'break-word',
-                          }}>
-                            {testResult.ok ? '✓' : '✗'} {testResult.message}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Last run info */}
-                    {src.last_run_at && !isEditing && (
-                      <div style={{ padding: '0 14px 8px', fontSize: '10px', color: COLORS.textMuted }}>
-                        Ostatnio: {new Date(src.last_run_at).toLocaleString('pl-PL')}
-                        {src.last_run_status && <span> · {src.last_run_status === 'success' ? '✅' : '❌'} {src.last_run_count} dok.</span>}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+        {/* Source list */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{
+            fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <span>Źródła importu</span>
+            <button onClick={() => { setAdding(!adding); setEditingSource(null); setNewType(null); setNewName(''); setNewConfig({}); }}
+              style={{ background: 'transparent', border: 'none', color: COLORS.primary, cursor: 'pointer', fontSize: '16px', padding: '0 4px', lineHeight: 1 }}
+              title="Dodaj źródło">+</button>
           </div>
-        )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {importSources.map(src => {
+              const isEditing = editingSource === src.id;
+              const fields = configFields(src.source_type);
+              return (
+                <div key={src.id} style={{
+                  border: `1px solid ${isEditing ? COLORS.primary + '60' : COLORS.border}`,
+                  borderRadius: '8px', overflow: 'hidden',
+                  background: isEditing ? `${COLORS.primary}08` : COLORS.bgTertiary,
+                }}>
+                  <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>{src.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: '500' }}>{src.name}</div>
+                      <div style={{ fontSize: '10px', color: COLORS.textMuted }}>{src.source_type}</div>
+                    </div>
+                    <button onClick={() => openEditor(src)} style={{
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      fontSize: '14px', color: COLORS.textMuted, padding: '2px 4px',
+                    }} title="Konfiguracja">⚙️</button>
+                    <button onClick={() => handleImport(src)} disabled={importing} style={{
+                      background: COLORS.primary, border: 'none', borderRadius: '6px',
+                      color: '#fff', cursor: importing ? 'wait' : 'pointer',
+                      padding: '6px 12px', fontSize: '11px', fontWeight: '500',
+                      opacity: importing ? 0.6 : 1,
+                    }}>
+                      {importing ? '...' : 'Importuj'}
+                    </button>
+                  </div>
 
-        {importSources.length === 0 && (
-          <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Brak skonfigurowanych źródeł importu</div>
+                  {isEditing && (
+                    <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${COLORS.border}` }}>
+                      <div style={{ marginTop: '12px', marginBottom: '10px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>Nazwa</label>
+                        <input value={editName} onChange={(e) => setEditName(e.target.value)} style={inputStyle} />
+                      </div>
+                      {renderConfigFields(fields, editConfig, setEditConfig)}
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                        <button onClick={() => handleTestConnection(src)} disabled={testing}
+                          style={{
+                            flex: 1, padding: '8px', fontSize: '11px', fontWeight: '500',
+                            background: COLORS.bgSecondary, border: `1px solid ${COLORS.border}`,
+                            borderRadius: '6px', color: COLORS.text,
+                            cursor: testing ? 'wait' : 'pointer', opacity: testing ? 0.6 : 1,
+                          }}>
+                          {testing ? 'Testowanie...' : '🔌 Test'}
+                        </button>
+                        <button onClick={() => handleSaveConfig(src)} disabled={saving}
+                          style={{
+                            flex: 1, padding: '8px', fontSize: '11px', fontWeight: '500',
+                            background: COLORS.primary, border: 'none', borderRadius: '6px',
+                            color: '#fff', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.6 : 1,
+                          }}>
+                          {saving ? '...' : '💾 Zapisz'}
+                        </button>
+                        <button onClick={() => { if (confirm('Usunąć to źródło?')) handleDeleteSource(src); }} disabled={saving}
+                          style={{
+                            padding: '8px', fontSize: '11px',
+                            background: 'transparent', border: `1px solid #ef444440`,
+                            borderRadius: '6px', color: '#ef4444', cursor: 'pointer',
+                          }} title="Usuń źródło">🗑️</button>
+                      </div>
+                      {testResult && (
+                        <div style={{
+                          marginTop: '8px', padding: '8px 12px', borderRadius: '6px', fontSize: '11px',
+                          background: testResult.ok ? `${COLORS.success}15` : '#ef444415',
+                          border: `1px solid ${testResult.ok ? COLORS.success + '30' : '#ef444430'}`,
+                          color: testResult.ok ? COLORS.success : '#ef4444', wordBreak: 'break-word',
+                        }}>
+                          {testResult.ok ? '✓' : '✗'} {testResult.message}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {src.last_run_at && !isEditing && (
+                    <div style={{ padding: '0 14px 8px', fontSize: '10px', color: COLORS.textMuted }}>
+                      Ostatnio: {new Date(src.last_run_at).toLocaleString('pl-PL')}
+                      {src.last_run_status && <span> · {src.last_run_status === 'success' ? '✅' : '❌'} {src.last_run_count} dok.</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {importSources.length === 0 && !adding && (
+              <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Brak skonfigurowanych źródeł importu</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Add new source form */}
+        {adding && (
+          <div style={{
+            padding: '14px', background: `${COLORS.primary}08`, borderRadius: '10px',
+            border: `1px solid ${COLORS.primary}40`, marginBottom: '16px',
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '10px', color: COLORS.primary }}>
+              Nowe źródło importu
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
+              {IMPORT_TYPES.map(t => (
+                <button key={t.type} onClick={() => { setNewType(t); setNewName(prev => prev || t.name); setNewConfig({}); }}
+                  style={{
+                    padding: '6px 10px', fontSize: '11px',
+                    border: `1px solid ${newType?.type === t.type ? COLORS.primary : COLORS.border}`,
+                    borderRadius: '6px',
+                    background: newType?.type === t.type ? `${COLORS.primary}20` : COLORS.bgTertiary,
+                    color: newType?.type === t.type ? COLORS.primary : COLORS.text,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                  }}>
+                  <span>{t.icon}</span> {t.name}
+                </button>
+              ))}
+            </div>
+            {newType && (
+              <>
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>Nazwa</label>
+                  <input value={newName} onChange={(e) => setNewName(e.target.value)}
+                    placeholder={`np. ${newType.name}`} style={inputStyle} />
+                </div>
+                {renderConfigFields(configFields(newType.type), newConfig, setNewConfig)}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={handleAddSource} disabled={saving || !newName}
+                    style={{
+                      flex: 1, padding: '8px', fontSize: '12px', fontWeight: '500',
+                      background: COLORS.primary, border: 'none', borderRadius: '6px',
+                      color: '#fff', cursor: saving ? 'wait' : 'pointer',
+                      opacity: (!newName || saving) ? 0.5 : 1,
+                    }}>
+                    {saving ? '...' : 'Dodaj źródło'}
+                  </button>
+                  <button onClick={() => { setAdding(false); setNewType(null); }}
+                    style={{
+                      padding: '8px 14px', fontSize: '12px',
+                      background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                      borderRadius: '6px', color: COLORS.textMuted, cursor: 'pointer',
+                    }}>Anuluj</button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -1328,11 +1522,10 @@ function ImportPanel({ data, onClose, api, setDocuments, setError, token, naviga
           )}
         </div>
       </div>
-    </>
   );
 }
 
-function DescribePanel({ data, onClose, navigate }) {
+function DescribePanel({ data, navigate }) {
   const { task, documents } = data;
   const docsNew = documents.filter(d => d.status === 'new');
   const docsDescribed = documents.filter(d => d.status === 'described' || d.status === 'approved');
@@ -1341,17 +1534,6 @@ function DescribePanel({ data, onClose, navigate }) {
   const progress = docsTotal > 0 ? Math.round(((docsDescribed.length + docsExported.length) / docsTotal) * 100) : 0;
 
   return (
-    <>
-      <div style={{
-        padding: '16px', borderBottom: `1px solid ${COLORS.border}`,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
-        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>✏️ Opis dokumentów</h3>
-        <button onClick={onClose} style={{
-          background: COLORS.bgTertiary, border: 'none', borderRadius: '6px',
-          color: COLORS.textMuted, cursor: 'pointer', width: '28px', height: '28px', fontSize: '14px',
-        }}>×</button>
-      </div>
       <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
         <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
           <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
@@ -1423,18 +1605,35 @@ function DescribePanel({ data, onClose, navigate }) {
           </div>
         )}
       </div>
-    </>
   );
 }
 
-function ExportPanel({ data, onClose, api, setDocuments, setError, navigate }) {
-  const { task, sources, documents } = data;
+function ExportPanel({ data, api, setDocuments, setSources, setError, navigate }) {
+  const { task, sources, documents, projectId } = data;
   const [exporting, setExporting] = useState(false);
   const [lastResult, setLastResult] = useState(null);
+  const [editingSource, setEditingSource] = useState(null);
+  const [editConfig, setEditConfig] = useState({});
+  const [editName, setEditName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [newType, setNewType] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [newConfig, setNewConfig] = useState({});
 
   const exportSources = sources.filter(s => s.direction === 'export');
   const docsDescribed = documents.filter(d => d.status === 'described' || d.status === 'approved');
   const docsExported = documents.filter(d => d.status === 'exported');
+
+  const refreshSources = async () => {
+    if (!projectId || !setSources) return;
+    try {
+      const updated = await api(`/projects/${projectId}/sources`);
+      setSources(updated);
+    } catch (e) {}
+  };
 
   const handleExport = async (source) => {
     setExporting(true);
@@ -1460,18 +1659,127 @@ function ExportPanel({ data, onClose, api, setDocuments, setError, navigate }) {
     finally { setExporting(false); }
   };
 
+  const openEditor = (src) => {
+    setAdding(false);
+    setEditingSource(src.id === editingSource ? null : src.id);
+    setEditConfig({ ...(src.config || {}) });
+    setEditName(src.name);
+    setTestResult(null);
+  };
+
+  const handleSaveConfig = async (src) => {
+    setSaving(true);
+    try {
+      await api(`/sources/${src.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: editName, config: editConfig }),
+      });
+      setEditingSource(null);
+      await refreshSources();
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleDeleteSource = async (src) => {
+    setSaving(true);
+    try {
+      await api(`/sources/${src.id}`, { method: 'DELETE' });
+      setEditingSource(null);
+      await refreshSources();
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleTestConnection = async (src) => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await api(`/sources/${src.id}/test-connection`, { method: 'POST' });
+      setTestResult(result);
+    } catch (e) {
+      setTestResult({ ok: false, message: e.message });
+    }
+    finally { setTesting(false); }
+  };
+
+  const handleAddSource = async () => {
+    if (!newType || !newName || !projectId) return;
+    setSaving(true);
+    try {
+      await api(`/projects/${projectId}/sources`, {
+        method: 'POST',
+        body: JSON.stringify({
+          project_id: projectId,
+          direction: 'export',
+          source_type: newType.type,
+          name: newName,
+          config: newConfig,
+        }),
+      });
+      setAdding(false);
+      setNewType(null);
+      setNewName('');
+      setNewConfig({});
+      await refreshSources();
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const EXPORT_TYPES = [
+    { type: 'wfirma', name: 'wFirma (CSV)', icon: '📊' },
+    { type: 'jpk_pkpir', name: 'JPK_PKPIR (XML)', icon: '📋' },
+    { type: 'comarch', name: 'Comarch Optima (XML)', icon: '🔷' },
+    { type: 'symfonia', name: 'Symfonia (CSV)', icon: '🎵' },
+    { type: 'enova', name: 'enova365 (XML)', icon: '🟢' },
+    { type: 'csv', name: 'CSV ogólny', icon: '📄' },
+  ];
+
+  const WFIRMA_FIELDS = [
+    { key: 'encoding', label: 'Kodowanie', placeholder: 'utf-8-sig', options: ['utf-8', 'utf-8-sig', 'cp1250', 'iso-8859-2'] },
+    { key: 'date_format', label: 'Format daty', placeholder: '%Y-%m-%d', options: ['%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y'] },
+  ];
+  const JPK_FIELDS = [
+    { key: 'nip', label: 'NIP firmy', placeholder: '1234567890' },
+    { key: 'company_name', label: 'Nazwa firmy', placeholder: 'Firma Sp. z o.o.' },
+  ];
+  const CSV_FIELDS = [
+    { key: 'delimiter', label: 'Separator', placeholder: ';', options: [';', ',', '\t'] },
+    { key: 'encoding', label: 'Kodowanie', placeholder: 'utf-8-sig', options: ['utf-8', 'utf-8-sig', 'cp1250', 'iso-8859-2'] },
+  ];
+
+  const configFields = (srcType) => {
+    if (srcType === 'wfirma') return WFIRMA_FIELDS;
+    if (srcType === 'jpk_pkpir') return JPK_FIELDS;
+    if (srcType === 'csv') return CSV_FIELDS;
+    return [];
+  };
+
+  const inputStyle = {
+    width: '100%', padding: '8px 10px', background: COLORS.bgSecondary,
+    border: `1px solid ${COLORS.border}`, borderRadius: '6px',
+    color: COLORS.text, fontSize: '12px', boxSizing: 'border-box',
+  };
+
+  const renderConfigFields = (fields, config, setConfig) => fields.map(f => (
+    <div key={f.key} style={{ marginBottom: '10px' }}>
+      <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>{f.label}</label>
+      {f.options ? (
+        <select value={config[f.key] || ''} onChange={(e) => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+          style={inputStyle}>
+          <option value="">—</option>
+          {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+      ) : (
+        <input type={f.type || 'text'} value={config[f.key] || ''}
+          onChange={(e) => setConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+          placeholder={f.placeholder} style={inputStyle} />
+      )}
+    </div>
+  ));
+
+  const noDocsReady = docsDescribed.length === 0;
+
   return (
-    <>
-      <div style={{
-        padding: '16px', borderBottom: `1px solid ${COLORS.border}`,
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
-        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>📤 Eksport</h3>
-        <button onClick={onClose} style={{
-          background: COLORS.bgTertiary, border: 'none', borderRadius: '6px',
-          color: COLORS.textMuted, cursor: 'pointer', width: '28px', height: '28px', fontSize: '14px',
-        }}>×</button>
-      </div>
       <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
         <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
           <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
@@ -1481,38 +1789,166 @@ function ExportPanel({ data, onClose, api, setDocuments, setError, navigate }) {
           <InfoRow label="Cele eksportu" value={`${exportSources.length}`} />
         </div>
 
-        {exportSources.length > 0 && (
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600' }}>
-              Eksportuj do
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {exportSources.map(src => {
-                const noDocsReady = docsDescribed.length === 0;
-                const isDisabled = exporting || noDocsReady;
-                return (
-                  <button key={src.id} onClick={() => handleExport(src)} disabled={isDisabled}
-                    title={noDocsReady ? 'Brak opisanych dokumentów do eksportu' : `Eksportuj do ${src.name}`}
-                    style={{
-                      padding: '10px 14px', fontSize: '13px', fontWeight: '500',
-                      border: `1px solid ${COLORS.border}`, borderRadius: '8px',
-                      background: COLORS.bgTertiary, color: isDisabled ? COLORS.textMuted : COLORS.text,
-                      cursor: isDisabled ? 'not-allowed' : 'pointer', opacity: isDisabled ? 0.5 : 1,
-                      display: 'flex', alignItems: 'center', gap: '8px',
-                    }}>
-                    <span>{src.icon}</span>
-                    <span style={{ flex: 1, textAlign: 'left' }}>{src.name}</span>
-                    {exporting && <span>...</span>}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Source list */}
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{
+            fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <span>Cele eksportu</span>
+            <button onClick={() => { setAdding(!adding); setEditingSource(null); setNewType(null); setNewName(''); setNewConfig({}); }}
+              style={{ background: 'transparent', border: 'none', color: COLORS.primary, cursor: 'pointer', fontSize: '16px', padding: '0 4px', lineHeight: 1 }}
+              title="Dodaj cel eksportu">+</button>
           </div>
-        )}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {exportSources.map(src => {
+              const isEditing = editingSource === src.id;
+              const fields = configFields(src.source_type);
+              const isDisabled = exporting || noDocsReady;
+              return (
+                <div key={src.id} style={{
+                  border: `1px solid ${isEditing ? COLORS.primary + '60' : COLORS.border}`,
+                  borderRadius: '8px', overflow: 'hidden',
+                  background: isEditing ? `${COLORS.primary}08` : COLORS.bgTertiary,
+                }}>
+                  <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>{src.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '13px', fontWeight: '500' }}>{src.name}</div>
+                      <div style={{ fontSize: '10px', color: COLORS.textMuted }}>{src.source_type}</div>
+                    </div>
+                    <button onClick={() => openEditor(src)} style={{
+                      background: 'transparent', border: 'none', cursor: 'pointer',
+                      fontSize: '14px', color: COLORS.textMuted, padding: '2px 4px',
+                    }} title="Konfiguracja">⚙️</button>
+                    <button onClick={() => handleExport(src)} disabled={isDisabled}
+                      title={noDocsReady ? 'Brak opisanych dokumentów' : `Eksportuj do ${src.name}`}
+                      style={{
+                        background: isDisabled ? COLORS.bgSecondary : COLORS.primary,
+                        border: 'none', borderRadius: '6px',
+                        color: isDisabled ? COLORS.textMuted : '#fff',
+                        cursor: isDisabled ? 'not-allowed' : 'pointer',
+                        padding: '6px 12px', fontSize: '11px', fontWeight: '500',
+                        opacity: isDisabled ? 0.5 : 1,
+                      }}>
+                      {exporting ? '...' : 'Eksportuj'}
+                    </button>
+                  </div>
 
-        {exportSources.length === 0 && (
-          <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Brak skonfigurowanych celów eksportu</div>
+                  {isEditing && (
+                    <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${COLORS.border}` }}>
+                      <div style={{ marginTop: '12px', marginBottom: '10px' }}>
+                        <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>Nazwa</label>
+                        <input value={editName} onChange={(e) => setEditName(e.target.value)} style={inputStyle} />
+                      </div>
+                      {renderConfigFields(fields, editConfig, setEditConfig)}
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                        <button onClick={() => handleTestConnection(src)} disabled={testing}
+                          style={{
+                            flex: 1, padding: '8px', fontSize: '11px', fontWeight: '500',
+                            background: COLORS.bgSecondary, border: `1px solid ${COLORS.border}`,
+                            borderRadius: '6px', color: COLORS.text,
+                            cursor: testing ? 'wait' : 'pointer', opacity: testing ? 0.6 : 1,
+                          }}>
+                          {testing ? 'Testowanie...' : '🔌 Test'}
+                        </button>
+                        <button onClick={() => handleSaveConfig(src)} disabled={saving}
+                          style={{
+                            flex: 1, padding: '8px', fontSize: '11px', fontWeight: '500',
+                            background: COLORS.primary, border: 'none', borderRadius: '6px',
+                            color: '#fff', cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.6 : 1,
+                          }}>
+                          {saving ? '...' : '💾 Zapisz'}
+                        </button>
+                        <button onClick={() => { if (confirm('Usunąć ten cel eksportu?')) handleDeleteSource(src); }} disabled={saving}
+                          style={{
+                            padding: '8px', fontSize: '11px',
+                            background: 'transparent', border: `1px solid #ef444440`,
+                            borderRadius: '6px', color: '#ef4444', cursor: 'pointer',
+                          }} title="Usuń">🗑️</button>
+                      </div>
+                      {testResult && (
+                        <div style={{
+                          marginTop: '8px', padding: '8px 12px', borderRadius: '6px', fontSize: '11px',
+                          background: testResult.ok ? `${COLORS.success}15` : '#ef444415',
+                          border: `1px solid ${testResult.ok ? COLORS.success + '30' : '#ef444430'}`,
+                          color: testResult.ok ? COLORS.success : '#ef4444', wordBreak: 'break-word',
+                        }}>
+                          {testResult.ok ? '✓' : '✗'} {testResult.message}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {src.last_run_at && !isEditing && (
+                    <div style={{ padding: '0 14px 8px', fontSize: '10px', color: COLORS.textMuted }}>
+                      Ostatnio: {new Date(src.last_run_at).toLocaleString('pl-PL')}
+                      {src.last_run_status && <span> · {src.last_run_status === 'success' ? '✅' : '❌'} {src.last_run_count} dok.</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {exportSources.length === 0 && !adding && (
+              <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Brak skonfigurowanych celów eksportu</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Add new export source form */}
+        {adding && (
+          <div style={{
+            padding: '14px', background: `${COLORS.primary}08`, borderRadius: '10px',
+            border: `1px solid ${COLORS.primary}40`, marginBottom: '16px',
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '10px', color: COLORS.primary }}>
+              Nowy cel eksportu
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
+              {EXPORT_TYPES.map(t => (
+                <button key={t.type} onClick={() => { setNewType(t); setNewName(prev => prev || t.name); setNewConfig({}); }}
+                  style={{
+                    padding: '6px 10px', fontSize: '11px',
+                    border: `1px solid ${newType?.type === t.type ? COLORS.primary : COLORS.border}`,
+                    borderRadius: '6px',
+                    background: newType?.type === t.type ? `${COLORS.primary}20` : COLORS.bgTertiary,
+                    color: newType?.type === t.type ? COLORS.primary : COLORS.text,
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
+                  }}>
+                  <span>{t.icon}</span> {t.name}
+                </button>
+              ))}
+            </div>
+            {newType && (
+              <>
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>Nazwa</label>
+                  <input value={newName} onChange={(e) => setNewName(e.target.value)}
+                    placeholder={`np. ${newType.name}`} style={inputStyle} />
+                </div>
+                {renderConfigFields(configFields(newType.type), newConfig, setNewConfig)}
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={handleAddSource} disabled={saving || !newName}
+                    style={{
+                      flex: 1, padding: '8px', fontSize: '12px', fontWeight: '500',
+                      background: COLORS.primary, border: 'none', borderRadius: '6px',
+                      color: '#fff', cursor: saving ? 'wait' : 'pointer',
+                      opacity: (!newName || saving) ? 0.5 : 1,
+                    }}>
+                    {saving ? '...' : 'Dodaj cel'}
+                  </button>
+                  <button onClick={() => { setAdding(false); setNewType(null); }}
+                    style={{
+                      padding: '8px 14px', fontSize: '12px',
+                      background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                      borderRadius: '6px', color: COLORS.textMuted, cursor: 'pointer',
+                    }}>Anuluj</button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
@@ -1540,6 +1976,5 @@ function ExportPanel({ data, onClose, api, setDocuments, setError, navigate }) {
           </div>
         )}
       </div>
-    </>
   );
 }

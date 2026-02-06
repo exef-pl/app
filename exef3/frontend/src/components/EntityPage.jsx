@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { COLORS, ENTITY_TYPES, PROJECT_TYPES, TASK_STATUS } from '../constants.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import ActivitiesSidebar from './ActivitiesSidebar.jsx';
 import TaskContentArea from './TaskContentArea.jsx';
 import RightPanel from './RightPanel.jsx';
 
@@ -175,10 +174,10 @@ export default function EntityPage({ panel }) {
   else if (panel === 'sources') { panelType = 'sources'; panelData = { sources, projectId }; panelClose = projectPath || entityPath; }
   else if (panel === 'view-task' && activeTask) { panelType = 'view-task'; panelData = activeTask; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'new-task') { panelType = 'task'; panelData = null; panelClose = projectPath || entityPath; }
-  else if (panel === 'activity-import' && activeTask) { panelType = 'activity-import'; panelData = { task: activeTask, sources, documents }; panelClose = taskPath || projectPath || entityPath; }
-  else if (panel === 'activity-describe' && activeTask) { panelType = 'activity-describe'; panelData = { task: activeTask, documents }; panelClose = taskPath || projectPath || entityPath; }
-  else if (panel === 'activity-export' && activeTask) { panelType = 'activity-export'; panelData = { task: activeTask, sources, documents }; panelClose = taskPath || projectPath || entityPath; }
-  else if (panel === 'new-document') { panelType = 'document'; panelData = null; panelClose = taskPath || entityPath; }
+  else if (panel === 'activity-import' && activeTask) { panelType = 'activity-import'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
+  else if (panel === 'activity-describe' && activeTask) { panelType = 'activity-describe'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
+  else if (panel === 'activity-export' && activeTask) { panelType = 'activity-export'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
+  else if (panel === 'new-document' && activeTask) { panelType = 'new-document'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'view-document') { panelType = 'view-document'; panelData = selectedDocument; panelClose = taskPath || entityPath; }
 
   return (
@@ -365,28 +364,52 @@ export default function EntityPage({ panel }) {
             {tasks.map(task => {
               const progress = task.docs_total > 0 ? Math.round((task.docs_described / task.docs_total) * 100) : 0;
               const status = TASK_STATUS[task.status];
+              const isActive = activeTask?.id === task.id;
               return (
-                <Link
-                  key={task.id}
-                  to={`${projectPath}/task/${task.id}`}
-                  style={{
-                    padding: '10px', textDecoration: 'none',
-                    background: activeTask?.id === task.id ? COLORS.bgTertiary : 'transparent',
-                    border: activeTask?.id === task.id ? `1px solid ${COLORS.border}` : '1px solid transparent',
-                    borderRadius: '8px', color: COLORS.text, textAlign: 'left',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '500' }}>{task.icon} {task.name}</span>
-                    <span style={{ fontSize: '10px', color: status?.color }}>{status?.icon}</span>
-                  </div>
-                  <div style={{ height: '3px', background: COLORS.border, borderRadius: '2px', overflow: 'hidden' }}>
-                    <div style={{ width: `${progress}%`, height: '100%', background: progress === 100 ? COLORS.success : COLORS.primary }} />
-                  </div>
-                  <div style={{ fontSize: '10px', color: COLORS.textMuted, marginTop: '4px' }}>
-                    {task.docs_described}/{task.docs_total} opisanych
-                  </div>
-                </Link>
+                <div key={task.id} style={{ position: 'relative' }}>
+                  <Link
+                    to={`${projectPath}/task/${task.id}`}
+                    style={{
+                      display: 'block', padding: '10px', textDecoration: 'none',
+                      background: isActive ? COLORS.bgTertiary : 'transparent',
+                      border: isActive ? `1px solid ${COLORS.border}` : '1px solid transparent',
+                      borderRadius: '8px', color: COLORS.text, textAlign: 'left',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '500', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.icon} {task.name}</span>
+                      <span style={{ fontSize: '10px', color: status?.color, marginLeft: '4px' }}>{status?.icon}</span>
+                    </div>
+                    <div style={{ height: '3px', background: COLORS.border, borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ width: `${progress}%`, height: '100%', background: progress === 100 ? COLORS.success : COLORS.primary }} />
+                    </div>
+                    <div style={{ fontSize: '10px', color: COLORS.textMuted, marginTop: '4px' }}>
+                      {task.docs_described}/{task.docs_total} opisanych
+                    </div>
+                  </Link>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!confirm(`Usunąć zadanie "${task.name}"?`)) return;
+                      try {
+                        await api(`/tasks/${task.id}`, { method: 'DELETE' });
+                        setTasks(prev => prev.filter(t => t.id !== task.id));
+                        if (taskId === task.id) navigate(projectPath);
+                      } catch (err) { if (!err.sessionExpired) setError(err.message); }
+                    }}
+                    title="Usuń zadanie"
+                    style={{
+                      position: 'absolute', top: '8px', right: '8px',
+                      width: '22px', height: '22px', padding: 0,
+                      background: 'transparent', border: 'none', borderRadius: '4px',
+                      color: '#ef4444', cursor: 'pointer', fontSize: '11px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      opacity: 0.5, transition: 'opacity 0.15s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = 1}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = 0.5}
+                  >🗑️</button>
+                </div>
               );
             })}
             {tasks.length === 0 && projectId && (
@@ -397,22 +420,7 @@ export default function EntityPage({ panel }) {
           </div>
         </div>
 
-        {/* Czynności section */}
-        {activeTask && (
-          <div style={{ marginTop: '8px' }}>
-            <span style={{ fontSize: '10px', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '8px' }}>
-              Czynności
-            </span>
-            <ActivitiesSidebar
-              activeTask={activeTask}
-              documents={documents}
-              sources={sources}
-              taskPath={taskPath}
-              navigate={navigate}
-              activePanel={panel}
-            />
-          </div>
-        )}
+        
         </div>
       </aside>
 
