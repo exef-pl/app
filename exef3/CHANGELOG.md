@@ -1,3 +1,18 @@
+## [1.0.5] - 2026-02-06
+
+### Summary
+
+refactor(exef3): deep code analysis engine with 3 supporting modules
+
+### Other
+
+- update exef3/backend/app/api/sources.py
+- update exef3/frontend/src/App.jsx
+- update exef3/frontend/src/components/ActivitiesSidebar.jsx
+- update exef3/frontend/src/components/EntityPage.jsx
+- update exef3/frontend/src/components/RightPanel.jsx
+
+
 ## [1.0.4] - 2026-02-06
 
 ### Summary

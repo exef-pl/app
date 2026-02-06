@@ -43,7 +43,7 @@ export default function EntityPage({ panel }) {
     }
     api(`/projects/${projectId}/tasks`).then(data => {
       setTasks(data);
-      if (!taskId && data.length > 0) {
+      if (!taskId && data.length > 0 && panel !== 'view-project') {
         navigate(`/entity/${entityId}/project/${projectId}/task/${data[0].id}`, { replace: true });
       }
     }).catch(e => { if (!e.sessionExpired) setError(e.message); });
@@ -175,6 +175,9 @@ export default function EntityPage({ panel }) {
   else if (panel === 'sources') { panelType = 'sources'; panelData = { sources, projectId }; panelClose = projectPath || entityPath; }
   else if (panel === 'view-task' && activeTask) { panelType = 'view-task'; panelData = activeTask; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'new-task') { panelType = 'task'; panelData = null; panelClose = projectPath || entityPath; }
+  else if (panel === 'activity-import' && activeTask) { panelType = 'activity-import'; panelData = { task: activeTask, sources, documents }; panelClose = taskPath || projectPath || entityPath; }
+  else if (panel === 'activity-describe' && activeTask) { panelType = 'activity-describe'; panelData = { task: activeTask, documents }; panelClose = taskPath || projectPath || entityPath; }
+  else if (panel === 'activity-export' && activeTask) { panelType = 'activity-export'; panelData = { task: activeTask, sources, documents }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'new-document') { panelType = 'document'; panelData = null; panelClose = taskPath || entityPath; }
   else if (panel === 'view-document') { panelType = 'view-document'; panelData = selectedDocument; panelClose = taskPath || entityPath; }
 
@@ -403,14 +406,10 @@ export default function EntityPage({ panel }) {
             <ActivitiesSidebar
               activeTask={activeTask}
               documents={documents}
-              setDocuments={setDocuments}
               sources={sources}
               taskPath={taskPath}
               navigate={navigate}
-              api={api}
-              setError={setError}
-              onSourceSelect={() => projectPath && navigate(`${projectPath}/sources`)}
-              token={token}
+              activePanel={panel}
             />
           </div>
         )}
@@ -462,6 +461,7 @@ export default function EntityPage({ panel }) {
             setError={setError}
             setProjects={setProjects}
             entityId={entityId}
+            token={token}
           />
         </aside>
       )}

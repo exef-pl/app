@@ -209,6 +209,9 @@ function AppShell() {
           <Route path="/entity/:entityId/project/:projectId/sources" element={<EntityPage panel="sources" />} />
           <Route path="/entity/:entityId/project/:projectId/task/new" element={<EntityPage panel="new-task" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId" element={<EntityPage panel="view-task" />} />
+          <Route path="/entity/:entityId/project/:projectId/task/:taskId/import" element={<EntityPage panel="activity-import" />} />
+          <Route path="/entity/:entityId/project/:projectId/task/:taskId/describe" element={<EntityPage panel="activity-describe" />} />
+          <Route path="/entity/:entityId/project/:projectId/task/:taskId/export" element={<EntityPage panel="activity-export" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/document/new" element={<EntityPage panel="new-document" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/document/:documentId" element={<EntityPage panel="view-document" />} />
           <Route path="*" element={<Navigate to="/" replace />} />

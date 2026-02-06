@@ -9,7 +9,7 @@ export default function RightPanel({
   loading, activeEntity, activeProject, activeTask,
   projectId, setTasks, setDocuments,
   api, setSources, setError,
-  setProjects, entityId,
+  setProjects, entityId, token,
 }) {
   // ALL hooks MUST come before any conditional returns (Rules of Hooks)
   const [formData, setFormData] = useState({});
@@ -34,6 +34,15 @@ export default function RightPanel({
   }
   if (type === 'view-document' && data) {
     return <DocumentViewPanel doc={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} projectTags={[...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])]} />;
+  }
+  if (type === 'activity-import' && data) {
+    return <ImportPanel data={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} token={token} navigate={navigate} />;
+  }
+  if (type === 'activity-describe' && data) {
+    return <DescribePanel data={data} onClose={onClose} navigate={navigate} />;
+  }
+  if (type === 'activity-export' && data) {
+    return <ExportPanel data={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} navigate={navigate} />;
   }
 
   const update = (field, value) => {
@@ -1025,6 +1034,511 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
         >
           {saving ? '...' : saved ? '✓ Zapisano' : 'Zapisz metadane'}
         </button>
+      </div>
+    </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ACTIVITY PANELS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function ImportPanel({ data, onClose, api, setDocuments, setError, token, navigate }) {
+  const { task, sources, documents } = data;
+  const [importing, setImporting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [editingSource, setEditingSource] = useState(null);
+  const [editConfig, setEditConfig] = useState({});
+  const [editName, setEditName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const fileInputRef = React.useRef(null);
+
+  const importSources = sources.filter(s => s.direction === 'import');
+  const docsTotal = documents.length;
+
+  const handleImport = async (source) => {
+    setImporting(true);
+    try {
+      await api('/flow/import', {
+        method: 'POST',
+        body: JSON.stringify({ source_id: source.id, task_id: task.id }),
+      });
+      const docs = await api(`/tasks/${task.id}/documents`);
+      setDocuments(docs);
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setImporting(false); }
+  };
+
+  const handleCsvUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch(`${API_URL}/flow/upload-csv?task_id=${task.id}`, {
+        method: 'POST',
+        headers: { ...(token && { 'Authorization': `Bearer ${token}` }) },
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Błąd uploadu' }));
+        throw new Error(err.detail || 'Błąd');
+      }
+      const result = await res.json();
+      setUploadResult(result);
+      const docs = await api(`/tasks/${task.id}/documents`);
+      setDocuments(docs);
+      setTimeout(() => setUploadResult(null), 5000);
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setUploading(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
+  };
+
+  const openEditor = (src) => {
+    setEditingSource(src.id === editingSource ? null : src.id);
+    setEditConfig({ ...(src.config || {}) });
+    setEditName(src.name);
+    setTestResult(null);
+  };
+
+  const handleSaveConfig = async (src) => {
+    setSaving(true);
+    try {
+      await api(`/sources/${src.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: editName, config: editConfig }),
+      });
+      setEditingSource(null);
+    } catch (e) { if (!e.sessionExpired) setError(e.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleTestConnection = async (src) => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await api(`/sources/${src.id}/test-connection`, { method: 'POST' });
+      setTestResult(result);
+    } catch (e) {
+      setTestResult({ ok: false, message: e.message });
+    }
+    finally { setTesting(false); }
+  };
+
+  const EMAIL_FIELDS = [
+    { key: 'host', label: 'Serwer IMAP', placeholder: 'imap.example.pl' },
+    { key: 'port', label: 'Port', placeholder: '993', type: 'number' },
+    { key: 'username', label: 'Użytkownik', placeholder: 'user@example.pl' },
+    { key: 'password', label: 'Hasło', placeholder: '••••••••', type: 'password' },
+    { key: 'folder', label: 'Folder', placeholder: 'INBOX/Faktury' },
+    { key: 'days_back', label: 'Dni wstecz', placeholder: '30', type: 'number' },
+  ];
+  const KSEF_FIELDS = [
+    { key: 'nip', label: 'NIP', placeholder: '1234567890' },
+    { key: 'token', label: 'Token autoryzacji', placeholder: 'token...', type: 'password' },
+    { key: 'environment', label: 'Środowisko', placeholder: 'test', options: ['test', 'demo', 'prod'] },
+  ];
+
+  const configFields = (srcType) => {
+    if (srcType === 'email') return EMAIL_FIELDS;
+    if (srcType === 'ksef') return KSEF_FIELDS;
+    return [];
+  };
+
+  const inputStyle = {
+    width: '100%', padding: '8px 10px', background: COLORS.bgSecondary,
+    border: `1px solid ${COLORS.border}`, borderRadius: '6px',
+    color: COLORS.text, fontSize: '12px', boxSizing: 'border-box',
+  };
+
+  return (
+    <>
+      <div style={{
+        padding: '16px', borderBottom: `1px solid ${COLORS.border}`,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>📥 Import</h3>
+        <button onClick={onClose} style={{
+          background: COLORS.bgTertiary, border: 'none', borderRadius: '6px',
+          color: COLORS.textMuted, cursor: 'pointer', width: '28px', height: '28px', fontSize: '14px',
+        }}>×</button>
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+        <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
+          <InfoRow label="Zadanie" value={`${task.icon} ${task.name}`} />
+          <InfoRow label="Dokumenty" value={`${docsTotal} łącznie`} />
+          <InfoRow label="Źródła importu" value={`${importSources.length}`} />
+        </div>
+
+        {importSources.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600' }}>
+              Źródła importu
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {importSources.map(src => {
+                const isEditing = editingSource === src.id;
+                const fields = configFields(src.source_type);
+                return (
+                  <div key={src.id} style={{
+                    border: `1px solid ${isEditing ? COLORS.primary + '60' : COLORS.border}`,
+                    borderRadius: '8px', overflow: 'hidden',
+                    background: isEditing ? `${COLORS.primary}08` : COLORS.bgTertiary,
+                  }}>
+                    {/* Source header row */}
+                    <div style={{
+                      padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '8px',
+                    }}>
+                      <span style={{ fontSize: '16px' }}>{src.icon}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', fontWeight: '500' }}>{src.name}</div>
+                        <div style={{ fontSize: '10px', color: COLORS.textMuted }}>{src.source_type}</div>
+                      </div>
+                      <button onClick={() => openEditor(src)} style={{
+                        background: 'transparent', border: 'none', cursor: 'pointer',
+                        fontSize: '14px', color: COLORS.textMuted, padding: '2px 4px',
+                      }} title="Konfiguracja">⚙️</button>
+                      <button onClick={() => handleImport(src)} disabled={importing} style={{
+                        background: COLORS.primary, border: 'none', borderRadius: '6px',
+                        color: '#fff', cursor: importing ? 'wait' : 'pointer',
+                        padding: '6px 12px', fontSize: '11px', fontWeight: '500',
+                        opacity: importing ? 0.6 : 1,
+                      }}>
+                        {importing ? '...' : 'Importuj'}
+                      </button>
+                    </div>
+
+                    {/* Editable config fields */}
+                    {isEditing && fields.length > 0 && (
+                      <div style={{ padding: '0 14px 14px', borderTop: `1px solid ${COLORS.border}` }}>
+                        <div style={{ marginTop: '12px', marginBottom: '10px' }}>
+                          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>Nazwa</label>
+                          <input value={editName} onChange={(e) => setEditName(e.target.value)}
+                            style={inputStyle} />
+                        </div>
+                        {fields.map(f => (
+                          <div key={f.key} style={{ marginBottom: '10px' }}>
+                            <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px' }}>{f.label}</label>
+                            {f.options ? (
+                              <select value={editConfig[f.key] || ''} onChange={(e) => setEditConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                style={inputStyle}>
+                                {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+                              </select>
+                            ) : (
+                              <input
+                                type={f.type || 'text'}
+                                value={editConfig[f.key] || ''}
+                                onChange={(e) => setEditConfig(prev => ({ ...prev, [f.key]: e.target.value }))}
+                                placeholder={f.placeholder}
+                                style={inputStyle}
+                              />
+                            )}
+                          </div>
+                        ))}
+
+                        {/* Test & Save buttons */}
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                          <button onClick={() => handleTestConnection(src)} disabled={testing}
+                            style={{
+                              flex: 1, padding: '8px', fontSize: '11px', fontWeight: '500',
+                              background: COLORS.bgSecondary, border: `1px solid ${COLORS.border}`,
+                              borderRadius: '6px', color: COLORS.text,
+                              cursor: testing ? 'wait' : 'pointer', opacity: testing ? 0.6 : 1,
+                            }}>
+                            {testing ? 'Testowanie...' : '🔌 Test połączenia'}
+                          </button>
+                          <button onClick={() => handleSaveConfig(src)} disabled={saving}
+                            style={{
+                              flex: 1, padding: '8px', fontSize: '11px', fontWeight: '500',
+                              background: COLORS.primary, border: 'none', borderRadius: '6px',
+                              color: '#fff', cursor: saving ? 'wait' : 'pointer',
+                              opacity: saving ? 0.6 : 1,
+                            }}>
+                            {saving ? '...' : '💾 Zapisz'}
+                          </button>
+                        </div>
+
+                        {/* Test result */}
+                        {testResult && (
+                          <div style={{
+                            marginTop: '8px', padding: '8px 12px', borderRadius: '6px', fontSize: '11px',
+                            background: testResult.ok ? `${COLORS.success}15` : '#ef444415',
+                            border: `1px solid ${testResult.ok ? COLORS.success + '30' : '#ef444430'}`,
+                            color: testResult.ok ? COLORS.success : '#ef4444',
+                            wordBreak: 'break-word',
+                          }}>
+                            {testResult.ok ? '✓' : '✗'} {testResult.message}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Last run info */}
+                    {src.last_run_at && !isEditing && (
+                      <div style={{ padding: '0 14px 8px', fontSize: '10px', color: COLORS.textMuted }}>
+                        Ostatnio: {new Date(src.last_run_at).toLocaleString('pl-PL')}
+                        {src.last_run_status && <span> · {src.last_run_status === 'success' ? '✅' : '❌'} {src.last_run_count} dok.</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {importSources.length === 0 && (
+          <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Brak skonfigurowanych źródeł importu</div>
+          </div>
+        )}
+
+        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: '16px' }}>
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600' }}>
+            Upload pliku
+          </div>
+          <input ref={fileInputRef} type="file" accept=".csv,.txt,.tsv" onChange={handleCsvUpload} style={{ display: 'none' }} />
+          <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+            style={{
+              width: '100%', padding: '12px 14px', fontSize: '13px', fontWeight: '500',
+              border: `1px dashed ${COLORS.border}`, borderRadius: '8px',
+              background: COLORS.bgTertiary, color: COLORS.text,
+              cursor: uploading ? 'wait' : 'pointer', opacity: uploading ? 0.6 : 1,
+              display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
+            }}>
+            <span>📄</span>
+            <span>{uploading ? 'Importowanie...' : 'Upload CSV / plik faktur'}</span>
+          </button>
+          {uploadResult && (
+            <div style={{
+              marginTop: '8px', padding: '8px 12px', borderRadius: '6px', fontSize: '12px',
+              background: uploadResult.errors?.length ? `${COLORS.warning}20` : `${COLORS.success}20`,
+              color: uploadResult.errors?.length ? COLORS.warning : COLORS.success,
+            }}>
+              ✓ Zaimportowano {uploadResult.imported} dokumentów
+              {uploadResult.errors?.length > 0 && (
+                <div style={{ marginTop: '4px' }}>⚠ {uploadResult.errors.length} błędów</div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function DescribePanel({ data, onClose, navigate }) {
+  const { task, documents } = data;
+  const docsNew = documents.filter(d => d.status === 'new');
+  const docsDescribed = documents.filter(d => d.status === 'described' || d.status === 'approved');
+  const docsExported = documents.filter(d => d.status === 'exported');
+  const docsTotal = documents.length;
+  const progress = docsTotal > 0 ? Math.round(((docsDescribed.length + docsExported.length) / docsTotal) * 100) : 0;
+
+  return (
+    <>
+      <div style={{
+        padding: '16px', borderBottom: `1px solid ${COLORS.border}`,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>✏️ Opis dokumentów</h3>
+        <button onClick={onClose} style={{
+          background: COLORS.bgTertiary, border: 'none', borderRadius: '6px',
+          color: COLORS.textMuted, cursor: 'pointer', width: '28px', height: '28px', fontSize: '14px',
+        }}>×</button>
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+        <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
+          <InfoRow label="Zadanie" value={`${task.icon} ${task.name}`} />
+          <InfoRow label="Wszystkich" value={`${docsTotal}`} />
+          <InfoRow label="Do opisu" value={`${docsNew.length}`} />
+          <InfoRow label="Opisanych" value={`${docsDescribed.length}`} />
+          <InfoRow label="Wyeksportowanych" value={`${docsExported.length}`} />
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '6px', textTransform: 'uppercase', fontWeight: '600' }}>
+            Postęp opisu
+          </div>
+          <div style={{ height: '8px', background: COLORS.border, borderRadius: '4px', overflow: 'hidden', marginBottom: '4px' }}>
+            <div style={{ width: `${progress}%`, height: '100%', background: progress === 100 ? COLORS.success : COLORS.primary, transition: 'width 0.3s' }} />
+          </div>
+          <div style={{ fontSize: '11px', color: COLORS.textMuted, textAlign: 'right' }}>{progress}%</div>
+        </div>
+
+        {docsNew.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600' }}>
+              Dokumenty do opisu ({docsNew.length})
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {docsNew.slice(0, 10).map(doc => (
+                <button key={doc.id} onClick={() => {
+                  const m = location.pathname.match(/\/entity\/([^/]+)\/project\/([^/]+)\/task\/([^/]+)/);
+                  if (m) navigate(`/entity/${m[1]}/project/${m[2]}/task/${m[3]}/document/${doc.id}`);
+                }} style={{
+                  padding: '8px 12px', fontSize: '12px',
+                  border: `1px solid ${COLORS.border}`, borderRadius: '6px',
+                  background: COLORS.bgTertiary, color: COLORS.text,
+                  cursor: 'pointer', textAlign: 'left',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                }}>
+                  <span style={{ color: COLORS.warning }}>○</span>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {doc.metadata?.vendor_name || doc.metadata?.number || doc.original_filename || doc.id.slice(0, 8)}
+                  </span>
+                </button>
+              ))}
+              {docsNew.length > 10 && (
+                <div style={{ fontSize: '11px', color: COLORS.textMuted, textAlign: 'center', padding: '4px' }}>
+                  ...i {docsNew.length - 10} więcej
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {docsNew.length === 0 && docsTotal > 0 && (
+          <div style={{
+            padding: '16px', background: `${COLORS.success}10`, border: `1px solid ${COLORS.success}30`,
+            borderRadius: '8px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '20px', marginBottom: '4px' }}>✓</div>
+            <div style={{ fontSize: '13px', color: COLORS.success, fontWeight: '500' }}>Wszystkie dokumenty opisane</div>
+          </div>
+        )}
+
+        {docsTotal === 0 && (
+          <div style={{
+            padding: '16px', background: COLORS.bgTertiary,
+            borderRadius: '8px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Brak dokumentów — najpierw zaimportuj</div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+function ExportPanel({ data, onClose, api, setDocuments, setError, navigate }) {
+  const { task, sources, documents } = data;
+  const [exporting, setExporting] = useState(false);
+  const [lastResult, setLastResult] = useState(null);
+
+  const exportSources = sources.filter(s => s.direction === 'export');
+  const docsDescribed = documents.filter(d => d.status === 'described' || d.status === 'approved');
+  const docsExported = documents.filter(d => d.status === 'exported');
+
+  const handleExport = async (source) => {
+    setExporting(true);
+    setLastResult(null);
+    try {
+      const result = await api('/flow/export', {
+        method: 'POST',
+        body: JSON.stringify({ source_id: source.id, task_id: task.id }),
+      });
+      if (result.ok === false) {
+        setLastResult({ error: result.message || 'Brak dokumentów do eksportu.' });
+      } else {
+        setLastResult({ success: true, docs: result.docs_exported || 0 });
+      }
+      const docs = await api(`/tasks/${task.id}/documents`);
+      setDocuments(docs);
+    } catch (e) {
+      if (!e.sessionExpired) {
+        setLastResult({ error: e.message });
+        setError(e.message);
+      }
+    }
+    finally { setExporting(false); }
+  };
+
+  return (
+    <>
+      <div style={{
+        padding: '16px', borderBottom: `1px solid ${COLORS.border}`,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>📤 Eksport</h3>
+        <button onClick={onClose} style={{
+          background: COLORS.bgTertiary, border: 'none', borderRadius: '6px',
+          color: COLORS.textMuted, cursor: 'pointer', width: '28px', height: '28px', fontSize: '14px',
+        }}>×</button>
+      </div>
+      <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+        <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
+          <InfoRow label="Zadanie" value={`${task.icon} ${task.name}`} />
+          <InfoRow label="Gotowe do eksportu" value={`${docsDescribed.length}`} />
+          <InfoRow label="Wyeksportowane" value={`${docsExported.length}`} />
+          <InfoRow label="Cele eksportu" value={`${exportSources.length}`} />
+        </div>
+
+        {exportSources.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600' }}>
+              Eksportuj do
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {exportSources.map(src => {
+                const noDocsReady = docsDescribed.length === 0;
+                const isDisabled = exporting || noDocsReady;
+                return (
+                  <button key={src.id} onClick={() => handleExport(src)} disabled={isDisabled}
+                    title={noDocsReady ? 'Brak opisanych dokumentów do eksportu' : `Eksportuj do ${src.name}`}
+                    style={{
+                      padding: '10px 14px', fontSize: '13px', fontWeight: '500',
+                      border: `1px solid ${COLORS.border}`, borderRadius: '8px',
+                      background: COLORS.bgTertiary, color: isDisabled ? COLORS.textMuted : COLORS.text,
+                      cursor: isDisabled ? 'not-allowed' : 'pointer', opacity: isDisabled ? 0.5 : 1,
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                    }}>
+                    <span>{src.icon}</span>
+                    <span style={{ flex: 1, textAlign: 'left' }}>{src.name}</span>
+                    {exporting && <span>...</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {exportSources.length === 0 && (
+          <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px', textAlign: 'center' }}>
+            <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Brak skonfigurowanych celów eksportu</div>
+          </div>
+        )}
+
+        {lastResult && (
+          <div style={{
+            padding: '10px 12px', borderRadius: '8px', fontSize: '12px', marginBottom: '16px',
+            background: lastResult.error ? '#ef444415' : `${COLORS.success}15`,
+            border: `1px solid ${lastResult.error ? '#ef444430' : COLORS.success + '30'}`,
+            color: lastResult.error ? '#ef4444' : COLORS.success,
+          }}>
+            {lastResult.error
+              ? `⚠ ${lastResult.error}`
+              : `✓ Wyeksportowano ${lastResult.docs} dokumentów`}
+          </div>
+        )}
+
+        {docsDescribed.length > 0 && (
+          <div style={{ padding: '8px 12px', background: `${COLORS.primary}10`, borderRadius: '8px', fontSize: '12px', color: COLORS.primary }}>
+            {docsDescribed.length} dokumentów gotowych do eksportu
+          </div>
+        )}
+        {docsExported.length > 0 && (
+          <div style={{ marginTop: '8px', padding: '8px 12px', background: `${COLORS.success}10`, borderRadius: '8px', fontSize: '12px', color: COLORS.success }}>
+            ✓ {docsExported.length} już wyeksportowanych
+          </div>
+        )}
       </div>
     </>
   );

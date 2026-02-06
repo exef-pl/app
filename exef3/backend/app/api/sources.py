@@ -285,6 +285,129 @@ def list_source_types():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TEST CONNECTION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.post("/sources/{source_id}/test-connection")
+def test_source_connection(
+    source_id: str,
+    identity_id: str = Depends(get_current_identity_id),
+    db: Session = Depends(get_db),
+):
+    """Test connection for a data source (email IMAP, KSeF, etc.)."""
+    source = db.query(DataSource).filter(DataSource.id == source_id).first()
+    if not source:
+        raise HTTPException(status_code=404, detail="Źródło nie znalezione")
+    _check_project_access(db, source.project_id, identity_id)
+
+    source_type = source.source_type.value if hasattr(source.source_type, 'value') else str(source.source_type)
+    config = source.config or {}
+
+    if source_type == "email":
+        return _test_email_connection(config)
+    elif source_type == "ksef":
+        return _test_ksef_connection(config)
+    else:
+        return {"ok": True, "message": f"Źródło typu '{source_type}' nie wymaga testu połączenia."}
+
+
+def _test_email_connection(config: dict) -> dict:
+    """Test IMAP email connection."""
+    import imaplib
+    import socket
+
+    host = config.get("host", "")
+    port = int(config.get("port", 993))
+    username = config.get("username", "")
+    password = config.get("password", "")
+    folder = config.get("folder", "INBOX")
+
+    if not host:
+        return {"ok": False, "message": "Brak adresu serwera IMAP (host)."}
+    if not username:
+        return {"ok": False, "message": "Brak nazwy użytkownika (username)."}
+
+    try:
+        # Try connecting to IMAP server
+        if port == 993:
+            mail = imaplib.IMAP4_SSL(host, port, timeout=10)
+        else:
+            mail = imaplib.IMAP4(host, port, timeout=10)
+
+        # Try login if password provided
+        if password:
+            mail.login(username, password)
+            # Try selecting folder
+            status, data = mail.select(folder, readonly=True)
+            if status == "OK":
+                msg_count = int(data[0])
+                mail.logout()
+                return {"ok": True, "message": f"Połączenie OK. Folder '{folder}' zawiera {msg_count} wiadomości."}
+            else:
+                mail.logout()
+                return {"ok": False, "message": f"Połączenie OK, ale folder '{folder}' nie istnieje."}
+        else:
+            mail.logout()
+            return {"ok": True, "message": f"Połączenie z serwerem {host}:{port} OK (brak hasła — nie zalogowano)."}
+
+    except imaplib.IMAP4.error as e:
+        return {"ok": False, "message": f"Błąd IMAP: {str(e)}"}
+    except socket.timeout:
+        return {"ok": False, "message": f"Timeout — serwer {host}:{port} nie odpowiada."}
+    except socket.gaierror:
+        return {"ok": False, "message": f"Nie można rozwiązać adresu: {host}"}
+    except ConnectionRefusedError:
+        return {"ok": False, "message": f"Połączenie odrzucone: {host}:{port}"}
+    except Exception as e:
+        return {"ok": False, "message": f"Błąd: {str(e)}"}
+
+
+def _test_ksef_connection(config: dict) -> dict:
+    """Test KSeF connection (NIP validation + API ping)."""
+    import re
+    import urllib.request
+    import urllib.error
+
+    nip = config.get("nip", "")
+    environment = config.get("environment", "test")
+
+    if not nip:
+        return {"ok": False, "message": "Brak NIP-u."}
+
+    # Validate NIP format
+    clean_nip = re.sub(r'[\s\-]', '', nip)
+    if len(clean_nip) != 10 or not clean_nip.isdigit():
+        return {"ok": False, "message": f"Nieprawidłowy format NIP: '{nip}'. NIP powinien mieć 10 cyfr."}
+
+    # NIP checksum validation
+    weights = [6, 5, 7, 2, 3, 4, 5, 6, 7]
+    checksum = sum(int(clean_nip[i]) * weights[i] for i in range(9)) % 11
+    if checksum != int(clean_nip[9]):
+        return {"ok": False, "message": f"NIP '{clean_nip}' ma nieprawidłową sumę kontrolną."}
+
+    # Try pinging KSeF API
+    env_urls = {
+        "test": "https://ksef-test.mf.gov.pl/api",
+        "demo": "https://ksef-demo.mf.gov.pl/api",
+        "prod": "https://ksef.mf.gov.pl/api",
+    }
+    base_url = env_urls.get(environment, env_urls["test"])
+
+    try:
+        req = urllib.request.Request(f"{base_url}/online/Session/Status/Credentials", method="GET")
+        req.add_header("Accept", "application/json")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return {"ok": True, "message": f"NIP {clean_nip} prawidłowy. Serwer KSeF ({environment}) odpowiada (HTTP {resp.status})."}
+    except urllib.error.HTTPError as e:
+        # KSeF returns 4xx/5xx but server is reachable
+        return {"ok": True, "message": f"NIP {clean_nip} prawidłowy. Serwer KSeF ({environment}) dostępny (HTTP {e.code})."}
+    except urllib.error.URLError as e:
+        return {"ok": False, "message": f"NIP {clean_nip} prawidłowy, ale serwer KSeF ({environment}) niedostępny: {e.reason}"}
+    except Exception as e:
+        return {"ok": False, "message": f"NIP {clean_nip} prawidłowy, ale błąd połączenia: {str(e)}"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # IMPORT / EXPORT TRIGGERS
 # ═══════════════════════════════════════════════════════════════════════════════
 
