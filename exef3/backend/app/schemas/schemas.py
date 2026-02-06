@@ -279,6 +279,9 @@ class TaskResponse(BaseModel):
     period_end: Optional[date]
     deadline: Optional[date]
     status: TaskStatus
+    import_status: Optional[str] = "not_started"
+    describe_status: Optional[str] = "not_started"
+    export_status: Optional[str] = "not_started"
     docs_total: int
     docs_described: int
     docs_approved: int
@@ -339,10 +342,11 @@ class DocumentResponse(BaseModel):
     source: Optional[str]
     status: DocumentStatus
     created_at: datetime
-    metadata: Optional[DocumentMetadataResponse] = None
+    document_metadata: Optional[DocumentMetadataResponse] = Field(None, alias="document_metadata", serialization_alias="metadata")
     
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class DocumentRelationCreate(BaseModel):
     parent_id: str

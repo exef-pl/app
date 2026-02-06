@@ -1,3 +1,5 @@
+![img.png](img.png)
+
 # EXEF - Document Flow Engine
 
 System zarządzania dokumentami księgowymi dla polskich firm.

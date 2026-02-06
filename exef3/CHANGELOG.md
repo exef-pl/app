@@ -1,3 +1,32 @@
+## [1.0.2] - 2026-02-06
+
+### Summary
+
+feat(docs): deep code analysis engine with 5 supporting modules
+
+### Docs
+
+- docs: update README
+
+### Config
+
+- config: update goal.yaml
+
+### Other
+
+- update exef3/.gitignore
+- update exef3/backend/app/api/firm.py
+- update exef3/backend/app/api/sources.py
+- update exef3/backend/app/api/tasks.py
+- update exef3/backend/app/api/templates.py
+- update exef3/backend/app/core/config.py
+- update exef3/backend/app/main.py
+- update exef3/backend/app/models/models.py
+- update exef3/backend/app/schemas/schemas.py
+- update exef3/backend/seed_demo.py
+- ... and 5 more
+
+
 ## [1.0.1] - 2026-02-06
 
 ### Summary

@@ -128,7 +128,7 @@ def list_documents(
     task, project, role = check_task_access(db, task_id, identity_id)
     
     query = db.query(Document).options(
-        joinedload(Document.metadata)
+        joinedload(Document.document_metadata)
     ).filter(Document.task_id == task_id)
     
     if status:
@@ -158,7 +158,7 @@ def create_document(data: DocumentCreate, identity_id: str = Depends(get_current
 @router.get("/documents/{document_id}", response_model=DocumentResponse)
 def get_document(document_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Pobiera dokument."""
-    document = db.query(Document).options(joinedload(Document.metadata)).filter(Document.id == document_id).first()
+    document = db.query(Document).options(joinedload(Document.document_metadata)).filter(Document.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
     
@@ -174,15 +174,15 @@ def update_document_metadata(
     db: Session = Depends(get_db)
 ):
     """Aktualizuje metadane dokumentu."""
-    document = db.query(Document).options(joinedload(Document.metadata)).filter(Document.id == document_id).first()
+    document = db.query(Document).options(joinedload(Document.document_metadata)).filter(Document.id == document_id).first()
     if not document:
         raise HTTPException(status_code=404, detail="Dokument nie znaleziony")
     
     task, project, role = check_task_access(db, document.task_id, identity_id, require_edit=True)
     
     # Pobierz lub utwórz metadane
-    if document.metadata:
-        metadata = document.metadata
+    if document.document_metadata:
+        metadata = document.document_metadata
         old_status = document.status
     else:
         metadata = DocumentMetadata(

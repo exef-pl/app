@@ -28,6 +28,12 @@ class EntityType(str, enum.Enum):
     SPOLKA = "spolka"
     ORGANIZACJA = "organizacja"
 
+class TaskRecurrence(str, enum.Enum):
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    YEARLY = "yearly"
+    ONCE = "once"
+
 class ProjectType(str, enum.Enum):
     KSIEGOWOSC = "ksiegowosc"
     JPK = "jpk"
@@ -53,6 +59,28 @@ class AuthorizationRole(str, enum.Enum):
     ACCOUNTANT = "accountant"
     ASSISTANT = "assistant"
     VIEWER = "viewer"
+
+class SourceDirection(str, enum.Enum):
+    IMPORT = "import"
+    EXPORT = "export"
+
+class SourceType(str, enum.Enum):
+    EMAIL = "email"
+    KSEF = "ksef"
+    UPLOAD = "upload"
+    WEBHOOK = "webhook"
+    WFIRMA = "wfirma"
+    JPK_PKPIR = "jpk_pkpir"
+    COMARCH = "comarch"
+    SYMFONIA = "symfonia"
+    ENOVA = "enova"
+    CSV = "csv"
+    MANUAL = "manual"
+
+class PhaseStatus(str, enum.Enum):
+    NOT_STARTED = "not_started"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # TOŻSAMOŚĆ (Identity) - Użytkownik z autentykacją
@@ -132,6 +160,36 @@ class Entity(Base):
     owner = relationship("Identity", back_populates="owned_entities", foreign_keys=[owner_id])
     members = relationship("EntityMember", back_populates="entity", cascade="all, delete-orphan")
     projects = relationship("Project", back_populates="entity", cascade="all, delete-orphan")
+    database_config = relationship("EntityDatabase", back_populates="entity", uselist=False, cascade="all, delete-orphan")
+
+class EntityDatabase(Base):
+    """Konfiguracja bazy danych per podmiot — lokalna + opcjonalna zdalna (sync/backup)."""
+    __tablename__ = "entity_databases"
+
+    id = Column(String(36), primary_key=True)
+    entity_id = Column(String(36), ForeignKey("entities.id"), unique=True, nullable=False)
+
+    # Lokalna baza danych
+    local_db_url = Column(String(500))          # np. sqlite:///./data/entities/<nip>.db
+    local_db_path = Column(String(500))         # ścieżka do pliku SQLite
+
+    # Zdalna baza danych (sync / backup)
+    remote_db_url = Column(String(500))         # np. postgresql://...
+    remote_db_driver = Column(String(50))       # sqlite | postgresql | mysql
+
+    # Synchronizacja
+    sync_enabled = Column(Boolean, default=False)
+    sync_direction = Column(String(20), default="local_to_remote")  # local_to_remote | remote_to_local | bidirectional
+    sync_interval_minutes = Column(Integer, default=60)
+    last_sync_at = Column(DateTime)
+    last_sync_status = Column(String(50))       # success | error | pending
+    last_sync_error = Column(Text)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relacje
+    entity = relationship("Entity", back_populates="database_config")
 
 class EntityMember(Base):
     """Członek podmiotu - powiązanie tożsamości z podmiotem."""
@@ -159,12 +217,44 @@ class EntityMember(Base):
 # PROJEKT (Project) - Księgowość, JPK, ZUS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+class ProjectTemplate(Base):
+    """Szablon projektu — definiuje typ, cykliczność zadań, kategorie.
+    
+    Szablony systemowe (is_system=True) są dostępne dla wszystkich.
+    Szablony użytkownika (is_system=False) są tworzone przez tożsamości.
+    """
+    __tablename__ = "project_templates"
+
+    id = Column(String(36), primary_key=True)
+    code = Column(String(50), unique=True, nullable=False)  # np. "ksiegowosc_miesiecznie"
+    name = Column(String(255), nullable=False)               # np. "Księgowość — opis faktur co miesiąc"
+    description = Column(Text)
+    project_type = Column(Enum(ProjectType), nullable=False)
+
+    # Cykliczność zadań
+    task_recurrence = Column(Enum(TaskRecurrence), default=TaskRecurrence.MONTHLY)
+    task_name_template = Column(String(255))    # np. "{month_name} {year}" → "Styczeń 2026"
+    task_icon = Column(String(10), default="📅")
+    deadline_day = Column(Integer, default=20)  # dzień miesiąca na deadline (np. 20 = 20-tego następnego mc)
+
+    # Domyślne ustawienia projektu
+    default_icon = Column(String(10), default="📊")
+    default_color = Column(String(20), default="#3b82f6")
+    default_categories = Column(JSON, default=list)
+
+    # Metadane
+    is_system = Column(Boolean, default=True)
+    created_by_id = Column(String(36), ForeignKey("identities.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class Project(Base):
     """Projekt w ramach podmiotu - np. Księgowość 2026, JPK Q1."""
     __tablename__ = "projects"
     
     id = Column(String(36), primary_key=True)
     entity_id = Column(String(36), ForeignKey("entities.id"), nullable=False)
+    template_id = Column(String(36), ForeignKey("project_templates.id"))
     
     # Dane projektu
     name = Column(String(255), nullable=False)
@@ -193,6 +283,7 @@ class Project(Base):
     entity = relationship("Entity", back_populates="projects")
     tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
     authorizations = relationship("ProjectAuthorization", back_populates="project", cascade="all, delete-orphan")
+    data_sources = relationship("DataSource", back_populates="project", cascade="all, delete-orphan")
 
 class ProjectAuthorization(Base):
     """Autoryzacja tożsamości do projektu innego podmiotu."""
@@ -250,6 +341,11 @@ class Task(Base):
     # Status
     status = Column(Enum(TaskStatus), default=TaskStatus.PENDING)
     
+    # Fazy zadania: import → opis → eksport
+    import_status = Column(Enum(PhaseStatus), default=PhaseStatus.NOT_STARTED)
+    describe_status = Column(Enum(PhaseStatus), default=PhaseStatus.NOT_STARTED)
+    export_status = Column(Enum(PhaseStatus), default=PhaseStatus.NOT_STARTED)
+    
     # Statystyki (cache)
     docs_total = Column(Integer, default=0)
     docs_described = Column(Integer, default=0)
@@ -262,6 +358,8 @@ class Task(Base):
     # Relacje
     project = relationship("Project", back_populates="tasks")
     documents = relationship("Document", back_populates="task", cascade="all, delete-orphan")
+    import_runs = relationship("ImportRun", back_populates="task", cascade="all, delete-orphan")
+    export_runs = relationship("ExportRun", back_populates="task", cascade="all, delete-orphan")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # DOKUMENT (Document) - Faktury, umowy
@@ -346,3 +444,100 @@ class DocumentRelation(Base):
     child = relationship("Document", foreign_keys=[child_id], back_populates="parent_relations")
     
     __table_args__ = (UniqueConstraint('parent_id', 'child_id', 'relation_type'),)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DATA SOURCE - Źródło danych (import/export) per projekt
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class DataSource(Base):
+    """Źródło danych — konfiguracja importu lub eksportu per projekt.
+    
+    Jeden projekt może mieć wiele źródeł: np. email (import) + wFirma (export).
+    Źródła są dziedziczone przez wszystkie zadania w projekcie.
+    """
+    __tablename__ = "data_sources"
+    
+    id = Column(String(36), primary_key=True)
+    project_id = Column(String(36), ForeignKey("projects.id"), nullable=False)
+    
+    # Kierunek i typ
+    direction = Column(Enum(SourceDirection), nullable=False)  # import | export
+    source_type = Column(Enum(SourceType), nullable=False)     # email, ksef, wfirma, etc.
+    
+    # Dane prezentacyjne
+    name = Column(String(255), nullable=False)   # np. "Email biuro@exef.pl", "wFirma eksport"
+    icon = Column(String(10), default="📥")
+    
+    # Konfiguracja (zależna od typu)
+    config = Column(JSON, default=dict)   # {host, port, username, ...} lub {api_key, format, ...}
+    
+    # Harmonogram
+    is_active = Column(Boolean, default=True)
+    auto_pull = Column(Boolean, default=False)  # automatyczny import?
+    pull_interval_minutes = Column(Integer, default=60)
+    
+    # Ostatnia operacja
+    last_run_at = Column(DateTime)
+    last_run_status = Column(String(50))   # success | error | partial
+    last_run_count = Column(Integer, default=0)
+    last_run_error = Column(Text)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacje
+    project = relationship("Project", back_populates="data_sources")
+    import_runs = relationship("ImportRun", back_populates="source", cascade="all, delete-orphan")
+    export_runs = relationship("ExportRun", back_populates="source", cascade="all, delete-orphan")
+
+
+class ImportRun(Base):
+    """Zapis pojedynczej operacji importu."""
+    __tablename__ = "import_runs"
+    
+    id = Column(String(36), primary_key=True)
+    source_id = Column(String(36), ForeignKey("data_sources.id"), nullable=False)
+    task_id = Column(String(36), ForeignKey("tasks.id"), nullable=False)
+    
+    # Wynik
+    status = Column(String(50), default="running")  # running | success | error | partial
+    docs_found = Column(Integer, default=0)
+    docs_imported = Column(Integer, default=0)
+    docs_skipped = Column(Integer, default=0)   # duplikaty / odrzucone
+    errors = Column(JSON, default=list)
+    
+    started_at = Column(DateTime, default=datetime.utcnow)
+    finished_at = Column(DateTime)
+    triggered_by_id = Column(String(36), ForeignKey("identities.id"))
+    
+    # Relacje
+    source = relationship("DataSource", back_populates="import_runs")
+    task = relationship("Task", back_populates="import_runs")
+
+
+class ExportRun(Base):
+    """Zapis pojedynczej operacji eksportu."""
+    __tablename__ = "export_runs"
+    
+    id = Column(String(36), primary_key=True)
+    source_id = Column(String(36), ForeignKey("data_sources.id"), nullable=False)
+    task_id = Column(String(36), ForeignKey("tasks.id"), nullable=False)
+    
+    # Wynik
+    status = Column(String(50), default="running")  # running | success | error
+    docs_exported = Column(Integer, default=0)
+    docs_failed = Column(Integer, default=0)
+    errors = Column(JSON, default=list)
+    
+    # Wygenerowany plik
+    output_format = Column(String(50))   # csv, xml, json
+    output_filename = Column(String(255))
+    output_content = Column(Text)         # treść pliku (CSV/XML) — mały rozmiar
+    
+    started_at = Column(DateTime, default=datetime.utcnow)
+    finished_at = Column(DateTime)
+    triggered_by_id = Column(String(36), ForeignKey("identities.id"))
+    
+    # Relacje
+    source = relationship("DataSource", back_populates="export_runs")
+    task = relationship("Task", back_populates="export_runs")

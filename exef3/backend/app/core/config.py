@@ -21,6 +21,15 @@ class Settings(BaseSettings):
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3003", "http://127.0.0.1:3003"]
     
+    # Per-entity database
+    ENTITY_DB_DIR: str = "./data/entities"
+    ENTITY_DB_PATH_TEMPLATE: str = "./data/entities/{nip}.db"
+    ENTITY_DB_URL_TEMPLATE: str = "sqlite:///./data/entities/{nip}.db"
+    ENTITY_REMOTE_DB_URL: Optional[str] = None
+    ENTITY_SYNC_ENABLED: bool = False
+    ENTITY_SYNC_DIRECTION: str = "local_to_remote"
+    ENTITY_SYNC_INTERVAL_MINUTES: int = 60
+    
     # Email
     SMTP_HOST: str = "localhost"
     SMTP_PORT: int = 1025
