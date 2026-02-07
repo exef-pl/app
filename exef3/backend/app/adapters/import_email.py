@@ -42,9 +42,12 @@ class EmailImportAdapter(BaseImportAdapter):
             if status != "OK":
                 return []
 
-            # Search for recent emails
+            # Search for recent emails — extend window by days_back to catch
+            # emails stored before the period (e.g. test/seeded mailboxes)
+            from datetime import timedelta
             since_date = period_start or date.today().replace(day=1)
-            search_date = since_date.strftime("%d-%b-%Y")
+            search_since = since_date - timedelta(days=days_back)
+            search_date = search_since.strftime("%d-%b-%Y")
             _, msg_ids = mail.search(None, f'(SINCE "{search_date}")')
 
             results = []
@@ -61,6 +64,22 @@ class EmailImportAdapter(BaseImportAdapter):
                 results.extend(docs)
 
             mail.logout()
+
+            # Post-filter by actual document date within the requested period
+            if period_start or period_end:
+                filtered = []
+                for doc in results:
+                    d = doc.document_date
+                    if d is None:
+                        filtered.append(doc)
+                        continue
+                    if period_start and d < period_start:
+                        continue
+                    if period_end and d > period_end:
+                        continue
+                    filtered.append(doc)
+                return filtered
+
             return results
 
         except Exception:

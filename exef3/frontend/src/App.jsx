@@ -213,6 +213,7 @@ function AppShell() {
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/import" element={<EntityPage panel="activity-import" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/selected" element={<EntityPage panel="activity-selected" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/export" element={<EntityPage panel="activity-export" />} />
+          <Route path="/entity/:entityId/project/:projectId/task/:taskId/duplicates" element={<EntityPage panel="activity-duplicates" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/document/new" element={<EntityPage panel="new-document" />} />
           <Route path="/entity/:entityId/project/:projectId/task/:taskId/document/:documentId" element={<EntityPage panel="view-document" />} />
           <Route path="*" element={<Navigate to="/" replace />} />

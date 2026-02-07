@@ -1,3 +1,38 @@
+## [1.0.10] - 2026-02-07
+
+### Summary
+
+feat(docs): deep code analysis engine with 5 supporting modules
+
+### Docs
+
+- docs: update api.md
+- docs: update adapters.md
+- docs: update database.md
+- docs: update testing.md
+- docs: update duplicates.md
+- docs: update comarch.md
+- docs: update csv.md
+- docs: update enova.md
+- docs: update index.md
+- docs: update jpk.md
+- ... and 9 more
+
+### Other
+
+- update exef3/backend/app/adapters/import_email.py
+- update exef3/backend/app/api/sources_flow.py
+- update exef3/backend/app/api/tasks.py
+- update exef3/backend/app/api/templates.py
+- update exef3/backend/app/models/models.py
+- update exef3/backend/app/schemas/schemas.py
+- update exef3/backend/conftest.py
+- update exef3/backend/pyproject.toml
+- update exef3/backend/seed_demo.py
+- update exef3/backend/tests/__init__.py
+- ... and 12 more
+
+
 ## [1.0.9] - 2026-02-07
 
 ### Summary

@@ -179,6 +179,7 @@ export default function EntityPage({ panel }) {
   else if (panel === 'activity-import' && activeTask) { panelType = 'activity-import'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'activity-selected' && activeTask) { panelType = 'activity-selected'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'activity-export' && activeTask) { panelType = 'activity-export'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
+  else if (panel === 'activity-duplicates' && activeTask) { panelType = 'activity-duplicates'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'new-document' && activeTask) { panelType = 'new-document'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'view-document') { panelType = 'view-document'; panelData = selectedDocument; panelClose = taskPath || entityPath; }
 
@@ -424,12 +425,34 @@ export default function EntityPage({ panel }) {
 
         
         </div>
+
+        {/* Help link */}
+        <div style={{ padding: '12px', borderTop: `1px solid ${COLORS.border}` }}>
+          <a
+            href="http://localhost:8888"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 10px', borderRadius: '8px',
+              background: 'transparent', color: COLORS.textMuted,
+              textDecoration: 'none', fontSize: '12px',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = COLORS.bgTertiary}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <span style={{ fontSize: '14px' }}>📖</span>
+            <span>Dokumentacja / Pomoc</span>
+          </a>
+        </div>
       </aside>
 
       {/* MAIN CONTENT - Dokumenty */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <TaskContentArea
           activeTask={activeTask}
+          activeProject={activeProject}
           documents={documents}
           setDocuments={setDocuments}
           sources={sources}

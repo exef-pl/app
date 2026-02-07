@@ -155,6 +155,18 @@ def seed():
             default_categories=["InPost", "DPD", "DHL", "Poczta Polska", "GLS", "Kurier", "Inne"],
             is_system=True,
         ),
+        ProjectTemplate(
+            id=uid(), code="rekrutacja_cv",
+            name="Rekrutacja — zarządzanie CV",
+            description="Import CV z emaila, podgląd danych kandydatów, porównywanie w tabeli. Obsługa PDF, DOCX, CSV.",
+            project_type=ProjectType.REKRUTACJA,
+            task_recurrence=TaskRecurrence.ONCE,
+            task_name_template="Rekrutacja {year}",
+            task_icon="👥", deadline_day=30,
+            default_icon="👥", default_color="#8b5cf6",
+            default_categories=["Frontend", "Backend", "DevOps", "QA", "UX/UI", "PM", "HR", "Inne"],
+            is_system=True,
+        ),
     ]
     for t in templates:
         db.add(t)

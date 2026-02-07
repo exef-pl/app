@@ -120,6 +120,59 @@ def create_email_bank_statement():
     return msg
 
 
+def create_email_march_csv():
+    """Email with CSV invoice attachment for March 2026."""
+    msg = MIMEMultipart()
+    msg["From"] = "faktury@ovh.pl"
+    msg["To"] = "testuser@test.local"
+    msg["Subject"] = "Faktury za marzec 2026"
+    msg["Date"] = "Mon, 20 Mar 2026 10:00:00 +0100"
+
+    body = "W załączeniu przesyłamy faktury za marzec 2026.\n\nPozdrawiamy,\nDział księgowości OVH"
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    csv_data = (
+        "numer;kontrahent;nip;data;netto;vat;brutto;waluta\n"
+        "FV/201/03/2026;OVH Sp. z o.o.;5213003700;2026-03-05;1219.51;280.49;1500.00;PLN\n"
+        "FV/202/03/2026;Hetzner Online GmbH;;2026-03-08;2439.02;560.98;3000.00;PLN\n"
+        "FV/203/03/2026;Comarch S.A.;6770065406;2026-03-12;813.01;186.99;1000.00;PLN\n"
+        "FV/204/03/2026;IKEA Retail Sp. z o.o.;5262548458;2026-03-18;3252.03;747.97;4000.00;PLN\n"
+        "FV/205/03/2026;Shell Polska Sp. z o.o.;5270008597;2026-03-22;1626.02;373.98;2000.00;PLN\n"
+        "FV/206/03/2026;PGE Obrót S.A.;6110202860;2026-03-25;569.11;130.89;700.00;PLN\n"
+        "FV/207/03/2026;Orange Polska S.A.;5260250995;2026-03-28;4065.04;934.96;5000.00;PLN\n"
+        "FV/208/03/2026;MediaMarkt Sp. z o.o.;5213406938;2026-03-30;1463.41;336.59;1800.00;PLN\n"
+    ).encode("utf-8")
+    part = MIMEBase("text", "csv")
+    part.set_payload(csv_data)
+    encoders.encode_base64(part)
+    part.add_header("Content-Disposition", "attachment", filename="faktury_marzec_2026.csv")
+    msg.attach(part)
+
+    return msg
+
+
+def create_email_march_body():
+    """Email with invoice data in body for March 2026."""
+    msg = MIMEText(
+        "Dzień dobry,\n\n"
+        "Informujemy o wystawionej fakturze:\n"
+        "Faktura: FV/301/03/2026\n"
+        "Kontrahent: Allegro.pl Sp. z o.o.\n"
+        "NIP: 5272525995\n"
+        "Kwota brutto: 2 345,67 PLN\n"
+        "Data wystawienia: 2026-03-15\n\n"
+        "Proszę o terminową płatność.\n"
+        "Pozdrawiamy",
+        "plain", "utf-8"
+    )
+    msg["From"] = "faktury@allegro.pl"
+    msg["To"] = "testuser@test.local"
+    msg["Subject"] = "Faktura FV/301/03/2026 - Allegro.pl"
+    msg["Date"] = "Sat, 15 Mar 2026 11:30:00 +0100"
+
+    return msg
+
+
 def main():
     # Create Maildir structure
     md = mailbox.Maildir(MAILDIR_PATH, create=True)
@@ -130,6 +183,8 @@ def main():
         create_email_with_pdf(),
         create_email_body_only(),
         create_email_bank_statement(),
+        create_email_march_csv(),
+        create_email_march_body(),
     ]
 
     for msg in messages:

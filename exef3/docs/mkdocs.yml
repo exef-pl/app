@@ -1,0 +1,66 @@
+site_name: EXEF — Dokumentacja
+site_description: Dokumentacja systemu EXEF do zarządzania dokumentami księgowymi
+site_url: http://localhost:8888
+
+theme:
+  name: material
+  language: pl
+  palette:
+    - scheme: slate
+      primary: indigo
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Tryb jasny
+    - scheme: default
+      primary: indigo
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Tryb ciemny
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+  icon:
+    logo: material/file-document-multiple
+
+nav:
+  - Start: index.md
+  - Import dokumentów:
+    - Przegląd: import/index.md
+    - Email (IMAP): import/email.md
+    - KSeF: import/ksef.md
+    - CSV Upload: import/csv.md
+    - Wyciągi bankowe: import/bank.md
+    - Ręczne / Webhook: import/manual.md
+  - Eksport dokumentów:
+    - Przegląd: export/index.md
+    - wFirma: export/wfirma.md
+    - JPK_PKPIR: export/jpk.md
+    - Comarch Optima: export/comarch.md
+    - Symfonia: export/symfonia.md
+    - enova365: export/enova.md
+    - CSV: export/csv.md
+  - Duplikaty: duplicates.md
+  - Architektura:
+    - Adaptery: architecture/adapters.md
+    - Baza danych: architecture/database.md
+    - Testowanie: architecture/testing.md
+  - API: api.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - attr_list
+  - md_in_html

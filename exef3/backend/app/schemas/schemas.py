@@ -25,6 +25,7 @@ class ProjectType(str, Enum):
     WPLATY = "wplaty"
     DOWODY_PLATNOSCI = "dowody_platnosci"
     DRUKI_PRZESYLKI = "druki_przesylki"
+    REKRUTACJA = "rekrutacja"
 
 class TaskStatus(str, Enum):
     PENDING = "pending"
@@ -372,6 +373,9 @@ class DocumentResponse(BaseModel):
     class Config:
         from_attributes = True
         populate_by_name = True
+
+class DuplicateDocumentResponse(DocumentResponse):
+    project_id: str
 
 class DocumentRelationCreate(BaseModel):
     parent_id: str

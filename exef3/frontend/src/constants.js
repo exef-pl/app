@@ -46,4 +46,5 @@ export const PROJECT_TYPES = {
   wplaty: { label: 'Wpłaty / Bank', icon: '🏦' },
   dowody_platnosci: { label: 'Dowody płatności', icon: '💳' },
   druki_przesylki: { label: 'Druki / Przesyłki', icon: '📦' },
+  rekrutacja: { label: 'Rekrutacja / CV', icon: '👥' },
 };

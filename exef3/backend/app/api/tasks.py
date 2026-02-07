@@ -21,7 +21,7 @@ from app.models.models import (
 )
 from app.schemas.schemas import (
     TaskCreate, TaskUpdate, TaskResponse,
-    DocumentCreate, DocumentResponse, DocumentMetadataUpdate, DocumentMetadataResponse,
+    DocumentCreate, DocumentResponse, DuplicateDocumentResponse, DocumentMetadataUpdate, DocumentMetadataResponse,
     DocumentRelationCreate, DocumentRelationResponse
 )
 
@@ -148,7 +148,52 @@ def list_documents(
     documents = query.order_by(Document.document_date.desc()).all()
     return documents
 
-@router.get("/documents/{document_id}/duplicates", response_model=List[DocumentResponse])
+@router.get("/tasks/{task_id}/duplicates")
+def list_task_duplicates(
+    task_id: str,
+    identity_id: str = Depends(get_current_identity_id),
+    db: Session = Depends(get_db),
+):
+    """Returns duplicate groups for a task — documents sharing the same doc_id."""
+    edb = resolve_entity_db(db, task_id)
+    task, project, role = check_task_access(db, task_id, identity_id, edb=edb)
+
+    # Find doc_ids that appear more than once in this task
+    dup_ids = (
+        edb.query(Document.doc_id)
+        .filter(Document.task_id == task_id, Document.doc_id.isnot(None))
+        .group_by(Document.doc_id)
+        .having(func.count(Document.id) > 1)
+        .all()
+    )
+    dup_doc_ids = [row[0] for row in dup_ids]
+    if not dup_doc_ids:
+        return {"groups": [], "total_duplicates": 0}
+
+    docs = (
+        edb.query(Document)
+        .options(joinedload(Document.document_metadata))
+        .filter(Document.task_id == task_id, Document.doc_id.in_(dup_doc_ids))
+        .order_by(Document.doc_id, Document.created_at.asc())
+        .all()
+    )
+
+    from app.schemas.schemas import DocumentResponse as DR
+    groups = {}
+    for doc in docs:
+        grp = groups.setdefault(doc.doc_id, [])
+        grp.append(DR.model_validate(doc, from_attributes=True).model_dump(by_alias=True))
+
+    return {
+        "groups": [
+            {"doc_id": did, "documents": grp_docs}
+            for did, grp_docs in groups.items()
+        ],
+        "total_duplicates": sum(len(g) - 1 for g in groups.values()),
+    }
+
+
+@router.get("/documents/{document_id}/duplicates", response_model=List[DuplicateDocumentResponse])
 def find_duplicates(document_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Finds documents with the same doc_id (potential duplicates) across the entity."""
     edb = resolve_entity_db(db, document_id)
@@ -166,7 +211,7 @@ def find_duplicates(document_id: str, identity_id: str = Depends(get_current_ide
     project = edb.query(Project).filter(Project.id == task.project_id).first()
     
     duplicates = (
-        edb.query(Document)
+        edb.query(Document, Task.project_id)
         .options(joinedload(Document.document_metadata))
         .join(Task, Document.task_id == Task.id)
         .join(Project, Task.project_id == Project.id)
@@ -178,7 +223,13 @@ def find_duplicates(document_id: str, identity_id: str = Depends(get_current_ide
         .order_by(Document.created_at.desc())
         .all()
     )
-    return duplicates
+    results = []
+    for dup_doc, proj_id in duplicates:
+        data = {c.key: getattr(dup_doc, c.key) for c in dup_doc.__table__.columns}
+        data['document_metadata'] = dup_doc.document_metadata
+        data['project_id'] = proj_id
+        results.append(DuplicateDocumentResponse.model_validate(data, from_attributes=True))
+    return results
 
 @router.post("/documents", response_model=DocumentResponse)
 def create_document(data: DocumentCreate, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
@@ -417,6 +468,39 @@ def delete_document(document_id: str, identity_id: str = Depends(get_current_ide
     if edb is not db:
         db.commit()
     return {"status": "deleted"}
+
+@router.post("/documents/bulk-delete")
+def bulk_delete_documents(data: dict, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
+    """Usuwa wiele dokumentów na raz."""
+    doc_ids = data.get("document_ids", [])
+    if not doc_ids:
+        raise HTTPException(status_code=400, detail="Brak document_ids")
+
+    deleted = 0
+    for document_id in doc_ids:
+        edb = resolve_entity_db(db, document_id)
+        document = edb.query(Document).filter(Document.id == document_id).first()
+        if not document:
+            continue
+        task, project, role = check_task_access(db, document.task_id, identity_id, require_edit=True, edb=edb)
+
+        task_obj = edb.query(Task).filter(Task.id == document.task_id).first()
+        task_obj.docs_total -= 1
+        if document.status in [DocumentStatus.DESCRIBED, DocumentStatus.APPROVED, DocumentStatus.EXPORTED]:
+            task_obj.docs_described -= 1
+        if document.status in [DocumentStatus.APPROVED, DocumentStatus.EXPORTED]:
+            task_obj.docs_approved -= 1
+        if document.status == DocumentStatus.EXPORTED:
+            task_obj.docs_exported -= 1
+
+        edb.delete(document)
+        remove_routing(db, document_id)
+        deleted += 1
+
+    edb.commit()
+    if edb is not db:
+        db.commit()
+    return {"status": "deleted", "count": deleted}
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # RELACJE DOKUMENTÓW

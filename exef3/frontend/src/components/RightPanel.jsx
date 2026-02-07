@@ -34,9 +34,9 @@ export default function RightPanel({
     return <TaskViewPanel task={data} onClose={onClose} navigate={navigate} api={api} projectId={projectId} setTasks={setTasks} setError={setError} />;
   }
   if (type === 'view-document' && data) {
-    return <DocumentViewPanel doc={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} projectTags={[...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])]} />;
+    return <DocumentViewPanel doc={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} projectTags={[...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])]} navigate={navigate} entityId={entityId} activeProject={activeProject} />;
   }
-  if ((type === 'activity-import' || type === 'activity-selected' || type === 'activity-export' || type === 'new-document') && data) {
+  if ((type === 'activity-import' || type === 'activity-selected' || type === 'activity-export' || type === 'activity-duplicates' || type === 'new-document') && data) {
     return <ActivityTabbedPanel activeTab={type} data={data} onClose={onClose} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} token={token} navigate={navigate} onCreateDocument={onCreateDocument} loading={loading} selectedDocs={selectedDocs} setSelectedDocs={setSelectedDocs} activeProject={activeProject} />;
   }
 
@@ -904,7 +904,8 @@ function ProjectViewPanel({ data, onClose, navigate, activeTask, api, setError, 
   );
 }
 
-function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectTags = [] }) {
+function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectTags = [], navigate, entityId, activeProject }) {
+  const isCV = activeProject?.type === 'rekrutacja';
   const meta = doc.metadata || {};
   const [description, setDescription] = useState(meta.description || '');
   const [category, setCategory] = useState(meta.category || '');
@@ -962,10 +963,10 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
   };
 
   const statusColors = {
-    new: { bg: '#3b82f620', color: '#3b82f6', label: 'Nowy' },
-    described: { bg: '#f59e0b20', color: '#f59e0b', label: 'Opisany' },
-    approved: { bg: '#10b98120', color: '#10b981', label: 'Zatwierdzony' },
-    exported: { bg: '#8b5cf620', color: '#8b5cf6', label: 'Wyeksportowany' },
+    new: { bg: '#3b82f620', color: '#3b82f6', label: isCV ? 'Nowe CV' : 'Nowy' },
+    described: { bg: '#f59e0b20', color: '#f59e0b', label: isCV ? 'Oceniony' : 'Opisany' },
+    approved: { bg: '#10b98120', color: '#10b981', label: isCV ? 'Zatwierdzony' : 'Zatwierdzony' },
+    exported: { bg: '#8b5cf620', color: '#8b5cf6', label: isCV ? 'Zamknięty' : 'Wyeksportowany' },
   };
   const st = statusColors[doc.status] || statusColors.new;
 
@@ -975,7 +976,7 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
         padding: '16px', borderBottom: `1px solid ${COLORS.border}`,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>📄 {doc.number || 'Dokument'}</h3>
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>{isCV ? '👤' : '📄'} {isCV ? (doc.contractor_name || doc.number || 'Kandydat') : (doc.number || 'Dokument')}</h3>
         <button onClick={onClose} style={{
           background: COLORS.bgTertiary, border: 'none', borderRadius: '6px',
           color: COLORS.textMuted, cursor: 'pointer', width: '28px', height: '28px', fontSize: '14px',
@@ -985,12 +986,23 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
       <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
         {/* Document info (read-only) */}
         <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Dane dokumentu</div>
-          <InfoRow label="Numer" value={doc.number || '—'} />
-          <InfoRow label="Kontrahent" value={doc.contractor_name || '—'} />
-          <InfoRow label="NIP" value={doc.contractor_nip || '—'} />
-          <InfoRow label="Kwota brutto" value={doc.amount_gross ? `${doc.amount_gross.toLocaleString('pl-PL')} ${doc.currency || 'PLN'}` : '—'} />
-          <InfoRow label="Data" value={doc.document_date || '—'} />
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>{isCV ? 'Dane kandydata' : 'Dane dokumentu'}</div>
+          {isCV ? (
+            <>
+              <InfoRow label="Kandydat" value={doc.contractor_name || '—'} />
+              <InfoRow label="Email / Telefon" value={doc.contractor_nip || '—'} />
+              <InfoRow label="Plik" value={doc.number || '—'} />
+              <InfoRow label="Data otrzymania" value={doc.document_date || '—'} />
+            </>
+          ) : (
+            <>
+              <InfoRow label="Numer" value={doc.number || '—'} />
+              <InfoRow label="Kontrahent" value={doc.contractor_name || '—'} />
+              <InfoRow label="NIP" value={doc.contractor_nip || '—'} />
+              <InfoRow label="Kwota brutto" value={doc.amount_gross ? `${doc.amount_gross.toLocaleString('pl-PL')} ${doc.currency || 'PLN'}` : '—'} />
+              <InfoRow label="Data" value={doc.document_date || '—'} />
+            </>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
             <span style={{ fontSize: '11px', color: COLORS.textMuted }}>Status</span>
             <span style={{
@@ -1024,12 +1036,20 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
               ⚠️ Wykryto {duplicates.length} {duplicates.length === 1 ? 'duplikat' : 'duplikaty'}
             </div>
             {duplicates.map(d => (
-              <div key={d.id} style={{
-                fontSize: '11px', color: COLORS.textMuted, padding: '3px 0',
-                display: 'flex', justifyContent: 'space-between',
-              }}>
+              <div key={d.id}
+                onClick={() => navigate && entityId && d.project_id && d.task_id && navigate(`/entity/${entityId}/project/${d.project_id}/task/${d.task_id}/document/${d.id}`)}
+                style={{
+                  fontSize: '11px', color: COLORS.textMuted, padding: '5px 6px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  borderRadius: '6px', cursor: navigate ? 'pointer' : 'default',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f59e0b15'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                title="Przejdź do duplikatu"
+              >
                 <span>{d.number || '—'} • {d.contractor_name || '—'}</span>
-                <span style={{ fontSize: '10px', opacity: 0.7 }}>{d.source || '—'}</span>
+                <span style={{ fontSize: '10px', opacity: 0.7, display: 'flex', alignItems: 'center', gap: '4px' }}>{d.source || '—'} →</span>
               </div>
             ))}
           </div>
@@ -1037,11 +1057,11 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 
         {/* Category */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>Kategoria</label>
+          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>{isCV ? 'Stanowisko' : 'Kategoria'}</label>
           <input
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            placeholder="np. IT - Hosting, Biuro, Marketing..."
+            placeholder={isCV ? 'np. Frontend Developer, QA Engineer...' : 'np. IT - Hosting, Biuro, Marketing...'}
             style={{
               width: '100%', padding: '10px 12px', fontSize: '13px',
               background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
@@ -1065,7 +1085,7 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 
         {/* Tags */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Tagi</label>
+          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>{isCV ? 'Umiejętności' : 'Tagi'}</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
             {tags.map(tag => (
               <span key={tag} style={{
@@ -1109,7 +1129,7 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-              placeholder="Dodaj tag..."
+              placeholder={isCV ? 'Dodaj umiejętność...' : 'Dodaj tag...'}
               style={{
                 flex: 1, padding: '8px 10px', fontSize: '12px',
                 background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
@@ -1127,11 +1147,11 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 
         {/* Description */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>Opis</label>
+          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>{isCV ? 'Notatki' : 'Opis'}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Dodaj opis dokumentu..."
+            placeholder={isCV ? 'Notatki o kandydacie, wrażenia z rozmowy...' : 'Dodaj opis dokumentu...'}
             style={{
               width: '100%', padding: '10px 12px', fontSize: '13px',
               background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
@@ -1229,14 +1249,21 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setSources, setError, token, navigate, onCreateDocument, loading, selectedDocs, setSelectedDocs, activeProject }) {
+  const dupCount = (() => {
+    const ids = {};
+    (data.documents || []).forEach(d => { if (d.doc_id) ids[d.doc_id] = (ids[d.doc_id] || 0) + 1; });
+    return Object.values(ids).filter(c => c > 1).reduce((s, c) => s + c, 0);
+  })();
+
   const TABS = [
     { id: 'activity-import', label: 'Import', icon: '📥', suffix: '/import' },
     { id: 'activity-selected', label: `Zaznaczone${selectedDocs?.length ? ` (${selectedDocs.length})` : ''}`, icon: '☑️', suffix: '/selected' },
+    { id: 'activity-duplicates', label: `Duplikaty${dupCount ? ` (${dupCount})` : ''}`, icon: '⚠️', suffix: '/duplicates' },
     { id: 'activity-export', label: 'Eksport', icon: '📤', suffix: '/export' },
     { id: 'new-document', label: 'Nowy', icon: '➕', suffix: '/document/new' },
   ];
 
-  const basePath = location.pathname.replace(/\/(import|selected|describe|export|document\/new)$/, '');
+  const basePath = location.pathname.replace(/\/(import|selected|describe|export|duplicates|document\/new)$/, '');
 
   return (
     <>
@@ -1279,6 +1306,9 @@ function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setS
       {activeTab === 'activity-selected' && (
         <BulkEditPanel data={data} api={api} setDocuments={setDocuments} setError={setError} selectedDocs={selectedDocs} setSelectedDocs={setSelectedDocs} navigate={navigate} activeProject={activeProject} />
       )}
+      {activeTab === 'activity-duplicates' && (
+        <DuplicatesPanel data={data} api={api} setDocuments={setDocuments} setError={setError} navigate={navigate} />
+      )}
       {activeTab === 'activity-export' && (
         <ExportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} navigate={navigate} />
       )}
@@ -1288,6 +1318,206 @@ function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setS
     </>
   );
 }
+
+function DuplicatesPanel({ data, api, setDocuments, setError, navigate }) {
+  const { task, documents } = data;
+  const [groups, setGroups] = useState([]);
+  const [totalDups, setTotalDups] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
+  const fetchDuplicates = async () => {
+    setLoading(true);
+    try {
+      const res = await api(`/tasks/${task.id}/duplicates`);
+      setGroups(res.groups || []);
+      setTotalDups(res.total_duplicates || 0);
+    } catch (e) {
+      if (!e.sessionExpired) setError(e.message);
+      setGroups([]);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchDuplicates(); }, [task.id]);
+
+  const handleDelete = async (docId) => {
+    setDeleting(docId);
+    try {
+      await api(`/documents/${docId}`, { method: 'DELETE' });
+      const updated = await api(`/tasks/${task.id}/documents`);
+      setDocuments(updated);
+      await fetchDuplicates();
+      setConfirmDelete(null);
+    } catch (e) {
+      if (!e.sessionExpired) setError(e.message);
+    }
+    setDeleting(null);
+  };
+
+  const handleDeleteAllDuplicates = async (group) => {
+    const toDelete = group.documents.slice(1);
+    setDeleting('bulk');
+    try {
+      for (const doc of toDelete) {
+        await api(`/documents/${doc.id}`, { method: 'DELETE' });
+      }
+      const updated = await api(`/tasks/${task.id}/documents`);
+      setDocuments(updated);
+      await fetchDuplicates();
+    } catch (e) {
+      if (!e.sessionExpired) setError(e.message);
+    }
+    setDeleting(null);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px' }}>
+        <div style={{ color: COLORS.textMuted, fontSize: '13px' }}>Szukam duplikatów...</div>
+      </div>
+    );
+  }
+
+  if (groups.length === 0) {
+    return (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px', gap: '8px' }}>
+        <div style={{ fontSize: '32px' }}>✅</div>
+        <div style={{ fontSize: '14px', fontWeight: '500', color: COLORS.text }}>Brak duplikatów</div>
+        <div style={{ fontSize: '12px', color: COLORS.textMuted, textAlign: 'center' }}>
+          Wszystkie dokumenty w tym zadaniu mają unikalne identyfikatory (doc_id).
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      <div style={{
+        padding: '12px', background: `${COLORS.warning}15`, borderRadius: '8px', marginBottom: '16px',
+        border: `1px solid ${COLORS.warning}30`,
+      }}>
+        <div style={{ fontSize: '13px', fontWeight: '600', color: COLORS.warning, marginBottom: '4px' }}>
+          ⚠️ Znaleziono {totalDups} {totalDups === 1 ? 'duplikat' : totalDups < 5 ? 'duplikaty' : 'duplikatów'}
+        </div>
+        <div style={{ fontSize: '11px', color: COLORS.textMuted }}>
+          {groups.length} {groups.length === 1 ? 'grupa' : groups.length < 5 ? 'grupy' : 'grup'} dokumentów z tym samym identyfikatorem.
+          Pierwszy dokument w każdej grupie to oryginał.
+        </div>
+      </div>
+
+      {groups.map((group, gi) => (
+        <div key={group.doc_id} style={{
+          marginBottom: '12px', borderRadius: '8px',
+          border: `1px solid ${COLORS.border}`, overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '10px 12px', background: COLORS.bgTertiary,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            borderBottom: `1px solid ${COLORS.border}`,
+          }}>
+            <div>
+              <div style={{ fontSize: '11px', color: COLORS.textMuted, fontFamily: 'monospace' }}>
+                {group.doc_id}
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: '500', marginTop: '2px' }}>
+                {group.documents.length} dokumentów
+              </div>
+            </div>
+            {group.documents.length > 1 && (
+              <button
+                onClick={() => handleDeleteAllDuplicates(group)}
+                disabled={deleting === 'bulk'}
+                style={{
+                  padding: '4px 10px', fontSize: '10px', borderRadius: '6px',
+                  border: `1px solid ${COLORS.danger}40`, background: `${COLORS.danger}10`,
+                  color: COLORS.danger, cursor: deleting === 'bulk' ? 'wait' : 'pointer',
+                  fontWeight: '500',
+                }}
+              >
+                {deleting === 'bulk' ? '...' : 'Usuń duplikaty'}
+              </button>
+            )}
+          </div>
+
+          {group.documents.map((doc, di) => {
+            const isOriginal = di === 0;
+            const isConfirming = confirmDelete === doc.id;
+            return (
+              <div key={doc.id} style={{
+                padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '8px',
+                borderBottom: di < group.documents.length - 1 ? `1px solid ${COLORS.border}` : 'none',
+                background: isOriginal ? `${COLORS.success}08` : `${COLORS.warning}08`,
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {isOriginal ? (
+                      <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '4px', background: `${COLORS.success}20`, color: COLORS.success, fontWeight: '600' }}>
+                        Oryginał
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '4px', background: `${COLORS.warning}20`, color: COLORS.warning, fontWeight: '600' }}>
+                        Duplikat
+                      </span>
+                    )}
+                    <span style={{ fontSize: '12px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {doc.number || '—'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: COLORS.textMuted, marginTop: '3px', display: 'flex', gap: '8px' }}>
+                    <span>{doc.contractor_name || '—'}</span>
+                    <span>{doc.amount_gross ? `${doc.amount_gross.toLocaleString('pl-PL')} ${doc.currency || 'PLN'}` : ''}</span>
+                    <span>{doc.document_date || ''}</span>
+                  </div>
+                  <div style={{ fontSize: '9px', color: COLORS.textMuted, marginTop: '2px' }}>
+                    Źródło: {doc.source || '—'} · ID: {doc.id.slice(0, 8)}
+                  </div>
+                </div>
+
+                {!isOriginal && (
+                  <div style={{ flexShrink: 0, display: 'flex', gap: '4px' }}>
+                    {isConfirming ? (
+                      <>
+                        <button onClick={() => handleDelete(doc.id)}
+                          disabled={deleting === doc.id}
+                          style={{
+                            padding: '4px 8px', fontSize: '10px', borderRadius: '4px',
+                            border: 'none', background: COLORS.danger, color: '#fff',
+                            cursor: deleting === doc.id ? 'wait' : 'pointer', fontWeight: '600',
+                          }}>
+                          {deleting === doc.id ? '...' : 'Potwierdź'}
+                        </button>
+                        <button onClick={() => setConfirmDelete(null)}
+                          style={{
+                            padding: '4px 8px', fontSize: '10px', borderRadius: '4px',
+                            border: `1px solid ${COLORS.border}`, background: 'transparent',
+                            color: COLORS.textMuted, cursor: 'pointer',
+                          }}>
+                          Anuluj
+                        </button>
+                      </>
+                    ) : (
+                      <button onClick={() => setConfirmDelete(doc.id)}
+                        style={{
+                          padding: '4px 8px', fontSize: '10px', borderRadius: '4px',
+                          border: `1px solid ${COLORS.danger}40`, background: 'transparent',
+                          color: COLORS.danger, cursor: 'pointer',
+                        }}>
+                        🗑️ Usuń
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 
 function NewDocumentPanel({ onCreateDocument, loading }) {
   const [formData, setFormData] = useState({});
@@ -1807,9 +2037,32 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState(null);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const selected = documents.filter(d => selectedDocs?.includes(d.id));
   const projectTags = [...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])];
+
+  const handleBulkDelete = async () => {
+    if (!selectedDocs?.length) return;
+    setDeleting(true);
+    setResult(null);
+    try {
+      const res = await api('/documents/bulk-delete', {
+        method: 'POST',
+        body: JSON.stringify({ document_ids: selectedDocs }),
+      });
+      setResult({ ok: true, text: `Usunięto ${res.count} dokumentów` });
+      const updated = await api(`/tasks/${task.id}/documents`);
+      setDocuments(updated);
+      setSelectedDocs([]);
+      setConfirmBulkDelete(false);
+      setTimeout(() => setResult(null), 4000);
+    } catch (e) {
+      if (!e.sessionExpired) setResult({ ok: false, text: e.message });
+    }
+    finally { setDeleting(false); }
+  };
 
   const addTag = () => {
     const t = newTag.trim();
@@ -1990,6 +2243,52 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
           >
             {saving ? '...' : `Zapisz dla ${selected.length} dokumentów`}
           </button>
+
+          {/* Bulk delete */}
+          <div style={{ marginTop: '12px', borderTop: `1px solid ${COLORS.border}`, paddingTop: '12px' }}>
+            {!confirmBulkDelete ? (
+              <button
+                onClick={() => setConfirmBulkDelete(true)}
+                style={{
+                  width: '100%', padding: '10px', fontSize: '12px', fontWeight: '500',
+                  background: 'transparent', border: `1px solid #ef444440`,
+                  borderRadius: '8px', color: '#ef4444', cursor: 'pointer',
+                }}
+              >
+                🗑️ Usuń {selected.length} {selected.length === 1 ? 'dokument' : selected.length < 5 ? 'dokumenty' : 'dokumentów'}
+              </button>
+            ) : (
+              <div style={{ padding: '10px', background: '#ef444415', borderRadius: '8px', border: '1px solid #ef444440' }}>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: '#ef4444', marginBottom: '8px' }}>
+                  Na pewno usunąć {selected.length} {selected.length === 1 ? 'dokument' : selected.length < 5 ? 'dokumenty' : 'dokumentów'}?
+                </div>
+                <div style={{ fontSize: '11px', color: COLORS.textMuted, marginBottom: '10px' }}>
+                  Tej operacji nie można cofnąć.
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={deleting}
+                    style={{
+                      flex: 1, padding: '8px', fontSize: '12px', fontWeight: '600',
+                      background: '#ef4444', color: '#fff', border: 'none',
+                      borderRadius: '6px', cursor: deleting ? 'wait' : 'pointer',
+                      opacity: deleting ? 0.7 : 1,
+                    }}
+                  >{deleting ? 'Usuwanie...' : 'Tak, usuń'}</button>
+                  <button
+                    onClick={() => setConfirmBulkDelete(false)}
+                    disabled={deleting}
+                    style={{
+                      flex: 1, padding: '8px', fontSize: '12px', fontWeight: '500',
+                      background: COLORS.bgTertiary, color: COLORS.textMuted,
+                      border: `1px solid ${COLORS.border}`, borderRadius: '6px', cursor: 'pointer',
+                    }}
+                  >Anuluj</button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {result && (
             <div style={{

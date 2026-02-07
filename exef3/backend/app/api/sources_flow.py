@@ -13,7 +13,6 @@ from app.core.docid import generate_doc_id
 from app.api.access import check_project_access
 from app.api.sources_helpers import (
     CSV_COL_MAP, detect_delimiter, map_csv_row, clean_nip, parse_amount, parse_date,
-    generate_mock_import, generate_mock_export,
 )
 from app.api.sources import (
     ImportRunResponse, ExportRunResponse, TriggerImportRequest, TriggerExportRequest,
@@ -72,22 +71,31 @@ def trigger_import(
              task.id[:8], task.period_start, task.period_end,
              list((source.config or {}).keys()), identity_id[:8])
 
-    if AdapterClass:
-        adapter = AdapterClass(config=source.config or {}, source_name=source.name)
-        import_results = adapter.fetch(
-            period_start=task.period_start,
-            period_end=task.period_end,
-        )
-        log.info("IMPORT FETCH: adapter=%s returned %d results", AdapterClass.__name__, len(import_results))
-    else:
-        # Fallback to mock for unknown source types
-        log.warning("IMPORT FALLBACK: no adapter for type='%s', using mock generator", source_type_str)
-        import_results = []
-        for d in generate_mock_import(source, task):
-            from app.adapters.base import ImportResult
-            import_results.append(ImportResult(**{k: v for k, v in d.items() if k != 'status'}))
+    if not AdapterClass:
+        raise HTTPException(status_code=400, detail=f"Nieznany typ źródła importu: '{source_type_str}'. Dostępne: email, ksef, csv, upload, manual, webhook, bank.")
+
+    adapter = AdapterClass(config=source.config or {}, source_name=source.name)
+    import_results = adapter.fetch(
+        period_start=task.period_start,
+        period_end=task.period_end,
+    )
+    log.info("IMPORT FETCH: adapter=%s returned %d results", AdapterClass.__name__, len(import_results))
+
+    # Preload existing doc_ids for this task to prevent duplicate imports
+    existing_doc_ids = set(
+        row[0] for row in edb.query(Document.doc_id)
+        .filter(Document.task_id == task.id, Document.doc_id.isnot(None))
+        .all()
+    )
+    # Also track source_ids already imported for this task
+    existing_source_ids = set(
+        row[0] for row in edb.query(Document.source_id)
+        .filter(Document.task_id == task.id, Document.source_id.isnot(None))
+        .all()
+    )
 
     created_count = 0
+    skipped_count = 0
     for result in import_results:
         doc_dict = result.to_dict() if hasattr(result, 'to_dict') else result
         # Remove non-Document fields
@@ -111,7 +119,23 @@ def trigger_import(
             amount_gross=doc.amount_gross,
             doc_type=doc.doc_type or 'invoice',
         )
+
+        # Skip duplicates: check by doc_id or source_id
+        if doc.doc_id and doc.doc_id in existing_doc_ids:
+            log.debug("IMPORT SKIP (dup doc_id): number='%s' doc_id=%s", doc.number, doc.doc_id)
+            skipped_count += 1
+            continue
+        if doc.source_id and doc.source_id in existing_source_ids:
+            log.debug("IMPORT SKIP (dup source_id): number='%s' source_id=%s", doc.number, doc.source_id)
+            skipped_count += 1
+            continue
+
         edb.add(doc)
+        # Track newly added IDs so subsequent rows in this batch also deduplicate
+        if doc.doc_id:
+            existing_doc_ids.add(doc.doc_id)
+        if doc.source_id:
+            existing_source_ids.add(doc.source_id)
         log.debug("IMPORT DOC: id=%s number='%s' contractor='%s' gross=%s date=%s source_id=%s doc_id=%s",
                   doc.id[:8], doc.number, doc.contractor_name, doc.amount_gross, doc.document_date, doc.source_id, doc.doc_id)
 
@@ -151,8 +175,8 @@ def trigger_import(
 
     edb.commit()
     edb.refresh(run)
-    log.info("IMPORT DONE: source=%s task=%s found=%d imported=%d run=%s status=%s",
-             source.id[:8], task.id[:8], run.docs_found, run.docs_imported, run.id[:8], run.status)
+    log.info("IMPORT DONE: source=%s task=%s found=%d imported=%d skipped=%d run=%s status=%s",
+             source.id[:8], task.id[:8], run.docs_found, run.docs_imported, skipped_count, run.id[:8], run.status)
     return run
 
 
@@ -182,7 +206,15 @@ def upload_csv(
 
     reader = csv.DictReader(io.StringIO(content), delimiter=detect_delimiter(content))
 
+    # Preload existing doc_ids for deduplication
+    existing_doc_ids = set(
+        row[0] for row in edb.query(Document.doc_id)
+        .filter(Document.task_id == task_id, Document.doc_id.isnot(None))
+        .all()
+    )
+
     created_count = 0
+    skipped_count = 0
     errors = []
 
     for row_idx, row in enumerate(reader, 1):
@@ -214,6 +246,14 @@ def upload_csv(
                 amount_gross=doc.amount_gross,
                 doc_type=doc.doc_type or 'invoice',
             )
+
+            # Skip duplicates
+            if doc.doc_id and doc.doc_id in existing_doc_ids:
+                skipped_count += 1
+                continue
+            if doc.doc_id:
+                existing_doc_ids.add(doc.doc_id)
+
             edb.add(doc)
 
             # Add metadata if description or category present
@@ -247,6 +287,7 @@ def upload_csv(
     return {
         "ok": True,
         "imported": created_count,
+        "skipped": skipped_count,
         "errors": errors[:10],  # Limit error list
         "filename": file.filename,
     }
@@ -300,20 +341,16 @@ def trigger_export(
              ExportAdapterClass.__name__ if ExportAdapterClass else "MOCK_FALLBACK",
              task.id[:8], len(docs), list((source.config or {}).keys()), identity_id[:8])
 
-    if ExportAdapterClass:
-        adapter = ExportAdapterClass(config=source.config or {}, source_name=source.name)
-        export_result = adapter.export(docs, task_name=task.name)
-        output_content = export_result.content
-        output_filename = export_result.filename
-        output_format = export_result.format
-        log.info("EXPORT GENERATED: adapter=%s filename='%s' format=%s content_size=%d bytes",
-                 ExportAdapterClass.__name__, output_filename, output_format, len(output_content))
-    else:
-        # Fallback to mock
-        log.warning("EXPORT FALLBACK: no adapter for type='%s', using mock generator", source_type_str)
-        format_info = EXPORT_FORMAT_INFO.get(source_type_str, {"name": "CSV", "format": "csv"})
-        output_content, output_filename = generate_mock_export(source, docs, task)
-        output_format = format_info["format"]
+    if not ExportAdapterClass:
+        raise HTTPException(status_code=400, detail=f"Nieznany typ eksportu: '{source_type_str}'. Dostępne: wfirma, jpk_pkpir, comarch, symfonia, enova, csv.")
+
+    adapter = ExportAdapterClass(config=source.config or {}, source_name=source.name)
+    export_result = adapter.export(docs, task_name=task.name)
+    output_content = export_result.content
+    output_filename = export_result.filename
+    output_format = export_result.format
+    log.info("EXPORT GENERATED: adapter=%s filename='%s' format=%s content_size=%d bytes",
+             ExportAdapterClass.__name__, output_filename, output_format, len(output_content))
 
     # Mark documents as exported
     exported_count = 0

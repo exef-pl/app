@@ -366,6 +366,46 @@ def _generate_tasks(template: ProjectTemplate, project: Project, year: int,
 
 def _generate_default_sources(project: Project) -> list:
     """Create default DataSources for a new project with Docker test configs."""
+    proj_type = project.type.value if hasattr(project.type, 'value') else str(project.type)
+
+    if proj_type == "rekrutacja":
+        return [
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.IMPORT,
+                source_type=SourceType.EMAIL,
+                name="Email — CV kandydatów",
+                icon="📧",
+                config={
+                    "host": "test-imap",
+                    "port": 143,
+                    "username": "testuser",
+                    "password": "testpass",
+                    "folder": "INBOX",
+                    "days_back": 90,
+                },
+            ),
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.IMPORT,
+                source_type=SourceType.UPLOAD,
+                name="Upload CV (PDF/DOCX)",
+                icon="📎",
+                config={},
+            ),
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.EXPORT,
+                source_type=SourceType.CSV,
+                name="Eksport kandydatów (CSV)",
+                icon="📊",
+                config={"delimiter": ";", "encoding": "utf-8-sig"},
+            ),
+        ]
+
     sources = [
         # Import sources
         DataSource(
