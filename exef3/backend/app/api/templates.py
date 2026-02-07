@@ -410,6 +410,149 @@ def _generate_default_sources(project: Project) -> list:
             ),
         ]
 
+    if proj_type == "umowy":
+        return [
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.IMPORT,
+                source_type=SourceType.EMAIL,
+                name="Email — umowy",
+                icon="📧",
+                config={
+                    "host": "test-imap",
+                    "port": 143,
+                    "username": "testuser",
+                    "password": "testpass",
+                    "folder": "INBOX",
+                    "days_back": 90,
+                    "doc_type": "contract",
+                    "subject_pattern": "(?i)(umowa|kontrakt|aneks|contract|agreement|NDA|SLA)",
+                    "attachment_extensions": ["pdf", "docx", "doc", "odt"],
+                    "filename_pattern": "(?i)(umowa|kontrakt|aneks|contract|agreement)",
+                },
+            ),
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.IMPORT,
+                source_type=SourceType.UPLOAD,
+                name="Upload umów (PDF/DOCX)",
+                icon="📎",
+                config={},
+            ),
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.EXPORT,
+                source_type=SourceType.CSV,
+                name="Eksport rejestru umów (CSV)",
+                icon="📊",
+                config={"delimiter": ";", "encoding": "utf-8-sig"},
+            ),
+        ]
+
+    # ── Generic document project types (email + upload + CSV export) ──────
+    _DOC_TYPE_SOURCES = {
+        "korespondencja": {
+            "email_name": "Email — korespondencja",
+            "doc_type": "correspondence",
+            "subject_pattern": "(?i)(pismo|korespondencja|wezwanie|reklamacja|zawiadomienie)",
+            "extensions": ["pdf", "docx", "doc", "jpg", "png", "tiff"],
+            "filename_pattern": "(?i)(pismo|koresp|wezwanie|zawiad)",
+            "upload_name": "Upload pism (PDF/skan)",
+            "export_name": "Rejestr korespondencji (CSV)",
+        },
+        "zamowienia": {
+            "email_name": "Email — zamówienia",
+            "doc_type": "order",
+            "subject_pattern": "(?i)(zamówienie|order|PO|zakup|sprzedaż)",
+            "extensions": ["pdf", "docx", "csv", "xml"],
+            "filename_pattern": "(?i)(zamow|order|PO)",
+            "upload_name": "Upload zamówień",
+            "export_name": "Rejestr zamówień (CSV)",
+        },
+        "protokoly": {
+            "email_name": "Email — protokoły",
+            "doc_type": "protocol",
+            "subject_pattern": "(?i)(protokół|protokol|minutes|odbiór|zebranie)",
+            "extensions": ["pdf", "docx", "doc"],
+            "filename_pattern": "(?i)(protok|minutes|odbi)",
+            "upload_name": "Upload protokołów",
+            "export_name": "Rejestr protokołów (CSV)",
+        },
+        "polisy": {
+            "email_name": "Email — polisy",
+            "doc_type": "policy",
+            "subject_pattern": "(?i)(polisa|ubezpieczenie|insurance|OC|AC|składka)",
+            "extensions": ["pdf", "docx"],
+            "filename_pattern": "(?i)(polisa|ubezp|insurance|policy)",
+            "upload_name": "Upload polis (PDF)",
+            "export_name": "Rejestr polis (CSV)",
+        },
+        "wnioski": {
+            "email_name": "Email — wnioski",
+            "doc_type": "request",
+            "subject_pattern": "(?i)(wniosek|request|podanie|prośba|zgłoszenie)",
+            "extensions": ["pdf", "docx", "doc"],
+            "filename_pattern": "(?i)(wniosek|request|podanie)",
+            "upload_name": "Upload wniosków",
+            "export_name": "Rejestr wniosków (CSV)",
+        },
+        "nieruchomosci": {
+            "email_name": "Email — nieruchomości",
+            "doc_type": "property",
+            "subject_pattern": "(?i)(najem|nieruchomość|akt notarialny|protokół zdawczo|czynsz)",
+            "extensions": ["pdf", "docx", "doc", "jpg", "png"],
+            "filename_pattern": "(?i)(najem|akt|nieruch|czynsz)",
+            "upload_name": "Upload dokumentów",
+            "export_name": "Rejestr nieruchomości (CSV)",
+        },
+    }
+
+    if proj_type in _DOC_TYPE_SOURCES:
+        cfg = _DOC_TYPE_SOURCES[proj_type]
+        return [
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.IMPORT,
+                source_type=SourceType.EMAIL,
+                name=cfg["email_name"],
+                icon="📧",
+                config={
+                    "host": "test-imap",
+                    "port": 143,
+                    "username": "testuser",
+                    "password": "testpass",
+                    "folder": "INBOX",
+                    "days_back": 90,
+                    "doc_type": cfg["doc_type"],
+                    "subject_pattern": cfg["subject_pattern"],
+                    "attachment_extensions": cfg["extensions"],
+                    "filename_pattern": cfg["filename_pattern"],
+                },
+            ),
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.IMPORT,
+                source_type=SourceType.UPLOAD,
+                name=cfg["upload_name"],
+                icon="📎",
+                config={},
+            ),
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.EXPORT,
+                source_type=SourceType.CSV,
+                name=cfg["export_name"],
+                icon="📊",
+                config={"delimiter": ";", "encoding": "utf-8-sig"},
+            ),
+        ]
+
     sources = [
         # Import sources
         DataSource(

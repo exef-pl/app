@@ -47,4 +47,11 @@ export const PROJECT_TYPES = {
   dowody_platnosci: { label: 'Dowody płatności', icon: '💳' },
   druki_przesylki: { label: 'Druki / Przesyłki', icon: '📦' },
   rekrutacja: { label: 'Rekrutacja / CV', icon: '👥' },
+  umowy: { label: 'Umowy / Kontrakty', icon: '📝' },
+  korespondencja: { label: 'Korespondencja', icon: '✉️' },
+  zamowienia: { label: 'Zamówienia', icon: '🛒' },
+  protokoly: { label: 'Protokoły', icon: '📋' },
+  polisy: { label: 'Polisy / Ubezpieczenia', icon: '🛡️' },
+  wnioski: { label: 'Wnioski', icon: '📨' },
+  nieruchomosci: { label: 'Nieruchomości', icon: '🏠' },
 };
