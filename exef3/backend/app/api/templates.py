@@ -410,6 +410,48 @@ def _generate_default_sources(project: Project) -> list:
             ),
         ]
 
+    if proj_type == "umowy":
+        return [
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.IMPORT,
+                source_type=SourceType.EMAIL,
+                name="Email — umowy",
+                icon="📧",
+                config={
+                    "host": "test-imap",
+                    "port": 143,
+                    "username": "testuser",
+                    "password": "testpass",
+                    "folder": "INBOX",
+                    "days_back": 90,
+                    "doc_type": "contract",
+                    "subject_pattern": "(?i)(umowa|kontrakt|aneks|contract|agreement|NDA|SLA)",
+                    "attachment_extensions": ["pdf", "docx", "doc", "odt"],
+                    "filename_pattern": "(?i)(umowa|kontrakt|aneks|contract|agreement)",
+                },
+            ),
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.IMPORT,
+                source_type=SourceType.UPLOAD,
+                name="Upload umów (PDF/DOCX)",
+                icon="📎",
+                config={},
+            ),
+            DataSource(
+                id=str(uuid4()),
+                project_id=project.id,
+                direction=SourceDirection.EXPORT,
+                source_type=SourceType.CSV,
+                name="Eksport rejestru umów (CSV)",
+                icon="📊",
+                config={"delimiter": ";", "encoding": "utf-8-sig"},
+            ),
+        ]
+
     sources = [
         # Import sources
         DataSource(

@@ -904,8 +904,58 @@ function ProjectViewPanel({ data, onClose, navigate, activeTask, api, setError, 
   );
 }
 
+const DOC_VIEW_CONFIG = {
+  invoice: {
+    icon: '📄', titleFn: (d) => d.number || 'Dokument',
+    sectionLabel: 'Dane dokumentu',
+    fields: (d) => [
+      ['Numer', d.number || '—'],
+      ['Kontrahent', d.contractor_name || '—'],
+      ['NIP', d.contractor_nip || '—'],
+      ['Kwota brutto', d.amount_gross ? `${d.amount_gross.toLocaleString('pl-PL')} ${d.currency || 'PLN'}` : '—'],
+      ['Data', d.document_date || '—'],
+    ],
+    status: { new: 'Nowy', described: 'Opisany', approved: 'Zatwierdzony', exported: 'Wyeksportowany' },
+    categoryLabel: 'Kategoria', categoryPlaceholder: 'np. IT - Hosting, Biuro, Marketing...',
+    tagsLabel: 'Tagi', tagPlaceholder: 'Dodaj tag...',
+    descLabel: 'Opis', descPlaceholder: 'Dodaj opis dokumentu...',
+  },
+  rekrutacja: {
+    icon: '👤', titleFn: (d) => d.contractor_name || d.number || 'Kandydat',
+    sectionLabel: 'Dane kandydata',
+    fields: (d) => [
+      ['Kandydat', d.contractor_name || '—'],
+      ['Email / Telefon', d.contractor_nip || '—'],
+      ['Plik', d.number || '—'],
+      ['Data otrzymania', d.document_date || '—'],
+    ],
+    status: { new: 'Nowe CV', described: 'Oceniony', approved: 'Zatwierdzony', exported: 'Zamknięty' },
+    categoryLabel: 'Stanowisko', categoryPlaceholder: 'np. Frontend Developer, QA Engineer...',
+    tagsLabel: 'Umiejętności', tagPlaceholder: 'Dodaj umiejętność...',
+    descLabel: 'Notatki', descPlaceholder: 'Notatki o kandydacie, wrażenia z rozmowy...',
+  },
+  umowy: {
+    icon: '📝', titleFn: (d) => d.number || d.contractor_name || 'Umowa',
+    sectionLabel: 'Dane umowy',
+    fields: (d) => [
+      ['Numer / Nazwa', d.number || '—'],
+      ['Strona umowy', d.contractor_name || '—'],
+      ['NIP / PESEL', d.contractor_nip || '—'],
+      ['Data umowy', d.document_date || '—'],
+    ],
+    status: { new: 'Nowa', described: 'Opisana', approved: 'Zatwierdzona', exported: 'Zarchiwizowana' },
+    categoryLabel: 'Typ umowy', categoryPlaceholder: 'np. B2B, Umowa o pracę, NDA...',
+    tagsLabel: 'Tagi', tagPlaceholder: 'Dodaj tag...',
+    descLabel: 'Uwagi', descPlaceholder: 'Uwagi do umowy, kluczowe warunki...',
+  },
+};
+
+function getDocViewConfig(projectType) {
+  return DOC_VIEW_CONFIG[projectType] || DOC_VIEW_CONFIG.invoice;
+}
+
 function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectTags = [], navigate, entityId, activeProject }) {
-  const isCV = activeProject?.type === 'rekrutacja';
+  const dvc = getDocViewConfig(activeProject?.type);
   const meta = doc.metadata || {};
   const [description, setDescription] = useState(meta.description || '');
   const [category, setCategory] = useState(meta.category || '');
@@ -963,10 +1013,10 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
   };
 
   const statusColors = {
-    new: { bg: '#3b82f620', color: '#3b82f6', label: isCV ? 'Nowe CV' : 'Nowy' },
-    described: { bg: '#f59e0b20', color: '#f59e0b', label: isCV ? 'Oceniony' : 'Opisany' },
-    approved: { bg: '#10b98120', color: '#10b981', label: isCV ? 'Zatwierdzony' : 'Zatwierdzony' },
-    exported: { bg: '#8b5cf620', color: '#8b5cf6', label: isCV ? 'Zamknięty' : 'Wyeksportowany' },
+    new: { bg: '#3b82f620', color: '#3b82f6', label: dvc.status.new },
+    described: { bg: '#f59e0b20', color: '#f59e0b', label: dvc.status.described },
+    approved: { bg: '#10b98120', color: '#10b981', label: dvc.status.approved },
+    exported: { bg: '#8b5cf620', color: '#8b5cf6', label: dvc.status.exported },
   };
   const st = statusColors[doc.status] || statusColors.new;
 
@@ -976,7 +1026,7 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
         padding: '16px', borderBottom: `1px solid ${COLORS.border}`,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
-        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>{isCV ? '👤' : '📄'} {isCV ? (doc.contractor_name || doc.number || 'Kandydat') : (doc.number || 'Dokument')}</h3>
+        <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600' }}>{dvc.icon} {dvc.titleFn(doc)}</h3>
         <button onClick={onClose} style={{
           background: COLORS.bgTertiary, border: 'none', borderRadius: '6px',
           color: COLORS.textMuted, cursor: 'pointer', width: '28px', height: '28px', fontSize: '14px',
@@ -986,23 +1036,10 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
       <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
         {/* Document info (read-only) */}
         <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>{isCV ? 'Dane kandydata' : 'Dane dokumentu'}</div>
-          {isCV ? (
-            <>
-              <InfoRow label="Kandydat" value={doc.contractor_name || '—'} />
-              <InfoRow label="Email / Telefon" value={doc.contractor_nip || '—'} />
-              <InfoRow label="Plik" value={doc.number || '—'} />
-              <InfoRow label="Data otrzymania" value={doc.document_date || '—'} />
-            </>
-          ) : (
-            <>
-              <InfoRow label="Numer" value={doc.number || '—'} />
-              <InfoRow label="Kontrahent" value={doc.contractor_name || '—'} />
-              <InfoRow label="NIP" value={doc.contractor_nip || '—'} />
-              <InfoRow label="Kwota brutto" value={doc.amount_gross ? `${doc.amount_gross.toLocaleString('pl-PL')} ${doc.currency || 'PLN'}` : '—'} />
-              <InfoRow label="Data" value={doc.document_date || '—'} />
-            </>
-          )}
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>{dvc.sectionLabel}</div>
+          {dvc.fields(doc).map(([label, value]) => (
+            <InfoRow key={label} label={label} value={value} />
+          ))}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
             <span style={{ fontSize: '11px', color: COLORS.textMuted }}>Status</span>
             <span style={{
@@ -1057,11 +1094,11 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 
         {/* Category */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>{isCV ? 'Stanowisko' : 'Kategoria'}</label>
+          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>{dvc.categoryLabel}</label>
           <input
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            placeholder={isCV ? 'np. Frontend Developer, QA Engineer...' : 'np. IT - Hosting, Biuro, Marketing...'}
+            placeholder={dvc.categoryPlaceholder}
             style={{
               width: '100%', padding: '10px 12px', fontSize: '13px',
               background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
@@ -1085,7 +1122,7 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 
         {/* Tags */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>{isCV ? 'Umiejętności' : 'Tagi'}</label>
+          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>{dvc.tagsLabel}</label>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
             {tags.map(tag => (
               <span key={tag} style={{
@@ -1129,7 +1166,7 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
-              placeholder={isCV ? 'Dodaj umiejętność...' : 'Dodaj tag...'}
+              placeholder={dvc.tagPlaceholder}
               style={{
                 flex: 1, padding: '8px 10px', fontSize: '12px',
                 background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
@@ -1147,11 +1184,11 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 
         {/* Description */}
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>{isCV ? 'Notatki' : 'Opis'}</label>
+          <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>{dvc.descLabel}</label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder={isCV ? 'Notatki o kandydacie, wrażenia z rozmowy...' : 'Dodaj opis dokumentu...'}
+            placeholder={dvc.descPlaceholder}
             style={{
               width: '100%', padding: '10px 12px', fontSize: '13px',
               background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
@@ -1255,12 +1292,13 @@ function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setS
     return Object.values(ids).filter(c => c > 1).reduce((s, c) => s + c, 0);
   })();
 
+  const isCV = activeProject?.type === 'rekrutacja';
   const TABS = [
     { id: 'activity-import', label: 'Import', icon: '📥', suffix: '/import' },
     { id: 'activity-selected', label: `Zaznaczone${selectedDocs?.length ? ` (${selectedDocs.length})` : ''}`, icon: '☑️', suffix: '/selected' },
-    { id: 'activity-duplicates', label: `Duplikaty${dupCount ? ` (${dupCount})` : ''}`, icon: '⚠️', suffix: '/duplicates' },
+    ...(!isCV ? [{ id: 'activity-duplicates', label: `Duplikaty${dupCount ? ` (${dupCount})` : ''}`, icon: '⚠️', suffix: '/duplicates' }] : []),
     { id: 'activity-export', label: 'Eksport', icon: '📤', suffix: '/export' },
-    { id: 'new-document', label: 'Nowy', icon: '➕', suffix: '/document/new' },
+    { id: 'new-document', label: isCV ? 'Nowy kandydat' : 'Nowy', icon: '➕', suffix: '/document/new' },
   ];
 
   const basePath = location.pathname.replace(/\/(import|selected|describe|export|duplicates|document\/new)$/, '');

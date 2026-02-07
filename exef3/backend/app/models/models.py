@@ -46,6 +46,7 @@ class ProjectType(str, enum.Enum):
     DOWODY_PLATNOSCI = "dowody_platnosci"
     DRUKI_PRZESYLKI = "druki_przesylki"
     REKRUTACJA = "rekrutacja"
+    UMOWY = "umowy"
 
 class TaskStatus(str, enum.Enum):
     PENDING = "pending"

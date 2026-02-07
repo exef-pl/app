@@ -1,26 +1,66 @@
 import React, { useState, useMemo } from 'react';
 import { COLORS, STATUS_CONFIG } from '../constants.js';
 
-const COL_WIDTHS = ['4%', '17%', '21%', '14%', '14%', '18%', '12%'];
-const CV_COL_WIDTHS = ['4%', '22%', '18%', '22%', '12%', '12%', '10%'];
+// ── View configurations per project type ─────────────────────────────────────
+const VIEW_CONFIGS = {
+  invoice: {
+    colWidths: ['4%', '17%', '21%', '14%', '14%', '18%', '12%'],
+    columns: [
+      { key: 'number', label: 'Numer', align: 'left' },
+      { key: 'contractor', label: 'Kontrahent', align: 'left' },
+      { key: 'amount', label: 'Kwota', align: 'right' },
+      { key: 'category', label: 'Kategoria', align: 'left' },
+      { key: 'status', label: 'Status', align: 'center' },
+      { key: 'source', label: 'Źródło', align: 'center' },
+    ],
+    searchPlaceholder: 'Szukaj (numer, kontrahent, NIP, kategoria)...',
+    statsLabels: { new: 'Nowe', described: 'Opisane', exported: 'Wyeksportowane' },
+    showExportWarning: true,
+    emptyCategory: '⚠️ Brak',
+    emptyCategoryStyle: 'warning',
+    showDuplicates: true,
+  },
+  rekrutacja: {
+    colWidths: ['4%', '22%', '18%', '22%', '12%', '12%', '10%'],
+    columns: [
+      { key: 'contractor', label: 'Kandydat', align: 'left' },
+      { key: 'category', label: 'Stanowisko', align: 'left' },
+      { key: 'tags', label: 'Umiejętności', align: 'left' },
+      { key: 'date', label: 'Data', align: 'center' },
+      { key: 'status', label: 'Status', align: 'center' },
+      { key: 'source', label: 'Źródło', align: 'center' },
+    ],
+    searchPlaceholder: 'Szukaj (kandydat, stanowisko, umiejętności)...',
+    statsLabels: { new: 'Nowe', described: 'Ocenione', exported: 'Zatwierdzone' },
+    showExportWarning: false,
+    emptyCategory: 'Brak stanowiska',
+    emptyCategoryStyle: 'muted',
+    showDuplicates: false,
+  },
+  umowy: {
+    colWidths: ['4%', '22%', '18%', '14%', '12%', '18%', '12%'],
+    columns: [
+      { key: 'number', label: 'Numer / Nazwa', align: 'left' },
+      { key: 'contractor', label: 'Strona umowy', align: 'left' },
+      { key: 'category', label: 'Typ umowy', align: 'left' },
+      { key: 'date', label: 'Data', align: 'center' },
+      { key: 'status', label: 'Status', align: 'center' },
+      { key: 'source', label: 'Źródło', align: 'center' },
+    ],
+    searchPlaceholder: 'Szukaj (nazwa, strona, typ, NIP)...',
+    statsLabels: { new: 'Nowe', described: 'Opisane', exported: 'Zarchiwizowane' },
+    showExportWarning: false,
+    emptyCategory: 'Brak typu',
+    emptyCategoryStyle: 'muted',
+    showDuplicates: false,
+  },
+};
 
-const COLUMNS = [
-  { key: 'number', label: 'Numer', align: 'left' },
-  { key: 'contractor', label: 'Kontrahent', align: 'left' },
-  { key: 'amount', label: 'Kwota', align: 'right' },
-  { key: 'category', label: 'Kategoria', align: 'left' },
-  { key: 'status', label: 'Status', align: 'center' },
-  { key: 'source', label: 'Źródło', align: 'center' },
-];
-
-const CV_COLUMNS = [
-  { key: 'contractor', label: 'Kandydat', align: 'left' },
-  { key: 'category', label: 'Stanowisko', align: 'left' },
-  { key: 'tags', label: 'Umiejętności', align: 'left' },
-  { key: 'date', label: 'Data', align: 'center' },
-  { key: 'status', label: 'Status', align: 'center' },
-  { key: 'source', label: 'Źródło', align: 'center' },
-];
+function getViewConfig(projectType) {
+  if (projectType === 'rekrutacja') return VIEW_CONFIGS.rekrutacja;
+  if (projectType === 'umowy') return VIEW_CONFIGS.umowy;
+  return VIEW_CONFIGS.invoice;
+}
 
 const selectStyle = {
   padding: '5px 8px', fontSize: '11px', borderRadius: '6px',
@@ -89,9 +129,9 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
   const notExported = docs.filter(d => d.status !== 'exported').length;
 
   const uniqueSources = [...new Set(docs.map(d => d.source).filter(Boolean))];
-  const isCV = activeProject?.type === 'rekrutacja';
-  const columns = isCV ? CV_COLUMNS : COLUMNS;
-  const colWidths = isCV ? CV_COL_WIDTHS : COL_WIDTHS;
+  const vc = getViewConfig(activeProject?.type);
+  const columns = vc.columns;
+  const colWidths = vc.colWidths;
 
   const handleSort = (col) => {
     if (sortCol === col) {
@@ -131,22 +171,12 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
             padding: '0 16px 10px', display: 'flex', gap: '16px', fontSize: '11px', color: COLORS.textMuted,
           }}>
             <span>Łącznie: <strong style={{ color: COLORS.text }}>{docsTotal}</strong></span>
-            {isCV ? (
-            <>
-              <span>Nowe: <strong style={{ color: COLORS.warning }}>{docsNew}</strong></span>
-              <span>Ocenione: <strong style={{ color: COLORS.primary }}>{docsDescribed}</strong></span>
-              <span>Zatwierdzone: <strong style={{ color: COLORS.success }}>{docsExported}</strong></span>
-            </>
-          ) : (
-            <>
-              <span>Nowe: <strong style={{ color: COLORS.warning }}>{docsNew}</strong></span>
-              <span>Opisane: <strong style={{ color: COLORS.primary }}>{docsDescribed}</strong></span>
-              <span>Wyeksportowane: <strong style={{ color: COLORS.success }}>{docsExported}</strong></span>
-              {notExported > 0 && (
-                <span style={{ color: COLORS.danger }}>⚠ Do eksportu: <strong>{notExported}</strong></span>
-              )}
-            </>
-          )}
+            <span>{vc.statsLabels.new}: <strong style={{ color: COLORS.warning }}>{docsNew}</strong></span>
+            <span>{vc.statsLabels.described}: <strong style={{ color: COLORS.primary }}>{docsDescribed}</strong></span>
+            <span>{vc.statsLabels.exported}: <strong style={{ color: COLORS.success }}>{docsExported}</strong></span>
+            {vc.showExportWarning && notExported > 0 && (
+              <span style={{ color: COLORS.danger }}>⚠ Do eksportu: <strong>{notExported}</strong></span>
+            )}
           </div>
         )}
       </div>
@@ -159,7 +189,7 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
         }}>
           <span style={{ fontSize: '10px', color: COLORS.textMuted, textTransform: 'uppercase', fontWeight: '500' }}>🔍</span>
           <input
-            type="text" placeholder={isCV ? 'Szukaj (kandydat, stanowisko, umiejętności)...' : 'Szukaj (numer, kontrahent, NIP, kategoria)...'}
+            type="text" placeholder={vc.searchPlaceholder}
             value={search} onChange={e => setSearch(e.target.value)}
             style={{
               flex: 1, minWidth: '140px', padding: '5px 10px', fontSize: '12px',
@@ -247,7 +277,7 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
                 if (sorted.length === 0 && hasFilters) {
                   return (
                     <tr>
-                      <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: COLORS.textMuted, fontSize: '13px' }}>
+                      <td colSpan={columns.length + 1} style={{ padding: '32px', textAlign: 'center', color: COLORS.textMuted, fontSize: '13px' }}>
                         Brak dokumentów pasujących do filtrów
                         <div style={{ marginTop: '8px' }}>
                           <button onClick={clearFilters} style={{
@@ -261,82 +291,105 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
                   );
                 }
                 const idCounts = {};
-                documents.forEach(d => { if (d.doc_id) idCounts[d.doc_id] = (idCounts[d.doc_id] || 0) + 1; });
+                if (vc.showDuplicates) {
+                  documents.forEach(d => { if (d.doc_id) idCounts[d.doc_id] = (idCounts[d.doc_id] || 0) + 1; });
+                }
                 return sorted.map(doc => {
                 const status = STATUS_CONFIG[doc.status];
-                const isDup = doc.doc_id && idCounts[doc.doc_id] > 1;
+                const isDup = vc.showDuplicates && doc.doc_id && idCounts[doc.doc_id] > 1;
                 const isChecked = selectedDocs.includes(doc.id);
 
-                if (isCV) {
-                  return (
-                    <tr key={doc.id} onClick={() => navigate(`${taskPath}/document/${doc.id}`)}
-                      style={{
-                        borderBottom: `1px solid ${COLORS.border}`, cursor: 'pointer',
-                        background: isChecked ? `${COLORS.primary}12` : selectedDocument?.id === doc.id ? COLORS.bgTertiary : 'transparent',
-                      }}>
-                      <td style={{ padding: '12px 4px', textAlign: 'center' }}>
-                        <input type="checkbox" checked={isChecked}
-                          onClick={e => e.stopPropagation()}
-                          onChange={e => {
-                            if (e.target.checked) {
-                              setSelectedDocs(prev => [...prev, doc.id]);
-                              navigate(`${taskPath}/selected`);
-                            } else {
-                              setSelectedDocs(selectedDocs.filter(id => id !== doc.id));
-                            }
-                          }}
-                          style={{ cursor: 'pointer', accentColor: COLORS.primary }}
-                        />
-                      </td>
-                      <td style={{ padding: '12px 8px' }}>
-                        <div style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {doc.contractor_name || doc.number || '—'}
-                        </div>
-                        <div style={{ fontSize: '10px', color: COLORS.textMuted }}>
-                          {doc.contractor_nip || ''}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 8px' }}>
-                        {doc.metadata?.category ? (
+                const renderCell = (col) => {
+                  switch (col.key) {
+                    case 'number':
+                      return (
+                        <td key={col.key} style={{ padding: '12px 8px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {isDup && <span title="Potencjalny duplikat" style={{ marginRight: '4px' }}>⚠️</span>}
+                            {doc.number || '—'}
+                          </div>
+                          <div style={{ fontSize: '10px', color: COLORS.textMuted }}>{doc.document_date}</div>
+                        </td>
+                      );
+                    case 'contractor':
+                      return (
+                        <td key={col.key} style={{ padding: '12px 8px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {doc.contractor_name || doc.number || '—'}
+                          </div>
+                          <div style={{ fontSize: '10px', color: COLORS.textMuted }}>
+                            {doc.contractor_nip ? (activeProject?.type === 'rekrutacja' ? doc.contractor_nip : `NIP: ${doc.contractor_nip}`) : ''}
+                          </div>
+                        </td>
+                      );
+                    case 'amount':
+                      return (
+                        <td key={col.key} style={{ padding: '12px 8px', textAlign: 'right' }}>
+                          <div style={{ fontSize: '14px', fontWeight: '600' }}>
+                            {doc.amount_gross?.toLocaleString('pl-PL') || '—'} {doc.currency}
+                          </div>
+                        </td>
+                      );
+                    case 'category':
+                      return (
+                        <td key={col.key} style={{ padding: '12px 8px' }}>
+                          {doc.metadata?.category ? (
+                            <span style={{
+                              fontSize: '11px', padding: '4px 8px', borderRadius: '4px',
+                              background: `${COLORS.primary}20`, color: COLORS.primary,
+                            }}>{doc.metadata.category}</span>
+                          ) : (
+                            <span style={{
+                              color: vc.emptyCategoryStyle === 'warning' ? COLORS.warning : COLORS.textMuted,
+                              fontSize: '11px', fontStyle: vc.emptyCategoryStyle === 'muted' ? 'italic' : 'normal',
+                            }}>{vc.emptyCategory}</span>
+                          )}
+                        </td>
+                      );
+                    case 'tags':
+                      return (
+                        <td key={col.key} style={{ padding: '12px 8px' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                            {(doc.metadata?.tags || []).slice(0, 4).map(t => (
+                              <span key={t} style={{
+                                fontSize: '10px', padding: '2px 6px', borderRadius: '10px',
+                                background: `${COLORS.primary}15`, color: COLORS.primary,
+                              }}>{t}</span>
+                            ))}
+                            {(doc.metadata?.tags || []).length > 4 && (
+                              <span style={{ fontSize: '10px', color: COLORS.textMuted }}>+{doc.metadata.tags.length - 4}</span>
+                            )}
+                            {(doc.metadata?.tags || []).length === 0 && (
+                              <span style={{ fontSize: '10px', color: COLORS.textMuted, fontStyle: 'italic' }}>—</span>
+                            )}
+                          </div>
+                        </td>
+                      );
+                    case 'date':
+                      return (
+                        <td key={col.key} style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: COLORS.textMuted }}>
+                          {doc.document_date || '—'}
+                        </td>
+                      );
+                    case 'status':
+                      return (
+                        <td key={col.key} style={{ padding: '12px 8px', textAlign: 'center' }}>
                           <span style={{
                             fontSize: '11px', padding: '4px 8px', borderRadius: '4px',
-                            background: `${COLORS.secondary}20`, color: COLORS.secondary,
-                          }}>{doc.metadata.category}</span>
-                        ) : (
-                          <span style={{ color: COLORS.textMuted, fontSize: '11px', fontStyle: 'italic' }}>Brak stanowiska</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '12px 8px' }}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                          {(doc.metadata?.tags || []).slice(0, 4).map(t => (
-                            <span key={t} style={{
-                              fontSize: '10px', padding: '2px 6px', borderRadius: '10px',
-                              background: `${COLORS.primary}15`, color: COLORS.primary,
-                            }}>{t}</span>
-                          ))}
-                          {(doc.metadata?.tags || []).length > 4 && (
-                            <span style={{ fontSize: '10px', color: COLORS.textMuted }}>+{doc.metadata.tags.length - 4}</span>
-                          )}
-                          {(doc.metadata?.tags || []).length === 0 && (
-                            <span style={{ fontSize: '10px', color: COLORS.textMuted, fontStyle: 'italic' }}>—</span>
-                          )}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center', fontSize: '12px', color: COLORS.textMuted }}>
-                        {doc.document_date || '—'}
-                      </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                        <span style={{
-                          fontSize: '11px', padding: '4px 8px', borderRadius: '4px',
-                          background: `${status?.color}20`, color: status?.color,
-                        }}>{status?.icon} {status?.label}</span>
-                      </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                        <span style={{ fontSize: '10px', color: COLORS.textMuted }}>{doc.source || '—'}</span>
-                      </td>
-                    </tr>
-                  );
-                }
+                            background: `${status?.color}20`, color: status?.color,
+                          }}>{status?.icon} {status?.label}</span>
+                        </td>
+                      );
+                    case 'source':
+                      return (
+                        <td key={col.key} style={{ padding: '12px 8px', textAlign: 'center' }}>
+                          <span style={{ fontSize: '10px', color: COLORS.textMuted }}>{doc.source || '—'}</span>
+                        </td>
+                      );
+                    default:
+                      return <td key={col.key} />;
+                  }
+                };
 
                 return (
                   <tr key={doc.id} onClick={() => navigate(`${taskPath}/document/${doc.id}`)}
@@ -352,52 +405,13 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
                             setSelectedDocs(prev => [...prev, doc.id]);
                             navigate(`${taskPath}/selected`);
                           } else {
-                            const remaining = selectedDocs.filter(id => id !== doc.id);
-                            setSelectedDocs(remaining);
+                            setSelectedDocs(selectedDocs.filter(id => id !== doc.id));
                           }
                         }}
                         style={{ cursor: 'pointer', accentColor: COLORS.primary }}
                       />
                     </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <div style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {isDup && <span title="Potencjalny duplikat" style={{ marginRight: '4px' }}>⚠️</span>}
-                        {doc.number || '—'}
-                      </div>
-                      <div style={{ fontSize: '10px', color: COLORS.textMuted }}>{doc.document_date}</div>
-                    </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      <div style={{ fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.contractor_name || '—'}</div>
-                      <div style={{ fontSize: '10px', color: COLORS.textMuted }}>
-                        {doc.contractor_nip ? `NIP: ${doc.contractor_nip}` : ''}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 8px', textAlign: 'right' }}>
-                      <div style={{ fontSize: '14px', fontWeight: '600' }}>
-                        {doc.amount_gross?.toLocaleString('pl-PL') || '—'} {doc.currency}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 8px' }}>
-                      {doc.metadata?.category ? (
-                        <span style={{
-                          fontSize: '11px', padding: '4px 8px', borderRadius: '4px',
-                          background: `${COLORS.primary}20`, color: COLORS.primary,
-                        }}>{doc.metadata.category}</span>
-                      ) : (
-                        <span style={{ color: COLORS.warning, fontSize: '11px' }}>⚠️ Brak</span>
-                      )}
-                    </td>
-                    <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                      <span style={{
-                        fontSize: '11px', padding: '4px 8px', borderRadius: '4px',
-                        background: `${status?.color}20`, color: status?.color,
-                      }}>{status?.icon} {status?.label}</span>
-                    </td>
-                    <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                      <span style={{ fontSize: '10px', color: COLORS.textMuted }}>
-                        {doc.source || '—'}
-                      </span>
-                    </td>
+                    {columns.map(renderCell)}
                   </tr>
                 );
               });

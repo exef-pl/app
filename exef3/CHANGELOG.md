@@ -1,3 +1,20 @@
+## [1.0.11] - 2026-02-07
+
+### Summary
+
+feat(examples): CLI interface with 2 supporting modules
+
+### Other
+
+- update exef3/backend/app/api/templates.py
+- update exef3/backend/app/models/models.py
+- update exef3/backend/app/schemas/schemas.py
+- update exef3/backend/seed_demo.py
+- update exef3/frontend/src/components/RightPanel.jsx
+- update exef3/frontend/src/components/TaskContentArea.jsx
+- update exef3/frontend/src/constants.js
+
+
 ## [1.0.10] - 2026-02-07
 
 ### Summary

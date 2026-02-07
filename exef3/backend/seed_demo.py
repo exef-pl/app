@@ -167,6 +167,18 @@ def seed():
             default_categories=["Frontend", "Backend", "DevOps", "QA", "UX/UI", "PM", "HR", "Inne"],
             is_system=True,
         ),
+        ProjectTemplate(
+            id=uid(), code="umowy_kontrakty",
+            name="Umowy / Kontrakty",
+            description="Zarządzanie umowami, aneksami i kontraktami. Import z emaila lub upload, śledzenie terminów, stron i statusów.",
+            project_type=ProjectType.UMOWY,
+            task_recurrence=TaskRecurrence.ONCE,
+            task_name_template="Umowy {year}",
+            task_icon="📝", deadline_day=30,
+            default_icon="📝", default_color="#0ea5e9",
+            default_categories=["Umowa o pracę", "Umowa zlecenie", "Umowa o dzieło", "B2B", "NDA", "SLA", "Najem", "Inne"],
+            is_system=True,
+        ),
     ]
     for t in templates:
         db.add(t)
