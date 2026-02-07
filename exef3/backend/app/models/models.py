@@ -203,6 +203,16 @@ class EntityDatabase(Base):
     # Relacje
     entity = relationship("Entity", back_populates="database_config")
 
+class ResourceRouting(Base):
+    """Routing index — maps resource IDs to entity NIP for per-entity DB resolution."""
+    __tablename__ = "resource_routing"
+
+    resource_id = Column(String(36), primary_key=True)
+    entity_nip = Column(String(10), nullable=False, index=True)
+    entity_id = Column(String(36), nullable=False)
+    resource_type = Column(String(20))  # project, task, source, document
+
+
 class EntityMember(Base):
     """Członek podmiotu - powiązanie tożsamości z podmiotem."""
     __tablename__ = "entity_members"

@@ -7,6 +7,11 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
+from app.core.config import settings
+from app.core.entity_db import (
+    entity_db_manager, sync_identity_to_entity_db, sync_entity_to_entity_db,
+    resolve_entity_db_by_entity,
+)
 from app.models.models import Entity, EntityMember, Identity, AuthorizationRole
 from app.schemas.schemas import (
     EntityCreate, EntityUpdate, EntityResponse, EntityDetail,
@@ -70,6 +75,21 @@ def create_entity(data: EntityCreate, identity_id: str = Depends(get_current_ide
     
     db.commit()
     db.refresh(entity)
+
+    # Auto-create entity DB when USE_ENTITY_DB is enabled
+    if settings.USE_ENTITY_DB:
+        nip = entity.nip or entity.id[:10]
+        entity_db_manager.ensure_dir()
+        entity_db_manager.init_entity_db(nip)
+        edb = entity_db_manager.get_session(nip)
+        sync_entity_to_entity_db(edb, entity)
+        # Sync owner identity stub
+        owner = db.query(Identity).filter(Identity.id == identity_id).first()
+        if owner:
+            sync_identity_to_entity_db(edb, owner)
+        edb.commit()
+        log.info("ENTITY_DB: created DB for entity=%s nip=%s", entity.name, nip)
+
     log.info("CREATE entity: id=%s name='%s' type=%s nip=%s owner=%s → Pydantic validated: %s",
              entity.id[:8], entity.name, entity.type, entity.nip, identity_id[:8],
              EntityResponse.model_validate(entity, from_attributes=True).model_dump(include={'id','name','type','nip'}))
@@ -197,7 +217,14 @@ def add_member(entity_id: str, data: EntityMemberCreate, identity_id: str = Depe
     db.add(member)
     db.commit()
     db.refresh(member)
-    
+
+    # Sync new member's identity to entity DB
+    if settings.USE_ENTITY_DB:
+        edb = resolve_entity_db_by_entity(db, entity_id)
+        if edb is not db:
+            sync_identity_to_entity_db(edb, target_identity)
+            edb.commit()
+
     return EntityMemberResponse(
         id=member.id,
         identity=target_identity,

@@ -24,6 +24,7 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_USE_TLS=${SMTP_USE_TLS}
       - FROM_EMAIL=${FROM_EMAIL}
+      - USE_ENTITY_DB=${USE_ENTITY_DB:-false}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

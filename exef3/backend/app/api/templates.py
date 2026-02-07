@@ -11,6 +11,8 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
 from app.core.config import settings
+from app.core.entity_db import resolve_entity_db_by_entity, add_routing
+from app.api.access import check_entity_access
 
 log = logging.getLogger("exef.templates")
 from app.models.models import (
@@ -137,6 +139,12 @@ def create_project_from_template(
 
     project_name = data.name or f"{template.name} {year}"
 
+    edb = resolve_entity_db_by_entity(db, data.entity_id)
+
+    # Get entity NIP for routing
+    entity = db.query(Entity).filter(Entity.id == data.entity_id).first()
+    nip = entity.nip or entity.id[:10] if entity else data.entity_id[:10]
+
     # Create project
     project = Project(
         id=str(uuid4()),
@@ -152,20 +160,25 @@ def create_project_from_template(
         categories=template.default_categories or [],
         is_active=True,
     )
-    db.add(project)
+    edb.add(project)
+    add_routing(db, project.id, data.entity_id, nip, "project")
 
     # Generate tasks based on recurrence
     tasks = _generate_tasks(template, project, year, period_start, period_end)
     for task in tasks:
-        db.add(task)
+        edb.add(task)
+        add_routing(db, task.id, data.entity_id, nip, "task")
 
     # Auto-create default DataSources with Docker test configs
     default_sources = _generate_default_sources(project)
     for src in default_sources:
-        db.add(src)
+        edb.add(src)
+        add_routing(db, src.id, data.entity_id, nip, "source")
 
-    db.commit()
-    db.refresh(project)
+    edb.commit()
+    if edb is not db:
+        db.commit()
+    edb.refresh(project)
 
     log.info("CREATE PROJECT FROM TEMPLATE: project=%s name='%s' type=%s year=%d template='%s' by=%s",
              project.id[:8], project.name, project.type.value if hasattr(project.type, 'value') else project.type,
@@ -205,7 +218,7 @@ def get_entity_database(
     db: Session = Depends(get_db),
 ):
     """Pobiera konfigurację bazy danych podmiotu."""
-    _check_entity_access(db, entity_id, identity_id)
+    check_entity_access(db, entity_id, identity_id)
 
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
     db_config = db.query(EntityDatabase).filter(EntityDatabase.entity_id == entity_id).first()
@@ -238,7 +251,7 @@ def update_entity_database(
     db: Session = Depends(get_db),
 ):
     """Aktualizuje konfigurację bazy danych podmiotu."""
-    _check_entity_access(db, entity_id, identity_id, require_owner=True)
+    check_entity_access(db, entity_id, identity_id, require_owner=True)
 
     db_config = db.query(EntityDatabase).filter(EntityDatabase.entity_id == entity_id).first()
     if not db_config:
@@ -260,19 +273,7 @@ def update_entity_database(
 # HELPERS
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def _check_entity_access(db: Session, entity_id: str, identity_id: str, require_owner: bool = False):
-    entity = db.query(Entity).filter(Entity.id == entity_id).first()
-    if not entity:
-        raise HTTPException(status_code=404, detail="Podmiot nie znaleziony")
-    membership = db.query(EntityMember).filter(
-        EntityMember.entity_id == entity_id,
-        EntityMember.identity_id == identity_id,
-    ).first()
-    if not membership:
-        raise HTTPException(status_code=403, detail="Brak dostępu do podmiotu")
-    if require_owner and membership.role != AuthorizationRole.OWNER and entity.owner_id != identity_id:
-        raise HTTPException(status_code=403, detail="Tylko właściciel może zmienić konfigurację DB")
-    return entity, membership
+# _check_entity_access moved to app/api/access.py as check_entity_access
 
 
 def _generate_tasks(template: ProjectTemplate, project: Project, year: int,

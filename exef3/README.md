@@ -33,6 +33,63 @@ System zarządzania dokumentami księgowymi dla polskich firm.
 └─────────────────────────────────────────────────────────────┘
 ```
 
+
+Nie, **obecnie jest jedna wspólna baza danych** dla wszystkich podmiotów i użytkowników. Sprawdźmy to:
+Widzę w konfiguracji, że jest **zaplanowana** architektura per-entity DB. Sprawdźmy, czy jest faktycznie zaimplementowana:
+
+
+
+
+
+
+
+
+
+
+## Obecna architektura bazy danych
+
+**Jedna wspólna baza SQLite** (`data/exef.db`) przechowuje **wszystko** — użytkowników, podmioty, projekty, zadania, dokumenty:
+
+```
+    DATABASE_URL: str = "sqlite:///./data/exef.db"
+```
+
+Wszystkie modele ([Identity](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:98:0-132:86), [Entity](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:138:0-174:122), [EntityMember](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:205:0-225:68), [Project](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:262:0-298:101), [Task](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:336:0-378:96), [Document](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:384:0-424:122), [DocumentMetadata](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:426:0-445:75), [DataSource](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:471:0-510:98)) są w tej jednej bazie. Separacja danych między podmiotami jest realizowana przez **relacje SQL** (foreign keys), nie przez osobne bazy.
+
+---
+
+## Przygotowana (ale niezaimplementowana) architektura per-entity
+
+W konfiguracji i modelach jest **zaplanowana** infrastruktura do osobnych baz na podmiot:
+
+```
+    ENTITY_DB_DIR: str = "./data/entities"
+    ENTITY_DB_PATH_TEMPLATE: str = "./data/entities/{nip}.db"
+    ENTITY_DB_URL_TEMPLATE: str = "sqlite:///./data/entities/{nip}.db"
+    ENTITY_REMOTE_DB_URL: Optional[str] = None
+    ENTITY_SYNC_ENABLED: bool = False
+    ENTITY_SYNC_DIRECTION: str = "local_to_remote"
+```
+
+Jest model [EntityDatabase](cci:2://file:///home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:176:0-203:69) w `@/home/tom/github/exef-pl/app/exef3/backend/app/models/models.py:177-204` z polami:
+- **`local_db_url`** — np. `sqlite:///./data/entities/5213003700.db`
+- **`remote_db_url`** — opcjonalny PostgreSQL/MySQL do sync
+- **`sync_enabled`**, **`sync_direction`**, **`sync_interval_minutes`** — konfiguracja synchronizacji
+
+Jest też endpoint `GET /entities/{entity_id}/database` który auto-tworzy konfigurację, ale **żaden kod nie tworzy faktycznie osobnych baz ani nie routuje zapytań do nich**.
+
+
+## Podsumowanie
+
+| Co | Status |
+|---|---|
+| Jedna baza `exef.db` — users, entities, projects, docs | ✅ Działa |
+| Tabela `entity_databases` z konfiguracją per-NIP | ✅ Istnieje (model + endpoint) |
+| Tworzenie osobnych SQLite per podmiot (`{nip}.db`) | ❌ Nie zaimplementowane |
+| Routing zapytań do entity-specific DB | ❌ Nie zaimplementowane |
+| Sync lokalna ↔ zdalna baza | ❌ Nie zaimplementowane |
+
+
 ## 🧪 Logowanie testowe
 
 Aplikacja wspiera logowanie przez **magic link** (link bezhasłowy).

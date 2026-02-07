@@ -9,6 +9,12 @@ from sqlalchemy import func
 
 from app.core.database import get_db
 from app.core.security import get_current_identity_id
+from app.core.config import settings
+from app.core.entity_db import (
+    resolve_entity_db, resolve_entity_db_by_entity, add_routing, remove_routing,
+    sync_identity_to_entity_db,
+)
+from app.api.access import check_project_access
 
 log = logging.getLogger("exef.projects")
 from app.models.models import (
@@ -24,56 +30,35 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 
 def get_user_projects(db: Session, identity_id: str) -> List[Project]:
     """Pobiera wszystkie projekty dostępne dla użytkownika."""
-    # Projekty z podmiotów użytkownika
     memberships = db.query(EntityMember).filter(EntityMember.identity_id == identity_id).all()
     entity_ids = [m.entity_id for m in memberships]
-    
-    own_projects = db.query(Project).filter(Project.entity_id.in_(entity_ids)).all() if entity_ids else []
-    
-    # Projekty z autoryzacji
-    authorizations = db.query(ProjectAuthorization).filter(
-        ProjectAuthorization.identity_id == identity_id,
-        ProjectAuthorization.can_view == True
-    ).all()
-    authorized_project_ids = [a.project_id for a in authorizations]
-    
-    authorized_projects = db.query(Project).filter(
-        Project.id.in_(authorized_project_ids)
-    ).all() if authorized_project_ids else []
-    
-    # Połącz
-    all_projects = {p.id: p for p in own_projects + authorized_projects}
-    return list(all_projects.values())
 
-def check_project_access(db: Session, project_id: str, identity_id: str, require_edit: bool = False):
-    """Sprawdza dostęp do projektu."""
-    project = db.query(Project).options(joinedload(Project.entity)).filter(Project.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail="Projekt nie znaleziony")
-    
-    # Sprawdź członkostwo w podmiocie
-    membership = db.query(EntityMember).filter(
-        EntityMember.entity_id == project.entity_id,
-        EntityMember.identity_id == identity_id
-    ).first()
-    
-    if membership:
-        if require_edit and not membership.can_manage_projects and membership.role != AuthorizationRole.OWNER:
-            raise HTTPException(status_code=403, detail="Brak uprawnień do edycji projektu")
-        return project, "member", membership.role
-    
-    # Sprawdź autoryzację do projektu
-    authorization = db.query(ProjectAuthorization).filter(
-        ProjectAuthorization.project_id == project_id,
-        ProjectAuthorization.identity_id == identity_id
-    ).first()
-    
-    if authorization:
-        if require_edit and not authorization.can_describe:
-            raise HTTPException(status_code=403, detail="Brak uprawnień do edycji")
-        return project, "authorized", authorization.role
-    
-    raise HTTPException(status_code=403, detail="Brak dostępu do projektu")
+    all_projects = {}
+
+    if settings.USE_ENTITY_DB:
+        # Query each entity's DB
+        for entity_id in entity_ids:
+            edb = resolve_entity_db_by_entity(db, entity_id)
+            for p in edb.query(Project).filter(Project.entity_id == entity_id).all():
+                all_projects[p.id] = p
+    else:
+        own_projects = db.query(Project).filter(Project.entity_id.in_(entity_ids)).all() if entity_ids else []
+        for p in own_projects:
+            all_projects[p.id] = p
+
+        # Projekty z autoryzacji (single-DB mode only; in entity DB mode, handled per-project)
+        authorizations = db.query(ProjectAuthorization).filter(
+            ProjectAuthorization.identity_id == identity_id,
+            ProjectAuthorization.can_view == True
+        ).all()
+        authorized_project_ids = [a.project_id for a in authorizations]
+        authorized_projects = db.query(Project).filter(
+            Project.id.in_(authorized_project_ids)
+        ).all() if authorized_project_ids else []
+        for p in authorized_projects:
+            all_projects[p.id] = p
+
+    return list(all_projects.values())
 
 @router.get("", response_model=List[ProjectWithStats])
 def list_projects(
@@ -82,22 +67,26 @@ def list_projects(
     db: Session = Depends(get_db)
 ):
     """Lista projektów użytkownika."""
-    projects = get_user_projects(db, identity_id)
-    
     if entity_id:
-        projects = [p for p in projects if p.entity_id == entity_id]
+        edb = resolve_entity_db_by_entity(db, entity_id)
+        projects = edb.query(Project).filter(Project.entity_id == entity_id).all()
+    else:
+        projects = get_user_projects(db, identity_id)
     
     result = []
     for project in projects:
+        # Resolve entity DB per project (handles multi-entity case)
+        proj_edb = resolve_entity_db(db, project.id) if settings.USE_ENTITY_DB else db
+
         # Pobierz statystyki
-        stats = db.query(
+        stats = proj_edb.query(
             func.sum(Task.docs_total).label("total"),
             func.sum(Task.docs_described).label("described"),
             func.sum(Task.docs_approved).label("approved"),
             func.sum(Task.docs_exported).label("exported"),
         ).filter(Task.project_id == project.id).first()
         
-        # Sprawdź rolę użytkownika
+        # Sprawdź rolę użytkownika (main DB)
         membership = db.query(EntityMember).filter(
             EntityMember.entity_id == project.entity_id,
             EntityMember.identity_id == identity_id
@@ -105,7 +94,7 @@ def list_projects(
         my_role = membership.role if membership else None
         
         if not my_role:
-            auth = db.query(ProjectAuthorization).filter(
+            auth = proj_edb.query(ProjectAuthorization).filter(
                 ProjectAuthorization.project_id == project.id,
                 ProjectAuthorization.identity_id == identity_id
             ).first()
@@ -140,13 +129,23 @@ def create_project(data: ProjectCreate, identity_id: str = Depends(get_current_i
     if not membership.can_manage_projects and membership.role != AuthorizationRole.OWNER:
         raise HTTPException(status_code=403, detail="Brak uprawnień do tworzenia projektów")
     
+    edb = resolve_entity_db_by_entity(db, data.entity_id)
+
     project = Project(
         id=str(uuid4()),
         **data.model_dump()
     )
-    db.add(project)
-    db.commit()
-    db.refresh(project)
+    edb.add(project)
+
+    # Add routing entry to main DB
+    entity = db.query(Entity).filter(Entity.id == data.entity_id).first()
+    nip = entity.nip or entity.id[:10] if entity else data.entity_id[:10]
+    add_routing(db, project.id, data.entity_id, nip, "project")
+
+    edb.commit()
+    if edb is not db:
+        db.commit()
+    edb.refresh(project)
     log.info("CREATE project: id=%s name='%s' type=%s entity=%s by=%s → Pydantic: %s",
              project.id[:8], project.name, project.type, data.entity_id[:8], identity_id[:8],
              ProjectResponse.model_validate(project, from_attributes=True).model_dump(include={'id','name','type','year'}))
@@ -155,14 +154,15 @@ def create_project(data: ProjectCreate, identity_id: str = Depends(get_current_i
 @router.get("/{project_id}", response_model=ProjectDetail)
 def get_project(project_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Pobiera szczegóły projektu."""
-    project, access_type, role = check_project_access(db, project_id, identity_id)
+    edb = resolve_entity_db(db, project_id)
+    project, access_type, role = check_project_access(db, project_id, identity_id, edb=edb)
     
     entity = db.query(Entity).filter(Entity.id == project.entity_id).first()
-    authorizations = db.query(ProjectAuthorization).options(
+    authorizations = edb.query(ProjectAuthorization).options(
         joinedload(ProjectAuthorization.identity)
     ).filter(ProjectAuthorization.project_id == project_id).all()
     
-    tasks_count = db.query(Task).filter(Task.project_id == project_id).count()
+    tasks_count = edb.query(Task).filter(Task.project_id == project_id).count()
     
     return ProjectDetail(
         **{k: getattr(project, k) for k in ProjectResponse.model_fields.keys()},
@@ -184,24 +184,28 @@ def get_project(project_id: str, identity_id: str = Depends(get_current_identity
 @router.patch("/{project_id}", response_model=ProjectResponse)
 def update_project(project_id: str, data: ProjectUpdate, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Aktualizuje projekt."""
-    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True)
+    edb = resolve_entity_db(db, project_id)
+    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True, edb=edb)
     
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(project, key, value)
     
-    db.commit()
-    db.refresh(project)
+    edb.commit()
     log.info("UPDATE project: id=%s fields=%s by=%s", project_id[:8], list(data.model_dump(exclude_unset=True).keys()), identity_id[:8])
     return project
 
 @router.delete("/{project_id}")
 def delete_project(project_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Usuwa projekt."""
-    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True)
+    edb = resolve_entity_db(db, project_id)
+    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True, edb=edb)
     
     log.warning("DELETE project: id=%s name='%s' by=%s", project_id[:8], project.name, identity_id[:8])
-    db.delete(project)
-    db.commit()
+    edb.delete(project)
+    remove_routing(db, project_id)
+    edb.commit()
+    if edb is not db:
+        db.commit()
     return {"status": "deleted"}
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -216,24 +220,29 @@ def create_authorization(
     db: Session = Depends(get_db)
 ):
     """Tworzy autoryzację (dostęp) do projektu dla innej tożsamości."""
-    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True)
+    edb = resolve_entity_db(db, project_id)
+    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True, edb=edb)
     
     # Tylko owner może dawać autoryzacje
     if role != AuthorizationRole.OWNER:
         raise HTTPException(status_code=403, detail="Tylko właściciel może nadawać autoryzacje")
     
-    # Sprawdź czy tożsamość istnieje
+    # Sprawdź czy tożsamość istnieje (main DB)
     target_identity = db.query(Identity).filter(Identity.id == data.identity_id).first()
     if not target_identity:
         raise HTTPException(status_code=404, detail="Tożsamość nie znaleziona")
     
-    # Sprawdź czy już ma autoryzację
-    existing = db.query(ProjectAuthorization).filter(
+    # Sprawdź czy już ma autoryzację (entity DB)
+    existing = edb.query(ProjectAuthorization).filter(
         ProjectAuthorization.project_id == project_id,
         ProjectAuthorization.identity_id == data.identity_id
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Tożsamość już ma autoryzację do tego projektu")
+    
+    # Sync identity stub to entity DB for FK relationships
+    if settings.USE_ENTITY_DB and edb is not db:
+        sync_identity_to_entity_db(edb, target_identity)
     
     authorization = ProjectAuthorization(
         id=str(uuid4()),
@@ -241,9 +250,8 @@ def create_authorization(
         granted_by_id=identity_id,
         **data.model_dump()
     )
-    db.add(authorization)
-    db.commit()
-    db.refresh(authorization)
+    edb.add(authorization)
+    edb.commit()
     
     return ProjectAuthorizationResponse(
         id=authorization.id,
@@ -265,12 +273,13 @@ def delete_authorization(
     db: Session = Depends(get_db)
 ):
     """Usuwa autoryzację do projektu."""
-    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True)
+    edb = resolve_entity_db(db, project_id)
+    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True, edb=edb)
     
     if role != AuthorizationRole.OWNER:
         raise HTTPException(status_code=403, detail="Tylko właściciel może usuwać autoryzacje")
     
-    authorization = db.query(ProjectAuthorization).filter(
+    authorization = edb.query(ProjectAuthorization).filter(
         ProjectAuthorization.id == auth_id,
         ProjectAuthorization.project_id == project_id
     ).first()
@@ -278,8 +287,8 @@ def delete_authorization(
     if not authorization:
         raise HTTPException(status_code=404, detail="Autoryzacja nie znaleziona")
     
-    db.delete(authorization)
-    db.commit()
+    edb.delete(authorization)
+    edb.commit()
     return {"status": "deleted"}
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -289,8 +298,9 @@ def delete_authorization(
 @router.get("/{project_id}/tasks", response_model=List[TaskResponse])
 def list_tasks(project_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Lista zadań w projekcie."""
-    project, _, _ = check_project_access(db, project_id, identity_id)
-    tasks = db.query(Task).options(
+    edb = resolve_entity_db(db, project_id)
+    project, _, _ = check_project_access(db, project_id, identity_id, edb=edb)
+    tasks = edb.query(Task).options(
         joinedload(Task.assigned_to)
     ).filter(Task.project_id == project_id).order_by(Task.period_start.desc()).all()
     return tasks
@@ -299,11 +309,12 @@ def list_tasks(project_id: str, identity_id: str = Depends(get_current_identity_
 @router.get("/{project_id}/members")
 def list_project_members(project_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Lista osób z dostępem do projektu (członkowie podmiotu + autoryzowani)."""
-    project, _, _ = check_project_access(db, project_id, identity_id)
+    edb = resolve_entity_db(db, project_id)
+    project, _, _ = check_project_access(db, project_id, identity_id, edb=edb)
 
     members = []
 
-    # Entity members
+    # Entity members (always from main DB)
     entity_members = db.query(EntityMember).options(
         joinedload(EntityMember.identity)
     ).filter(EntityMember.entity_id == project.entity_id).all()
@@ -318,8 +329,8 @@ def list_project_members(project_id: str, identity_id: str = Depends(get_current
             "source": "entity_member",
         })
 
-    # Project authorizations
-    auths = db.query(ProjectAuthorization).options(
+    # Project authorizations (entity DB)
+    auths = edb.query(ProjectAuthorization).options(
         joinedload(ProjectAuthorization.identity)
     ).filter(ProjectAuthorization.project_id == project_id).all()
     seen_ids = {m["id"] for m in members}

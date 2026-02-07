@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.entity_db import entity_db_manager
 
 # ── Logging config ──
 logging.basicConfig(
@@ -20,7 +21,7 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 logging.getLogger("multipart.multipart").setLevel(logging.WARNING)
 logging.getLogger("passlib").setLevel(logging.WARNING)
-from app.api import auth, entities, projects, tasks, firm, templates, sources
+from app.api import auth, entities, projects, tasks, firm, templates, sources, sources_flow
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -44,6 +45,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Entity DB session cleanup middleware
+@app.middleware("http")
+async def entity_db_cleanup_middleware(request: Request, call_next):
+    response = await call_next(request)
+    entity_db_manager.cleanup_sessions()
+    return response
+
 # Routery API
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(entities.router, prefix="/api/v1")
@@ -52,6 +60,7 @@ app.include_router(tasks.router, prefix="/api/v1")
 app.include_router(firm.router, prefix="/api/v1")
 app.include_router(templates.router, prefix="/api/v1")
 app.include_router(sources.router, prefix="/api/v1")
+app.include_router(sources_flow.router, prefix="/api/v1")
 
 @app.get("/")
 def root():

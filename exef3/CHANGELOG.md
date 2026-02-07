@@ -1,3 +1,28 @@
+## [1.0.8] - 2026-02-07
+
+### Summary
+
+refactor(docs): deep code analysis engine with 5 supporting modules
+
+### Docs
+
+- docs: update README
+
+### Other
+
+- update exef3/backend/app/api/access.py
+- update exef3/backend/app/api/entities.py
+- update exef3/backend/app/api/projects.py
+- update exef3/backend/app/api/sources.py
+- update exef3/backend/app/api/sources_flow.py
+- update exef3/backend/app/api/sources_helpers.py
+- update exef3/backend/app/api/tasks.py
+- update exef3/backend/app/api/templates.py
+- update exef3/backend/app/core/config.py
+- update exef3/backend/app/core/database.py
+- ... and 5 more
+
+
 ## [1.0.7] - 2026-02-06
 
 ### Summary

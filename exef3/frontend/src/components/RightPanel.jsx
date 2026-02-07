@@ -786,6 +786,9 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [duplicates, setDuplicates] = useState([]);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   useEffect(() => {
     const m = doc.metadata || {};
@@ -1013,8 +1016,8 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
         </div>
       </div>
 
-      {/* Save button */}
-      <div style={{ padding: '16px', borderTop: `1px solid ${COLORS.border}` }}>
+      {/* Save + Delete buttons */}
+      <div style={{ padding: '16px', borderTop: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <button
           onClick={handleSave}
           disabled={saving}
@@ -1028,6 +1031,67 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
         >
           {saving ? '...' : saved ? '✓ Zapisano' : 'Zapisz metadane'}
         </button>
+        {deleteError && (
+          <div style={{
+            padding: '8px 12px', fontSize: '12px', color: '#ef4444',
+            background: '#ef444415', border: '1px solid #ef444440',
+            borderRadius: '8px',
+          }}>
+            {deleteError}
+          </div>
+        )}
+        {!confirmDelete ? (
+          <button
+            onClick={() => { setConfirmDelete(true); setDeleteError(null); }}
+            style={{
+              width: '100%', padding: '10px', fontSize: '12px', fontWeight: '500',
+              background: 'transparent', border: `1px solid ${COLORS.border}`,
+              borderRadius: '8px', color: COLORS.textMuted, cursor: 'pointer',
+            }}
+          >
+            🗑️ Usuń dokument
+          </button>
+        ) : (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={async () => {
+                setDeleting(true);
+                setDeleteError(null);
+                try {
+                  await api(`/documents/${doc.id}`, { method: 'DELETE' });
+                  if (setDocuments) {
+                    setDocuments(prev => prev.filter(d => d.id !== doc.id));
+                  }
+                  onClose();
+                } catch (e) {
+                  if (!e.sessionExpired) {
+                    setDeleteError(e.message);
+                    setError(e.message);
+                  }
+                }
+                finally { setDeleting(false); setConfirmDelete(false); }
+              }}
+              disabled={deleting}
+              style={{
+                flex: 1, padding: '10px', fontSize: '12px', fontWeight: '600',
+                background: '#ef444420', border: '1px solid #ef444460',
+                borderRadius: '8px', color: '#ef4444', cursor: deleting ? 'wait' : 'pointer',
+              }}
+            >
+              {deleting ? '...' : 'Potwierdź usunięcie'}
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              style={{
+                padding: '10px 16px', fontSize: '12px', fontWeight: '500',
+                background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                borderRadius: '8px', color: COLORS.textMuted, cursor: 'pointer',
+              }}
+            >
+              Anuluj
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
