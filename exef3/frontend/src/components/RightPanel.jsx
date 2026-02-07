@@ -8,6 +8,7 @@ export default function RightPanel({
   onCreateEntity, onCreateProject, onCreateTask, onCreateDocument, onUpdateDocumentMetadata,
   loading, activeEntity, activeProject, activeTask,
   projectId, setTasks, setDocuments,
+  selectedDocs, setSelectedDocs,
   api, setSources, setError,
   setProjects, entityId, token,
 }) {
@@ -35,8 +36,8 @@ export default function RightPanel({
   if (type === 'view-document' && data) {
     return <DocumentViewPanel doc={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} projectTags={[...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])]} />;
   }
-  if ((type === 'activity-import' || type === 'activity-describe' || type === 'activity-export' || type === 'new-document') && data) {
-    return <ActivityTabbedPanel activeTab={type} data={data} onClose={onClose} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} token={token} navigate={navigate} onCreateDocument={onCreateDocument} loading={loading} />;
+  if ((type === 'activity-import' || type === 'activity-selected' || type === 'activity-export' || type === 'new-document') && data) {
+    return <ActivityTabbedPanel activeTab={type} data={data} onClose={onClose} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} token={token} navigate={navigate} onCreateDocument={onCreateDocument} loading={loading} selectedDocs={selectedDocs} setSelectedDocs={setSelectedDocs} activeProject={activeProject} />;
   }
 
   const update = (field, value) => {
@@ -617,8 +618,36 @@ function TaskViewPanel({ task, onClose, navigate, api, projectId, setTasks, setE
 function ProjectViewPanel({ data, onClose, navigate, activeTask, api, setError, setProjects, entityId }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('accountant');
+  const [inviting, setInviting] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState(null);
   const projType = PROJECT_TYPES[data.type] || { icon: '📁', label: data.type };
   const isArchived = data.is_archived;
+
+  useEffect(() => {
+    api(`/projects/${data.id}/members`).then(setMembers).catch(() => setMembers([]));
+  }, [data.id]);
+
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    setInviteMsg(null);
+    try {
+      const result = await api(`/projects/${data.id}/invite`, {
+        method: 'POST',
+        body: JSON.stringify({ email: inviteEmail.trim(), role: inviteRole }),
+      });
+      setMembers(prev => [...prev, { ...result.identity, source: 'authorization' }]);
+      setInviteEmail('');
+      setInviteMsg({ ok: true, text: `Zaproszono ${result.identity.email} jako ${inviteRole}` });
+      setTimeout(() => setInviteMsg(null), 4000);
+    } catch (e) {
+      if (!e.sessionExpired) setInviteMsg({ ok: false, text: e.message });
+    }
+    finally { setInviting(false); }
+  };
 
   const handleArchive = async () => {
     setBusy(true);
@@ -691,6 +720,104 @@ function ProjectViewPanel({ data, onClose, navigate, activeTask, api, setError, 
             background: COLORS.bgTertiary, color: COLORS.text, cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: '8px',
           }}>📋 Nowe zadanie</button>
+        </div>
+
+        {/* Share / Invite section */}
+        <div style={{
+          marginTop: '24px', paddingTop: '16px',
+          borderTop: `1px solid ${COLORS.border}`,
+        }}>
+          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '10px', textTransform: 'uppercase', fontWeight: '600' }}>
+            Udostępnij projekt
+          </div>
+
+          {/* Current members */}
+          <div style={{ marginBottom: '12px' }}>
+            {members.map(m => (
+              <div key={m.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '6px 8px', borderRadius: '6px',
+                background: COLORS.bgTertiary, marginBottom: '4px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <span style={{
+                    width: '24px', height: '24px', borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '10px', color: '#fff', fontWeight: '600', flexShrink: 0,
+                  }}>
+                    {(m.first_name?.[0] || m.email?.[0] || '?').toUpperCase()}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {m.first_name && m.last_name ? `${m.first_name} ${m.last_name}` : m.email}
+                    </div>
+                    <div style={{ fontSize: '10px', color: COLORS.textMuted }}>
+                      {m.source === 'member' ? '👤 Członek' : '🔑 Autoryzowany'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {members.length === 0 && (
+              <div style={{ fontSize: '11px', color: COLORS.textMuted, fontStyle: 'italic' }}>Brak osób</div>
+            )}
+          </div>
+
+          {/* Invite form */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <input
+              type="email"
+              placeholder="Email osoby do zaproszenia..."
+              value={inviteEmail}
+              onChange={e => setInviteEmail(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleInvite()}
+              style={{
+                width: '100%', padding: '8px 10px', fontSize: '12px',
+                background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                borderRadius: '8px', color: COLORS.text, boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <select
+                value={inviteRole}
+                onChange={e => setInviteRole(e.target.value)}
+                style={{
+                  flex: 1, padding: '8px 6px', fontSize: '11px',
+                  background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                  borderRadius: '8px', color: COLORS.text,
+                }}
+              >
+                <option value="accountant">Księgowa</option>
+                <option value="assistant">Asystent</option>
+                <option value="viewer">Podgląd</option>
+              </select>
+              <button
+                onClick={handleInvite}
+                disabled={inviting || !inviteEmail.trim()}
+                style={{
+                  padding: '8px 14px', fontSize: '12px', fontWeight: '500',
+                  background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+                  border: 'none', borderRadius: '8px', color: '#fff',
+                  cursor: inviting || !inviteEmail.trim() ? 'default' : 'pointer',
+                  opacity: inviting || !inviteEmail.trim() ? 0.5 : 1,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {inviting ? '...' : 'Zaproś'}
+              </button>
+            </div>
+            {inviteMsg && (
+              <div style={{
+                padding: '6px 10px', fontSize: '11px', borderRadius: '6px',
+                background: inviteMsg.ok ? `${COLORS.success}15` : '#ef444415',
+                color: inviteMsg.ok ? COLORS.success : '#ef4444',
+                border: `1px solid ${inviteMsg.ok ? COLORS.success + '40' : '#ef444440'}`,
+              }}>
+                {inviteMsg.text}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Archive / Delete section */}
@@ -1014,84 +1141,84 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
             }}
           />
         </div>
-      </div>
 
-      {/* Save + Delete buttons */}
-      <div style={{ padding: '16px', borderTop: `1px solid ${COLORS.border}`, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          style={{
-            width: '100%', padding: '12px', fontSize: '14px', fontWeight: '500',
-            background: saved ? COLORS.success : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
-            border: 'none', borderRadius: '8px', color: '#fff',
-            cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1,
-            transition: 'background 0.3s',
-          }}
-        >
-          {saving ? '...' : saved ? '✓ Zapisano' : 'Zapisz metadane'}
-        </button>
-        {deleteError && (
-          <div style={{
-            padding: '8px 12px', fontSize: '12px', color: '#ef4444',
-            background: '#ef444415', border: '1px solid #ef444440',
-            borderRadius: '8px',
-          }}>
-            {deleteError}
-          </div>
-        )}
-        {!confirmDelete ? (
+        {/* Save + Delete buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
           <button
-            onClick={() => { setConfirmDelete(true); setDeleteError(null); }}
+            onClick={handleSave}
+            disabled={saving}
             style={{
-              width: '100%', padding: '10px', fontSize: '12px', fontWeight: '500',
-              background: 'transparent', border: `1px solid ${COLORS.border}`,
-              borderRadius: '8px', color: COLORS.textMuted, cursor: 'pointer',
+              width: '100%', padding: '12px', fontSize: '14px', fontWeight: '500',
+              background: saved ? COLORS.success : `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+              border: 'none', borderRadius: '8px', color: '#fff',
+              cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1,
+              transition: 'background 0.3s',
             }}
           >
-            🗑️ Usuń dokument
+            {saving ? '...' : saved ? '✓ Zapisano' : 'Zapisz metadane'}
           </button>
-        ) : (
-          <div style={{ display: 'flex', gap: '8px' }}>
+          {deleteError && (
+            <div style={{
+              padding: '8px 12px', fontSize: '12px', color: '#ef4444',
+              background: '#ef444415', border: '1px solid #ef444440',
+              borderRadius: '8px',
+            }}>
+              {deleteError}
+            </div>
+          )}
+          {!confirmDelete ? (
             <button
-              onClick={async () => {
-                setDeleting(true);
-                setDeleteError(null);
-                try {
-                  await api(`/documents/${doc.id}`, { method: 'DELETE' });
-                  if (setDocuments) {
-                    setDocuments(prev => prev.filter(d => d.id !== doc.id));
-                  }
-                  onClose();
-                } catch (e) {
-                  if (!e.sessionExpired) {
-                    setDeleteError(e.message);
-                    setError(e.message);
-                  }
-                }
-                finally { setDeleting(false); setConfirmDelete(false); }
-              }}
-              disabled={deleting}
+              onClick={() => { setConfirmDelete(true); setDeleteError(null); }}
               style={{
-                flex: 1, padding: '10px', fontSize: '12px', fontWeight: '600',
-                background: '#ef444420', border: '1px solid #ef444460',
-                borderRadius: '8px', color: '#ef4444', cursor: deleting ? 'wait' : 'pointer',
-              }}
-            >
-              {deleting ? '...' : 'Potwierdź usunięcie'}
-            </button>
-            <button
-              onClick={() => setConfirmDelete(false)}
-              style={{
-                padding: '10px 16px', fontSize: '12px', fontWeight: '500',
-                background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                width: '100%', padding: '10px', fontSize: '12px', fontWeight: '500',
+                background: 'transparent', border: `1px solid ${COLORS.border}`,
                 borderRadius: '8px', color: COLORS.textMuted, cursor: 'pointer',
               }}
             >
-              Anuluj
+              🗑️ Usuń dokument
             </button>
-          </div>
-        )}
+          ) : (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={async () => {
+                  setDeleting(true);
+                  setDeleteError(null);
+                  try {
+                    await api(`/documents/${doc.id}`, { method: 'DELETE' });
+                    if (setDocuments) {
+                      setDocuments(prev => prev.filter(d => d.id !== doc.id));
+                    }
+                    onClose();
+                  } catch (e) {
+                    if (!e.sessionExpired) {
+                      setDeleteError(e.message);
+                      setError(e.message);
+                    }
+                  }
+                  finally { setDeleting(false); setConfirmDelete(false); }
+                }}
+                disabled={deleting}
+                style={{
+                  flex: 1, padding: '10px', fontSize: '12px', fontWeight: '600',
+                  background: '#ef444420', border: '1px solid #ef444460',
+                  borderRadius: '8px', color: '#ef4444', cursor: deleting ? 'wait' : 'pointer',
+                }}
+              >
+                {deleting ? '...' : 'Potwierdź usunięcie'}
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                style={{
+                  padding: '10px 16px', fontSize: '12px', fontWeight: '500',
+                  background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                  borderRadius: '8px', color: COLORS.textMuted, cursor: 'pointer',
+                }}
+              >
+                Anuluj
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
@@ -1101,15 +1228,15 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
 // ACTIVITY PANELS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setSources, setError, token, navigate, onCreateDocument, loading }) {
+function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setSources, setError, token, navigate, onCreateDocument, loading, selectedDocs, setSelectedDocs, activeProject }) {
   const TABS = [
     { id: 'activity-import', label: 'Import', icon: '📥', suffix: '/import' },
-    { id: 'activity-describe', label: 'Opis', icon: '✏️', suffix: '/describe' },
+    { id: 'activity-selected', label: `Zaznaczone${selectedDocs?.length ? ` (${selectedDocs.length})` : ''}`, icon: '☑️', suffix: '/selected' },
     { id: 'activity-export', label: 'Eksport', icon: '📤', suffix: '/export' },
     { id: 'new-document', label: 'Nowy', icon: '➕', suffix: '/document/new' },
   ];
 
-  const basePath = location.pathname.replace(/\/(import|describe|export|document\/new)$/, '');
+  const basePath = location.pathname.replace(/\/(import|selected|describe|export|document\/new)$/, '');
 
   return (
     <>
@@ -1149,8 +1276,8 @@ function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setS
       {activeTab === 'activity-import' && (
         <ImportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} token={token} navigate={navigate} />
       )}
-      {activeTab === 'activity-describe' && (
-        <DescribePanel data={data} navigate={navigate} />
+      {activeTab === 'activity-selected' && (
+        <BulkEditPanel data={data} api={api} setDocuments={setDocuments} setError={setError} selectedDocs={selectedDocs} setSelectedDocs={setSelectedDocs} navigate={navigate} activeProject={activeProject} />
       )}
       {activeTab === 'activity-export' && (
         <ExportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} navigate={navigate} />
@@ -1671,6 +1798,215 @@ function DescribePanel({ data, navigate }) {
       </div>
   );
 }
+
+function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSelectedDocs, navigate, activeProject }) {
+  const { task, documents } = data;
+  const [category, setCategory] = useState('');
+  const [tags, setTags] = useState([]);
+  const [newTag, setNewTag] = useState('');
+  const [description, setDescription] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const selected = documents.filter(d => selectedDocs?.includes(d.id));
+  const projectTags = [...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])];
+
+  const addTag = () => {
+    const t = newTag.trim();
+    if (t && !tags.includes(t)) { setTags(prev => [...prev, t]); setNewTag(''); }
+  };
+
+  const handleBulkSave = async () => {
+    if (!selectedDocs?.length) return;
+    setSaving(true);
+    setResult(null);
+    const body = { document_ids: selectedDocs };
+    if (category.trim()) body.category = category.trim();
+    if (tags.length > 0) body.tags = tags;
+    if (description.trim()) body.description = description.trim();
+
+    if (!body.category && !body.tags && !body.description) {
+      setResult({ ok: false, text: 'Wypełnij przynajmniej jedno pole' });
+      setSaving(false);
+      return;
+    }
+
+    try {
+      const res = await api('/documents/bulk-metadata', {
+        method: 'PATCH',
+        body: JSON.stringify(body),
+      });
+      setResult({ ok: true, text: `Zaktualizowano ${res.updated} z ${res.total} dokumentów` });
+      // Refresh documents
+      const updated = await api(`/tasks/${task.id}/documents`);
+      setDocuments(updated);
+      setTimeout(() => setResult(null), 4000);
+    } catch (e) {
+      if (!e.sessionExpired) setResult({ ok: false, text: e.message });
+    }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
+      {/* Selection summary */}
+      <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
+        <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>
+          Zaznaczone dokumenty
+        </div>
+        {selected.length > 0 ? (
+          <>
+            <div style={{ fontSize: '14px', fontWeight: '600', color: COLORS.primary, marginBottom: '6px' }}>
+              {selected.length} {selected.length === 1 ? 'dokument' : selected.length < 5 ? 'dokumenty' : 'dokumentów'}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '120px', overflow: 'auto' }}>
+              {selected.map(doc => (
+                <div key={doc.id} style={{ fontSize: '11px', color: COLORS.text, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ color: COLORS.primary }}>•</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {doc.number || doc.contractor_name || doc.id.slice(0, 8)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setSelectedDocs([])}
+              style={{
+                marginTop: '8px', padding: '4px 10px', fontSize: '10px',
+                background: 'transparent', border: `1px solid ${COLORS.border}`,
+                borderRadius: '6px', color: COLORS.textMuted, cursor: 'pointer',
+              }}
+            >
+              Odznacz wszystkie
+            </button>
+          </>
+        ) : (
+          <div style={{ fontSize: '12px', color: COLORS.textMuted }}>
+            Zaznacz dokumenty w tabeli (checkbox po lewej), aby edytować je zbiorczo.
+          </div>
+        )}
+      </div>
+
+      {selected.length > 0 && (
+        <>
+          {/* Category */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>
+              Kategoria (nadpisz)
+            </label>
+            <input
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              placeholder="np. IT, Biuro, Transport..."
+              style={{
+                width: '100%', padding: '10px 12px', fontSize: '13px',
+                background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                borderRadius: '8px', color: COLORS.text, boxSizing: 'border-box',
+              }}
+            />
+            {projectTags.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
+                {projectTags.map(t => (
+                  <button key={t} type="button" onClick={() => setCategory(t)} style={{
+                    padding: '3px 8px', fontSize: '10px', fontWeight: '500',
+                    background: COLORS.bgTertiary, color: COLORS.textMuted,
+                    border: `1px solid ${COLORS.border}`, borderRadius: '10px', cursor: 'pointer',
+                  }}>{t}</button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Tags */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>
+              Tagi (dodaj do istniejących)
+            </label>
+            {tags.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
+                {tags.map(t => (
+                  <span key={t} style={{
+                    fontSize: '11px', padding: '3px 8px', borderRadius: '10px',
+                    background: `${COLORS.primary}20`, color: COLORS.primary,
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                  }}>
+                    {t}
+                    <span onClick={() => setTags(prev => prev.filter(x => x !== t))}
+                      style={{ cursor: 'pointer', fontSize: '10px', opacity: 0.6 }}>×</span>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input
+                value={newTag}
+                onChange={e => setNewTag(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(); } }}
+                placeholder="Dodaj tag..."
+                style={{
+                  flex: 1, padding: '8px 10px', fontSize: '12px',
+                  background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                  borderRadius: '8px', color: COLORS.text, boxSizing: 'border-box',
+                }}
+              />
+              <button onClick={addTag} disabled={!newTag.trim()} style={{
+                padding: '8px 12px', fontSize: '12px', fontWeight: '500',
+                background: newTag.trim() ? COLORS.primary : COLORS.bgTertiary,
+                color: newTag.trim() ? '#fff' : COLORS.textMuted,
+                border: 'none', borderRadius: '8px', cursor: newTag.trim() ? 'pointer' : 'default',
+              }}>+</button>
+            </div>
+          </div>
+
+          {/* Description */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>
+              Opis (nadpisz)
+            </label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Wspólny opis dla zaznaczonych..."
+              style={{
+                width: '100%', padding: '10px 12px', fontSize: '13px',
+                background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
+                borderRadius: '8px', color: COLORS.text,
+                minHeight: '80px', resize: 'vertical',
+                fontFamily: 'inherit', boxSizing: 'border-box',
+              }}
+            />
+          </div>
+
+          {/* Save button */}
+          <button
+            onClick={handleBulkSave}
+            disabled={saving}
+            style={{
+              width: '100%', padding: '12px', fontSize: '14px', fontWeight: '500',
+              background: `linear-gradient(135deg, ${COLORS.primary}, ${COLORS.secondary})`,
+              border: 'none', borderRadius: '8px', color: '#fff',
+              cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1,
+            }}
+          >
+            {saving ? '...' : `Zapisz dla ${selected.length} dokumentów`}
+          </button>
+
+          {result && (
+            <div style={{
+              marginTop: '8px', padding: '8px 12px', fontSize: '12px', borderRadius: '8px',
+              background: result.ok ? `${COLORS.success}15` : '#ef444415',
+              color: result.ok ? COLORS.success : '#ef4444',
+              border: `1px solid ${result.ok ? COLORS.success + '40' : '#ef444440'}`,
+            }}>
+              {result.text}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 
 function ExportPanel({ data, api, setDocuments, setSources, setError, navigate }) {
   const { task, sources, documents, projectId } = data;

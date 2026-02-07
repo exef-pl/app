@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { COLORS, STATUS_CONFIG } from '../constants.js';
 
-const COL_WIDTHS = ['18%', '22%', '15%', '15%', '18%', '12%'];
+const COL_WIDTHS = ['4%', '17%', '21%', '14%', '14%', '18%', '12%'];
 
 const COLUMNS = [
   { key: 'number', label: 'Numer', align: 'left' },
@@ -18,7 +18,7 @@ const selectStyle = {
   color: COLORS.text, outline: 'none', minWidth: 0,
 };
 
-export default function TaskContentArea({ activeTask, documents, setDocuments, sources, selectedDocument, taskPath, navigate, api, setError, loading, setLoading }) {
+export default function TaskContentArea({ activeTask, documents, setDocuments, sources, selectedDocument, selectedDocs, setSelectedDocs, taskPath, navigate, api, setError, loading, setLoading }) {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSource, setFilterSource] = useState('');
@@ -184,6 +184,16 @@ export default function TaskContentArea({ activeTask, documents, setDocuments, s
             </colgroup>
             <thead>
               <tr style={{ borderBottom: `1px solid ${COLORS.border}` }}>
+                <th style={{ padding: '10px 4px', textAlign: 'center', width: COL_WIDTHS[0] }}>
+                  <input type="checkbox"
+                    checked={sorted.length > 0 && selectedDocs.length === sorted.length}
+                    onChange={e => {
+                      if (e.target.checked) setSelectedDocs(sorted.map(d => d.id));
+                      else setSelectedDocs([]);
+                    }}
+                    style={{ cursor: 'pointer', accentColor: COLORS.primary }}
+                  />
+                </th>
                 {COLUMNS.map(col => (
                   <th key={col.key}
                     onClick={() => handleSort(col.key)}
@@ -228,12 +238,23 @@ export default function TaskContentArea({ activeTask, documents, setDocuments, s
                 return sorted.map(doc => {
                 const status = STATUS_CONFIG[doc.status];
                 const isDup = doc.doc_id && idCounts[doc.doc_id] > 1;
+                const isChecked = selectedDocs.includes(doc.id);
                 return (
                   <tr key={doc.id} onClick={() => navigate(`${taskPath}/document/${doc.id}`)}
                     style={{
                       borderBottom: `1px solid ${COLORS.border}`, cursor: 'pointer',
-                      background: selectedDocument?.id === doc.id ? COLORS.bgTertiary : isDup ? '#f59e0b08' : 'transparent',
+                      background: isChecked ? `${COLORS.primary}12` : selectedDocument?.id === doc.id ? COLORS.bgTertiary : isDup ? '#f59e0b08' : 'transparent',
                     }}>
+                    <td style={{ padding: '12px 4px', textAlign: 'center' }}>
+                      <input type="checkbox" checked={isChecked}
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => {
+                          if (e.target.checked) setSelectedDocs(prev => [...prev, doc.id]);
+                          else setSelectedDocs(prev => prev.filter(id => id !== doc.id));
+                        }}
+                        style={{ cursor: 'pointer', accentColor: COLORS.primary }}
+                      />
+                    </td>
                     <td style={{ padding: '12px 8px' }}>
                       <div style={{ fontSize: '13px', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {isDup && <span title="Potencjalny duplikat" style={{ marginRight: '4px' }}>⚠️</span>}

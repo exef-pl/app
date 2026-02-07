@@ -14,6 +14,7 @@ export default function EntityPage({ panel }) {
   const [tasks, setTasks] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [sources, setSources] = useState([]);
+  const [selectedDocs, setSelectedDocs] = useState([]);
   const [projectMenu, setProjectMenu] = useState(null); // project id with open menu
   const [confirmDeleteProject, setConfirmDeleteProject] = useState(null); // project id pending delete confirm
 
@@ -51,7 +52,8 @@ export default function EntityPage({ panel }) {
 
   // Load documents when task changes
   useEffect(() => {
-    if (!taskId || !token) { setDocuments([]); return; }
+    if (!taskId || !token) { setDocuments([]); setSelectedDocs([]); return; }
+    setSelectedDocs([]);
     api(`/tasks/${taskId}/documents`).then(setDocuments).catch(e => { if (!e.sessionExpired) setError(e.message); });
   }, [taskId]);
 
@@ -175,7 +177,7 @@ export default function EntityPage({ panel }) {
   else if (panel === 'view-task' && activeTask) { panelType = 'view-task'; panelData = activeTask; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'new-task') { panelType = 'task'; panelData = null; panelClose = projectPath || entityPath; }
   else if (panel === 'activity-import' && activeTask) { panelType = 'activity-import'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
-  else if (panel === 'activity-describe' && activeTask) { panelType = 'activity-describe'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
+  else if (panel === 'activity-selected' && activeTask) { panelType = 'activity-selected'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'activity-export' && activeTask) { panelType = 'activity-export'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'new-document' && activeTask) { panelType = 'new-document'; panelData = { task: activeTask, sources, documents, projectId }; panelClose = taskPath || projectPath || entityPath; }
   else if (panel === 'view-document') { panelType = 'view-document'; panelData = selectedDocument; panelClose = taskPath || entityPath; }
@@ -432,6 +434,8 @@ export default function EntityPage({ panel }) {
           setDocuments={setDocuments}
           sources={sources}
           selectedDocument={selectedDocument}
+          selectedDocs={selectedDocs}
+          setSelectedDocs={setSelectedDocs}
           taskPath={taskPath}
           navigate={navigate}
           api={api}
@@ -464,6 +468,8 @@ export default function EntityPage({ panel }) {
             projectId={projectId}
             setTasks={setTasks}
             setDocuments={setDocuments}
+            selectedDocs={selectedDocs}
+            setSelectedDocs={setSelectedDocs}
             api={api}
             setSources={setSources}
             setError={setError}

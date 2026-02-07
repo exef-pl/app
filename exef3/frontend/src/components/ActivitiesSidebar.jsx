@@ -55,11 +55,11 @@ export default function ActivitiesSidebar({ activeTask, documents, sources, task
         onClick={() => taskPath && navigate(`${taskPath}/import`)}
         isActive={activePanel === 'activity-import'}
       />
-      <ActivityRow icon="✏️" label="Opis"
+      <ActivityRow icon="☑️" label="Zaznaczone"
         detail={`${docsNew.length} do opisu · ${docsDescribed.length} opisanych`}
         color={phaseColor(descStatus)} status={descStatus}
-        onClick={() => taskPath && navigate(`${taskPath}/describe`)}
-        isActive={activePanel === 'activity-describe'}
+        onClick={() => taskPath && navigate(`${taskPath}/selected`)}
+        isActive={activePanel === 'activity-selected'}
       />
       <ActivityRow icon="📤" label="Eksport"
         detail={`${exportSources.length} celów · ${docsDescribed.length} gotowych`}

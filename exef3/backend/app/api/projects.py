@@ -265,6 +265,92 @@ def create_authorization(
         valid_until=authorization.valid_until,
     )
 
+@router.post("/{project_id}/invite")
+def invite_to_project(
+    project_id: str,
+    data: dict,
+    identity_id: str = Depends(get_current_identity_id),
+    db: Session = Depends(get_db),
+):
+    """Zaprasza osobę do projektu po adresie email.
+    
+    Body: { email, role?, can_describe?, can_approve?, can_export? }
+    """
+    edb = resolve_entity_db(db, project_id)
+    project, access_type, role = check_project_access(db, project_id, identity_id, require_edit=True, edb=edb)
+
+    membership = db.query(EntityMember).filter(
+        EntityMember.entity_id == project.entity_id,
+        EntityMember.identity_id == identity_id,
+    ).first()
+    if not membership or (membership.role != AuthorizationRole.OWNER and not membership.can_manage_projects):
+        raise HTTPException(status_code=403, detail="Brak uprawnień do zapraszania osób")
+
+    email = (data.get("email") or "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Podaj adres email")
+
+    target = db.query(Identity).filter(Identity.email == email).first()
+    if not target:
+        raise HTTPException(status_code=404, detail=f"Nie znaleziono użytkownika z adresem {email}")
+
+    if target.id == identity_id:
+        raise HTTPException(status_code=400, detail="Nie możesz zaprosić siebie")
+
+    # Check if already has access (entity member or authorization)
+    is_member = db.query(EntityMember).filter(
+        EntityMember.entity_id == project.entity_id,
+        EntityMember.identity_id == target.id,
+    ).first()
+    if is_member:
+        raise HTTPException(status_code=400, detail="Ta osoba jest już członkiem podmiotu")
+
+    existing_auth = edb.query(ProjectAuthorization).filter(
+        ProjectAuthorization.project_id == project_id,
+        ProjectAuthorization.identity_id == target.id,
+    ).first()
+    if existing_auth:
+        raise HTTPException(status_code=400, detail="Ta osoba ma już dostęp do tego projektu")
+
+    invite_role = data.get("role", "accountant")
+    if invite_role not in ("accountant", "assistant", "viewer"):
+        invite_role = "accountant"
+
+    if settings.USE_ENTITY_DB and edb is not db:
+        sync_identity_to_entity_db(edb, target)
+
+    authorization = ProjectAuthorization(
+        id=str(uuid4()),
+        project_id=project_id,
+        identity_id=target.id,
+        granted_by_id=identity_id,
+        role=invite_role,
+        can_view=True,
+        can_describe=data.get("can_describe", invite_role in ("accountant", "assistant")),
+        can_approve=data.get("can_approve", invite_role == "accountant"),
+        can_export=data.get("can_export", invite_role == "accountant"),
+    )
+    edb.add(authorization)
+    edb.commit()
+
+    log.info("INVITE: project=%s email=%s role=%s by=%s", project_id[:8], email, invite_role, identity_id[:8])
+
+    return {
+        "id": authorization.id,
+        "identity": {
+            "id": target.id,
+            "email": target.email,
+            "first_name": target.first_name,
+            "last_name": target.last_name,
+        },
+        "role": authorization.role.value if hasattr(authorization.role, 'value') else authorization.role,
+        "can_view": authorization.can_view,
+        "can_describe": authorization.can_describe,
+        "can_approve": authorization.can_approve,
+        "can_export": authorization.can_export,
+    }
+
+
 @router.delete("/{project_id}/authorizations/{auth_id}")
 def delete_authorization(
     project_id: str,

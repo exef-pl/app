@@ -289,6 +289,75 @@ def update_document_metadata(
              metadata.version, document.status, identity_id[:8])
     return document
 
+@router.patch("/documents/bulk-metadata")
+def bulk_update_metadata(
+    data: dict,
+    identity_id: str = Depends(get_current_identity_id),
+    db: Session = Depends(get_db),
+):
+    """Aktualizuje metadane wielu dokumentów naraz.
+    
+    Body: { document_ids: [...], category?, tags?, description? }
+    Ustawia podane pola we WSZYSTKICH podanych dokumentach.
+    """
+    doc_ids = data.get("document_ids", [])
+    if not doc_ids:
+        raise HTTPException(status_code=400, detail="Brak document_ids")
+
+    fields = {}
+    if "category" in data: fields["category"] = data["category"]
+    if "tags" in data: fields["tags"] = data["tags"]
+    if "description" in data: fields["description"] = data["description"]
+    if not fields:
+        raise HTTPException(status_code=400, detail="Brak pól do aktualizacji")
+
+    updated = 0
+    edbs = set()
+    for doc_id in doc_ids:
+        edb = resolve_entity_db(db, doc_id)
+        document = edb.query(Document).options(joinedload(Document.document_metadata)).filter(Document.id == doc_id).first()
+        if not document:
+            continue
+
+        task, project, role = check_task_access(db, document.task_id, identity_id, require_edit=True, edb=edb)
+
+        if document.document_metadata:
+            metadata = document.document_metadata
+        else:
+            metadata = DocumentMetadata(id=str(uuid4()), document_id=doc_id)
+            edb.add(metadata)
+            edb.flush()
+
+        for key, value in fields.items():
+            if key == "tags" and isinstance(value, list):
+                existing = metadata.tags or []
+                merged = list(dict.fromkeys(existing + value))
+                metadata.tags = merged
+            else:
+                setattr(metadata, key, value)
+
+        metadata.edited_by_id = identity_id
+        metadata.edited_at = datetime.utcnow()
+        metadata.version = (metadata.version or 0) + 1
+
+        if document.status == DocumentStatus.NEW:
+            document.status = DocumentStatus.DESCRIBED
+            task_obj = edb.query(Task).filter(Task.id == document.task_id).first()
+            if task_obj:
+                task_obj.docs_described += 1
+
+        edbs.add(id(edb))
+        updated += 1
+
+    edb.commit()
+    if edb is not db:
+        db.commit()
+
+    log.info("BULK metadata: %d/%d docs updated fields=%s by=%s",
+             updated, len(doc_ids), list(fields.keys()), identity_id[:8])
+    return {"updated": updated, "total": len(doc_ids)}
+
+
 @router.post("/documents/{document_id}/approve", response_model=DocumentResponse)
 def approve_document(document_id: str, identity_id: str = Depends(get_current_identity_id), db: Session = Depends(get_db)):
     """Zatwierdza dokument."""
