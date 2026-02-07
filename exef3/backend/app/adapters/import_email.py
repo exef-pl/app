@@ -1,4 +1,14 @@
-"""Email (IMAP) import adapter — connects to IMAP, parses invoice emails."""
+"""Email (IMAP) import adapter — connects to IMAP, parses email attachments.
+
+Supports configurable filters to separate different document types
+(invoices, CVs, contracts, etc.) from the same mailbox:
+
+- subject_pattern:  regex applied to email subject
+- sender_filter:    comma-separated emails/domains (e.g. "@pracuj.pl,hr@firma.pl")
+- attachment_extensions: list of allowed extensions (e.g. ["pdf","docx"])
+- filename_pattern: regex applied to attachment filename
+- doc_type:         document type assigned to results (default: "invoice")
+"""
 import imaplib
 import email
 import re
@@ -10,15 +20,62 @@ from app.adapters.base import BaseImportAdapter, ImportResult
 
 
 class EmailImportAdapter(BaseImportAdapter):
-    """Import invoices from IMAP email server.
+    """Import documents from IMAP email server.
 
-    Scans inbox (or configured folder) for emails with invoice attachments
-    or invoice data in the body. Parses PDF/XML attachments and plain-text
-    invoice summaries.
+    Scans inbox (or configured folder) for emails matching configured filters.
+    Supports invoice-specific parsing (CSV/XML/PDF) as well as generic
+    attachment import for CVs, contracts, and other document types.
     """
+
+    def _load_filters(self):
+        """Load filter settings from DataSource config."""
+        self._doc_type = self.config.get("doc_type", "invoice")
+        self._subject_pattern = None
+        sp = self.config.get("subject_pattern")
+        if sp:
+            try:
+                self._subject_pattern = re.compile(sp)
+            except re.error:
+                pass
+        self._sender_filter = []
+        sf = self.config.get("sender_filter", "")
+        if sf:
+            self._sender_filter = [s.strip().lower() for s in sf.split(",") if s.strip()]
+        self._attachment_extensions = None
+        ae = self.config.get("attachment_extensions")
+        if ae and isinstance(ae, list):
+            self._attachment_extensions = [ext.lower().lstrip(".") for ext in ae]
+        self._filename_pattern = None
+        fp = self.config.get("filename_pattern")
+        if fp:
+            try:
+                self._filename_pattern = re.compile(fp)
+            except re.error:
+                pass
+
+    def _match_email(self, subject: str, from_addr: str) -> bool:
+        """Check if an email passes subject and sender filters."""
+        if self._subject_pattern and not self._subject_pattern.search(subject):
+            return False
+        if self._sender_filter:
+            from_lower = from_addr.lower()
+            if not any(f in from_lower for f in self._sender_filter):
+                return False
+        return True
+
+    def _match_attachment(self, filename: str) -> bool:
+        """Check if an attachment passes extension and filename filters."""
+        if self._attachment_extensions:
+            ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+            if ext not in self._attachment_extensions:
+                return False
+        if self._filename_pattern and not self._filename_pattern.search(filename):
+            return False
+        return True
 
     def fetch(self, period_start: Optional[date] = None,
               period_end: Optional[date] = None) -> List[ImportResult]:
+        self._load_filters()
         host = self.config.get("host", "")
         port = int(self.config.get("port", 993))
         username = self.config.get("username", "")
@@ -60,6 +117,13 @@ class EmailImportAdapter(BaseImportAdapter):
 
                 raw = msg_data[0][1]
                 msg = email.message_from_bytes(raw)
+
+                # Apply email-level filters (subject, sender)
+                subject = self._decode_header(msg.get("Subject", ""))
+                from_addr = self._decode_header(msg.get("From", ""))
+                if not self._match_email(subject, from_addr):
+                    continue
+
                 docs = self._parse_email(msg, msg_id.decode())
                 results.extend(docs)
 
@@ -86,11 +150,12 @@ class EmailImportAdapter(BaseImportAdapter):
             return []
 
     def _parse_email(self, msg, msg_id: str) -> List[ImportResult]:
-        """Parse a single email for invoice data."""
+        """Parse a single email for document data."""
         results = []
         subject = self._decode_header(msg.get("Subject", ""))
         from_addr = self._decode_header(msg.get("From", ""))
         msg_date = email.utils.parsedate_to_datetime(msg.get("Date", "")) if msg.get("Date") else None
+        is_invoice = self._doc_type == "invoice"
 
         # Check attachments
         for part in msg.walk():
@@ -104,27 +169,62 @@ class EmailImportAdapter(BaseImportAdapter):
             if not payload:
                 continue
 
-            # Parse CSV attachments as potential invoice lists
-            if filename.lower().endswith(".csv"):
-                csv_docs = self._parse_csv_attachment(payload, filename, from_addr, msg_date)
-                results.extend(csv_docs)
-            # Parse XML (potential KSeF/e-invoice)
-            elif filename.lower().endswith(".xml"):
-                xml_docs = self._parse_xml_attachment(payload, filename, from_addr, msg_date)
-                results.extend(xml_docs)
-            # PDF — extract metadata from filename
-            elif filename.lower().endswith(".pdf"):
-                doc = self._parse_pdf_filename(filename, from_addr, msg_date)
+            # Apply attachment-level filters
+            if not self._match_attachment(filename):
+                continue
+
+            lower_name = filename.lower()
+
+            if is_invoice:
+                # Invoice-specific parsing paths
+                if lower_name.endswith(".csv"):
+                    csv_docs = self._parse_csv_attachment(payload, filename, from_addr, msg_date)
+                    results.extend(csv_docs)
+                elif lower_name.endswith(".xml"):
+                    xml_docs = self._parse_xml_attachment(payload, filename, from_addr, msg_date)
+                    results.extend(xml_docs)
+                elif lower_name.endswith(".pdf"):
+                    doc = self._parse_pdf_filename(filename, from_addr, msg_date)
+                    if doc:
+                        results.append(doc)
+            else:
+                # Generic document import (CV, contract, etc.)
+                doc = self._parse_generic_attachment(
+                    filename, from_addr, subject, msg_date, msg_id
+                )
                 if doc:
                     results.append(doc)
 
-        # If no attachments, try parsing email body for invoice info
-        if not results:
+        # If no attachments found, try parsing email body (invoice mode only)
+        if not results and is_invoice:
             body_doc = self._parse_body(msg, subject, from_addr, msg_date, msg_id)
             if body_doc:
                 results.append(body_doc)
 
         return results
+
+    def _parse_generic_attachment(self, filename: str, from_addr: str,
+                                   subject: str, msg_date,
+                                   msg_id: str) -> Optional[ImportResult]:
+        """Create an ImportResult for a generic (non-invoice) attachment.
+
+        Used for CVs, contracts, and other document types where we store
+        the file reference and sender info without trying to parse
+        financial data.
+        """
+        name_no_ext = filename.rsplit(".", 1)[0] if "." in filename else filename
+        sender_name = self._extract_sender_name(from_addr)
+
+        return ImportResult(
+            doc_type=self._doc_type,
+            number=filename,
+            contractor_name=sender_name,
+            document_date=msg_date.date() if msg_date else None,
+            source="email",
+            source_id=f"email-{self._doc_type}-{msg_id}-{filename}",
+            original_filename=filename,
+            description=subject,
+        )
 
     def _parse_csv_attachment(self, payload: bytes, filename: str,
                               from_addr: str, msg_date) -> List[ImportResult]:
@@ -157,7 +257,7 @@ class EmailImportAdapter(BaseImportAdapter):
 
             if number or gross or contractor:
                 results.append(ImportResult(
-                    doc_type="invoice",
+                    doc_type=self._doc_type,
                     number=number,
                     contractor_name=contractor,
                     contractor_nip=self._clean_nip(nip),
@@ -204,7 +304,7 @@ class EmailImportAdapter(BaseImportAdapter):
 
             if number or gross or contractor:
                 results.append(ImportResult(
-                    doc_type="invoice",
+                    doc_type=self._doc_type,
                     number=number,
                     contractor_name=contractor,
                     contractor_nip=self._clean_nip(nip),
@@ -227,7 +327,7 @@ class EmailImportAdapter(BaseImportAdapter):
         number = fv_match.group(0).replace("_", "/") if fv_match else name
 
         return ImportResult(
-            doc_type="invoice",
+            doc_type=self._doc_type,
             number=number,
             contractor_name=self._extract_sender_name(from_addr),
             document_date=msg_date.date() if msg_date else None,
@@ -261,7 +361,7 @@ class EmailImportAdapter(BaseImportAdapter):
 
         if fv_match or amount_match:
             return ImportResult(
-                doc_type="invoice",
+                doc_type=self._doc_type,
                 number=fv_match.group(0).strip() if fv_match else None,
                 contractor_name=self._extract_sender_name(from_addr),
                 contractor_nip=self._clean_nip(nip_match.group(1)) if nip_match else None,

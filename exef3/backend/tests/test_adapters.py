@@ -87,6 +87,116 @@ class TestEmailImportAdapter:
         assert results == []
 
 
+class TestEmailImportFilters:
+    """Tests for EmailImportAdapter filtering (subject, sender, extensions, filename, doc_type)."""
+
+    def _adapter(self, **overrides):
+        from app.adapters.import_email import EmailImportAdapter
+        config = {
+            "host": "test-imap", "port": 143,
+            "username": "testuser", "password": "testpass",
+            "folder": "INBOX", "days_back": 60,
+        }
+        config.update(overrides)
+        return EmailImportAdapter(config)
+
+    def test_default_doc_type_is_invoice(self):
+        a = self._adapter()
+        a._load_filters()
+        assert a._doc_type == "invoice"
+
+    def test_custom_doc_type(self):
+        a = self._adapter(doc_type="cv")
+        a._load_filters()
+        assert a._doc_type == "cv"
+
+    def test_subject_pattern_match(self):
+        a = self._adapter(subject_pattern="(?i)(faktura|invoice)")
+        a._load_filters()
+        assert a._match_email("Faktura FV/001/2026", "test@test.com") is True
+        assert a._match_email("CV kandydata - Jan Kowalski", "hr@firma.pl") is False
+
+    def test_subject_pattern_none_passes_all(self):
+        a = self._adapter()
+        a._load_filters()
+        assert a._match_email("anything", "anyone@any.com") is True
+
+    def test_sender_filter_match(self):
+        a = self._adapter(sender_filter="@pracuj.pl,hr@firma.pl")
+        a._load_filters()
+        assert a._match_email("CV", "notifications@pracuj.pl") is True
+        assert a._match_email("CV", "hr@firma.pl") is True
+        assert a._match_email("CV", "random@other.com") is False
+
+    def test_sender_filter_empty_passes_all(self):
+        a = self._adapter()
+        a._load_filters()
+        assert a._match_email("test", "anyone@anywhere.com") is True
+
+    def test_attachment_extensions_filter(self):
+        a = self._adapter(attachment_extensions=["pdf", "docx"])
+        a._load_filters()
+        assert a._match_attachment("CV_Jan_Kowalski.pdf") is True
+        assert a._match_attachment("resume.docx") is True
+        assert a._match_attachment("data.csv") is False
+        assert a._match_attachment("invoice.xml") is False
+
+    def test_attachment_extensions_none_passes_all(self):
+        a = self._adapter()
+        a._load_filters()
+        assert a._match_attachment("anything.xyz") is True
+
+    def test_filename_pattern_match(self):
+        a = self._adapter(filename_pattern="(?i)(CV|resume)")
+        a._load_filters()
+        assert a._match_attachment("CV_Jan_Kowalski.pdf") is True
+        assert a._match_attachment("resume_2026.docx") is True
+        assert a._match_attachment("FV_001_2026.pdf") is False
+
+    def test_combined_filters(self):
+        a = self._adapter(
+            attachment_extensions=["pdf", "docx"],
+            filename_pattern="(?i)(CV|resume)",
+        )
+        a._load_filters()
+        assert a._match_attachment("CV_Jan.pdf") is True
+        assert a._match_attachment("CV_Jan.csv") is False  # wrong extension
+        assert a._match_attachment("FV_001.pdf") is False  # wrong filename
+
+    def test_invalid_regex_ignored(self):
+        a = self._adapter(subject_pattern="[invalid(", filename_pattern="[bad(")
+        a._load_filters()
+        assert a._subject_pattern is None
+        assert a._filename_pattern is None
+        # With no valid patterns, everything passes
+        assert a._match_email("test", "test@test.com") is True
+        assert a._match_attachment("test.pdf") is True
+
+    def test_fetch_with_doc_type_cv(self):
+        """Fetch with doc_type=cv returns results with correct doc_type."""
+        a = self._adapter(doc_type="cv")
+        results = a.fetch(date(2026, 1, 1), date(2026, 12, 31))
+        # All results should have doc_type="cv" instead of "invoice"
+        for r in results:
+            assert r.doc_type == "cv"
+
+    def test_subject_filter_reduces_results(self):
+        """Subject filter should reduce the number of results."""
+        a_all = self._adapter()
+        a_filtered = self._adapter(subject_pattern="(?i)ZZZZNONEXISTENT")
+        all_results = a_all.fetch(date(2026, 1, 1), date(2026, 12, 31))
+        filtered_results = a_filtered.fetch(date(2026, 1, 1), date(2026, 12, 31))
+        assert len(all_results) > len(filtered_results)
+        assert len(filtered_results) == 0
+
+    def test_extension_filter_reduces_results(self):
+        """Extension filter for docx only should return fewer or no results (test emails have csv/xml/pdf)."""
+        a = self._adapter(attachment_extensions=["docx"], doc_type="cv")
+        results = a.fetch(date(2026, 1, 1), date(2026, 12, 31))
+        # Test IMAP has no .docx attachments, so this should return 0
+        assert len(results) == 0
+
+
 class TestKsefImportAdapter:
     """Tests for KsefImportAdapter against mock-ksef Docker service."""
 

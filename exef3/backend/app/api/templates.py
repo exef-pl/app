@@ -384,6 +384,10 @@ def _generate_default_sources(project: Project) -> list:
                     "password": "testpass",
                     "folder": "INBOX",
                     "days_back": 90,
+                    "doc_type": "cv",
+                    "subject_pattern": "(?i)(CV|kandydat|aplikacja|rekrutacja|resume)",
+                    "attachment_extensions": ["pdf", "docx", "doc", "odt", "rtf"],
+                    "filename_pattern": "(?i)(CV|resume|życiorys|lebenslauf)",
                 },
             ),
             DataSource(
