@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { COLORS, STATUS_CONFIG } from '../constants.js';
-import { getTableConfig, getStatsLabels } from '../docTypeConfig.js';
+import { getTableConfig, getStatsLabels, getDetailConfig, getContextLabels } from '../docTypeConfig.js';
 
 const selectStyle = {
   padding: '5px 8px', fontSize: '11px', borderRadius: '6px',
@@ -71,6 +71,8 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
   const uniqueSources = [...new Set(docs.map(d => d.source).filter(Boolean))];
   const tc = getTableConfig(activeProject?.type);
   const sl = getStatsLabels(activeProject?.type);
+  const dc = getDetailConfig(activeProject?.type);
+  const cl = getContextLabels(activeProject?.type);
   const columns = tc.columns;
   const colWidths = tc.colWidths;
 
@@ -141,7 +143,7 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={selectStyle}>
             <option value="">Wszystkie statusy</option>
             {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-              <option key={k} value={k}>{v.icon} {v.label}</option>
+              <option key={k} value={k}>{v.icon} {dc.status[k] || v.label}</option>
             ))}
           </select>
           {uniqueSources.length > 1 && (
@@ -219,7 +221,7 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
                   return (
                     <tr>
                       <td colSpan={columns.length + 1} style={{ padding: '32px', textAlign: 'center', color: COLORS.textMuted, fontSize: '13px' }}>
-                        Brak dokumentów pasujących do filtrów
+                        {cl.emptyLabel} pasujących do filtrów
                         <div style={{ marginTop: '8px' }}>
                           <button onClick={clearFilters} style={{
                             padding: '4px 12px', fontSize: '11px', borderRadius: '6px',
@@ -259,7 +261,7 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
                             {doc.contractor_name || doc.number || '—'}
                           </div>
                           <div style={{ fontSize: '10px', color: COLORS.textMuted }}>
-                            {doc.contractor_nip ? (activeProject?.type === 'rekrutacja' ? doc.contractor_nip : `NIP: ${doc.contractor_nip}`) : ''}
+                            {doc.contractor_nip ? `${tc.nipPrefix}${doc.contractor_nip}` : ''}
                           </div>
                         </td>
                       );
@@ -366,8 +368,8 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             justifyContent: 'center', height: '100%', color: COLORS.textMuted,
           }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📄</div>
-            <div style={{ fontSize: '14px' }}>Brak dokumentów w tym zadaniu</div>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>{dc.icon}</div>
+            <div style={{ fontSize: '14px' }}>{cl.emptyLabel} w tym zadaniu</div>
             <div style={{ fontSize: '12px', marginTop: '8px' }}>Użyj Import w panelu Czynności po lewej</div>
           </div>
         )}

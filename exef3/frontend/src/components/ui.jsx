@@ -26,6 +26,19 @@ export function InputField({ label, value, onChange, type = 'text', required = f
   );
 }
 
+export function DocFormFields({ fields, formData, update }) {
+  return fields.map(f => (
+    <InputField
+      key={f.key}
+      label={f.label}
+      type={f.type || 'text'}
+      value={formData[f.key] || ''}
+      placeholder={f.placeholder || ''}
+      onChange={(v) => update(f.key, f.type === 'number' ? (parseFloat(v) || null) : v)}
+    />
+  ));
+}
+
 export function InfoRow({ label, value }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontSize: '12px' }}>

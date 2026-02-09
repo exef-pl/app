@@ -1,7 +1,8 @@
 import React from 'react';
 import { COLORS } from '../constants.js';
+import { getTabsConfig, getContextLabels } from '../docTypeConfig.js';
 
-export default function ActivitiesSidebar({ activeTask, documents, sources, taskPath, navigate, activePanel }) {
+export default function ActivitiesSidebar({ activeTask, documents, sources, taskPath, navigate, activePanel, activeProject }) {
   const importSources = sources.filter(s => s.direction === 'import');
   const exportSources = sources.filter(s => s.direction === 'export');
 
@@ -45,28 +46,36 @@ export default function ActivitiesSidebar({ activeTask, documents, sources, task
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-      <ActivityRow icon="➕" label="Dodaj" detail="Nowy dokument"
-        color={COLORS.primary} status={null}
-        onClick={() => taskPath && navigate(`${taskPath}/document/new`)}
-      />
-      <ActivityRow icon="📥" label="Import"
-        detail={`${importSources.length} źródeł · ${docsTotal} dok.`}
-        color={phaseColor(impStatus)} status={impStatus}
-        onClick={() => taskPath && navigate(`${taskPath}/import`)}
-        isActive={activePanel === 'activity-import'}
-      />
-      <ActivityRow icon="☑️" label="Zaznaczone"
-        detail={`${docsNew.length} do opisu · ${docsDescribed.length} opisanych`}
-        color={phaseColor(descStatus)} status={descStatus}
-        onClick={() => taskPath && navigate(`${taskPath}/selected`)}
-        isActive={activePanel === 'activity-selected'}
-      />
-      <ActivityRow icon="📤" label="Eksport"
-        detail={`${exportSources.length} celów · ${docsDescribed.length} gotowych`}
-        color={phaseColor(expStatus)} status={expStatus}
-        onClick={() => taskPath && navigate(`${taskPath}/export`)}
-        isActive={activePanel === 'activity-export'}
-      />
+      {(() => {
+        const tc = getTabsConfig(activeProject?.type);
+        const cl = getContextLabels(activeProject?.type);
+        return (
+          <>
+            <ActivityRow icon="➕" label="Dodaj" detail={tc.newLabel}
+              color={COLORS.primary} status={null}
+              onClick={() => taskPath && navigate(`${taskPath}/document/new`)}
+            />
+            <ActivityRow icon="📥" label="Import"
+              detail={`${importSources.length} źródeł · ${docsTotal} dok.`}
+              color={phaseColor(impStatus)} status={impStatus}
+              onClick={() => taskPath && navigate(`${taskPath}/import`)}
+              isActive={activePanel === 'activity-import'}
+            />
+            <ActivityRow icon="☑️" label="Zaznaczone"
+              detail={`${docsNew.length} ${cl.countNew} · ${docsDescribed.length} ${cl.countDescribed}`}
+              color={phaseColor(descStatus)} status={descStatus}
+              onClick={() => taskPath && navigate(`${taskPath}/selected`)}
+              isActive={activePanel === 'activity-selected'}
+            />
+            <ActivityRow icon="📤" label="Eksport"
+              detail={`${exportSources.length} celów · ${docsDescribed.length} gotowych`}
+              color={phaseColor(expStatus)} status={expStatus}
+              onClick={() => taskPath && navigate(`${taskPath}/export`)}
+              isActive={activePanel === 'activity-export'}
+            />
+          </>
+        );
+      })()}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { COLORS, API_URL, ENTITY_TYPES, PROJECT_TYPES } from '../constants.js';
-import { getDetailConfig, getTabsConfig } from '../docTypeConfig.js';
-import { InputField, InfoRow } from './ui.jsx';
+import { getDetailConfig, getTabsConfig, getFormConfig, getStatsLabels, getContextLabels } from '../docTypeConfig.js';
+import { InputField, InfoRow, DocFormFields } from './ui.jsx';
 import SourceConfigPanel from './SourceConfigPanel.jsx';
 
 export default function RightPanel({ 
@@ -32,7 +32,7 @@ export default function RightPanel({
     return <ProjectViewPanel data={data} onClose={onClose} navigate={navigate} activeTask={activeTask} api={api} setError={setError} setProjects={setProjects} entityId={entityId} />;
   }
   if (type === 'view-task' && data) {
-    return <TaskViewPanel task={data} onClose={onClose} navigate={navigate} api={api} projectId={projectId} setTasks={setTasks} setError={setError} />;
+    return <TaskViewPanel task={data} onClose={onClose} navigate={navigate} api={api} projectId={projectId} setTasks={setTasks} setError={setError} activeProject={activeProject} />;
   }
   if (type === 'view-document' && data) {
     return <DocumentViewPanel doc={data} onClose={onClose} api={api} setDocuments={setDocuments} setError={setError} projectTags={[...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])]} navigate={navigate} entityId={entityId} activeProject={activeProject} />;
@@ -159,7 +159,10 @@ export default function RightPanel({
         )}
 
         {/* DOCUMENT FORM */}
-        {type === 'document' && (
+        {type === 'document' && (() => {
+          const dvc = getDetailConfig(activeProject?.type);
+          const fc = getFormConfig(activeProject?.type);
+          return (
           <>
             {data ? (
               <>
@@ -171,13 +174,11 @@ export default function RightPanel({
                   marginBottom: '16px',
                 }}>
                   <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>
-                    Dane zaimportowane
+                    {dvc.sectionLabel}
                   </div>
-                  <InfoRow label="Numer" value={data.number} />
-                  <InfoRow label="Kontrahent" value={data.contractor_name} />
-                  <InfoRow label="NIP" value={data.contractor_nip} />
-                  <InfoRow label="Kwota brutto" value={`${data.amount_gross?.toLocaleString('pl-PL')} ${data.currency}`} />
-                  <InfoRow label="Data" value={data.document_date} />
+                  {dvc.fields(data).map(([label, value]) => (
+                    <InfoRow key={label} label={label} value={value} />
+                  ))}
                 </div>
                 
                 {/* Metadane - edytowalne */}
@@ -185,17 +186,17 @@ export default function RightPanel({
                   Metadane (edytowalne)
                 </div>
                 <InputField 
-                  label="Kategoria" 
+                  label={dvc.categoryLabel}
                   value={formData.metadata?.category || formData.category || ''} 
                   onChange={(v) => update('category', v)} 
-                  placeholder="np. IT - Hosting"
+                  placeholder={dvc.categoryPlaceholder}
                 />
                 <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: COLORS.textMuted, marginBottom: '6px' }}>Opis</label>
+                  <label style={{ display: 'block', fontSize: '12px', color: COLORS.textMuted, marginBottom: '6px' }}>{dvc.descLabel}</label>
                   <textarea
                     value={formData.metadata?.description || formData.description || ''}
                     onChange={(e) => update('description', e.target.value)}
-                    placeholder="Dodaj opis..."
+                    placeholder={dvc.descPlaceholder}
                     style={{
                       width: '100%',
                       padding: '12px',
@@ -213,19 +214,11 @@ export default function RightPanel({
                 </div>
               </>
             ) : (
-              <>
-                {/* Nowy dokument */}
-                <InputField label="Numer dokumentu" value={formData.number || ''} onChange={(v) => update('number', v)} />
-                <InputField label="Kontrahent" value={formData.contractor_name || ''} onChange={(v) => update('contractor_name', v)} />
-                <InputField label="NIP kontrahenta" value={formData.contractor_nip || ''} onChange={(v) => update('contractor_nip', v)} />
-                <InputField label="Kwota netto" value={formData.amount_net || ''} onChange={(v) => update('amount_net', parseFloat(v) || null)} type="number" />
-                <InputField label="VAT" value={formData.amount_vat || ''} onChange={(v) => update('amount_vat', parseFloat(v) || null)} type="number" />
-                <InputField label="Kwota brutto" value={formData.amount_gross || ''} onChange={(v) => update('amount_gross', parseFloat(v) || null)} type="number" />
-                <InputField label="Data dokumentu" value={formData.document_date || ''} onChange={(v) => update('document_date', v)} type="date" />
-              </>
+              <DocFormFields fields={fc.fields} formData={formData} update={update} />
             )}
           </>
-        )}
+          );
+        })()}
       </form>
 
       <div style={{
@@ -248,7 +241,7 @@ export default function RightPanel({
             opacity: loading ? 0.7 : 1,
           }}
         >
-          {loading ? '...' : data ? 'Zapisz' : 'Utwórz'}
+          {loading ? '...' : data ? 'Zapisz' : getFormConfig(activeProject?.type).submitLabel}
         </button>
       </div>
     </>
@@ -446,7 +439,7 @@ function ProjectTagsEditor({ tags, onChange }) {
   );
 }
 
-function TaskViewPanel({ task, onClose, navigate, api, projectId, setTasks, setError }) {
+function TaskViewPanel({ task, onClose, navigate, api, projectId, setTasks, setError, activeProject }) {
   const [members, setMembers] = useState([]);
   const [assigning, setAssigning] = useState(false);
 
@@ -519,10 +512,10 @@ function TaskViewPanel({ task, onClose, navigate, api, projectId, setTasks, setE
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
             <span style={{ color: COLORS.textMuted }}>Dokumenty</span>
-            <span style={{ fontWeight: '500' }}>{task.docs_described}/{task.docs_total} opisanych</span>
+            <span style={{ fontWeight: '500' }}>{task.docs_described}/{task.docs_total} {getContextLabels(activeProject?.type).countDescribed}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginTop: '4px' }}>
-            <span style={{ color: COLORS.textMuted }}>Wyeksportowane</span>
+            <span style={{ color: COLORS.textMuted }}>{getStatsLabels(activeProject?.type).exported}</span>
             <span style={{ fontWeight: '500' }}>{task.docs_exported}/{task.docs_total}</span>
           </div>
         </div>
@@ -1295,14 +1288,19 @@ function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setS
       {activeTab === 'activity-selected' && (
         <BulkEditPanel data={data} api={api} setDocuments={setDocuments} setError={setError} selectedDocs={selectedDocs} setSelectedDocs={setSelectedDocs} navigate={navigate} activeProject={activeProject} />
       )}
-      {activeTab === 'activity-duplicates' && (
+      {activeTab === 'activity-duplicates' && tabsCfg.showDuplicates && (
         <DuplicatesPanel data={data} api={api} setDocuments={setDocuments} setError={setError} navigate={navigate} />
       )}
+      {activeTab === 'activity-duplicates' && !tabsCfg.showDuplicates && (() => {
+        const bp = location.pathname.replace(/\/duplicates$/, '/import');
+        setTimeout(() => navigate(bp), 0);
+        return null;
+      })()}
       {activeTab === 'activity-export' && (
         <ExportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} navigate={navigate} />
       )}
       {activeTab === 'new-document' && (
-        <NewDocumentPanel onCreateDocument={onCreateDocument} loading={loading} />
+        <NewDocumentPanel onCreateDocument={onCreateDocument} loading={loading} activeProject={activeProject} />
       )}
     </>
   );
@@ -1508,9 +1506,10 @@ function DuplicatesPanel({ data, api, setDocuments, setError, navigate }) {
 }
 
 
-function NewDocumentPanel({ onCreateDocument, loading }) {
+function NewDocumentPanel({ onCreateDocument, loading, activeProject }) {
   const [formData, setFormData] = useState({});
   const update = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+  const fc = getFormConfig(activeProject?.type);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -1520,13 +1519,7 @@ function NewDocumentPanel({ onCreateDocument, loading }) {
   return (
     <>
       <form onSubmit={handleSubmit} style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
-        <InputField label="Numer dokumentu" value={formData.number || ''} onChange={(v) => update('number', v)} />
-        <InputField label="Kontrahent" value={formData.contractor_name || ''} onChange={(v) => update('contractor_name', v)} />
-        <InputField label="NIP kontrahenta" value={formData.contractor_nip || ''} onChange={(v) => update('contractor_nip', v)} />
-        <InputField label="Kwota netto" value={formData.amount_net || ''} onChange={(v) => update('amount_net', parseFloat(v) || null)} type="number" />
-        <InputField label="VAT" value={formData.amount_vat || ''} onChange={(v) => update('amount_vat', parseFloat(v) || null)} type="number" />
-        <InputField label="Kwota brutto" value={formData.amount_gross || ''} onChange={(v) => update('amount_gross', parseFloat(v) || null)} type="number" />
-        <InputField label="Data dokumentu" value={formData.document_date || ''} onChange={(v) => update('document_date', v)} type="date" />
+        <DocFormFields fields={fc.fields} formData={formData} update={update} />
       </form>
       <div style={{ padding: '16px', borderTop: `1px solid ${COLORS.border}` }}>
         <button onClick={handleSubmit} disabled={loading}
@@ -1537,7 +1530,7 @@ function NewDocumentPanel({ onCreateDocument, loading }) {
             fontSize: '14px', fontWeight: '500',
             cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1,
           }}>
-          {loading ? '...' : 'Utwórz'}
+          {loading ? '...' : fc.submitLabel}
         </button>
       </div>
     </>
@@ -2029,6 +2022,7 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const dvc = getDetailConfig(activeProject?.type);
   const selected = documents.filter(d => selectedDocs?.includes(d.id));
   const projectTags = [...new Set([...(activeProject?.categories || []), ...(activeProject?.tags || [])])];
 
@@ -2134,12 +2128,12 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
           {/* Category */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>
-              Kategoria (nadpisz)
+              {dvc.categoryLabel} (nadpisz)
             </label>
             <input
               value={category}
               onChange={e => setCategory(e.target.value)}
-              placeholder="np. IT, Biuro, Transport..."
+              placeholder={dvc.categoryPlaceholder}
               style={{
                 width: '100%', padding: '10px 12px', fontSize: '13px',
                 background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,
@@ -2162,7 +2156,7 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
           {/* Tags */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>
-              Tagi (dodaj do istniejących)
+              {dvc.tagsLabel} (dodaj do istniejących)
             </label>
             {tags.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '6px' }}>
@@ -2203,12 +2197,12 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
           {/* Description */}
           <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'block', fontSize: '11px', color: COLORS.textMuted, marginBottom: '4px', textTransform: 'uppercase' }}>
-              Opis (nadpisz)
+              {dvc.descLabel} (nadpisz)
             </label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Wspólny opis dla zaznaczonych..."
+              placeholder={dvc.descPlaceholder}
               style={{
                 width: '100%', padding: '10px 12px', fontSize: '13px',
                 background: COLORS.bgTertiary, border: `1px solid ${COLORS.border}`,

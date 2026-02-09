@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { COLORS, ENTITY_TYPES, PROJECT_TYPES, TASK_STATUS } from '../constants.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { getContextLabels } from '../docTypeConfig.js';
 import TaskContentArea from './TaskContentArea.jsx';
 import RightPanel from './RightPanel.jsx';
 
@@ -387,7 +388,7 @@ export default function EntityPage({ panel }) {
                       <div style={{ width: `${progress}%`, height: '100%', background: progress === 100 ? COLORS.success : COLORS.primary }} />
                     </div>
                     <div style={{ fontSize: '10px', color: COLORS.textMuted, marginTop: '4px' }}>
-                      {task.docs_described}/{task.docs_total} opisanych
+                      {task.docs_described}/{task.docs_total} {getContextLabels(activeProject?.type).countDescribed}
                     </div>
                   </Link>
                   <button
