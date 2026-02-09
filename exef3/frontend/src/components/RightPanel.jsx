@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { COLORS, API_URL, ENTITY_TYPES, PROJECT_TYPES } from '../constants.js';
-import { getDetailConfig, getTabsConfig, getFormConfig, getStatsLabels, getContextLabels } from '../docTypeConfig.js';
+import { getDetailConfig, getTabsConfig, getFormConfig, getStatsLabels, getContextLabels, pluralizeDoc } from '../docTypeConfig.js';
 import { InputField, InfoRow, DocFormFields } from './ui.jsx';
 import SourceConfigPanel from './SourceConfigPanel.jsx';
 
@@ -513,8 +513,8 @@ function TaskViewPanel({ task, onClose, navigate, api, projectId, setTasks, setE
             <div style={{ width: `${progress}%`, height: '100%', background: progress === 100 ? COLORS.success : COLORS.primary, transition: 'width 0.3s' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
-            <span style={{ color: COLORS.textMuted }}>Dokumenty</span>
-            <span style={{ fontWeight: '500' }}>{task.docs_described}/{task.docs_total} {getContextLabels(activeProject?.type).countDescribed}</span>
+            <span style={{ color: COLORS.textMuted }}>{cl.docsLabel || 'Dokumenty'}</span>
+            <span style={{ fontWeight: '500' }}>{task.docs_described}/{task.docs_total} {cl.countDescribed}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginTop: '4px' }}>
             <span style={{ color: COLORS.textMuted }}>{getStatsLabels(activeProject?.type).exported}</span>
@@ -699,7 +699,7 @@ function ProjectViewPanel({ data, onClose, navigate, activeTask, api, setError, 
           <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
             <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Aktywne zadanie</div>
             <InfoRow label="Nazwa" value={`${activeTask.icon} ${activeTask.name}`} />
-            <InfoRow label="Dokumenty" value={`${activeTask.docs_described}/${activeTask.docs_total} opisanych`} />
+            <InfoRow label={getContextLabels(data.type).docsLabel || 'Dokumenty'} value={`${activeTask.docs_described}/${activeTask.docs_total} ${getContextLabels(data.type).countDescribed}`} />
             <InfoRow label="Status" value={activeTask.status} />
           </div>
         )}
@@ -1735,7 +1735,7 @@ function ImportPanel({ data, api, setDocuments, setSources, setError, token, nav
         <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
           <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
           <InfoRow label="Zadanie" value={`${task.icon} ${task.name}`} />
-          <InfoRow label="Dokumenty" value={`${docsTotal} łącznie`} />
+          <InfoRow label={getContextLabels(activeProject?.type).docsLabel || 'Dokumenty'} value={`${docsTotal} łącznie`} />
           <InfoRow label="Źródła importu" value={`${importSources.length}`} />
         </div>
 
@@ -2092,12 +2092,12 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
       {/* Selection summary */}
       <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
         <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>
-          Zaznaczone dokumenty
+          Zaznaczone {(getContextLabels(activeProject?.type).docsLabel || 'dokumenty').toLowerCase()}
         </div>
         {selected.length > 0 ? (
           <>
             <div style={{ fontSize: '14px', fontWeight: '600', color: COLORS.primary, marginBottom: '6px' }}>
-              {selected.length} {selected.length === 1 ? 'dokument' : selected.length < 5 ? 'dokumenty' : 'dokumentów'}
+              {selected.length} {pluralizeDoc(selected.length, activeProject?.type)}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '120px', overflow: 'auto' }}>
               {selected.map(doc => (
@@ -2242,12 +2242,12 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
                   borderRadius: '8px', color: '#ef4444', cursor: 'pointer',
                 }}
               >
-                🗑️ Usuń {selected.length} {selected.length === 1 ? 'dokument' : selected.length < 5 ? 'dokumenty' : 'dokumentów'}
+                🗑️ Usuń {selected.length} {pluralizeDoc(selected.length, activeProject?.type)}
               </button>
             ) : (
               <div style={{ padding: '10px', background: '#ef444415', borderRadius: '8px', border: '1px solid #ef444440' }}>
                 <div style={{ fontSize: '12px', fontWeight: '600', color: '#ef4444', marginBottom: '8px' }}>
-                  Na pewno usunąć {selected.length} {selected.length === 1 ? 'dokument' : selected.length < 5 ? 'dokumenty' : 'dokumentów'}?
+                  Na pewno usunąć {selected.length} {pluralizeDoc(selected.length, activeProject?.type)}?
                 </div>
                 <div style={{ fontSize: '11px', color: COLORS.textMuted, marginBottom: '10px' }}>
                   Tej operacji nie można cofnąć.

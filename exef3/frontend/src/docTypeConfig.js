@@ -999,27 +999,28 @@ const DEFAULT_PHASE_LABELS = {
   completed: 'Zakończony', in_progress: 'W trakcie', not_started: 'Nie rozpoczęty',
 };
 
+// docsNoun: [singular, plural 2-4, plural 5+]  — Polish declension
 const CONTEXT_LABELS = {
-  invoice:          { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów' },
-  rekrutacja:       { countNew: 'do oceny',        countDescribed: 'ocenionych',       emptyLabel: 'Brak kandydatów',
+  invoice:          { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów',      docsLabel: 'Dokumenty',       docsNoun: ['dokument', 'dokumenty', 'dokumentów'] },
+  rekrutacja:       { countNew: 'do oceny',        countDescribed: 'ocenionych',       emptyLabel: 'Brak kandydatów',      docsLabel: 'Kandydaci',       docsNoun: ['kandydat', 'kandydatów', 'kandydatów'],
                       taskStatus: { pending: 'Oczekuje', in_progress: 'W trakcie', completed: 'Zakończone', exported: 'Zatwierdzone' },
                       phaseLabels: { completed: 'Zakończony', in_progress: 'W trakcie', not_started: 'Nie rozpoczęty' } },
-  umowy:            { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak umów' },
-  korespondencja:   { countNew: 'do rejestracji',  countDescribed: 'zarejestrowanych', emptyLabel: 'Brak korespondencji' },
-  zamowienia:       { countNew: 'do opisu',        countDescribed: 'w realizacji',     emptyLabel: 'Brak zamówień' },
-  protokoly:        { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak protokołów' },
-  polisy:           { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak polis' },
-  wnioski:          { countNew: 'do rozpatrzenia', countDescribed: 'rozpatrywanych',   emptyLabel: 'Brak wniosków' },
-  nieruchomosci:    { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów' },
-  jpk:              { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów JPK' },
-  zus:              { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak deklaracji' },
-  vat_ue:           { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak transakcji' },
-  kpir:             { countNew: 'do opisu',        countDescribed: 'zaksięgowanych',   emptyLabel: 'Brak wpisów KPiR' },
-  wplaty:           { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak operacji' },
-  dowody_platnosci: { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dowodów' },
-  projekt_klienta:  { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów' },
-  rd_ipbox:         { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak kosztów R&D' },
-  druki_przesylki:  { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak przesyłek' },
+  umowy:            { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak umów',            docsLabel: 'Umowy',           docsNoun: ['umowę', 'umowy', 'umów'] },
+  korespondencja:   { countNew: 'do rejestracji',  countDescribed: 'zarejestrowanych', emptyLabel: 'Brak korespondencji',  docsLabel: 'Korespondencja',  docsNoun: ['pismo', 'pisma', 'pism'] },
+  zamowienia:       { countNew: 'do opisu',        countDescribed: 'w realizacji',     emptyLabel: 'Brak zamówień',        docsLabel: 'Zamówienia',      docsNoun: ['zamówienie', 'zamówienia', 'zamówień'] },
+  protokoly:        { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak protokołów',      docsLabel: 'Protokoły',       docsNoun: ['protokół', 'protokoły', 'protokołów'] },
+  polisy:           { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak polis',           docsLabel: 'Polisy',          docsNoun: ['polisę', 'polisy', 'polis'] },
+  wnioski:          { countNew: 'do rozpatrzenia', countDescribed: 'rozpatrywanych',   emptyLabel: 'Brak wniosków',       docsLabel: 'Wnioski',         docsNoun: ['wniosek', 'wnioski', 'wniosków'] },
+  nieruchomosci:    { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów',      docsLabel: 'Dokumenty',       docsNoun: ['dokument', 'dokumenty', 'dokumentów'] },
+  jpk:              { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów JPK',  docsLabel: 'Dokumenty JPK',   docsNoun: ['dokument', 'dokumenty', 'dokumentów'] },
+  zus:              { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak deklaracji',      docsLabel: 'Deklaracje',      docsNoun: ['deklarację', 'deklaracje', 'deklaracji'] },
+  vat_ue:           { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak transakcji',      docsLabel: 'Transakcje',      docsNoun: ['transakcję', 'transakcje', 'transakcji'] },
+  kpir:             { countNew: 'do opisu',        countDescribed: 'zaksięgowanych',   emptyLabel: 'Brak wpisów KPiR',    docsLabel: 'Wpisy KPiR',     docsNoun: ['wpis', 'wpisy', 'wpisów'] },
+  wplaty:           { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak operacji',        docsLabel: 'Operacje',        docsNoun: ['operację', 'operacje', 'operacji'] },
+  dowody_platnosci: { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dowodów',         docsLabel: 'Dowody',          docsNoun: ['dowód', 'dowody', 'dowodów'] },
+  projekt_klienta:  { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów',      docsLabel: 'Dokumenty',       docsNoun: ['dokument', 'dokumenty', 'dokumentów'] },
+  rd_ipbox:         { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak kosztów R&D',    docsLabel: 'Koszty R&D',     docsNoun: ['koszt', 'koszty', 'kosztów'] },
+  druki_przesylki:  { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak przesyłek',      docsLabel: 'Przesyłki',       docsNoun: ['przesyłkę', 'przesyłki', 'przesyłek'] },
 };
 
 const DEFAULT_CONTEXT = CONTEXT_LABELS.invoice;
@@ -1063,6 +1064,14 @@ export function getContextLabels(projectType) {
     taskStatus: ctx.taskStatus || DEFAULT_TASK_STATUS,
     phaseLabels: ctx.phaseLabels || DEFAULT_PHASE_LABELS,
   };
+}
+
+export function pluralizeDoc(count, projectType) {
+  const cl = getContextLabels(projectType);
+  const [one, few, many] = cl.docsNoun || ['dokument', 'dokumenty', 'dokumentów'];
+  if (count === 1) return one;
+  if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) return few;
+  return many;
 }
 
 export { DOC_TYPE_CONFIGS, PROJECT_TYPE_MAP };
