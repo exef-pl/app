@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_URL } from './constants.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EXEF - Widok Biura Rachunkowego
 // Dashboard z wieloma klientami (delegowanymi tożsamościami)
 // Dane pobierane z API: GET /api/v1/firm/dashboard
 // ═══════════════════════════════════════════════════════════════════════════════
-
-const API_URL = 'http://localhost:8003/api/v1';
 
 const STATUS_CONFIG = {
   in_progress: { label: 'W trakcie', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' },

@@ -21,7 +21,7 @@ logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 logging.getLogger("multipart.multipart").setLevel(logging.WARNING)
 logging.getLogger("passlib").setLevel(logging.WARNING)
-from app.api import auth, entities, projects, tasks, firm, templates, sources, sources_flow
+from app.api import auth, entities, projects, tasks, firm, templates, sources, sources_flow, relations
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -61,6 +61,7 @@ app.include_router(firm.router, prefix="/api/v1")
 app.include_router(templates.router, prefix="/api/v1")
 app.include_router(sources.router, prefix="/api/v1")
 app.include_router(sources_flow.router, prefix="/api/v1")
+app.include_router(relations.router, prefix="/api/v1")
 
 @app.get("/")
 def root():

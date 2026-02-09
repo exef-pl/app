@@ -519,10 +519,11 @@ def create_relation(data: DocumentRelationCreate, identity_id: str = Depends(get
     # Sprawdź dostęp
     check_task_access(db, parent.task_id, identity_id, require_edit=True, edb=edb)
     
-    # Sprawdź czy relacja już istnieje
+    # Sprawdź czy relacja już istnieje (per relation_type)
     existing = edb.query(DocumentRelation).filter(
         DocumentRelation.parent_id == data.parent_id,
-        DocumentRelation.child_id == data.child_id
+        DocumentRelation.child_id == data.child_id,
+        DocumentRelation.relation_type == data.relation_type
     ).first()
     if existing:
         raise HTTPException(status_code=400, detail="Relacja już istnieje")

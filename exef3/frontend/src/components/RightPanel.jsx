@@ -3,6 +3,7 @@ import { COLORS, API_URL, ENTITY_TYPES, PROJECT_TYPES } from '../constants.js';
 import { getDetailConfig, getTabsConfig, getFormConfig, getStatsLabels, getContextLabels, pluralizeDoc } from '../docTypeConfig.js';
 import { InputField, InfoRow, DocFormFields } from './ui.jsx';
 import SourceConfigPanel from './SourceConfigPanel.jsx';
+import RelationsPanel from './RelationsPanel.jsx';
 
 export default function RightPanel({ 
   type, data, onClose, navigate,
@@ -212,6 +213,8 @@ export default function RightPanel({
                     }}
                   />
                 </div>
+                {/* Powiązania z innymi dokumentami */}
+                <RelationsPanel documentId={data.id} api={api} />
               </>
             ) : (
               <DocFormFields fields={fc.fields} formData={formData} update={update} />
@@ -1145,6 +1148,9 @@ function DocumentViewPanel({ doc, onClose, api, setDocuments, setError, projectT
           />
         </div>
 
+        {/* Powiązania z innymi dokumentami */}
+        <RelationsPanel documentId={doc.id} api={api} />
+
         {/* Save + Delete buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
           <button
@@ -1926,91 +1932,6 @@ function ImportPanel({ data, api, setDocuments, setSources, setError, token, nav
             </div>
           )}
         </div>
-      </div>
-  );
-}
-
-function DescribePanel({ data, navigate, activeProject }) {
-  const { task, documents } = data;
-  const docsNew = documents.filter(d => d.status === 'new');
-  const docsDescribed = documents.filter(d => d.status === 'described' || d.status === 'approved');
-  const docsExported = documents.filter(d => d.status === 'exported');
-  const docsTotal = documents.length;
-  const progress = docsTotal > 0 ? Math.round(((docsDescribed.length + docsExported.length) / docsTotal) * 100) : 0;
-  const sl = getStatsLabels(activeProject?.type);
-  const cl = getContextLabels(activeProject?.type);
-
-  return (
-      <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
-        <div style={{ padding: '12px', background: COLORS.bgTertiary, borderRadius: '8px', marginBottom: '16px' }}>
-          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
-          <InfoRow label="Zadanie" value={`${task.icon} ${task.name}`} />
-          <InfoRow label="Wszystkich" value={`${docsTotal}`} />
-          <InfoRow label={sl.new} value={`${docsNew.length}`} />
-          <InfoRow label={sl.described} value={`${docsDescribed.length}`} />
-          <InfoRow label={sl.exported} value={`${docsExported.length}`} />
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '6px', textTransform: 'uppercase', fontWeight: '600' }}>
-            Postęp opisu
-          </div>
-          <div style={{ height: '8px', background: COLORS.border, borderRadius: '4px', overflow: 'hidden', marginBottom: '4px' }}>
-            <div style={{ width: `${progress}%`, height: '100%', background: progress === 100 ? COLORS.success : COLORS.primary, transition: 'width 0.3s' }} />
-          </div>
-          <div style={{ fontSize: '11px', color: COLORS.textMuted, textAlign: 'right' }}>{progress}%</div>
-        </div>
-
-        {docsNew.length > 0 && (
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600' }}>
-              {cl.emptyLabel.replace('Brak ', '')} {cl.countNew} ({docsNew.length})
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {docsNew.slice(0, 10).map(doc => (
-                <button key={doc.id} onClick={() => {
-                  const m = location.pathname.match(/\/entity\/([^/]+)\/project\/([^/]+)\/task\/([^/]+)/);
-                  if (m) navigate(`/entity/${m[1]}/project/${m[2]}/task/${m[3]}/document/${doc.id}`);
-                }} style={{
-                  padding: '8px 12px', fontSize: '12px',
-                  border: `1px solid ${COLORS.border}`, borderRadius: '6px',
-                  background: COLORS.bgTertiary, color: COLORS.text,
-                  cursor: 'pointer', textAlign: 'left',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                }}>
-                  <span style={{ color: COLORS.warning }}>○</span>
-                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {doc.metadata?.vendor_name || doc.metadata?.number || doc.original_filename || doc.id.slice(0, 8)}
-                  </span>
-                </button>
-              ))}
-              {docsNew.length > 10 && (
-                <div style={{ fontSize: '11px', color: COLORS.textMuted, textAlign: 'center', padding: '4px' }}>
-                  ...i {docsNew.length - 10} więcej
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {docsNew.length === 0 && docsTotal > 0 && (
-          <div style={{
-            padding: '16px', background: `${COLORS.success}10`, border: `1px solid ${COLORS.success}30`,
-            borderRadius: '8px', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: '20px', marginBottom: '4px' }}>✓</div>
-            <div style={{ fontSize: '13px', color: COLORS.success, fontWeight: '500' }}>Wszystkie {cl.countDescribed}</div>
-          </div>
-        )}
-
-        {docsTotal === 0 && (
-          <div style={{
-            padding: '16px', background: COLORS.bgTertiary,
-            borderRadius: '8px', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: '12px', color: COLORS.textMuted }}>{cl.emptyLabel} — najpierw zaimportuj</div>
-          </div>
-        )}
       </div>
   );
 }

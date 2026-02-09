@@ -401,6 +401,53 @@ class DocumentRelationResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class LinkedDocumentInfo(BaseModel):
+    """Enriched info about a linked document (for UI display)."""
+    id: str
+    number: Optional[str]
+    contractor_name: Optional[str]
+    contractor_nip: Optional[str]
+    amount_gross: Optional[float]
+    currency: str = "PLN"
+    document_date: Optional[date] = None
+    status: str
+    doc_type: str
+    project_id: str
+    project_name: str
+    project_type: str
+    task_name: str
+
+class DocumentRelationDetail(BaseModel):
+    """Relation with full linked document info."""
+    id: str
+    relation_type: str
+    description: Optional[str]
+    created_at: datetime
+    direction: str  # "parent" or "child"
+    linked_document: LinkedDocumentInfo
+
+class DocumentSearchResult(BaseModel):
+    """Document found via cross-entity search."""
+    id: str
+    number: Optional[str]
+    contractor_name: Optional[str]
+    contractor_nip: Optional[str]
+    amount_gross: Optional[float]
+    currency: str = "PLN"
+    document_date: Optional[date] = None
+    status: str
+    doc_type: str
+    project_id: str
+    project_name: str
+    project_type: str
+    task_name: str
+
+class MatchSuggestion(BaseModel):
+    """Auto-match suggestion between two documents."""
+    document: DocumentSearchResult
+    score: float  # 0.0 - 1.0 match confidence
+    match_reasons: List[str]  # e.g. ["amount_match", "nip_match", "date_close"]
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # DASHBOARD
 # ═══════════════════════════════════════════════════════════════════════════════
