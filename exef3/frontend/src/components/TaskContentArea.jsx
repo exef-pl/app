@@ -320,7 +320,7 @@ export default function TaskContentArea({ activeTask, activeProject, documents, 
                           <span style={{
                             fontSize: '11px', padding: '4px 8px', borderRadius: '4px',
                             background: `${status?.color}20`, color: status?.color,
-                          }}>{status?.icon} {status?.label}</span>
+                          }}>{status?.icon} {dc.status[doc.status] || status?.label}</span>
                         </td>
                       );
                     case 'source':

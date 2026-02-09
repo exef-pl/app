@@ -344,7 +344,7 @@ class ProjectAuthorization(Base):
     # Relacje
     project = relationship("Project", back_populates="authorizations")
     identity = relationship("Identity", back_populates="project_authorizations", foreign_keys=[identity_id])
-    granted_by = relationship("Identity", foreign_keys=[granted_by_id])
+    granted_by = relationship("Identity", foreign_keys=[granted_by_id], overlaps="granted_authorizations")
     
     __table_args__ = (UniqueConstraint('project_id', 'identity_id'),)
 

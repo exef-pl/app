@@ -1,3 +1,18 @@
+## [1.0.12] - 2026-02-09
+
+### Summary
+
+feat(docs): deep code analysis engine with 2 supporting modules
+
+### Other
+
+- update exef3/backend/app/models/models.py
+- update exef3/frontend/src/components/EntityPage.jsx
+- update exef3/frontend/src/components/RightPanel.jsx
+- update exef3/frontend/src/components/TaskContentArea.jsx
+- update exef3/frontend/src/docTypeConfig.js
+
+
 ## [1.0.11] - 2026-02-07
 
 ### Summary

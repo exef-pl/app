@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { getContextLabels } from '../docTypeConfig.js';
 import TaskContentArea from './TaskContentArea.jsx';
 import RightPanel from './RightPanel.jsx';
+import ActivitiesSidebar from './ActivitiesSidebar.jsx';
 
 export default function EntityPage({ panel }) {
   const { entityId, projectId, taskId, documentId } = useParams();
@@ -424,7 +425,23 @@ export default function EntityPage({ panel }) {
           </div>
         </div>
 
-        
+        {/* Czynności — only when a task is selected */}
+        {activeTask && (
+          <div style={{ marginTop: '12px' }}>
+            <div style={{ fontSize: '10px', color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+              Czynności
+            </div>
+            <ActivitiesSidebar
+              activeTask={activeTask}
+              documents={documents}
+              sources={sources}
+              taskPath={taskPath}
+              navigate={navigate}
+              activePanel={panelType}
+              activeProject={activeProject}
+            />
+          </div>
+        )}
         </div>
 
         {/* Help link */}

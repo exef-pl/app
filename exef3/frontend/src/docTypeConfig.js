@@ -992,9 +992,18 @@ const PROJECT_TYPE_MAP = {
 // SIDEBAR & PHASE LABELS (per doc type)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+const DEFAULT_TASK_STATUS = {
+  pending: 'Oczekuje', in_progress: 'W trakcie', completed: 'Zakończone', exported: 'Wyeksportowane',
+};
+const DEFAULT_PHASE_LABELS = {
+  completed: 'Zakończony', in_progress: 'W trakcie', not_started: 'Nie rozpoczęty',
+};
+
 const CONTEXT_LABELS = {
   invoice:          { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak dokumentów' },
-  rekrutacja:       { countNew: 'do oceny',        countDescribed: 'ocenionych',       emptyLabel: 'Brak kandydatów' },
+  rekrutacja:       { countNew: 'do oceny',        countDescribed: 'ocenionych',       emptyLabel: 'Brak kandydatów',
+                      taskStatus: { pending: 'Oczekuje', in_progress: 'W trakcie', completed: 'Zakończone', exported: 'Zatwierdzone' },
+                      phaseLabels: { completed: 'Zakończony', in_progress: 'W trakcie', not_started: 'Nie rozpoczęty' } },
   umowy:            { countNew: 'do opisu',        countDescribed: 'opisanych',        emptyLabel: 'Brak umów' },
   korespondencja:   { countNew: 'do rejestracji',  countDescribed: 'zarejestrowanych', emptyLabel: 'Brak korespondencji' },
   zamowienia:       { countNew: 'do opisu',        countDescribed: 'w realizacji',     emptyLabel: 'Brak zamówień' },
@@ -1048,7 +1057,12 @@ export function getFormConfig(projectType) {
 
 export function getContextLabels(projectType) {
   const key = PROJECT_TYPE_MAP[projectType] || 'invoice';
-  return CONTEXT_LABELS[key] || DEFAULT_CONTEXT;
+  const ctx = CONTEXT_LABELS[key] || DEFAULT_CONTEXT;
+  return {
+    ...ctx,
+    taskStatus: ctx.taskStatus || DEFAULT_TASK_STATUS,
+    phaseLabels: ctx.phaseLabels || DEFAULT_PHASE_LABELS,
+  };
 }
 
 export { DOC_TYPE_CONFIGS, PROJECT_TYPE_MAP };

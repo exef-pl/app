@@ -465,17 +465,19 @@ function TaskViewPanel({ task, onClose, navigate, api, projectId, setTasks, setE
     finally { setAssigning(false); }
   };
 
+  const cl = getContextLabels(activeProject?.type);
+
   const phaseLabel = (status) => {
-    if (status === 'completed') return { text: 'Zakończony', color: COLORS.success, icon: '✅' };
-    if (status === 'in_progress') return { text: 'W trakcie', color: COLORS.warning, icon: '🔄' };
-    return { text: 'Nie rozpoczęty', color: COLORS.textMuted, icon: '○' };
+    if (status === 'completed') return { text: cl.phaseLabels.completed, color: COLORS.success, icon: '✅' };
+    if (status === 'in_progress') return { text: cl.phaseLabels.in_progress, color: COLORS.warning, icon: '🔄' };
+    return { text: cl.phaseLabels.not_started, color: COLORS.textMuted, icon: '○' };
   };
 
   const statusLabel = {
-    pending: { text: 'Oczekuje', color: COLORS.warning },
-    in_progress: { text: 'W trakcie', color: COLORS.primary },
-    completed: { text: 'Zakończone', color: COLORS.success },
-    exported: { text: 'Wyeksportowane', color: COLORS.success },
+    pending: { text: cl.taskStatus.pending, color: COLORS.warning },
+    in_progress: { text: cl.taskStatus.in_progress, color: COLORS.primary },
+    completed: { text: cl.taskStatus.completed, color: COLORS.success },
+    exported: { text: cl.taskStatus.exported, color: COLORS.success },
   };
   const st = statusLabel[task.status] || statusLabel.pending;
 
@@ -1283,7 +1285,7 @@ function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setS
       </div>
       {/* Active panel content */}
       {activeTab === 'activity-import' && (
-        <ImportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} token={token} navigate={navigate} />
+        <ImportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} token={token} navigate={navigate} activeProject={activeProject} />
       )}
       {activeTab === 'activity-selected' && (
         <BulkEditPanel data={data} api={api} setDocuments={setDocuments} setError={setError} selectedDocs={selectedDocs} setSelectedDocs={setSelectedDocs} navigate={navigate} activeProject={activeProject} />
@@ -1297,7 +1299,7 @@ function ActivityTabbedPanel({ activeTab, data, onClose, api, setDocuments, setS
         return null;
       })()}
       {activeTab === 'activity-export' && (
-        <ExportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} navigate={navigate} />
+        <ExportPanel data={data} api={api} setDocuments={setDocuments} setSources={setSources} setError={setError} navigate={navigate} activeProject={activeProject} />
       )}
       {activeTab === 'new-document' && (
         <NewDocumentPanel onCreateDocument={onCreateDocument} loading={loading} activeProject={activeProject} />
@@ -1537,7 +1539,7 @@ function NewDocumentPanel({ onCreateDocument, loading, activeProject }) {
   );
 }
 
-function ImportPanel({ data, api, setDocuments, setSources, setError, token, navigate }) {
+function ImportPanel({ data, api, setDocuments, setSources, setError, token, navigate, activeProject }) {
   const { task, sources, documents, projectId } = data;
   const [importing, setImporting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -1917,7 +1919,7 @@ function ImportPanel({ data, api, setDocuments, setSources, setError, token, nav
               background: uploadResult.errors?.length ? `${COLORS.warning}20` : `${COLORS.success}20`,
               color: uploadResult.errors?.length ? COLORS.warning : COLORS.success,
             }}>
-              ✓ Zaimportowano {uploadResult.imported} dokumentów
+              ✓ Zaimportowano {uploadResult.imported} ({getContextLabels(activeProject?.type).emptyLabel.replace('Brak ', '')})
               {uploadResult.errors?.length > 0 && (
                 <div style={{ marginTop: '4px' }}>⚠ {uploadResult.errors.length} błędów</div>
               )}
@@ -1928,13 +1930,15 @@ function ImportPanel({ data, api, setDocuments, setSources, setError, token, nav
   );
 }
 
-function DescribePanel({ data, navigate }) {
+function DescribePanel({ data, navigate, activeProject }) {
   const { task, documents } = data;
   const docsNew = documents.filter(d => d.status === 'new');
   const docsDescribed = documents.filter(d => d.status === 'described' || d.status === 'approved');
   const docsExported = documents.filter(d => d.status === 'exported');
   const docsTotal = documents.length;
   const progress = docsTotal > 0 ? Math.round(((docsDescribed.length + docsExported.length) / docsTotal) * 100) : 0;
+  const sl = getStatsLabels(activeProject?.type);
+  const cl = getContextLabels(activeProject?.type);
 
   return (
       <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
@@ -1942,9 +1946,9 @@ function DescribePanel({ data, navigate }) {
           <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
           <InfoRow label="Zadanie" value={`${task.icon} ${task.name}`} />
           <InfoRow label="Wszystkich" value={`${docsTotal}`} />
-          <InfoRow label="Do opisu" value={`${docsNew.length}`} />
-          <InfoRow label="Opisanych" value={`${docsDescribed.length}`} />
-          <InfoRow label="Wyeksportowanych" value={`${docsExported.length}`} />
+          <InfoRow label={sl.new} value={`${docsNew.length}`} />
+          <InfoRow label={sl.described} value={`${docsDescribed.length}`} />
+          <InfoRow label={sl.exported} value={`${docsExported.length}`} />
         </div>
 
         <div style={{ marginBottom: '16px' }}>
@@ -1960,7 +1964,7 @@ function DescribePanel({ data, navigate }) {
         {docsNew.length > 0 && (
           <div style={{ marginBottom: '16px' }}>
             <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase', fontWeight: '600' }}>
-              Dokumenty do opisu ({docsNew.length})
+              {cl.emptyLabel.replace('Brak ', '')} {cl.countNew} ({docsNew.length})
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {docsNew.slice(0, 10).map(doc => (
@@ -1995,7 +1999,7 @@ function DescribePanel({ data, navigate }) {
             borderRadius: '8px', textAlign: 'center',
           }}>
             <div style={{ fontSize: '20px', marginBottom: '4px' }}>✓</div>
-            <div style={{ fontSize: '13px', color: COLORS.success, fontWeight: '500' }}>Wszystkie dokumenty opisane</div>
+            <div style={{ fontSize: '13px', color: COLORS.success, fontWeight: '500' }}>Wszystkie {cl.countDescribed}</div>
           </div>
         )}
 
@@ -2004,7 +2008,7 @@ function DescribePanel({ data, navigate }) {
             padding: '16px', background: COLORS.bgTertiary,
             borderRadius: '8px', textAlign: 'center',
           }}>
-            <div style={{ fontSize: '12px', color: COLORS.textMuted }}>Brak dokumentów — najpierw zaimportuj</div>
+            <div style={{ fontSize: '12px', color: COLORS.textMuted }}>{cl.emptyLabel} — najpierw zaimportuj</div>
           </div>
         )}
       </div>
@@ -2290,7 +2294,7 @@ function BulkEditPanel({ data, api, setDocuments, setError, selectedDocs, setSel
 }
 
 
-function ExportPanel({ data, api, setDocuments, setSources, setError, navigate }) {
+function ExportPanel({ data, api, setDocuments, setSources, setError, navigate, activeProject }) {
   const { task, sources, documents, projectId } = data;
   const [exporting, setExporting] = useState(false);
   const [lastResult, setLastResult] = useState(null);
@@ -2308,6 +2312,7 @@ function ExportPanel({ data, api, setDocuments, setSources, setError, navigate }
   const exportSources = sources.filter(s => s.direction === 'export');
   const docsDescribed = documents.filter(d => d.status === 'described' || d.status === 'approved');
   const docsExported = documents.filter(d => d.status === 'exported');
+  const sl = getStatsLabels(activeProject?.type);
 
   const refreshSources = async () => {
     if (!projectId || !setSources) return;
@@ -2467,7 +2472,7 @@ function ExportPanel({ data, api, setDocuments, setSources, setError, navigate }
           <div style={{ fontSize: '10px', color: COLORS.textMuted, marginBottom: '8px', textTransform: 'uppercase' }}>Podsumowanie</div>
           <InfoRow label="Zadanie" value={`${task.icon} ${task.name}`} />
           <InfoRow label="Gotowe do eksportu" value={`${docsDescribed.length}`} />
-          <InfoRow label="Wyeksportowane" value={`${docsExported.length}`} />
+          <InfoRow label={sl.exported} value={`${docsExported.length}`} />
           <InfoRow label="Cele eksportu" value={`${exportSources.length}`} />
         </div>
 
